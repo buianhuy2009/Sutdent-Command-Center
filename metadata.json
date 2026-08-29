@@ -1,0 +1,8 @@
+{
+  "name": "Remix Student Command Center v2",
+  "description": "Student Command Center integrating Google Calendar, Gmail, Sheets, Docs, Drive, and Canvas LMS with intelligent scheduling, radar alerts, and assignment management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

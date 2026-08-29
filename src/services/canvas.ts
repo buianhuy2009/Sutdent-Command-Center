@@ -1,0 +1,259 @@
+import { CanvasAssignment, CanvasSettings, Assignment } from '../types';
+
+export const DEFAULT_CANVAS_SETTINGS: CanvasSettings = {
+  calendarFeedUrl: '',
+  apiDomain: 'https://canvas.instructure.com',
+  apiToken: '',
+  autoSync: true,
+  lastSyncedAt: undefined,
+};
+
+const LOCAL_STORAGE_CANVAS_KEY = 'scc_canvas_settings_v1';
+
+export function loadCanvasSettings(): CanvasSettings {
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_CANVAS_KEY);
+    if (saved) {
+      return { ...DEFAULT_CANVAS_SETTINGS, ...JSON.parse(saved) };
+    }
+  } catch (e) {
+    console.error('Error loading Canvas settings:', e);
+  }
+  return DEFAULT_CANVAS_SETTINGS;
+}
+
+export function saveCanvasSettings(settings: CanvasSettings) {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_CANVAS_KEY, JSON.stringify(settings));
+  } catch (e) {
+    console.error('Error saving Canvas settings:', e);
+  }
+}
+
+/**
+ * Parse an iCalendar (.ics) string from Canvas Calendar Feed
+ */
+export function parseCanvasICS(icsText: string): CanvasAssignment[] {
+  if (!icsText || !icsText.includes('BEGIN:VCALENDAR')) {
+    if (icsText && icsText.includes('error')) {
+      throw new Error(`Invalid Canvas calendar feed response: ${icsText.slice(0, 100)}`);
+    }
+  }
+
+  const assignments: CanvasAssignment[] = [];
+  const lines = icsText.split(/\r\n|\n|\r/);
+
+  let inEvent = false;
+  let currentSummary = '';
+  let currentDtEnd = '';
+  let currentDtStart = '';
+  let currentDescription = '';
+  let currentUrl = '';
+  let currentUid = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+
+    // Handle folded lines (lines starting with space or tab)
+    while (i + 1 < lines.length && (lines[i + 1].startsWith(' ') || lines[i + 1].startsWith('\t'))) {
+      line += lines[i + 1].substring(1);
+      i++;
+    }
+
+    if (line.startsWith('BEGIN:VEVENT')) {
+      inEvent = true;
+      currentSummary = '';
+      currentDtEnd = '';
+      currentDtStart = '';
+      currentDescription = '';
+      currentUrl = '';
+      currentUid = '';
+    } else if (line.startsWith('END:VEVENT')) {
+      inEvent = false;
+      if (currentSummary) {
+        // Canvas ICS summary format is usually: "Assignment Title [Course Name]" or "[Course] Assignment"
+        let name = currentSummary;
+        let courseName = 'Canvas Course';
+
+        const bracketMatch = currentSummary.match(/^(.*?)\s*\[(.*?)\]$/);
+        const prefixBracketMatch = currentSummary.match(/^\[(.*?)\]\s*(.*)$/);
+
+        if (bracketMatch) {
+          name = bracketMatch[1].trim();
+          courseName = bracketMatch[2].trim();
+        } else if (prefixBracketMatch) {
+          courseName = prefixBracketMatch[1].trim();
+          name = prefixBracketMatch[2].trim();
+        }
+
+        // Parse due date
+        const dateRaw = currentDtEnd || currentDtStart;
+        let dueAt = '';
+        if (dateRaw) {
+          // Format could be YYYYMMDDTHHMMSSZ or YYYYMMDD
+          const cleanDate = dateRaw.replace(/[^0-9T]/g, '');
+          if (cleanDate.length >= 8) {
+            const year = cleanDate.substring(0, 4);
+            const month = cleanDate.substring(4, 6);
+            const day = cleanDate.substring(6, 8);
+            dueAt = `${year}-${month}-${day}`;
+          }
+        }
+
+        // Clean description
+        const cleanDesc = currentDescription
+          .replace(/\\n/g, '\n')
+          .replace(/\\,/g, ',')
+          .replace(/\\;/g, ';')
+          .replace(/\\\\/g, '\\');
+
+        // Extract points if in description
+        const pointsMatch = cleanDesc.match(/(\d+(\.\d+)?)\s*(pts|points)/i);
+        const pointsPossible = pointsMatch ? parseFloat(pointsMatch[1]) : undefined;
+
+        assignments.push({
+          id: currentUid || `canvas-ics-${Math.random().toString(36).substring(2, 9)}`,
+          name,
+          courseName,
+          dueAt: dueAt || new Date().toISOString().split('T')[0],
+          pointsPossible,
+          htmlUrl: currentUrl || (cleanDesc.match(/https?:\/\/[^\s]+/)?.[0] || ''),
+          description: cleanDesc,
+          isSynced: false,
+        });
+      }
+    } else if (inEvent) {
+      if (line.startsWith('SUMMARY:')) {
+        currentSummary = line.substring(8).trim();
+      } else if (line.startsWith('DTEND:') || line.startsWith('DTEND;')) {
+        currentDtEnd = line.substring(line.indexOf(':') + 1).trim();
+      } else if (line.startsWith('DTSTART:') || line.startsWith('DTSTART;')) {
+        currentDtStart = line.substring(line.indexOf(':') + 1).trim();
+      } else if (line.startsWith('DESCRIPTION:')) {
+        currentDescription = line.substring(12).trim();
+      } else if (line.startsWith('URL:')) {
+        currentUrl = line.substring(4).trim();
+      } else if (line.startsWith('UID:')) {
+        currentUid = line.substring(4).trim();
+      }
+    }
+  }
+
+  return assignments;
+}
+
+/**
+ * Fetch Canvas assignments from Calendar Feed (.ics) via proxy with authentic error handling
+ */
+export async function fetchCanvasAssignmentsFromFeed(feedUrl: string): Promise<CanvasAssignment[]> {
+  const cleanUrl = feedUrl.trim();
+  if (!cleanUrl) {
+    return [];
+  }
+
+  // Handle webcal:// prefix from Apple/Canvas copy link
+  const normalizedUrl = cleanUrl.replace(/^webcal:\/\//i, 'https://');
+
+  const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(normalizedUrl)}`;
+  const res = await fetch(proxyUrl);
+
+  if (!res.ok) {
+    let errorDetail = res.statusText;
+    try {
+      const errJson = await res.json();
+      if (errJson.error) errorDetail = errJson.error;
+    } catch {
+      // Ignore text parse errors
+    }
+    throw new Error(`Canvas feed fetch failed (${res.status}): ${errorDetail}`);
+  }
+
+  const icsText = await res.text();
+  if (!icsText || icsText.trim().length === 0) {
+    throw new Error('Canvas feed returned empty content');
+  }
+
+  return parseCanvasICS(icsText);
+}
+
+/**
+ * Fetch Canvas assignments directly via Canvas REST API (optional token)
+ */
+export async function fetchCanvasAssignmentsFromApi(
+  domain: string,
+  token: string
+): Promise<CanvasAssignment[]> {
+  if (!domain || !token) return [];
+
+  const cleanDomain = domain.replace(/\/$/, '');
+  const url = `${cleanDomain}/api/v1/users/self/upcoming_events`;
+  const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(url)}`;
+
+  const res = await fetch(proxyUrl, {
+    headers: {
+      'x-canvas-token': token,
+    },
+  });
+
+  if (!res.ok) {
+    let errorDetail = res.statusText;
+    try {
+      const errJson = await res.json();
+      if (errJson.error) errorDetail = errJson.error;
+    } catch {
+      // Ignore
+    }
+    throw new Error(`Canvas API error (${res.status}): ${errorDetail}`);
+  }
+
+  const events = await res.json();
+  if (!Array.isArray(events)) {
+    return [];
+  }
+
+  return events
+    .filter((e: any) => e.assignment || e.type === 'assignment')
+    .map((e: any) => {
+      const a = e.assignment || {};
+      return {
+        id: `canvas-api-${e.id || a.id}`,
+        name: a.name || e.title || 'Canvas Task',
+        courseName: e.context_name || 'Course',
+        courseId: e.context_code,
+        dueAt: (a.due_at || e.start_at || '').split('T')[0] || '',
+        pointsPossible: a.points_possible,
+        htmlUrl: a.html_url || e.html_url,
+        description: a.description || '',
+        isSynced: false,
+      };
+    });
+}
+
+/**
+ * Cross-reference Canvas assignments with Master Google Sheet assignments
+ */
+export function crossReferenceCanvasWithSheet(
+  canvasList: CanvasAssignment[],
+  sheetAssignments: Assignment[]
+): CanvasAssignment[] {
+  if (!Array.isArray(canvasList)) return [];
+  if (!Array.isArray(sheetAssignments)) return canvasList;
+
+  return canvasList.map((canvasItem) => {
+    const isAlreadyInSheet = sheetAssignments.some((sheetItem) => {
+      const nameMatch =
+        sheetItem.assignmentName.toLowerCase().trim() ===
+        canvasItem.name.toLowerCase().trim();
+      const courseMatch =
+        sheetItem.subject.toLowerCase().includes(canvasItem.courseName.toLowerCase().slice(0, 5)) ||
+        canvasItem.courseName.toLowerCase().includes(sheetItem.subject.toLowerCase().slice(0, 5));
+      return nameMatch || (courseMatch && sheetItem.dueDate === canvasItem.dueAt);
+    });
+
+    return {
+      ...canvasItem,
+      isSynced: isAlreadyInSheet,
+    };
+  });
+}
+
