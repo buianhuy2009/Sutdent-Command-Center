@@ -50,6 +50,18 @@ export const signInWithGoogle = async (): Promise<{ user: User; accessToken: str
     return { user: result.user, accessToken: cachedAccessToken };
   } catch (error: any) {
     console.error('Sign in error:', error);
+    if (error?.code === 'auth/unauthorized-domain' || (error?.message && error.message.includes('unauthorized-domain'))) {
+      const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'your Vercel domain';
+      throw new Error(
+        `Firebase Unauthorized Domain: Add '${currentHost}' to Firebase Console → Authentication → Settings → Authorized Domains to enable Google sign-in on Vercel.`
+      );
+    }
+    if (error?.code === 'auth/popup-closed-by-user') {
+      throw new Error('Sign-in popup was closed before completing authentication.');
+    }
+    if (error?.code === 'auth/popup-blocked') {
+      throw new Error('Sign-in popup was blocked by browser. Please allow popups for this site.');
+    }
     throw error;
   } finally {
     isSigningIn = false;

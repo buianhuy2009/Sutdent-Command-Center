@@ -25,6 +25,7 @@ import { ConfirmationModal } from './components/ConfirmationModal';
 import { StudyAssistantChat } from './components/StudyAssistantChat';
 import { CommandPalette } from './components/CommandPalette';
 import { ShortcutsModal } from './components/ShortcutsModal';
+import { DeploymentModal } from './components/DeploymentModal';
 import { ToastContainer } from './components/Toast';
 
 import {
@@ -179,6 +180,7 @@ export default function App() {
   const [aiChatOpen, setAiChatOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
+  const [deploymentModalOpen, setDeploymentModalOpen] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
@@ -1036,6 +1038,7 @@ export default function App() {
             isRefreshing={isRefreshingAll}
             onOpenCommandPalette={() => setCommandPaletteOpen(true)}
             onOpenShortcuts={() => setShortcutsModalOpen(true)}
+            onOpenDeploymentGuide={() => setDeploymentModalOpen(true)}
             onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
             onOpenNewAssignment={() => setActiveTab('tracker')}
             sheetUrl={masterSheetUrl}
@@ -1275,6 +1278,12 @@ export default function App() {
       <ShortcutsModal
         isOpen={shortcutsModalOpen}
         onClose={() => setShortcutsModalOpen(false)}
+      />
+
+      {/* Vercel Deployment & Integrations Guide Modal */}
+      <DeploymentModal
+        isOpen={deploymentModalOpen}
+        onClose={() => setDeploymentModalOpen(false)}
       />
 
       {/* Toast Notification Container */}
