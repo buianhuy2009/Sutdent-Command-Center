@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { User } from 'firebase/auth';
 import {
   Compass,
@@ -14,6 +14,8 @@ import {
   Radio,
   X,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { DailyRadarTab } from './components/DailyRadarTab';
@@ -63,6 +65,7 @@ import {
   fetchCanvasAssignmentsFromApi,
   crossReferenceCanvasWithSheet,
   submitCanvasAssignment,
+  loadCompletedCanvasIds,
 } from './services/canvas';
 import {
   summarizeEmailsWithGemini,
@@ -156,6 +159,43 @@ export default function App() {
   const [recentFiles, setRecentFiles] = useState<SchoolFile[]>([]);
   const [canvasAssignments, setCanvasAssignments] = useState<CanvasAssignment[]>([]);
   const [canvasSettings, setCanvasSettings] = useState<CanvasSettings>(loadCanvasSettings());
+
+  // Sidebar expanded / collapsed state (persisted in localStorage)
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('scc_sidebar_expanded');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarExpanded((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('scc_sidebar_expanded', String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
+
+  // Calculate live badge counts for sidebar
+  const completedCanvasIds = useMemo(() => new Set(loadCompletedCanvasIds()), [canvasAssignments]);
+  const canvasUnfinishedCount = useMemo(
+    () => canvasAssignments.filter((a) => !completedCanvasIds.has(a.id)).length,
+    [canvasAssignments, completedCanvasIds]
+  );
+  const urgentEmailCount = useMemo(
+    () => emailAlerts.filter((e) => (e.urgency === 'HIGH' || e.urgency === 'MEDIUM') && !e.isSpam).length,
+    [emailAlerts]
+  );
+  const pendingAssignmentCount = useMemo(
+    () => assignments.filter((a) => a.status !== 'Done').length,
+    [assignments]
+  );
 
   // Error States
   const [canvasError, setCanvasError] = useState<string | null>(null);
@@ -1579,139 +1619,227 @@ export default function App() {
       )}
       {/* Left Navigation Rail (Desktop) + Main Area Container */}
       <div className="flex-1 flex overflow-hidden h-full">
-        {/* Sleek Navy Navigation Rail */}
+        {/* Sleek Navy Navigation Rail / Expanded Sidebar */}
         <nav
           aria-label="Primary Navigation"
-          className="w-20 bg-[#0F172A]/95 dark:bg-[#0B1120]/95 backdrop-blur-md hidden md:flex flex-col items-center py-5 border-r border-slate-800/80 shadow-xl shrink-0 justify-between z-30 select-none h-full"
+          className={`${
+            isSidebarExpanded ? 'w-64' : 'w-20'
+          } bg-[#0F172A]/95 dark:bg-[#0B1120]/95 backdrop-blur-md hidden md:flex flex-col py-5 px-3 border-r border-slate-800/80 shadow-xl shrink-0 justify-between z-30 select-none h-full transition-[width] duration-300 ease-in-out`}
         >
-          {/* Brand Logo Monogram */}
-          <div
-            onClick={() => handleTabTransition('canvas')}
-            className="w-12 h-12 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/40 hover:scale-105 transition-transform cursor-pointer"
-            title="Canvas LMS Hub & Student Command Center"
-          >
-            S
-          </div>
-
-          {/* Navigation Icons with Active States */}
-          <div className="flex flex-col space-y-4 my-auto">
-            {/* 1. Canvas LMS Tab (Prioritized) */}
-            <button
-              id="rail-tab-canvas"
+          {/* Top Brand Monogram / Header */}
+          <div className="flex items-center justify-between gap-3 px-2 mb-6">
+            <div
               onClick={() => handleTabTransition('canvas')}
-              className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer relative group ${
-                activeTab === 'canvas'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
-                  : 'bg-slate-800/70 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-              }`}
-              title="Canvas LMS Hub (Press 1)"
+              className="flex items-center gap-3 cursor-pointer group min-w-0"
+              title="Canvas LMS Hub & Student Command Center"
             >
-              <Layers className="w-5 h-5" />
-              <span className="sr-only">Canvas LMS</span>
-              <span className="absolute left-14 bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md border border-slate-700">
-                Canvas LMS <span className="text-indigo-400 font-bold ml-1">[1]</span>
-              </span>
-            </button>
+              <div className="w-11 h-11 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/40 group-hover:scale-105 transition-transform shrink-0">
+                S
+              </div>
+              {isSidebarExpanded && (
+                <div className="min-w-0 overflow-hidden animate-in fade-in duration-200">
+                  <h2 className="text-sm font-bold text-white tracking-tight leading-tight truncate">
+                    Student Center
+                  </h2>
+                  <p className="text-[10px] text-indigo-400 font-medium tracking-wide uppercase">
+                    Academic OS
+                  </p>
+                </div>
+              )}
+            </div>
 
-            {/* 2. Daily Schedule Tab */}
-            <button
-              id="rail-tab-radar"
-              onClick={() => handleTabTransition('radar')}
-              className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer relative group ${
-                activeTab === 'radar'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
-                  : 'bg-slate-800/70 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-              }`}
-              title="Daily Schedule (Press 2)"
-            >
-              <Compass className="w-5 h-5" />
-              <span className="sr-only">Daily Schedule</span>
-              <span className="absolute left-14 bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md border border-slate-700">
-                Daily Schedule <span className="text-slate-400 ml-1">[2]</span>
-              </span>
-            </button>
-
-            {/* 3. Gmail Scanner Tab */}
-            <button
-              id="rail-tab-gmail"
-              onClick={() => handleTabTransition('gmail')}
-              className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer relative group ${
-                activeTab === 'gmail'
-                  ? 'bg-rose-600 text-white shadow-md shadow-rose-500/30'
-                  : 'bg-slate-800/70 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-              }`}
-              title="Gmail AI Scanner (Press 3)"
-            >
-              <Mail className="w-5 h-5" />
-              <span className="sr-only">Gmail Scanner</span>
-              <span className="absolute left-14 bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md border border-slate-700">
-                Gmail AI Scanner <span className="text-rose-400 ml-1">[3]</span>
-              </span>
-            </button>
-
-            {/* 4. Assignment Tracker Tab */}
-            <button
-              id="rail-tab-tracker"
-              onClick={() => handleTabTransition('tracker')}
-              className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer relative group ${
-                activeTab === 'tracker'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
-                  : 'bg-slate-800/70 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-              }`}
-              title="Master Assignment Tracker (Press 4)"
-            >
-              <CheckSquare className="w-5 h-5" />
-              <span className="sr-only">Assignment Tracker</span>
-              <span className="absolute left-14 bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md border border-slate-700">
-                Assignment Tracker <span className="text-slate-400 ml-1">[4]</span>
-              </span>
-            </button>
-
-            {/* 5. Project Starter Tab */}
-            <button
-              id="rail-tab-projects"
-              onClick={() => handleTabTransition('projects')}
-              className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer relative group ${
-                activeTab === 'projects'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
-                  : 'bg-slate-800/70 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-              }`}
-              title="Project Starter & Files (Press 5)"
-            >
-              <FileText className="w-5 h-5" />
-              <span className="sr-only">Project Starter</span>
-              <span className="absolute left-14 bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md border border-slate-700">
-                Project Starter <span className="text-slate-400 ml-1">[5]</span>
-              </span>
-            </button>
+            {isSidebarExpanded && (
+              <button
+                onClick={toggleSidebar}
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
+                title="Collapse sidebar"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
-          {/* Bottom Avatar / Profile Badge */}
-          <div className="mt-auto">
+          {/* Navigation Items Group */}
+          <div className="flex flex-col space-y-2 my-auto">
+            {isSidebarExpanded && (
+              <div className="px-3 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                Workspaces
+              </div>
+            )}
+
+            {[
+              {
+                id: 'canvas',
+                label: 'Canvas LMS',
+                description: 'Assignments & Submissions',
+                icon: Layers,
+                key: '1',
+                activeColor: 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30',
+                badge: canvasUnfinishedCount > 0 ? `${canvasUnfinishedCount}` : undefined,
+                badgeColor: 'bg-orange-500 text-white',
+              },
+              {
+                id: 'radar',
+                label: 'Daily Schedule',
+                description: 'Classes & Focus Blocks',
+                icon: Compass,
+                key: '2',
+                activeColor: 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30',
+                badge: calendarEvents.length > 0 ? `${calendarEvents.length}` : undefined,
+                badgeColor: 'bg-indigo-500/80 text-white',
+              },
+              {
+                id: 'gmail',
+                label: 'Gmail AI Scanner',
+                description: 'Filtered School Inbox',
+                icon: Mail,
+                key: '3',
+                activeColor: 'bg-rose-600 text-white shadow-md shadow-rose-500/30',
+                badge: urgentEmailCount > 0 ? `${urgentEmailCount}` : undefined,
+                badgeColor: 'bg-rose-500 text-white',
+              },
+              {
+                id: 'tracker',
+                label: 'Assignment Tracker',
+                description: 'Live Master Checklist',
+                icon: CheckSquare,
+                key: '4',
+                activeColor: 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30',
+                badge: pendingAssignmentCount > 0 ? `${pendingAssignmentCount}` : undefined,
+                badgeColor: 'bg-emerald-500 text-white',
+              },
+              {
+                id: 'projects',
+                label: 'Project Starter',
+                description: 'Drive Files & MLA Docs',
+                icon: FileText,
+                key: '5',
+                activeColor: 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30',
+                badge: undefined,
+                badgeColor: '',
+              },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              const Icon = tab.icon;
+
+              return (
+                <button
+                  key={tab.id}
+                  id={`rail-tab-${tab.id}`}
+                  onClick={() => handleTabTransition(tab.id)}
+                  className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative group ${
+                    isSidebarExpanded ? 'px-3 py-2.5 justify-between gap-3' : 'w-11 h-11 mx-auto justify-center'
+                  } ${
+                    isActive
+                      ? tab.activeColor
+                      : 'bg-slate-800/40 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  }`}
+                  title={`${tab.label} (Press ${tab.key})`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Icon className="w-5 h-5 shrink-0" />
+                    {isSidebarExpanded && (
+                      <div className="text-left min-w-0 overflow-hidden">
+                        <div className="text-xs font-semibold truncate leading-tight">
+                          {tab.label}
+                        </div>
+                        <div className="text-[10px] text-slate-400 dark:text-slate-400/80 truncate">
+                          {tab.description}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {isSidebarExpanded ? (
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {tab.badge && (
+                        <span className={`px-1.5 py-0.2 text-[10px] font-bold rounded-full ${tab.badgeColor}`}>
+                          {tab.badge}
+                        </span>
+                      )}
+                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 px-1 py-0.2 bg-black/20 rounded">
+                        [{tab.key}]
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      {tab.badge && (
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-[#0F172A]" />
+                      )}
+                      <span className="absolute left-14 bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md border border-slate-700">
+                        {tab.label} <span className="text-indigo-400 font-bold ml-1">[{tab.key}]</span>
+                      </span>
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Bottom Actions: Expand Toggle & User Profile */}
+          <div className="mt-auto pt-4 border-t border-slate-800/80 space-y-3">
+            {!isSidebarExpanded && (
+              <button
+                onClick={toggleSidebar}
+                className="w-11 h-11 mx-auto rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                title="Expand sidebar"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            )}
+
             {user ? (
               <div
-                className="w-10 h-10 rounded-full bg-slate-700 border-2 border-indigo-400/50 flex items-center justify-center text-xs font-bold text-slate-300 overflow-hidden cursor-pointer hover:border-indigo-400 transition-colors shadow-sm"
+                className={`flex items-center rounded-xl p-1.5 cursor-pointer hover:bg-slate-800/60 transition-colors ${
+                  isSidebarExpanded ? 'gap-3 justify-start' : 'justify-center'
+                }`}
                 title={`Signed in as ${user.displayName || user.email}`}
                 onClick={() => setCommandPaletteOpen(true)}
               >
-                {user.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt={user.displayName || 'User'}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  (user.displayName || user.email || 'JD').slice(0, 2).toUpperCase()
+                <div className="w-9 h-9 rounded-full bg-slate-700 border-2 border-indigo-400/50 flex items-center justify-center text-xs font-bold text-slate-300 overflow-hidden shrink-0 shadow-sm">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName || 'User'}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    (user.displayName || user.email || 'JD').slice(0, 2).toUpperCase()
+                  )}
+                </div>
+                {isSidebarExpanded && (
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold text-white truncate leading-tight">
+                      {user.displayName || user.email?.split('@')[0]}
+                    </div>
+                    <div className="text-[10px] text-slate-400 truncate">
+                      {user.email}
+                    </div>
+                  </div>
                 )}
               </div>
             ) : (
               <div
                 onClick={() => handleGoogleSignIn()}
-                className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-indigo-400 cursor-pointer hover:bg-slate-700 hover:border-indigo-500 transition-colors shadow-sm"
+                className={`flex items-center rounded-xl p-1.5 cursor-pointer hover:bg-slate-800/60 transition-colors ${
+                  isSidebarExpanded ? 'gap-3 justify-start' : 'justify-center'
+                }`}
                 title="Sign in with Google"
               >
-                JD
+                <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-indigo-400 shrink-0 shadow-sm">
+                  JD
+                </div>
+                {isSidebarExpanded && (
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold text-white truncate leading-tight">
+                      Sign in
+                    </div>
+                    <div className="text-[10px] text-slate-400 truncate">
+                      Sync with Google
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

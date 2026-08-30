@@ -132,3 +132,18 @@
     animation-fill-mode: both;
   }
 }
+
+/* Container Query Responsive Layouts */
+.cq-container {
+  container-type: inline-size;
+}
+
+@container (min-width: 480px) {
+  .cq-row {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+  .cq-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
