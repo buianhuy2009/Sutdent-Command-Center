@@ -32,6 +32,7 @@ interface AssignmentTrackerTabProps {
   isParsingAI: boolean;
   isGoogleConnected?: boolean;
   onConnectGoogle?: () => void;
+  onClearCompleted?: () => Promise<void>;
   sheetError?: string | null;
   sheetApiInfo?: ApiEnablementInfo | null;
 }
@@ -49,6 +50,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
   isParsingAI,
   isGoogleConnected = true,
   onConnectGoogle,
+  onClearCompleted,
   sheetError,
   sheetApiInfo,
 }) => {
@@ -57,6 +59,8 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
   const [filterSubject, setFilterSubject] = useState('ALL');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [filterPriority, setFilterPriority] = useState('ALL');
+  const [showArchived, setShowArchived] = useState(false);
+  const [isClearingDone, setIsClearingDone] = useState(false);
 
   // New assignment modal state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -121,19 +125,73 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
     await onUpdateStatus(assignment, nextStatus);
   };
 
-  // Filtered and sorted assignments
-  const filteredAssignments = assignments.filter((a) => {
-    const matchesSearch =
-      a.assignmentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (a.notes || '').toLowerCase().includes(searchQuery.toLowerCase());
+  const handleClearDone = async () => {
+    if (!onClearCompleted) return;
+    setIsClearingDone(true);
+    try {
+      await onClearCompleted();
+    } finally {
+      setIsClearingDone(false);
+    }
+  };
 
-    const matchesSubject = filterSubject === 'ALL' || a.subject === filterSubject;
-    const matchesStatus = filterStatus === 'ALL' || a.status === filterStatus;
-    const matchesPriority = filterPriority === 'ALL' || a.priority === filterPriority;
+  // Filtered and sorted assignments (Active at top, Done at bottom, Old done archived)
+  const { filteredAssignments, oldCompletedCount } = React.useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let oldDone = 0;
 
-    return matchesSearch && matchesSubject && matchesStatus && matchesPriority;
-  });
+    const filtered = assignments.filter((a) => {
+      const matchesSearch =
+        a.assignmentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (a.notes || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesSubject = filterSubject === 'ALL' || a.subject === filterSubject;
+      const matchesStatus = filterStatus === 'ALL' || a.status === filterStatus;
+      const matchesPriority = filterPriority === 'ALL' || a.priority === filterPriority;
+
+      if (!matchesSearch || !matchesSubject || !matchesStatus || !matchesPriority) {
+        return false;
+      }
+
+      // Check if this task was completed and due > 7 days ago
+      if (a.status === 'Done' && a.dueDate) {
+        const due = new Date(a.dueDate + 'T00:00:00');
+        const diffDays = Math.round((today.getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays > 7) {
+          oldDone++;
+          if (!showArchived && filterStatus !== 'Done') {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    });
+
+    // Smart Sort:
+    // 1. Incomplete / Active tasks (Not Started, In Progress) ALWAYS on top, sorted by due date ascending
+    // 2. Completed tasks (Done) ALWAYS on bottom
+    filtered.sort((a, b) => {
+      const aDone = a.status === 'Done';
+      const bDone = b.status === 'Done';
+
+      if (aDone && !bDone) return 1;
+      if (!aDone && bDone) return -1;
+
+      const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+      const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+
+      if (aDone && bDone) {
+        return bDate - aDate;
+      }
+
+      return aDate - bDate;
+    });
+
+    return { filteredAssignments: filtered, oldCompletedCount: oldDone };
+  }, [assignments, searchQuery, filterSubject, filterStatus, filterPriority, showArchived]);
 
   // Calculate relative due date
   const getDueBadge = (dueDateStr: string) => {
@@ -256,6 +314,22 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Sync</span>
           </button>
+
+          {doneCount > 0 && onClearCompleted && (
+            <button
+              onClick={handleClearDone}
+              disabled={isClearingDone}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 rounded-xl border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer"
+              title="Clear and remove finished tasks from your tracker and Google Sheet"
+            >
+              {isClearingDone ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <CheckCircle className="w-3.5 h-3.5" />
+              )}
+              <span>Clear Done ({doneCount})</span>
+            </button>
+          )}
 
           <button
             id="btn-add-assignment-top"
@@ -389,6 +463,23 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
           </select>
         </div>
       </div>
+
+      {/* Auto-Archived Tasks Notice */}
+      {oldCompletedCount > 0 && filterStatus !== 'Done' && (
+        <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">
+              📁 {oldCompletedCount} finished {oldCompletedCount === 1 ? 'task' : 'tasks'} auto-archived (&gt; 7 days ago)
+            </span>
+          </div>
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+          >
+            {showArchived ? 'Hide Archived' : `Show Archived (${oldCompletedCount})`}
+          </button>
+        </div>
+      )}
 
       {/* Main Assignment Table with Professional Polish Container */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">

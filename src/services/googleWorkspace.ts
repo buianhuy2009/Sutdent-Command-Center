@@ -701,6 +701,56 @@ export async function updateAssignmentInSheet(
   );
 }
 
+export async function syncAllAssignmentsToSheet(
+  token: string,
+  spreadsheetId: string,
+  assignments: Assignment[]
+): Promise<Assignment[]> {
+  const rows = assignments.map((a) => [
+    a.subject,
+    a.assignmentName,
+    a.dueDate,
+    a.priority,
+    a.status,
+    a.source || 'Manual',
+    a.docUrl || '',
+    a.notes || '',
+  ]);
+
+  // 1. Clear existing range
+  await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Assignments!A2:H100:clear`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  // 2. Write new rows
+  if (rows.length > 0) {
+    await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Assignments!A2:H${rows.length + 1}?valueInputOption=USER_ENTERED`,
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ values: rows }),
+      }
+    );
+  }
+
+  return assignments.map((a, index) => ({
+    ...a,
+    id: `sheet-${index + 2}`,
+    sheetRowIndex: index + 2,
+  }));
+}
+
 // ==========================================
 // GOOGLE DRIVE & DOCS API
 // ==========================================

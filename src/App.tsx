@@ -48,6 +48,7 @@ import {
   fetchSheetAssignments,
   appendAssignmentToSheet,
   updateAssignmentInSheet,
+  syncAllAssignmentsToSheet,
   fetchRecentSchoolFiles,
   createAssignmentDoc,
 } from './services/googleWorkspace';
@@ -625,11 +626,44 @@ export default function App() {
       setCanvasError(null);
       setLastSyncedAt(new Date());
 
+      // Auto-Sync Canvas Completion to Master Sheet Tracker
+      const token = getStoredGoogleToken();
+      let updatedSheetCount = 0;
+
+      const updatedAssignments = assignments.map((sheetItem) => {
+        const matchingCanvas = crossRef.find((c) => {
+          const nameMatch =
+            sheetItem.assignmentName.toLowerCase().trim() === c.name.toLowerCase().trim();
+          const courseMatch =
+            sheetItem.subject.toLowerCase().includes(c.courseName.toLowerCase().slice(0, 5)) ||
+            c.courseName.toLowerCase().includes(sheetItem.subject.toLowerCase().slice(0, 5));
+          return nameMatch || (courseMatch && sheetItem.dueDate === c.dueAt);
+        });
+
+        if (matchingCanvas && matchingCanvas.isCompleted && sheetItem.status !== 'Done') {
+          updatedSheetCount++;
+          const doneItem = { ...sheetItem, status: 'Done' as const };
+          if (token && masterSheetId && sheetItem.sheetRowIndex) {
+            updateAssignmentInSheet(token, masterSheetId, doneItem).catch((e) =>
+              console.warn('Auto-sync status to sheet error:', e)
+            );
+          }
+          return doneItem;
+        }
+        return sheetItem;
+      });
+
+      if (updatedSheetCount > 0) {
+        setAssignments(updatedAssignments);
+      }
+
       if (!isSilent) {
         addToast({
           type: 'success',
           title: 'Canvas LMS Synced Live',
-          message: `Loaded ${crossRef.length} real assignments from your Canvas feed.`,
+          message: `Loaded ${crossRef.length} real assignments from your Canvas feed.${
+            updatedSheetCount > 0 ? ` Marked ${updatedSheetCount} completed tasks as Done in Tracker.` : ''
+          }`,
         });
       }
     } catch (err: any) {
@@ -877,6 +911,39 @@ export default function App() {
         type: 'info',
         title: 'Status Updated',
         message: `Marked "${assignment.assignmentName}" as ${newStatus}.`,
+      });
+    }
+  };
+
+  // Clear / Purge all completed assignments from Master Sheet and tracker
+  const handleClearCompletedAssignments = async () => {
+    const activeOnly = assignments.filter((a) => a.status !== 'Done');
+    const token = getStoredGoogleToken();
+
+    if (token && masterSheetId) {
+      try {
+        const synced = await syncAllAssignmentsToSheet(token, masterSheetId, activeOnly);
+        setAssignments(synced);
+        addToast({
+          type: 'success',
+          title: 'Completed Tasks Cleared',
+          message: 'Cleaned finished assignments from your Master Google Sheet.',
+        });
+      } catch (err: any) {
+        console.error('Error clearing completed from sheet:', err);
+        setAssignments(activeOnly);
+        addToast({
+          type: 'info',
+          title: 'Cleared Locally',
+          message: 'Removed finished tasks from local view.',
+        });
+      }
+    } else {
+      setAssignments(activeOnly);
+      addToast({
+        type: 'success',
+        title: 'Completed Tasks Cleared',
+        message: 'Removed finished tasks from Master Tracker.',
       });
     }
   };
@@ -1522,6 +1589,7 @@ export default function App() {
                   isParsingAI={isParsingAI}
                   isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
                   onConnectGoogle={() => handleGoogleSignIn(true)}
+                  onClearCompleted={handleClearCompletedAssignments}
                   sheetError={sheetError}
                   sheetApiInfo={sheetApiInfo}
                 />
