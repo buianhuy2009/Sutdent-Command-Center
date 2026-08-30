@@ -10,7 +10,7 @@
   }
   html.dark {
     color-scheme: dark;
-    background-color: #0B1120;
+    background-color: #0F172A;
     color: #F8FAFC;
   }
   body {
@@ -18,7 +18,7 @@
     background-color: #FAF9F6;
   }
   .dark body {
-    background-color: #0B1120;
+    background-color: #0F172A;
   }
 
   /* Balanced typography for headings */
@@ -26,18 +26,32 @@
     text-wrap: balance;
   }
 
-  /* Enhanced dark mode readability and contrast */
+  /* Enhanced dark mode readability, button visibility and card contrast */
   .dark {
     --tw-border-opacity: 1;
   }
+  .dark .bg-slate-900,
+  .dark .bg-white {
+    background-color: #1E293B;
+  }
+  .dark .border-slate-800,
+  .dark .border-slate-200 {
+    border-color: #334155;
+  }
+  .dark .border-slate-700 {
+    border-color: #475569;
+  }
   .dark .text-slate-400 {
-    color: #94a3b8;
+    color: #CBD5E1;
   }
   .dark .text-slate-500 {
-    color: #cbd5e1;
+    color: #94A3B8;
   }
   .dark .text-slate-600 {
-    color: #e2e8f0;
+    color: #E2E8F0;
+  }
+  .dark input, .dark select, .dark textarea {
+    border-color: #334155;
   }
 }
 

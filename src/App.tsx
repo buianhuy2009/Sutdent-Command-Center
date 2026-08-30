@@ -28,6 +28,7 @@ import { QuickDraftModal } from './components/QuickDraftModal';
 import { ScheduleStudyModal } from './components/ScheduleStudyModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { StudyAssistantChat } from './components/StudyAssistantChat';
+import { AccountSettingsModal } from './components/AccountSettingsModal';
 import { CommandPalette } from './components/CommandPalette';
 import { ShortcutsModal } from './components/ShortcutsModal';
 import { DeploymentModal } from './components/DeploymentModal';
@@ -138,10 +139,15 @@ export default function App() {
 
   // Active Tab - Canvas is prioritized #1
   const [activeTab, setActiveTab] = useState('canvas');
+  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
+  const [clearedTabBadges, setClearedTabBadges] = useState<Set<string>>(new Set());
   const onboardingDialogRef = useRef<HTMLDialogElement | null>(null);
 
   // Smooth View Transitions for workspace switching
   const handleTabTransition = useCallback((newTab: string) => {
+    setClearedTabBadges((prev) => new Set(prev).add(newTab));
+    setAiChatOpen(false); // return to normal workspace if coach was open
+
     if (typeof document !== 'undefined' && (document as any).startViewTransition) {
       (document as any).startViewTransition(() => {
         setActiveTab(newTab);
@@ -1619,29 +1625,35 @@ export default function App() {
       )}
       {/* Left Navigation Rail (Desktop) + Main Area Container */}
       <div className="flex-1 flex overflow-hidden h-full">
-        {/* Sleek Navy Navigation Rail / Expanded Sidebar */}
+        {/* Sleek Theme-Reactive Sidebar */}
         <nav
           aria-label="Primary Navigation"
           className={`${
             isSidebarExpanded ? 'w-64' : 'w-20'
-          } bg-[#0F172A]/95 dark:bg-[#0B1120]/95 backdrop-blur-md hidden md:flex flex-col py-5 px-3 border-r border-slate-800/80 shadow-xl shrink-0 justify-between z-30 select-none h-full transition-[width] duration-300 ease-in-out`}
+          } bg-[#FAF9F6] dark:bg-[#0F172A] border-r border-slate-200/80 dark:border-slate-800 shadow-xl hidden md:flex flex-col py-5 px-3 shrink-0 justify-between z-30 select-none h-full transition-[width] duration-300 ease-in-out`}
         >
-          {/* Top Brand Monogram / Header */}
+          {/* Top Brand Monogram / Insignia Header */}
           <div className="flex items-center justify-between gap-3 px-2 mb-6">
             <div
               onClick={() => handleTabTransition('canvas')}
               className="flex items-center gap-3 cursor-pointer group min-w-0"
               title="Canvas LMS Hub & Student Command Center"
             >
-              <div className="w-11 h-11 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/40 group-hover:scale-105 transition-transform shrink-0">
-                S
+              <div className="w-11 h-11 bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform shrink-0 relative overflow-hidden border border-white/20">
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L1 7L12 12L23 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="rgba(255,255,255,0.2)"/>
+                  <path d="M5 10.5V16C5 17.5 8.13401 20 12 20C15.866 20 19 17.5 19 16V10.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 12V22" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2 2"/>
+                  <circle cx="12" cy="7" r="1.5" fill="#FBBF24" />
+                </svg>
               </div>
               {isSidebarExpanded && (
                 <div className="min-w-0 overflow-hidden animate-in fade-in duration-200">
-                  <h2 className="text-sm font-bold text-white tracking-tight leading-tight truncate">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight leading-tight truncate">
                     Student Center
                   </h2>
-                  <p className="text-[10px] text-indigo-400 font-medium tracking-wide uppercase">
+                  <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold tracking-wide uppercase">
                     Academic OS
                   </p>
                 </div>
@@ -1651,7 +1663,7 @@ export default function App() {
             {isSidebarExpanded && (
               <button
                 onClick={toggleSidebar}
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
                 title="Collapse sidebar"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -1662,7 +1674,7 @@ export default function App() {
           {/* Navigation Items Group */}
           <div className="flex flex-col space-y-2 my-auto">
             {isSidebarExpanded && (
-              <div className="px-3 pb-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="px-3 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Workspaces
               </div>
             )}
@@ -1674,8 +1686,7 @@ export default function App() {
                 description: 'Assignments & Submissions',
                 icon: Layers,
                 key: '1',
-                activeColor: 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30',
-                badge: canvasUnfinishedCount > 0 ? `${canvasUnfinishedCount}` : undefined,
+                badge: (!clearedTabBadges.has('canvas') && canvasUnfinishedCount > 0) ? `${canvasUnfinishedCount}` : undefined,
                 badgeColor: 'bg-orange-500 text-white',
               },
               {
@@ -1684,9 +1695,8 @@ export default function App() {
                 description: 'Classes & Focus Blocks',
                 icon: Compass,
                 key: '2',
-                activeColor: 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30',
-                badge: calendarEvents.length > 0 ? `${calendarEvents.length}` : undefined,
-                badgeColor: 'bg-indigo-500/80 text-white',
+                badge: (!clearedTabBadges.has('radar') && calendarEvents.length > 0) ? `${calendarEvents.length}` : undefined,
+                badgeColor: 'bg-indigo-500 text-white',
               },
               {
                 id: 'gmail',
@@ -1694,8 +1704,7 @@ export default function App() {
                 description: 'Filtered School Inbox',
                 icon: Mail,
                 key: '3',
-                activeColor: 'bg-rose-600 text-white shadow-md shadow-rose-500/30',
-                badge: urgentEmailCount > 0 ? `${urgentEmailCount}` : undefined,
+                badge: (!clearedTabBadges.has('gmail') && urgentEmailCount > 0) ? `${urgentEmailCount}` : undefined,
                 badgeColor: 'bg-rose-500 text-white',
               },
               {
@@ -1704,8 +1713,7 @@ export default function App() {
                 description: 'Live Master Checklist',
                 icon: CheckSquare,
                 key: '4',
-                activeColor: 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30',
-                badge: pendingAssignmentCount > 0 ? `${pendingAssignmentCount}` : undefined,
+                badge: (!clearedTabBadges.has('tracker') && pendingAssignmentCount > 0) ? `${pendingAssignmentCount}` : undefined,
                 badgeColor: 'bg-emerald-500 text-white',
               },
               {
@@ -1714,7 +1722,6 @@ export default function App() {
                 description: 'Drive Files & MLA Docs',
                 icon: FileText,
                 key: '5',
-                activeColor: 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30',
                 badge: undefined,
                 badgeColor: '',
               },
@@ -1731,8 +1738,8 @@ export default function App() {
                     isSidebarExpanded ? 'px-3 py-2.5 justify-between gap-3' : 'w-11 h-11 mx-auto justify-center'
                   } ${
                     isActive
-                      ? tab.activeColor
-                      : 'bg-slate-800/40 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25'
+                      : 'bg-slate-200/50 hover:bg-slate-200/80 dark:bg-slate-800/40 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                   }`}
                   title={`${tab.label} (Press ${tab.key})`}
                 >
@@ -1740,10 +1747,10 @@ export default function App() {
                     <Icon className="w-5 h-5 shrink-0" />
                     {isSidebarExpanded && (
                       <div className="text-left min-w-0 overflow-hidden">
-                        <div className="text-xs font-semibold truncate leading-tight">
+                        <div className={`text-xs font-semibold truncate leading-tight ${isActive ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>
                           {tab.label}
                         </div>
-                        <div className="text-[10px] text-slate-400 dark:text-slate-400/80 truncate">
+                        <div className={`text-[10px] truncate ${isActive ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}`}>
                           {tab.description}
                         </div>
                       </div>
@@ -1757,14 +1764,14 @@ export default function App() {
                           {tab.badge}
                         </span>
                       )}
-                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 px-1 py-0.2 bg-black/20 rounded">
+                      <span className={`text-[10px] font-mono px-1 py-0.2 rounded ${isActive ? 'bg-white/20 text-white' : 'bg-black/5 dark:bg-black/20 text-slate-500 dark:text-slate-400'}`}>
                         [{tab.key}]
                       </span>
                     </div>
                   ) : (
                     <>
                       {tab.badge && (
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-[#0F172A]" />
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-[#FAF9F6] dark:ring-[#0F172A]" />
                       )}
                       <span className="absolute left-14 bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md border border-slate-700">
                         {tab.label} <span className="text-indigo-400 font-bold ml-1">[{tab.key}]</span>
@@ -1776,27 +1783,28 @@ export default function App() {
             })}
           </div>
 
-          {/* Bottom Actions: Expand Toggle & User Profile */}
-          <div className="mt-auto pt-4 border-t border-slate-800/80 space-y-3">
+          {/* Bottom Actions: Expand Toggle & Account Settings Card */}
+          <div className="mt-auto pt-4 border-t border-slate-200/80 dark:border-slate-800 space-y-2">
             {!isSidebarExpanded && (
               <button
                 onClick={toggleSidebar}
-                className="w-11 h-11 mx-auto rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                className="w-11 h-11 mx-auto rounded-xl bg-slate-200/60 hover:bg-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
                 title="Expand sidebar"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
             )}
 
-            {user ? (
-              <div
-                className={`flex items-center rounded-xl p-1.5 cursor-pointer hover:bg-slate-800/60 transition-colors ${
-                  isSidebarExpanded ? 'gap-3 justify-start' : 'justify-center'
-                }`}
-                title={`Signed in as ${user.displayName || user.email}`}
-                onClick={() => setCommandPaletteOpen(true)}
-              >
-                <div className="w-9 h-9 rounded-full bg-slate-700 border-2 border-indigo-400/50 flex items-center justify-center text-xs font-bold text-slate-300 overflow-hidden shrink-0 shadow-sm">
+            {/* Click to open Account & Settings Modal */}
+            <div
+              className={`flex items-center rounded-2xl p-1.5 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-800/60 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 ${
+                isSidebarExpanded ? 'gap-3 justify-start' : 'justify-center'
+              }`}
+              title="Open Account & Settings"
+              onClick={() => setAccountSettingsOpen(true)}
+            >
+              {user ? (
+                <div className="w-9 h-9 rounded-xl bg-slate-700 border-2 border-indigo-400/50 flex items-center justify-center text-xs font-bold text-slate-300 overflow-hidden shrink-0 shadow-xs">
                   {user.photoURL ? (
                     <img
                       src={user.photoURL}
@@ -1808,67 +1816,34 @@ export default function App() {
                     (user.displayName || user.email || 'JD').slice(0, 2).toUpperCase()
                   )}
                 </div>
-                {isSidebarExpanded && (
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-white truncate leading-tight">
-                      {user.displayName || user.email?.split('@')[0]}
-                    </div>
-                    <div className="text-[10px] text-slate-400 truncate">
-                      {user.email}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div
-                onClick={() => handleGoogleSignIn()}
-                className={`flex items-center rounded-xl p-1.5 cursor-pointer hover:bg-slate-800/60 transition-colors ${
-                  isSidebarExpanded ? 'gap-3 justify-start' : 'justify-center'
-                }`}
-                title="Sign in with Google"
-              >
-                <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-indigo-400 shrink-0 shadow-sm">
+              ) : (
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400 shrink-0 shadow-xs">
                   JD
                 </div>
-                {isSidebarExpanded && (
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-white truncate leading-tight">
-                      Sign in
-                    </div>
-                    <div className="text-[10px] text-slate-400 truncate">
-                      Sync with Google
-                    </div>
+              )}
+
+              {isSidebarExpanded && (
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-semibold text-slate-900 dark:text-white truncate leading-tight">
+                    {user ? user.displayName || user.email?.split('@')[0] : 'Sign In'}
                   </div>
-                )}
-              </div>
-            )}
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                    {user ? user.email : 'Account & Settings'}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </nav>
 
         {/* Right Main Column with Top Header, Scrollable Content, and Bottom Status Bar */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#FAF9F6] dark:bg-[#0B1120]">
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#FAF9F6] dark:bg-[#0F172A]">
           {/* Top Header */}
           <Navbar
-            activeTab={activeTab}
-            setActiveTab={handleTabTransition}
-            user={user}
-            isDemoMode={isDemoMode}
-            setIsDemoMode={setIsDemoMode}
-            onGoogleSignIn={() => handleGoogleSignIn()}
-            onLogout={handleLogout}
-            isLoggingIn={isLoggingIn}
-            darkMode={darkMode}
-            setDarkMode={setDarkMode}
-            onRefreshAll={handleRefreshAll}
-            isRefreshing={isRefreshingAll}
             onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-            onOpenShortcuts={() => setShortcutsModalOpen(true)}
-            onOpenDeploymentGuide={() => setDeploymentModalOpen(true)}
-            onOpenOAuthGuide={() => setOauthGuideModalOpen(true)}
             onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
-            onOpenNewAssignment={() => handleTabTransition('tracker')}
-            sheetUrl={masterSheetUrl}
             notifications={notifications}
+            isAiChatOpen={aiChatOpen}
           />
 
           {/* Mobile Tab Navigation Bar (shown only on small screens) */}
@@ -1899,9 +1874,19 @@ export default function App() {
             })}
           </div>
 
-          {/* Scrollable Main Content Container */}
-          <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 min-h-0">
-            <div className="max-w-7xl mx-auto space-y-6">
+          {/* Main Area: Full-Screen AI Coach View OR Workspace Tabs */}
+          {aiChatOpen ? (
+            <StudyAssistantChat
+              isOpen={true}
+              onClose={() => setAiChatOpen(false)}
+              assignments={assignments}
+              events={calendarEvents}
+              alerts={emailAlerts}
+              isFullScreen={true}
+            />
+          ) : (
+            <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 min-h-0">
+              <div className="max-w-7xl mx-auto space-y-6">
               {activeTab === 'canvas' && (
                 <CanvasSyncTab
                   settings={canvasSettings}
@@ -2006,28 +1991,29 @@ export default function App() {
               )}
             </div>
           </main>
+          )}
         </div>
       </div>
 
-      {/* Floating AI Coach Button if closed */}
-      {!aiChatOpen && (
-        <button
-          id="btn-floating-ai-coach"
-          onClick={() => setAiChatOpen(true)}
-          className="fixed bottom-6 right-6 z-40 px-4 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-full shadow-lg shadow-indigo-500/25 flex items-center gap-2 font-bold text-xs hover:scale-105 transition-all"
-        >
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span>AI Study Coach</span>
-        </button>
-      )}
-
-      {/* Slide-over / Popup AI Study Coach */}
-      <StudyAssistantChat
-        isOpen={aiChatOpen}
-        onClose={() => setAiChatOpen(false)}
-        assignments={assignments}
-        events={calendarEvents}
-        alerts={emailAlerts}
+      {/* Unified Account & Settings Modal */}
+      <AccountSettingsModal
+        isOpen={accountSettingsOpen}
+        onClose={() => setAccountSettingsOpen(false)}
+        user={user}
+        onGoogleSignIn={() => handleGoogleSignIn()}
+        onLogout={handleLogout}
+        isLoggingIn={isLoggingIn}
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+        onRefreshAll={handleRefreshAll}
+        isRefreshing={isRefreshingAll}
+        sheetUrl={masterSheetUrl}
+        onOpenShortcuts={() => setShortcutsModalOpen(true)}
+        onOpenDeploymentGuide={() => setDeploymentModalOpen(true)}
+        onOpenOAuthGuide={() => setOauthGuideModalOpen(true)}
+        onOpenTour={() => {
+          onboardingDialogRef.current?.showModal();
+        }}
       />
 
       {/* Quick Draft Modal */}
