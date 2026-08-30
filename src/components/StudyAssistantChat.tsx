@@ -101,28 +101,28 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
 
   if (isFullScreen) {
     return (
-      <div className="flex-1 flex flex-col h-full bg-[#FAF9F6] dark:bg-[#0F172A] overflow-hidden animate-in fade-in duration-200">
+      <div className="flex-1 flex flex-col h-full bg-[#FAF9F5] dark:bg-[#141413] text-[#141413] dark:text-[#FAF9F5] overflow-hidden animate-in fade-in duration-200">
         {/* Top Bar with Prominent Return Button */}
-        <div className="h-16 px-4 sm:px-6 bg-white dark:bg-slate-800/90 border-b border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between shadow-xs shrink-0">
+        <div className="h-16 px-4 sm:px-6 bg-white dark:bg-[#1A1917] border-b border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between shadow-xs shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/80 text-indigo-600 dark:text-indigo-300 rounded-xl text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer border border-indigo-200/80 dark:border-indigo-800 shadow-2xs"
+              className="px-3.5 py-1.5 bg-[#D97757]/10 hover:bg-[#D97757]/20 text-[#D97757] rounded-xl text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer border border-[#D97757]/30 shadow-2xs"
               title="Return to Workspace"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Return to Workspace</span>
             </button>
-            <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-700 hidden sm:block" />
+            <div className="h-5 w-[1px] bg-[#DFDACB] dark:bg-[#2C2B27] hidden sm:block" />
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-xs">
-                <Sparkles className="w-4 h-4 text-amber-300" />
+              <div className="w-8 h-8 rounded-xl bg-[#D97757] text-white flex items-center justify-center shadow-xs">
+                <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] leading-tight">
                   AI Study Coach
                 </h3>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                <p className="text-[10px] text-[#8C897F]">
                   Powered by Gemini 2.5 Flash
                 </p>
               </div>
@@ -138,7 +138,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
                 },
               ])
             }
-            className="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            className="p-2 text-[#8C897F] hover:text-rose-600 dark:hover:text-rose-400 rounded-xl hover:bg-[#EFECE2] dark:hover:bg-[#252422] transition-colors cursor-pointer"
             title="Clear Conversation"
           >
             <Trash2 className="w-4 h-4" />
@@ -156,7 +156,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
                 }`}
               >
                 {msg.role === 'assistant' && (
-                  <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  <div className="w-8 h-8 rounded-xl bg-[#D97757]/15 text-[#D97757] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs border border-[#D97757]/30">
                     <Bot className="w-4 h-4" />
                   </div>
                 )}
@@ -164,8 +164,8 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
                 <div
                   className={`max-w-[85%] p-4 rounded-2xl shadow-2xs ${
                     msg.role === 'user'
-                      ? 'bg-indigo-600 text-white rounded-br-xs'
-                      : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700 rounded-bl-xs'
+                      ? 'bg-[#D97757] text-white rounded-br-xs'
+                      : 'bg-white dark:bg-[#1A1917] text-[#141413] dark:text-[#FAF9F5] border border-[#DFDACB] dark:border-[#2C2B27] rounded-bl-xs'
                   }`}
                 >
                   <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed">
@@ -174,7 +174,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
                 </div>
 
                 {msg.role === 'user' && (
-                  <div className="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs font-bold text-xs">
+                  <div className="w-8 h-8 rounded-xl bg-[#EFECE2] dark:bg-[#252422] text-[#141413] dark:text-[#FAF9F5] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs font-bold text-xs border border-[#DFDACB] dark:border-[#2C2B27]">
                     <UserIcon className="w-4 h-4" />
                   </div>
                 )}
@@ -182,8 +182,8 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
             ))}
 
             {isSending && (
-              <div className="flex items-center gap-2.5 text-slate-400 text-xs py-2">
-                <Bot className="w-5 h-5 text-indigo-500 animate-pulse" />
+              <div className="flex items-center gap-2.5 text-[#8C897F] text-xs py-2">
+                <Bot className="w-5 h-5 text-[#D97757] animate-pulse" />
                 <span className="animate-pulse font-medium">Analyzing your assignments and drafting response...</span>
               </div>
             )}
@@ -194,13 +194,13 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
 
         {/* Suggested Prompt Chips */}
         {messages.length < 4 && (
-          <div className="px-4 sm:px-6 py-2 border-t border-slate-200/80 dark:border-slate-800 bg-white/50 dark:bg-slate-800/40">
+          <div className="px-4 sm:px-6 py-2 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-white/50 dark:bg-[#1A1917]/50">
             <div className="max-w-3xl mx-auto flex gap-2 overflow-x-auto scrollbar-none">
               {promptSuggestions.map((prompt, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSend(prompt)}
-                  className="text-xs font-medium px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 whitespace-nowrap shrink-0 transition-colors cursor-pointer shadow-2xs"
+                  className="text-xs font-medium px-3 py-1.5 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[#5C5A54] dark:text-[#B5B2A8] hover:border-[#D97757] hover:text-[#D97757] whitespace-nowrap shrink-0 transition-colors cursor-pointer shadow-2xs"
                 >
                   {prompt}
                 </button>
@@ -210,7 +210,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
         )}
 
         {/* Bottom Input Box */}
-        <div className="p-4 sm:p-6 border-t border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-800/80 shrink-0">
+        <div className="p-4 sm:p-6 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-white dark:bg-[#1A1917]/90 shrink-0">
           <div className="max-w-3xl mx-auto flex gap-3">
             <input
               type="text"
@@ -223,12 +223,12 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
                 }
               }}
               placeholder="Ask your coach anything about homework, deadlines, or test prep..."
-              className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+              className="flex-1 px-4 py-3 bg-[#FAF9F5] dark:bg-[#141413] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl text-sm focus:ring-2 focus:ring-[#D97757] outline-none text-[#141413] dark:text-[#FAF9F5] placeholder:text-[#8C897F]"
             />
             <button
               onClick={() => handleSend()}
               disabled={!inputText.trim() || isSending}
-              className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs"
+              className="px-5 py-3 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-40 text-white rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs"
             >
               {isSending ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
