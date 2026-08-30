@@ -4,7 +4,96 @@ import {
   CreateDocParams,
   EmailMessage,
   SchoolFile,
+  ApiEnablementInfo,
 } from '../types';
+import { clearStoredGoogleToken } from './firebase';
+
+export const DEFAULT_PROJECT_NUMBER = '614024702267';
+
+export class GoogleApiDisabledError extends Error {
+  isServiceDisabled = true;
+  serviceName: string;
+  serviceId: string;
+  activationUrl: string;
+  projectId: string;
+
+  constructor(
+    serviceName: string,
+    serviceId: string,
+    activationUrl: string,
+    projectId: string,
+    originalMessage?: string
+  ) {
+    super(
+      `${serviceName} is not enabled in your Google Cloud Project (${projectId}). Click the link to enable it in Google Cloud Console.`
+    );
+    this.name = 'GoogleApiDisabledError';
+    this.serviceName = serviceName;
+    this.serviceId = serviceId;
+    this.activationUrl = activationUrl;
+    this.projectId = projectId;
+  }
+}
+
+export function parseGoogleApiResponseError(
+  status: number,
+  bodyText: string,
+  defaultServiceName: string,
+  defaultServiceId: string
+): Error {
+  try {
+    const json = JSON.parse(bodyText);
+    const err = json?.error;
+    const msg = err?.message || bodyText;
+    const details = err?.details || [];
+
+    // Detect 403 API disabled / not configured in project
+    const isServiceDisabled =
+      status === 403 &&
+      (msg.includes('before or it is disabled') ||
+        msg.includes('SERVICE_DISABLED') ||
+        msg.includes('accessNotConfigured') ||
+        msg.includes('has not been used in project') ||
+        details.some((d: any) => d.reason === 'SERVICE_DISABLED'));
+
+    if (isServiceDisabled) {
+      let activationUrl = '';
+      let projectId = DEFAULT_PROJECT_NUMBER;
+
+      for (const d of details) {
+        if (d?.metadata?.activationUrl) {
+          activationUrl = d.metadata.activationUrl;
+        }
+        if (d?.metadata?.consumer) {
+          projectId = d.metadata.consumer.replace('projects/', '');
+        }
+      }
+
+      if (!activationUrl) {
+        const linkDetail = details.find((d: any) => d?.links?.[0]?.url);
+        if (linkDetail?.links?.[0]?.url) {
+          activationUrl = linkDetail.links[0].url;
+        }
+      }
+
+      if (!activationUrl) {
+        activationUrl = `https://console.developers.google.com/apis/api/${defaultServiceId}/overview?project=${projectId}`;
+      }
+
+      return new GoogleApiDisabledError(
+        defaultServiceName,
+        defaultServiceId,
+        activationUrl,
+        projectId,
+        msg
+      );
+    }
+
+    return new Error(`${defaultServiceName} error (${status}): ${msg}`);
+  } catch {
+    return new Error(`${defaultServiceName} error (${status}): ${bodyText || 'Unknown error'}`);
+  }
+}
 
 // ==========================================
 // GOOGLE CALENDAR API
@@ -26,8 +115,14 @@ export async function fetchTodayCalendarEvents(token: string): Promise<CalendarE
       headers: { Authorization: `Bearer ${token}` },
     });
 
+    if (res.status === 401) {
+      clearStoredGoogleToken();
+      throw new Error('Google Calendar session expired (401). Please reconnect Google Account.');
+    }
+
     if (!res.ok) {
-      throw new Error(`Calendar API returned ${res.status}: ${res.statusText}`);
+      const errBody = await res.text();
+      throw parseGoogleApiResponseError(res.status, errBody, 'Google Calendar API', 'calendar-json.googleapis.com');
     }
 
     const data = await res.json();
@@ -141,7 +236,7 @@ export async function insertCalendarEvent(
 
   if (!res.ok) {
     const errBody = await res.text();
-    throw new Error(`Failed to create calendar event: ${errBody}`);
+    throw parseGoogleApiResponseError(res.status, errBody, 'Google Calendar API', 'calendar-json.googleapis.com');
   }
 
   const created = await res.json();
@@ -230,8 +325,14 @@ export async function fetchAcademicEmails(token: string): Promise<EmailMessage[]
       headers: { Authorization: `Bearer ${token}` },
     });
 
+    if (listRes.status === 401) {
+      clearStoredGoogleToken();
+      throw new Error('Gmail session expired (401). Please reconnect Google Account.');
+    }
+
     if (!listRes.ok) {
-      throw new Error(`Gmail API error: ${listRes.statusText}`);
+      const errBody = await listRes.text();
+      throw parseGoogleApiResponseError(listRes.status, errBody, 'Gmail API', 'gmail.googleapis.com');
     }
 
     const listData = await listRes.json();
@@ -313,7 +414,7 @@ export async function createGmailDraft(
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Failed to create Gmail draft: ${err}`);
+    throw parseGoogleApiResponseError(res.status, err, 'Gmail API', 'gmail.googleapis.com');
   }
 
   const result = await res.json();
@@ -341,6 +442,11 @@ export async function findOrCreateMasterSpreadsheet(
       headers: { Authorization: `Bearer ${token}` },
     });
 
+    if (searchRes.status === 401) {
+      clearStoredGoogleToken();
+      throw new Error('Google Sheets session expired (401). Please reconnect Google Account.');
+    }
+
     if (searchRes.ok) {
       const data = await searchRes.json();
       if (data.files && data.files.length > 0) {
@@ -351,6 +457,9 @@ export async function findOrCreateMasterSpreadsheet(
           isNew: false,
         };
       }
+    } else if (searchRes.status === 403) {
+      const errBody = await searchRes.text();
+      throw parseGoogleApiResponseError(searchRes.status, errBody, 'Google Drive API', 'drive.googleapis.com');
     }
 
     const createPayload = {
@@ -380,8 +489,14 @@ export async function findOrCreateMasterSpreadsheet(
       body: JSON.stringify(createPayload),
     });
 
+    if (createRes.status === 401) {
+      clearStoredGoogleToken();
+      throw new Error('Google Sheets session expired (401). Please reconnect Google Account.');
+    }
+
     if (!createRes.ok) {
-      throw new Error(`Failed to create Master Sheet: ${await createRes.text()}`);
+      const errBody = await createRes.text();
+      throw parseGoogleApiResponseError(createRes.status, errBody, 'Google Sheets API', 'sheets.googleapis.com');
     }
 
     const createdSheet = await createRes.json();
@@ -459,8 +574,14 @@ export async function readAssignmentsFromSheet(
       headers: { Authorization: `Bearer ${token}` },
     });
 
+    if (res.status === 401) {
+      clearStoredGoogleToken();
+      throw new Error('Google Sheets session expired (401). Please reconnect Google Account.');
+    }
+
     if (!res.ok) {
-      throw new Error(`Sheets API read error: ${res.statusText}`);
+      const errBody = await res.text();
+      throw parseGoogleApiResponseError(res.status, errBody, 'Google Sheets API', 'sheets.googleapis.com');
     }
 
     const data = await res.json();
@@ -514,8 +635,14 @@ export async function appendAssignmentToSheet(
     }
   );
 
+  if (res.status === 401) {
+    clearStoredGoogleToken();
+    throw new Error('Google Sheets session expired (401). Please reconnect Google Account.');
+  }
+
   if (!res.ok) {
-    throw new Error(`Failed to append row to Google Sheet: ${await res.text()}`);
+    const errBody = await res.text();
+    throw parseGoogleApiResponseError(res.status, errBody, 'Google Sheets API', 'sheets.googleapis.com');
   }
 
   const data = await res.json();
@@ -549,8 +676,14 @@ export async function updateAssignmentStatusInSheet(
     }
   );
 
+  if (res.status === 401) {
+    clearStoredGoogleToken();
+    throw new Error('Google Sheets session expired (401). Please reconnect Google Account.');
+  }
+
   if (!res.ok) {
-    throw new Error(`Failed to update status in Google Sheet: ${await res.text()}`);
+    const errBody = await res.text();
+    throw parseGoogleApiResponseError(res.status, errBody, 'Google Sheets API', 'sheets.googleapis.com');
   }
 }
 
@@ -574,20 +707,27 @@ export async function updateAssignmentInSheet(
 
 export async function fetchRecentSchoolFiles(
   token: string,
-  limit = 5
+  limit = 20
 ): Promise<SchoolFile[]> {
   try {
-    const query = `trashed = false and (mimeType = 'application/vnd.google-apps.document' or mimeType = 'application/vnd.google-apps.spreadsheet' or mimeType = 'application/vnd.google-apps.presentation' or mimeType = 'application/pdf')`;
+    // Exclude folders and trashed items so that any document, spreadsheet, presentation, PDF, or text file appears
+    const query = `trashed = false and mimeType != 'application/vnd.google-apps.folder'`;
     const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
       query
-    )}&orderBy=modifiedTime desc&pageSize=${limit}&fields=files(id,name,mimeType,modifiedTime,webViewLink,iconLink,size)`;
+    )}&orderBy=modifiedTime desc&pageSize=${limit}&fields=files(id,name,mimeType,modifiedTime,webViewLink,iconLink,size)&supportsAllDrives=true&includeItemsFromAllDrives=true`;
 
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
+    if (res.status === 401) {
+      clearStoredGoogleToken();
+      throw new Error('Google Workspace session expired (401). Please reconnect Google Account.');
+    }
+
     if (!res.ok) {
-      throw new Error(`Drive API error: ${res.statusText}`);
+      const errBody = await res.text();
+      throw parseGoogleApiResponseError(res.status, errBody, 'Google Drive API', 'drive.googleapis.com');
     }
 
     const data = await res.json();
@@ -621,8 +761,14 @@ export async function createFormattedAssignmentDoc(
       body: JSON.stringify({ title: docTitle }),
     });
 
+    if (createRes.status === 401) {
+      clearStoredGoogleToken();
+      throw new Error('Google Workspace session expired (401). Please reconnect Google Account.');
+    }
+
     if (!createRes.ok) {
-      throw new Error(`Failed to create Google Doc: ${await createRes.text()}`);
+      const errBody = await createRes.text();
+      throw parseGoogleApiResponseError(createRes.status, errBody, 'Google Docs API', 'docs.googleapis.com');
     }
 
     const createdDoc = await createRes.json();

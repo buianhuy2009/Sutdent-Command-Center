@@ -16,7 +16,8 @@ import {
   Zap,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Assignment, PriorityLevel, AssignmentStatus } from '../types';
+import { Assignment, PriorityLevel, AssignmentStatus, ApiEnablementInfo } from '../types';
+import { ApiActivationBanner } from './ApiActivationBanner';
 
 interface AssignmentTrackerTabProps {
   assignments: Assignment[];
@@ -29,6 +30,10 @@ interface AssignmentTrackerTabProps {
   onScheduleStudyBlock: (assignment: Assignment) => void;
   onParseNaturalText: (text: string) => Promise<void>;
   isParsingAI: boolean;
+  isGoogleConnected?: boolean;
+  onConnectGoogle?: () => void;
+  sheetError?: string | null;
+  sheetApiInfo?: ApiEnablementInfo | null;
 }
 
 export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
@@ -42,6 +47,10 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
   onScheduleStudyBlock,
   onParseNaturalText,
   isParsingAI,
+  isGoogleConnected = true,
+  onConnectGoogle,
+  sheetError,
+  sheetApiInfo,
 }) => {
   const [quickInput, setQuickInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -210,33 +219,28 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Master Spreadsheet Header & Live Sync Banner */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/20">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
             <CheckSquare className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
-                Master Assignment Tracker
-              </h2>
-              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                Google Sheets Sync
-              </span>
-            </div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+              Assignment Tracker
+            </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Live schema: [Subject, Assignment Name, Due Date, Priority, Status]
+              {assignments.length} total • {doneCount} completed • {highCount} high priority
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
           {sheetUrl && (
             <a
               href={sheetUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-xl border border-emerald-200 dark:border-emerald-800 transition-colors"
             >
               <span>Google Sheet</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -246,7 +250,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
           <button
             onClick={onRefresh}
             disabled={isLoading}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
             title="Reload from Google Sheet"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -254,15 +258,39 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
           </button>
 
           <button
-            id="btn-add-assignment-modal"
+            id="btn-add-assignment-top"
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>New Assignment</span>
+            <span>New Task</span>
           </button>
         </div>
       </div>
+
+      {/* API Disabled or Error Banner */}
+      {sheetApiInfo ? (
+        <ApiActivationBanner
+          info={sheetApiInfo}
+          onRetry={onRefresh}
+          isRetrying={isLoading}
+        />
+      ) : sheetError ? (
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>{sheetError}</span>
+          </div>
+          {onConnectGoogle && (
+            <button
+              onClick={onConnectGoogle}
+              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold shrink-0 cursor-pointer text-xs"
+            >
+              Reconnect Sheets
+            </button>
+          )}
+        </div>
+      ) : null}
 
       {/* AI Quick Task Input Bar */}
       <form

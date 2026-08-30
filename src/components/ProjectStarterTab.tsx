@@ -11,8 +11,10 @@ import {
   BookOpen,
   Copy,
   Trash2,
+  ShieldAlert,
 } from 'lucide-react';
-import { CreateDocParams, SchoolFile } from '../types';
+import { CreateDocParams, SchoolFile, ApiEnablementInfo } from '../types';
+import { ApiActivationBanner } from './ApiActivationBanner';
 
 interface ProjectStarterTabProps {
   recentFiles: SchoolFile[];
@@ -20,6 +22,11 @@ interface ProjectStarterTabProps {
   onRefreshFiles: () => void;
   onCreateDoc: (params: CreateDocParams) => Promise<string | null>;
   isCreatingDoc: boolean;
+  isGoogleConnected?: boolean;
+  onConnectGoogle?: () => void;
+  driveError?: string | null;
+  driveApiInfo?: ApiEnablementInfo | null;
+  onOpenActivationModal?: (info: ApiEnablementInfo) => void;
 }
 
 export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
@@ -28,6 +35,11 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
   onRefreshFiles,
   onCreateDoc,
   isCreatingDoc,
+  isGoogleConnected = true,
+  onConnectGoogle,
+  driveError,
+  driveApiInfo,
+  onOpenActivationModal,
 }) => {
   // Create Doc Form State
   const [docTitle, setDocTitle] = useState('');
@@ -132,7 +144,7 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Top Section: Top 5 Recent School Files */}
+      {/* Top Section: Recent Google Drive & School Files */}
       <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
         <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
@@ -140,14 +152,19 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
             <h2 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm uppercase tracking-wider">
               Recent Google Drive Files
             </h2>
+            {isGoogleConnected && recentFiles.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                {recentFiles.length} Live Files
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={onRefreshFiles}
               disabled={isLoadingFiles}
-              className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded transition-colors"
-              title="Refresh Drive Files"
+              className="p-1.5 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+              title="Refresh Google Drive"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoadingFiles ? 'animate-spin text-indigo-500' : ''}`} />
             </button>
@@ -155,7 +172,7 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
               href="https://drive.google.com"
               target="_blank"
               rel="noreferrer"
-              className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 inline-flex items-center gap-1"
+              className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 inline-flex items-center gap-1 px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
             >
               <span>Drive Web</span>
               <ExternalLink className="w-3 h-3" />
@@ -163,52 +180,107 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
           </div>
         </div>
 
+        {/* API Disabled or Error Alert if Drive API failed */}
+        {driveApiInfo ? (
+          <div className="mt-4">
+            <ApiActivationBanner
+              info={driveApiInfo}
+              onRetry={onRefreshFiles}
+              isRetrying={isLoadingFiles}
+            />
+          </div>
+        ) : driveError ? (
+          <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>{driveError}</span>
+            </div>
+            {onConnectGoogle && (
+              <button
+                onClick={onConnectGoogle}
+                className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold shrink-0 cursor-pointer text-xs"
+              >
+                Reconnect Drive
+              </button>
+            )}
+          </div>
+        ) : null}
+
         {/* Files Cards */}
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {isLoadingFiles ? (
-            <div className="col-span-full py-8 text-center text-slate-400">
+        <div className="mt-4">
+          {!isGoogleConnected ? (
+            <div className="py-8 px-4 text-center bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+              <Folder className="w-10 h-10 mx-auto text-indigo-500 mb-2 opacity-80" />
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Google Workspace Disconnected</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+                Connect your Google account with Drive permissions to see and sync all your Google Docs, Sheets, and files live.
+              </p>
+              {onConnectGoogle && (
+                <button
+                  onClick={onConnectGoogle}
+                  className="mt-3 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl inline-flex items-center gap-2 cursor-pointer shadow-xs transition-colors"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Connect Google Account</span>
+                </button>
+              )}
+            </div>
+          ) : isLoadingFiles ? (
+            <div className="py-10 text-center text-slate-400">
               <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
-              <p className="text-xs font-medium">Fetching recent Drive files...</p>
+              <p className="text-xs font-medium">Scanning Google Drive for recent documents...</p>
             </div>
           ) : recentFiles.length === 0 ? (
-            <div className="col-span-full py-8 text-center text-slate-500">
-              <FileText className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-              <p className="text-sm">No recent documents found in Google Drive.</p>
+            <div className="py-8 px-4 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+              <FileText className="w-8 h-8 mx-auto text-slate-400 mb-2" />
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">No Recent Documents Found</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Create a new document below or in Google Docs, and click refresh to sync.
+              </p>
+              <button
+                onClick={onRefreshFiles}
+                className="mt-3 px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <RefreshCw className="w-3 h-3" />
+                <span>Refresh Drive</span>
+              </button>
             </div>
           ) : (
-            recentFiles.map((file) => (
-              <div
-                key={file.id}
-                id={`recent-file-${file.id}`}
-                className="group relative bg-slate-50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-xl p-3 flex flex-col justify-between transition-all shadow-2xs hover:shadow-xs"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-1 mb-2">
-                    {getFileBadge(file.mimeType)}
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {formatRelativeTime(file.modifiedTime)}
-                    </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {recentFiles.map((file) => (
+                <div
+                  key={file.id}
+                  id={`recent-file-${file.id}`}
+                  className="group relative bg-slate-50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-xl p-3 flex flex-col justify-between transition-all shadow-2xs hover:shadow-xs"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-2">
+                      {getFileBadge(file.mimeType)}
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {formatRelativeTime(file.modifiedTime)}
+                      </span>
+                    </div>
+
+                    <h4 className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                      {file.name}
+                    </h4>
                   </div>
 
-                  <h4 className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                    {file.name}
-                  </h4>
+                  <div className="mt-3 pt-2 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                    <span>{file.size || 'Google Cloud'}</span>
+                    <a
+                      href={file.webViewLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-0.5 text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+                    >
+                      <span>Open</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
                 </div>
-
-                <div className="mt-3 pt-2 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                  <span>{file.size || 'Google Cloud'}</span>
-                  <a
-                    href={file.webViewLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-0.5 text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
-                  >
-                    <span>Open</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       </section>

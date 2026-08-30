@@ -26,10 +26,14 @@ import { StudyAssistantChat } from './components/StudyAssistantChat';
 import { CommandPalette } from './components/CommandPalette';
 import { ShortcutsModal } from './components/ShortcutsModal';
 import { DeploymentModal } from './components/DeploymentModal';
+import { OAuthGuideModal } from './components/OAuthGuideModal';
+import { ApiActivationModal } from './components/ApiActivationModal';
 import { ToastContainer } from './components/Toast';
 
 import {
   signInWithGoogle,
+  signInWithGoogleBasic,
+  OAuthTestUserRequiredError,
   signOutUser,
   onAuthStateChangedListener,
   getStoredGoogleToken,
@@ -71,6 +75,7 @@ import {
   CreateDocParams,
   QuickDraftRequest,
   AssignmentStatus,
+  ApiEnablementInfo,
 } from './types';
 
 const LOCAL_ASSIGNMENTS_KEY = 'scc_user_assignments_v2';
@@ -138,6 +143,15 @@ export default function App() {
   const [calendarError, setCalendarError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [sheetError, setSheetError] = useState<string | null>(null);
+  const [driveError, setDriveError] = useState<string | null>(null);
+
+  // API Disabled Info (for Google Cloud Console Enablement)
+  const [driveApiInfo, setDriveApiInfo] = useState<ApiEnablementInfo | null>(null);
+  const [calendarApiInfo, setCalendarApiInfo] = useState<ApiEnablementInfo | null>(null);
+  const [gmailApiInfo, setGmailApiInfo] = useState<ApiEnablementInfo | null>(null);
+  const [sheetApiInfo, setSheetApiInfo] = useState<ApiEnablementInfo | null>(null);
+  const [apiActivationModalInfo, setApiActivationModalInfo] = useState<ApiEnablementInfo | null>(null);
+  const [apiActivationModalOpen, setApiActivationModalOpen] = useState(false);
 
   // Sync Timestamp & Status
   const [lastSyncedAt, setLastSyncedAt] = useState<Date>(new Date());
@@ -181,6 +195,7 @@ export default function App() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
   const [deploymentModalOpen, setDeploymentModalOpen] = useState(false);
+  const [oauthGuideModalOpen, setOauthGuideModalOpen] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
@@ -226,6 +241,8 @@ export default function App() {
     const token = getStoredGoogleToken();
     if (!token) {
       setCalendarEvents([]);
+      setCalendarError(null);
+      setCalendarApiInfo(null);
       return;
     }
 
@@ -234,14 +251,27 @@ export default function App() {
       const items = await fetchTodayCalendarEvents(token);
       setCalendarEvents(items);
       setCalendarError(null);
+      setCalendarApiInfo(null);
     } catch (err: any) {
       console.error('Calendar fetch error:', err);
+      if (err?.isServiceDisabled) {
+        setCalendarApiInfo({
+          serviceName: err.serviceName || 'Google Calendar API',
+          serviceId: err.serviceId || 'calendar-json.googleapis.com',
+          activationUrl: err.activationUrl,
+          projectId: err.projectId || '614024702267',
+        });
+      } else {
+        setCalendarApiInfo(null);
+      }
       setCalendarError(err.message || 'Could not fetch live Calendar events.');
       if (!isSilent) {
         addToast({
           type: 'warning',
-          title: 'Google Calendar Sync',
+          title: err?.isServiceDisabled ? 'Calendar API Disabled' : 'Google Calendar Sync',
           message: err.message || 'Could not fetch live Calendar schedule.',
+          actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
+          actionUrl: err?.activationUrl,
         });
       }
     } finally {
@@ -255,6 +285,8 @@ export default function App() {
     if (!token) {
       setRawEmails([]);
       setEmailAlerts([]);
+      setEmailError(null);
+      setGmailApiInfo(null);
       return;
     }
 
@@ -263,6 +295,7 @@ export default function App() {
       const emails = await fetchAcademicEmails(token);
       setRawEmails(emails);
       setEmailError(null);
+      setGmailApiInfo(null);
 
       if (emails.length > 0) {
         const alerts = await summarizeEmailsWithGemini(emails);
@@ -272,12 +305,24 @@ export default function App() {
       }
     } catch (err: any) {
       console.error('Email fetch error:', err);
+      if (err?.isServiceDisabled) {
+        setGmailApiInfo({
+          serviceName: err.serviceName || 'Gmail API',
+          serviceId: err.serviceId || 'gmail.googleapis.com',
+          activationUrl: err.activationUrl,
+          projectId: err.projectId || '614024702267',
+        });
+      } else {
+        setGmailApiInfo(null);
+      }
       setEmailError(err.message || 'Could not scan live Gmail inbox.');
       if (!isSilent) {
         addToast({
           type: 'warning',
-          title: 'Gmail Scanner',
+          title: err?.isServiceDisabled ? 'Gmail API Disabled' : 'Gmail Scanner',
           message: err.message || 'Could not scan live Gmail inbox.',
+          actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
+          actionUrl: err?.activationUrl,
         });
       }
     } finally {
@@ -289,6 +334,8 @@ export default function App() {
   const loadSheetAssignments = useCallback(async (isSilent = false) => {
     const token = getStoredGoogleToken();
     if (!token) {
+      setSheetError(null);
+      setSheetApiInfo(null);
       return;
     }
 
@@ -303,14 +350,27 @@ export default function App() {
         setAssignments(items);
       }
       setSheetError(null);
+      setSheetApiInfo(null);
     } catch (err: any) {
       console.error('Sheet fetch error:', err);
+      if (err?.isServiceDisabled) {
+        setSheetApiInfo({
+          serviceName: err.serviceName || 'Google Sheets API',
+          serviceId: err.serviceId || 'sheets.googleapis.com',
+          activationUrl: err.activationUrl,
+          projectId: err.projectId || '614024702267',
+        });
+      } else {
+        setSheetApiInfo(null);
+      }
       setSheetError(err.message || 'Could not sync Master Sheet.');
       if (!isSilent) {
         addToast({
           type: 'warning',
-          title: 'Google Sheet Sync',
+          title: err?.isServiceDisabled ? 'Google Sheets API Disabled' : 'Google Sheet Sync',
           message: err.message || 'Could not sync Master Google Sheet.',
+          actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
+          actionUrl: err?.activationUrl,
         });
       }
     } finally {
@@ -323,6 +383,8 @@ export default function App() {
     const token = getStoredGoogleToken();
     if (!token) {
       setRecentFiles([]);
+      setDriveError(null);
+      setDriveApiInfo(null);
       return;
     }
 
@@ -330,12 +392,35 @@ export default function App() {
     try {
       const files = await fetchRecentSchoolFiles(token);
       setRecentFiles(files);
+      setDriveError(null);
+      setDriveApiInfo(null);
     } catch (err: any) {
       console.error('Drive files error:', err);
+      const errMsg = err?.message || 'Could not fetch Google Drive files.';
+      if (err?.isServiceDisabled) {
+        setDriveApiInfo({
+          serviceName: err.serviceName || 'Google Drive API',
+          serviceId: err.serviceId || 'drive.googleapis.com',
+          activationUrl: err.activationUrl,
+          projectId: err.projectId || '614024702267',
+        });
+      } else {
+        setDriveApiInfo(null);
+      }
+      setDriveError(errMsg);
+      if (!isSilent) {
+        addToast({
+          type: 'warning',
+          title: err?.isServiceDisabled ? 'Google Drive API Disabled' : 'Google Drive Sync Failed',
+          message: errMsg,
+          actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
+          actionUrl: err?.activationUrl,
+        });
+      }
     } finally {
       if (!isSilent) setIsLoadingFiles(false);
     }
-  }, []);
+  }, [addToast]);
 
   // Fetch Canvas assignments (Zero fake data)
   const loadCanvasData = useCallback(async (isSilent = false) => {
@@ -470,23 +555,63 @@ export default function App() {
   }, [assignments]);
 
   // Google Sign In Handler
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (requestWorkspace = true) => {
     setIsLoggingIn(true);
     try {
-      const result = await signInWithGoogle();
+      const result = await signInWithGoogle({ requestWorkspace });
+      if (!result) {
+        // User closed or dismissed the popup - clean exit
+        return;
+      }
       setUser(result.user);
       setIsDemoMode(false);
-      await runFullSync(false);
+      setOauthGuideModalOpen(false);
+
+      if (result.accessToken) {
+        await runFullSync(false);
+        addToast({
+          type: 'success',
+          title: 'Google Workspace Connected',
+          message: `Signed in as ${result.user.displayName || result.user.email || 'User'}.`,
+        });
+      } else {
+        addToast({
+          type: 'info',
+          title: 'Signed in (Basic Profile)',
+          message: `Signed in as ${result.user.displayName || result.user.email || 'User'}. Follow the OAuth setup to enable live Sheets & Drive sync.`,
+          duration: 6000,
+        });
+      }
     } catch (err: any) {
       console.error('Sign in error:', err);
-      addToast({
-        type: 'error',
-        title: 'Sign In Failed',
-        message: err.message || 'Could not complete Google sign in popup.',
-      });
+      if (
+        err instanceof OAuthTestUserRequiredError ||
+        err?.isOAuthBlocked ||
+        err?.message?.includes('OAuth Verification') ||
+        err?.message?.includes('Test users') ||
+        err?.message?.includes('verification process')
+      ) {
+        setOauthGuideModalOpen(true);
+        addToast({
+          type: 'warning',
+          title: 'Google Test User Setup Needed',
+          message: 'Google requires adding your email to "Test users" in Google Cloud Console for Workspace access.',
+          duration: 8000,
+        });
+      } else {
+        addToast({
+          type: 'error',
+          title: 'Sign In Failed',
+          message: err.message || 'Could not complete Google sign in.',
+        });
+      }
     } finally {
       setIsLoggingIn(false);
     }
+  };
+
+  const handleBasicSignIn = async () => {
+    await handleGoogleSignIn(false);
   };
 
   // Logout Handler
@@ -649,10 +774,21 @@ export default function App() {
       }
     } catch (err: any) {
       console.error('Error adding study block:', err);
+      if (err?.isServiceDisabled) {
+        setApiActivationModalInfo({
+          serviceName: err.serviceName || 'Google Calendar API',
+          serviceId: err.serviceId || 'calendar-json.googleapis.com',
+          activationUrl: err.activationUrl,
+          projectId: err.projectId || '614024702267',
+        });
+        setApiActivationModalOpen(true);
+      }
       addToast({
         type: 'error',
-        title: 'Scheduling Failed',
+        title: err?.isServiceDisabled ? 'Calendar API Disabled' : 'Scheduling Failed',
         message: err.message || 'Could not insert event into Google Calendar.',
+        actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
+        actionUrl: err?.activationUrl,
       });
     } finally {
       setIsScheduling(false);
@@ -716,10 +852,21 @@ export default function App() {
       }
     } catch (err: any) {
       console.error('Doc creation error:', err);
+      if (err?.isServiceDisabled) {
+        setApiActivationModalInfo({
+          serviceName: err.serviceName || 'Google Docs API',
+          serviceId: err.serviceId || 'docs.googleapis.com',
+          activationUrl: err.activationUrl,
+          projectId: err.projectId || '614024702267',
+        });
+        setApiActivationModalOpen(true);
+      }
       addToast({
         type: 'error',
-        title: 'Doc Creation Failed',
+        title: err?.isServiceDisabled ? 'Docs/Drive API Disabled' : 'Doc Creation Failed',
         message: err.message || 'Could not generate Google Doc in Drive.',
+        actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
+        actionUrl: err?.activationUrl,
       });
       return null;
     } finally {
@@ -751,10 +898,21 @@ export default function App() {
       }
     } catch (err: any) {
       console.error('Save draft error:', err);
+      if (err?.isServiceDisabled) {
+        setApiActivationModalInfo({
+          serviceName: err.serviceName || 'Gmail API',
+          serviceId: err.serviceId || 'gmail.googleapis.com',
+          activationUrl: err.activationUrl,
+          projectId: err.projectId || '614024702267',
+        });
+        setApiActivationModalOpen(true);
+      }
       addToast({
         type: 'error',
-        title: 'Draft Save Failed',
+        title: err?.isServiceDisabled ? 'Gmail API Disabled' : 'Draft Save Failed',
         message: err.message || 'Could not save draft to Gmail.',
+        actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
+        actionUrl: err?.activationUrl,
       });
     } finally {
       setIsSavingDraft(false);
@@ -1010,7 +1168,7 @@ export default function App() {
               </div>
             ) : (
               <div
-                onClick={handleGoogleSignIn}
+                onClick={() => handleGoogleSignIn()}
                 className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-indigo-400 cursor-pointer hover:bg-slate-700 hover:border-indigo-500 transition-colors shadow-sm"
                 title="Sign in with Google"
               >
@@ -1029,7 +1187,7 @@ export default function App() {
             user={user}
             isDemoMode={isDemoMode}
             setIsDemoMode={setIsDemoMode}
-            onGoogleSignIn={handleGoogleSignIn}
+            onGoogleSignIn={() => handleGoogleSignIn()}
             onLogout={handleLogout}
             isLoggingIn={isLoggingIn}
             darkMode={darkMode}
@@ -1039,6 +1197,7 @@ export default function App() {
             onOpenCommandPalette={() => setCommandPaletteOpen(true)}
             onOpenShortcuts={() => setShortcutsModalOpen(true)}
             onOpenDeploymentGuide={() => setDeploymentModalOpen(true)}
+            onOpenOAuthGuide={() => setOauthGuideModalOpen(true)}
             onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
             onOpenNewAssignment={() => setActiveTab('tracker')}
             sheetUrl={masterSheetUrl}
@@ -1105,6 +1264,10 @@ export default function App() {
                   }}
                   onNavigateToTab={setActiveTab}
                   urgentCanvasItems={canvasAssignments.filter((c) => !c.isSynced).slice(0, 3)}
+                  isGoogleConnected={Boolean(getStoredGoogleToken())}
+                  onConnectGoogle={() => handleGoogleSignIn(true)}
+                  calendarError={calendarError}
+                  calendarApiInfo={calendarApiInfo}
                 />
               )}
 
@@ -1120,6 +1283,10 @@ export default function App() {
                     setQuickDraftModalOpen(true);
                   }}
                   onExtractAssignment={handleExtractAssignment}
+                  isGoogleConnected={Boolean(getStoredGoogleToken())}
+                  onConnectGoogle={() => handleGoogleSignIn(true)}
+                  emailError={emailError}
+                  gmailApiInfo={gmailApiInfo}
                 />
               )}
 
@@ -1139,6 +1306,10 @@ export default function App() {
                   }}
                   onParseNaturalText={handleParseNaturalText}
                   isParsingAI={isParsingAI}
+                  isGoogleConnected={Boolean(getStoredGoogleToken())}
+                  onConnectGoogle={() => handleGoogleSignIn(true)}
+                  sheetError={sheetError}
+                  sheetApiInfo={sheetApiInfo}
                 />
               )}
 
@@ -1146,56 +1317,21 @@ export default function App() {
                 <ProjectStarterTab
                   recentFiles={recentFiles}
                   isLoadingFiles={isLoadingFiles}
-                  onRefreshFiles={loadRecentFiles}
+                  onRefreshFiles={() => loadRecentFiles(false)}
                   onCreateDoc={handleCreateDoc}
                   isCreatingDoc={isCreatingDoc}
+                  isGoogleConnected={Boolean(getStoredGoogleToken())}
+                  onConnectGoogle={() => handleGoogleSignIn(true)}
+                  driveError={driveError}
+                  driveApiInfo={driveApiInfo}
+                  onOpenActivationModal={(info) => {
+                    setApiActivationModalInfo(info);
+                    setApiActivationModalOpen(true);
+                  }}
                 />
               )}
             </div>
           </main>
-
-          {/* Bottom Status Bar / Hotkey Strip */}
-          <footer className="h-10 bg-slate-100 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-medium shrink-0 transition-colors">
-            <div className="flex items-center space-x-4 sm:space-x-6 overflow-x-auto scrollbar-none">
-              <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-semibold font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Auto-Sync 24/7 (45s): {lastSyncedAt.toLocaleTimeString()}</span>
-              </span>
-              <span
-                onClick={() => setActiveTab('tracker')}
-                className="cursor-pointer hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
-              >
-                [N] New Task
-              </span>
-              <span
-                onClick={handleRefreshAll}
-                className="cursor-pointer hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
-              >
-                [R] Sync Now
-              </span>
-              <span
-                onClick={() => setShortcutsModalOpen(true)}
-                className="cursor-pointer hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
-              >
-                [?] Shortcuts
-              </span>
-              <span
-                onClick={() => setDarkMode(!darkMode)}
-                className="cursor-pointer hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
-              >
-                [D] Dark Mode
-              </span>
-              <span
-                onClick={() => setAiChatOpen(!aiChatOpen)}
-                className="cursor-pointer text-indigo-600 dark:text-indigo-400 font-semibold hover:underline hidden sm:inline"
-              >
-                [A] AI Coach
-              </span>
-            </div>
-            <div className="shrink-0 text-slate-400 dark:text-slate-500 font-mono text-[10px] hidden md:block">
-              Continuous Live Sync Engine • Student Command Center
-            </div>
-          </footer>
         </div>
       </div>
 
@@ -1284,6 +1420,28 @@ export default function App() {
       <DeploymentModal
         isOpen={deploymentModalOpen}
         onClose={() => setDeploymentModalOpen(false)}
+      />
+
+      {/* Google OAuth & Test Users Setup Guide Modal */}
+      <OAuthGuideModal
+        isOpen={oauthGuideModalOpen}
+        onClose={() => setOauthGuideModalOpen(false)}
+        onRetryWorkspaceSignIn={() => handleGoogleSignIn(true)}
+        onBasicSignIn={handleBasicSignIn}
+        isLoggingIn={isLoggingIn}
+        projectId="studentcommandcenter-39cdc"
+        userEmail="buianhuy2009@gmail.com"
+      />
+
+      {/* Google Cloud API Enablement Modal */}
+      <ApiActivationModal
+        isOpen={apiActivationModalOpen}
+        onClose={() => setApiActivationModalOpen(false)}
+        info={apiActivationModalInfo}
+        onRetry={() => {
+          setApiActivationModalOpen(false);
+          handleRefreshAll();
+        }}
       />
 
       {/* Toast Notification Container */}

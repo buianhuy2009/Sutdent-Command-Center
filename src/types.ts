@@ -154,3 +154,13 @@ export interface ConfirmationModalState {
   isDestructive?: boolean;
   onConfirm: () => Promise<void> | void;
 }
+
+export interface ApiEnablementInfo {
+  isServiceDisabled?: boolean;
+  serviceName: string;
+  serviceId: string;
+  activationUrl?: string;
+  projectId?: string;
+  rawMessage?: string;
+}
+

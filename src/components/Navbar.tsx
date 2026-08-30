@@ -14,6 +14,7 @@ import {
   ExternalLink,
   GraduationCap,
   ShieldCheck,
+  Shield,
   Zap,
   Plus,
   Mail,
@@ -39,6 +40,7 @@ interface NavbarProps {
   onToggleAiChat: () => void;
   onOpenNewAssignment?: () => void;
   onOpenDeploymentGuide?: () => void;
+  onOpenOAuthGuide?: () => void;
   sheetUrl?: string;
 }
 
@@ -60,6 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleAiChat,
   onOpenNewAssignment,
   onOpenDeploymentGuide,
+  onOpenOAuthGuide,
   sheetUrl,
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -241,13 +244,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
 
                 <div className="px-2 py-1 space-y-0.5">
+                  {onOpenOAuthGuide && (
+                    <button
+                      onClick={() => {
+                        onOpenOAuthGuide();
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg flex items-center justify-between cursor-pointer"
+                    >
+                      <span>OAuth Test Users Setup</span>
+                      <Shield className="w-3.5 h-3.5 text-amber-500" />
+                    </button>
+                  )}
                   {onOpenDeploymentGuide && (
                     <button
                       onClick={() => {
                         onOpenDeploymentGuide();
                         setShowUserMenu(false);
                       }}
-                      className="w-full text-left px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg flex items-center justify-between"
+                      className="w-full text-left px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg flex items-center justify-between cursor-pointer"
                     >
                       <span>Vercel Integration Guide</span>
                       <Globe className="w-3.5 h-3.5 text-indigo-500" />

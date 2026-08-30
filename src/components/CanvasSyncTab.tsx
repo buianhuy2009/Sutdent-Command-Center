@@ -125,45 +125,46 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-orange-600 text-white flex items-center justify-center shadow-lg shadow-orange-600/30 shrink-0 font-bold">
-            <Layers className="w-6 h-6" />
+      {/* Top Clean Header */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-500/10 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+            <Layers className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2 text-orange-300 text-xs font-bold uppercase tracking-wider">
-              <span className="flex items-center gap-1.5">
-                <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-                Live Canvas LMS Integration
-              </span>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                Canvas LMS
+              </h2>
+              {isConfigured && (
+                <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 rounded-full">
+                  Connected
+                </span>
+              )}
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mt-0.5">
-              Canvas Assignments & Rubrics
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300 mt-0.5 max-w-xl">
-              Real-time synchronization with Canvas LMS. Cross-references assignments to your Master Google Sheet.
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Coursework, due dates, and rubrics
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <button
             onClick={() => setShowSettingsDrawer(!showSettingsDrawer)}
-            className="px-3.5 py-2 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-xl backdrop-blur-md border border-white/15 transition-all cursor-pointer flex items-center gap-1.5"
+            className="px-3 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer flex items-center gap-1.5"
           >
-            <Key className="w-3.5 h-3.5 text-orange-300" />
-            <span>{showSettingsDrawer ? 'Close Config' : 'Feed URL / Settings'}</span>
+            <Key className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+            <span>{showSettingsDrawer ? 'Close Settings' : 'Settings'}</span>
           </button>
 
           <button
             id="btn-fetch-canvas-feed"
             onClick={onFetchCanvas}
             disabled={isLoading}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-xs transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>{isLoading ? 'Syncing...' : 'Sync Feed Now'}</span>
+            <span>{isLoading ? 'Syncing...' : 'Sync Feed'}</span>
           </button>
         </div>
       </div>
@@ -174,7 +175,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
           <div className="flex items-start sm:items-center gap-3">
             <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5 sm:mt-0" />
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider">Canvas LMS Connection Alert</p>
+              <p className="text-xs font-bold uppercase tracking-wider">Canvas Connection Alert</p>
               <p className="text-xs text-rose-800 dark:text-rose-300 mt-0.5">{errorMessage}</p>
             </div>
           </div>
@@ -198,21 +199,17 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
       {/* Settings Box (Collapsible) */}
       {showSettingsDrawer && (
-        <section className="bg-white dark:bg-slate-900 rounded-2xl border border-orange-200 dark:border-orange-900/60 p-5 shadow-sm animate-in fade-in">
+        <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs animate-in fade-in">
           <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-orange-500 rounded-full" />
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm">
-                Canvas Connection Settings
-              </h3>
-            </div>
-            <span className="text-xs text-slate-400 font-mono">Real-time .ICS Feed Proxy</span>
+            <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">
+              Canvas Connection Settings
+            </h3>
           </div>
 
           <form onSubmit={handleSave} className="mt-4 space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Canvas Calendar Feed URL (.ics)
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Calendar Feed URL (.ics)
               </label>
               <input
                 id="input-canvas-feed"
@@ -223,7 +220,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                 className="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-white"
               />
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                On Canvas LMS: Go to <strong>Calendar</strong> → click <strong>Calendar Feed</strong> (lower right) → copy link and paste above.
+                Found on Canvas under <strong>Calendar → Calendar Feed</strong>
               </p>
             </div>
 
@@ -243,13 +240,13 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
               <div>
                 <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                  Access Token (Optional for API)
+                  Access Token (Optional)
                 </label>
                 <input
                   type="password"
                   value={apiToken}
                   onChange={(e) => setApiToken(e.target.value)}
-                  placeholder="Canvas Settings -> New Access Token"
+                  placeholder="Canvas Settings → Access Token"
                   className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white"
                 />
               </div>
@@ -263,7 +260,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                   onChange={(e) => setAutoSync(e.target.checked)}
                   className="w-4 h-4 text-orange-600 rounded"
                 />
-                <span>Real-time background sync (every 45s)</span>
+                <span>Background auto-sync</span>
               </label>
 
               <button
@@ -271,53 +268,43 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                 disabled={isSaving}
                 className="px-4 py-2 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
               >
-                {isSaving ? 'Saving...' : 'Save & Sync Live Feed'}
+                {isSaving ? 'Saving...' : 'Save Settings'}
               </button>
             </div>
           </form>
         </section>
       )}
 
-      {/* Onboarding Box if not configured yet */}
+      {/* Clean Connect Card if not configured yet */}
       {!isConfigured && !showSettingsDrawer && (
-        <section className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-orange-300 dark:border-orange-800/80 p-6 sm:p-8 text-center shadow-xs">
-          <div className="w-12 h-12 rounded-2xl bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400 flex items-center justify-center mx-auto mb-3">
-            <Layers className="w-6 h-6" />
+        <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 text-center shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center mx-auto mb-3">
+            <Layers className="w-5 h-5" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-            Connect Your Canvas LMS Account
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+            Connect Canvas Calendar Feed
           </h3>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-lg mx-auto">
-            To view real coursework, deadlines, and rubrics without fake placeholders, paste your Canvas Calendar Feed URL.
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+            Paste your Canvas calendar URL below to import assignments and due dates.
           </p>
 
-          <form onSubmit={handleSave} className="mt-5 max-w-xl mx-auto flex flex-col sm:flex-row gap-2">
+          <form onSubmit={handleSave} className="mt-4 max-w-lg mx-auto flex flex-col sm:flex-row gap-2">
             <input
               type="url"
               value={feedUrl}
               onChange={(e) => setFeedUrl(e.target.value)}
-              placeholder="Paste Canvas .ics Calendar Feed URL..."
+              placeholder="Paste Canvas .ics feed URL..."
               required
-              className="flex-1 px-4 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-white"
+              className="flex-1 px-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-white"
             />
             <button
               type="submit"
               disabled={isSaving || !feedUrl.trim()}
-              className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-colors shrink-0 shadow-xs"
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-colors shrink-0 shadow-xs cursor-pointer"
             >
-              {isSaving ? 'Connecting...' : 'Connect & Sync Live'}
+              {isSaving ? 'Connecting...' : 'Connect'}
             </button>
           </form>
-
-          <div className="mt-4 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-center gap-4 flex-wrap">
-            <span>1. Open Canvas LMS</span>
-            <span>→</span>
-            <span>2. Click <strong>Calendar</strong></span>
-            <span>→</span>
-            <span>3. Click <strong>Calendar Feed</strong> (lower right)</span>
-            <span>→</span>
-            <span>4. Paste URL above</span>
-          </div>
         </section>
       )}
 
