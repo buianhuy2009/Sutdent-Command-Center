@@ -121,6 +121,7 @@ export const signInWithGoogle = async (
       if (typeof window !== 'undefined') {
         try {
           sessionStorage.setItem(TOKEN_STORAGE_KEY, credential.accessToken);
+          sessionStorage.setItem('google_token_acquired_at', String(Date.now()));
         } catch {
           // ignore
         }

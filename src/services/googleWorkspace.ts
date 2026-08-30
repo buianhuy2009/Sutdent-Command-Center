@@ -899,3 +899,36 @@ export async function createFormattedAssignmentDoc(
 }
 
 export const createAssignmentDoc = createFormattedAssignmentDoc;
+
+/**
+ * Auto-share a Google Drive file so anyone with the link can view it (reader permission)
+ * This avoids 403 access denied errors for teachers when graded.
+ * POST https://www.googleapis.com/drive/v3/files/{fileId}/permissions
+ */
+export async function shareGoogleDriveFile(token: string, fileId: string): Promise<any> {
+  const url = `https://www.googleapis.com/drive/v3/files/${fileId}/permissions`;
+  
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+
+  const body = {
+    role: 'reader',
+    type: 'anyone',
+    allowFileDiscovery: false,
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw parseGoogleApiResponseError(res.status, text, 'Google Drive Permissions API', 'drive.googleapis.com');
+  }
+
+  return res.json();
+}

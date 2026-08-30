@@ -579,7 +579,22 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                               isDone ? 'line-through text-slate-400 dark:text-slate-500' : ''
                             }`}
                           >
-                            {assignment.assignmentName}
+                            <span className="align-middle">{assignment.assignmentName}</span>
+                            {assignment.source === 'Canvas' && (
+                              <span className="inline-flex items-center gap-0.5 ml-1.5 px-1.5 py-0.2 rounded-md text-[8px] font-bold bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-400 uppercase tracking-wide align-middle select-none">
+                                Canvas
+                              </span>
+                            )}
+                            {assignment.docUrl && (
+                              <a
+                                href={assignment.docUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-0.5 ml-1.5 px-1.5 py-0.2 rounded-md text-[8px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400 uppercase tracking-wide hover:underline align-middle select-none"
+                              >
+                                Doc
+                              </a>
+                            )}
                           </p>
                           {assignment.notes && (
                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">

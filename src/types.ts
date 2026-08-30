@@ -46,6 +46,7 @@ export interface EmailMessage {
   date: string;
   snippet: string;
   body?: string;
+  unread?: boolean;
 }
 
 export type EmailCategory = 'ASSIGNMENT' | 'EXAM' | 'GRADE' | 'SCHEDULE' | 'ANNOUNCEMENT' | 'SPAM' | 'PROMOTION' | 'GENERAL';

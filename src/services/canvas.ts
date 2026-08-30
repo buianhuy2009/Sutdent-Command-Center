@@ -531,3 +531,78 @@ export function crossReferenceCanvasWithSheet(
   });
 }
 
+/**
+ * Submit an assignment to Canvas via the submissions REST API endpoint
+ * POST /api/v1/courses/:course_id/assignments/:assignment_id/submissions
+ * with submission[submission_type]=online_url and submission[url]=file_url
+ */
+export async function submitCanvasAssignment(
+  domain: string,
+  token: string,
+  courseId: string,
+  assignmentId: string,
+  fileUrl: string
+): Promise<any> {
+  const cleanDomain = domain.replace(/\/$/, '');
+  
+  // Extract numerical assignment ID (e.g. from canvas-assign-12345)
+  const rawId = assignmentId.replace(/^(canvas-assign-|canvas-planner-|canvas-api-|canvas-ics-)/, '');
+  
+  const targetUrl = `${cleanDomain}/api/v1/courses/${courseId}/assignments/${rawId}/submissions`;
+  
+  const headers = {
+    'x-canvas-token': token,
+    'Content-Type': 'application/json',
+  };
+
+  const body = {
+    submission: {
+      submission_type: 'online_url',
+      url: fileUrl,
+    },
+  };
+
+  const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(targetUrl)}`;
+  const res = await fetch(proxyUrl, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    let errMessage = res.statusText;
+    try {
+      const errJson = await res.json();
+      if (errJson.errors) {
+        errMessage = JSON.stringify(errJson.errors);
+      } else if (errJson.message) {
+        errMessage = errJson.message;
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(`Canvas submission failed (${res.status}): ${errMessage}`);
+  }
+
+  return res.json();
+}
+
+/**
+ * Convert standard URLs to mobile native app deep links on small viewports
+ */
+export function toMobileDeepLink(url: string): string {
+  if (!url) return '';
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  if (!isMobile) return url;
+
+  if (url.includes('docs.google.com') || url.includes('drive.google.com')) {
+    return url.replace(/^https:\/\//, 'googledrive://');
+  }
+
+  if (url.includes('.instructure.com') || url.includes('/courses/')) {
+    return url.replace(/^https:\/\//, 'canvas-student://');
+  }
+
+  return url;
+}
+

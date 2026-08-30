@@ -10,9 +10,12 @@ import {
   Trash2,
   Search,
   Layers,
+  X,
+  AlertTriangle,
 } from 'lucide-react';
 import { CreateDocParams, SchoolFile, ApiEnablementInfo } from '../types';
 import { ApiActivationBanner } from './ApiActivationBanner';
+import { shareGoogleDriveFile } from '../services/googleWorkspace';
 
 interface ProjectStarterTabProps {
   recentFiles: SchoolFile[];
@@ -25,6 +28,7 @@ interface ProjectStarterTabProps {
   driveError?: string | null;
   driveApiInfo?: ApiEnablementInfo | null;
   onOpenActivationModal?: (info: ApiEnablementInfo) => void;
+  googleToken?: string;
 }
 
 export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
@@ -38,6 +42,7 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
   driveError,
   driveApiInfo,
   onOpenActivationModal,
+  googleToken,
 }) => {
   // Create Doc Form State - clean defaults (no pre-filled dummy content)
   const [docTitle, setDocTitle] = useState('');
@@ -49,6 +54,9 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
   const [checklistItems, setChecklistItems] = useState<string[]>([]);
   const [newChecklistText, setNewChecklistText] = useState('');
   const [createdDocUrl, setCreatedDocUrl] = useState<string | null>(null);
+
+  // Lightbox Modal state
+  const [previewFile, setPreviewFile] = useState<{ name: string; url: string; id?: string } | null>(null);
 
   // Drive files categorization & search
   const [fileCategory, setFileCategory] = useState<'ALL' | 'DOCS' | 'SHEETS' | 'SLIDES' | 'PDF'>('ALL');
@@ -348,15 +356,13 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
 
                   <div className="mt-3 pt-2 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
                     <span>{file.size || 'Google Cloud'}</span>
-                    <a
-                      href={file.webViewLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-0.5 text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+                    <button
+                      onClick={() => setPreviewFile({ name: file.name, url: file.webViewLink, id: file.id })}
+                      className="inline-flex items-center gap-0.5 text-indigo-600 dark:text-indigo-400 font-semibold hover:underline cursor-pointer"
                     >
-                      <span>Open</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                      <span>Preview</span>
+                      <Layers className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -579,6 +585,92 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
           </div>
         </form>
       </section>
+
+      {/* Dynamic Lightbox Doc Preview Modal */}
+      {previewFile && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-5xl h-[85vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 overflow-hidden">
+            
+            {/* Lightbox Header */}
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-500 fill-blue-50 shrink-0" viewBox="0 0 24 24">
+                  <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" fill="#4285F4" />
+                </svg>
+                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-md">
+                  Preview: {previewFile.name}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewFile.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 rounded-lg text-[11px] sm:text-xs font-semibold flex items-center gap-1 transition-colors"
+                >
+                  <span>Open Tab</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                <button
+                  onClick={() => setPreviewFile(null)}
+                  className="p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Permission Fallback UI (displayed at top of iframe) */}
+            <div className="bg-amber-50 dark:bg-amber-950/20 border-b border-amber-200/50 dark:border-amber-900/30 px-4 py-2 text-[10px] sm:text-[11px] text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className="truncate">
+                  Is the preview blank? Google restricts embedding for unauthorized accounts.
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={async () => {
+                    if (previewFile.id && googleToken) {
+                      try {
+                        await shareGoogleDriveFile(googleToken, previewFile.id);
+                        alert('Successfully shared! Refreshing preview...');
+                        // Force refresh preview by rebuilding URL
+                        setPreviewFile({ ...previewFile });
+                      } catch (e: any) {
+                        alert('Sharing failed: ' + (e.message || e));
+                      }
+                    } else {
+                      alert('Please connect Google Account to auto-share.');
+                    }
+                  }}
+                  className="px-2 py-0.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-[10px] font-bold cursor-pointer"
+                >
+                  Auto-Share File
+                </button>
+                <a
+                  href="https://accounts.google.com/SignOutOptions"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-amber-900 dark:hover:text-amber-200"
+                >
+                  Switch Account
+                </a>
+              </div>
+            </div>
+
+            {/* Embedded IFrame */}
+            <div className="flex-1 bg-slate-100 dark:bg-slate-950 relative">
+              <iframe
+                src={previewFile.url.replace('/edit', '/preview')}
+                className="absolute inset-0 w-full h-full border-0"
+                title={previewFile.name}
+                allow="autoplay"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

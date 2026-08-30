@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { CalendarEvent, CanvasAssignment, ApiEnablementInfo } from '../types';
 import { ApiActivationBanner } from './ApiActivationBanner';
+import { toMobileDeepLink } from '../services/canvas';
 
 interface DailyRadarTabProps {
   events: CalendarEvent[];
@@ -24,6 +25,7 @@ interface DailyRadarTabProps {
   onOpenScheduleModal: (event?: Partial<CalendarEvent>) => void;
   onNavigateToTab?: (tab: string) => void;
   urgentCanvasItems?: CanvasAssignment[];
+  allCanvasAssignments?: CanvasAssignment[];
   isGoogleConnected?: boolean;
   onConnectGoogle?: () => void;
   calendarError?: string | null;
@@ -37,24 +39,50 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
   onOpenScheduleModal,
   onNavigateToTab,
   urgentCanvasItems = [],
+  allCanvasAssignments = [],
   isGoogleConnected = true,
   onConnectGoogle,
   calendarError,
   calendarApiInfo,
 }) => {
   const now = new Date();
-  const sortedEvents = [...events].sort((a, b) => {
-    const timeA = a.start.dateTime ? new Date(a.start.dateTime).getTime() : 0;
-    const timeB = b.start.dateTime ? new Date(b.start.dateTime).getTime() : 0;
+  
+  // Format current date as YYYY-MM-DD in local time
+  const localYear = now.getFullYear();
+  const localMonth = String(now.getMonth() + 1).padStart(2, '0');
+  const localDay = String(now.getDate()).padStart(2, '0');
+  const todayStr = `${localYear}-${localMonth}-${localDay}`;
+
+  const canvasTimelineItems = allCanvasAssignments
+    .filter((a) => a.dueAt === todayStr && !a.isCompleted)
+    .map((a) => ({
+      id: a.id,
+      summary: `🎓 Canvas: ${a.name} (${a.pointsPossible !== undefined ? `${a.pointsPossible} pts` : 'Ungraded'})`,
+      description: a.description,
+      location: a.courseName,
+      start: { dateTime: a.dueAt ? `${a.dueAt}T23:59:00` : undefined },
+      end: { dateTime: a.dueAt ? `${a.dueAt}T23:59:59` : undefined },
+      htmlLink: a.htmlUrl,
+      isCanvas: true,
+      isStudyBlock: false,
+      hangoutLink: undefined,
+    }));
+
+  const combinedTimeline = [
+    ...events.map(e => ({ ...e, isCanvas: false })),
+    ...canvasTimelineItems
+  ].sort((a, b) => {
+    const timeA = a.start?.dateTime ? new Date(a.start.dateTime).getTime() : 0;
+    const timeB = b.start?.dateTime ? new Date(b.start.dateTime).getTime() : 0;
     return timeA - timeB;
   });
 
-  const nextUpcomingEvent = sortedEvents.find((e) => {
-    if (!e.start.dateTime) return false;
+  const nextUpcomingEvent = combinedTimeline.find((e) => {
+    if (!e.start?.dateTime) return false;
     return new Date(e.start.dateTime) > now;
   });
 
-  const minutesUntilNext = nextUpcomingEvent?.start.dateTime
+  const minutesUntilNext = nextUpcomingEvent?.start?.dateTime
     ? Math.round((new Date(nextUpcomingEvent.start.dateTime).getTime() - now.getTime()) / (1000 * 60))
     : null;
 
@@ -171,7 +199,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                 Syncing today's calendar events...
               </p>
             </div>
-          ) : sortedEvents.length === 0 ? (
+          ) : combinedTimeline.length === 0 ? (
             <div className="py-16 text-center text-slate-500 dark:text-slate-400">
               <CalendarIcon className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
@@ -188,11 +216,11 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
               </button>
             </div>
           ) : (
-            sortedEvents.map((event, idx) => {
-              const isPast = event.end.dateTime && new Date(event.end.dateTime) < now;
+            combinedTimeline.map((event: any, idx) => {
+              const isPast = event.end?.dateTime && new Date(event.end.dateTime) < now;
               const isCurrent =
-                event.start.dateTime &&
-                event.end.dateTime &&
+                event.start?.dateTime &&
+                event.end?.dateTime &&
                 new Date(event.start.dateTime) <= now &&
                 new Date(event.end.dateTime) >= now;
 
@@ -204,13 +232,15 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                 >
                   {/* Time on left */}
                   <div className="w-16 text-xs font-mono font-medium text-slate-500 dark:text-slate-400 pt-2.5 shrink-0 text-right">
-                    {formatEventTime(event.start.dateTime)}
+                    {formatEventTime(event.start?.dateTime)}
                   </div>
 
                   {/* Card on right */}
                   <div
                     className={`flex-1 p-4 rounded-xl border-l-4 transition-all ${
-                      event.isStudyBlock
+                      event.isCanvas
+                        ? 'border-orange-500 bg-orange-50/20 dark:bg-orange-950/10 text-slate-900 dark:text-white'
+                        : event.isStudyBlock
                         ? 'border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40 text-slate-900 dark:text-white'
                         : isCurrent
                         ? 'border-amber-500 bg-amber-50/80 dark:bg-amber-950/30 text-slate-900 dark:text-white shadow-xs'
@@ -222,13 +252,21 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4
-                            className={`text-sm font-semibold truncate ${
-                              isPast ? 'line-through text-slate-400' : 'text-slate-900 dark:text-white'
-                            }`}
-                          >
-                            {event.summary}
-                          </h4>
+                          <div className="flex items-center gap-1">
+                            {event.isCanvas && (
+                              <svg className="w-3.5 h-3.5 text-orange-600 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10" className="text-orange-100 dark:text-orange-950" />
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" className="text-orange-600 dark:text-orange-400" />
+                              </svg>
+                            )}
+                            <h4
+                              className={`text-sm font-semibold truncate ${
+                                isPast ? 'line-through text-slate-400' : 'text-slate-900 dark:text-white'
+                              }`}
+                            >
+                              {event.summary}
+                            </h4>
+                          </div>
                           {isCurrent && (
                             <span className="px-1.5 py-0.2 text-[10px] font-bold bg-amber-500 text-white rounded">
                               LIVE NOW
@@ -237,6 +275,11 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                           {event.isStudyBlock && (
                             <span className="px-1.5 py-0.2 text-[10px] font-bold bg-indigo-600 text-white rounded">
                               45M FOCUS
+                            </span>
+                          )}
+                          {event.isCanvas && (
+                            <span className="px-1.5 py-0.2 text-[9px] font-bold bg-orange-600 text-white rounded uppercase tracking-wider">
+                              LMS Deadline
                             </span>
                           )}
                         </div>
@@ -250,7 +293,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
 
                         {event.description && (
                           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 line-clamp-2 leading-relaxed">
-                            {event.description}
+                            {event.description.replace(/<[^>]*>?/gm, '')}
                           </p>
                         )}
                       </div>
@@ -270,11 +313,15 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                         )}
                         {event.htmlLink && (
                           <a
-                            href={event.htmlLink}
+                            href={toMobileDeepLink(event.htmlLink)}
                             target="_blank"
                             rel="noreferrer"
-                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors"
-                            title="Open in Google Calendar"
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              event.isCanvas
+                                ? 'text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/40'
+                                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                            }`}
+                            title={event.isCanvas ? "Open Assignment in Canvas" : "Open in Google Calendar"}
                           >
                             <ExternalLink className="w-4 h-4" />
                           </a>

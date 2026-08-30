@@ -19,6 +19,7 @@ import {
   Plus,
   Mail,
   Globe,
+  Bell,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 
@@ -42,6 +43,7 @@ interface NavbarProps {
   onOpenDeploymentGuide?: () => void;
   onOpenOAuthGuide?: () => void;
   sheetUrl?: string;
+  notifications?: any[];
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -64,8 +66,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenDeploymentGuide,
   onOpenOAuthGuide,
   sheetUrl,
+  notifications = [],
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationTier, setNotificationTier] = useState<'urgent' | 'updates' | 'activity'>('urgent');
 
   const tabs = [
     { id: 'canvas', label: 'Canvas LMS', icon: Layers, badge: 'Hub' },
@@ -174,6 +179,93 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-indigo-500' : ''}`} />
         </button>
+
+        {/* Aggregated Notification Center */}
+        <div className="relative">
+          <button
+            onClick={() => {
+              setShowNotifications(!showNotifications);
+              setShowUserMenu(false);
+            }}
+            className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative cursor-pointer"
+            title="Notifications Center"
+          >
+            <Bell className="w-4 h-4" />
+            {notifications.length > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 bg-rose-600 text-white rounded-full text-[9px] font-bold flex items-center justify-center animate-pulse">
+                {notifications.length}
+              </span>
+            )}
+          </button>
+
+          {showNotifications && (
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-2 z-50 animate-in fade-in zoom-in-95">
+              <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  Notification Center
+                </span>
+                <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full font-bold">
+                  {notifications.length} Total
+                </span>
+              </div>
+
+              {/* Actionable Tiers Filter Pills */}
+              <div className="px-3 py-2 flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800">
+                {[
+                  { id: 'urgent', label: '🔴 Urgent', count: notifications.filter((n) => n.tier === 'urgent').length },
+                  { id: 'updates', label: '🔵 Updates', count: notifications.filter((n) => n.tier === 'updates').length },
+                  { id: 'activity', label: '🟢 Activity', count: notifications.filter((n) => n.tier === 'activity').length },
+                ].map((tier) => (
+                  <button
+                    key={tier.id}
+                    onClick={() => setNotificationTier(tier.id as any)}
+                    className={`flex-1 py-1 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer text-center whitespace-nowrap ${
+                      notificationTier === tier.id
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700'
+                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-350'
+                    }`}
+                  >
+                    {tier.label} ({tier.count})
+                  </button>
+                ))}
+              </div>
+
+              {/* Notifications List */}
+              <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                {notifications.filter((n) => n.tier === notificationTier).length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-450 dark:text-slate-500">
+                    No active {notificationTier} notifications.
+                  </div>
+                ) : (
+                  notifications
+                    .filter((n) => n.tier === notificationTier)
+                    .map((item) => (
+                      <a
+                        key={item.id}
+                        href={item.link}
+                        target={item.link === '#' ? undefined : '_blank'}
+                        rel="noreferrer"
+                        onClick={() => setShowNotifications(false)}
+                        className="block px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-850 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
+                            {item.title}
+                          </span>
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-150 text-slate-700 dark:bg-slate-800 dark:text-slate-355 uppercase shrink-0 font-mono">
+                            {item.source}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-450 mt-1 leading-normal">
+                          {item.description}
+                        </p>
+                      </a>
+                    ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Dark Mode Toggle */}
         <button

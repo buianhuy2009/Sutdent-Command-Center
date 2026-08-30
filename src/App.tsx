@@ -30,6 +30,7 @@ import { DeploymentModal } from './components/DeploymentModal';
 import { OAuthGuideModal } from './components/OAuthGuideModal';
 import { ApiActivationModal } from './components/ApiActivationModal';
 import { ToastContainer } from './components/Toast';
+import confetti from 'canvas-confetti';
 
 import {
   signInWithGoogle,
@@ -51,6 +52,7 @@ import {
   syncAllAssignmentsToSheet,
   fetchRecentSchoolFiles,
   createAssignmentDoc,
+  shareGoogleDriveFile,
 } from './services/googleWorkspace';
 import {
   loadCanvasSettings,
@@ -58,6 +60,7 @@ import {
   fetchCanvasAssignmentsFromFeed,
   fetchCanvasAssignmentsFromApi,
   crossReferenceCanvasWithSheet,
+  submitCanvasAssignment,
 } from './services/canvas';
 import {
   summarizeEmailsWithGemini,
@@ -174,6 +177,82 @@ export default function App() {
   const [isCreatingDoc, setIsCreatingDoc] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+
+  // Dynamic Aggregated Notification Center Model
+  const notifications = React.useMemo(() => {
+    const list: any[] = [];
+    const now = new Date();
+
+    // 1. Urgent Tiers (Deadlines in 24h, Grades posted)
+    canvasAssignments.forEach((c) => {
+      // Due in 24h
+      if (c.dueAt && !c.isCompleted) {
+        const dueTime = new Date(c.dueAt + 'T23:59:59').getTime();
+        const diff = dueTime - now.getTime();
+        if (diff > 0 && diff < 86400000) {
+          list.push({
+            id: `urgent-due-${c.id}`,
+            tier: 'urgent',
+            title: `Deadline: ${c.name} is due soon!`,
+            description: `Subject: ${c.courseName} • Due in ${Math.round(diff / 3600000)} hours.`,
+            link: c.htmlUrl || '#',
+            source: 'Canvas',
+          });
+        }
+      }
+
+      // Grade Posted Feedback mapping directly back to commented Google Doc anchor locations
+      const matchingSheet = assignments.find(
+        (s) => s.assignmentName.toLowerCase().trim() === c.name.toLowerCase().trim()
+      );
+      if (c.isCompleted && matchingSheet?.docUrl) {
+        list.push({
+          id: `urgent-grade-${c.id}`,
+          tier: 'urgent',
+          title: `Grade Posted: ${c.name}`,
+          description: `Score details parsed. Click to open and read feedback directly in your Google Doc.`,
+          link: matchingSheet.docUrl,
+          source: 'Google Doc',
+        });
+      }
+    });
+
+    // 2. Updates Tier (Announcements / Slide changes)
+    canvasAssignments.filter(c => c.isInformational).forEach((c) => {
+      list.push({
+        id: `update-announcement-${c.id}`,
+        tier: 'updates',
+        title: `Announcement: ${c.name}`,
+        description: `Course post published in ${c.courseName}.`,
+        link: c.htmlUrl || '#',
+        source: 'Canvas',
+      });
+    });
+
+    // Google Drive files modified in last 24h
+    recentFiles.slice(0, 5).forEach((f) => {
+      list.push({
+        id: `update-file-${f.id}`,
+        tier: 'updates',
+        title: `Updated File: ${f.name}`,
+        description: `Modified recently in your Google Drive.`,
+        link: f.webViewLink,
+        source: 'Google Drive',
+      });
+    });
+
+    // 3. Activity Tier (Discussion replies)
+    list.push({
+      id: 'activity-discussion-demo',
+      tier: 'activity',
+      title: 'Discussion Reply: Peer feedback in AP Chemistry Group',
+      description: 'Minh Nguyen replied to your comment on Lab 3 topic.',
+      link: '#',
+      source: 'Canvas',
+    });
+
+    return list;
+  }, [canvasAssignments, recentFiles, assignments]);
 
   // Modals & Panels
   const [quickDraftModalOpen, setQuickDraftModalOpen] = useState(false);
@@ -816,6 +895,34 @@ export default function App() {
     setCanvasAssignments((prev) => crossReferenceCanvasWithSheet(prev, assignments));
   }, [assignments]);
 
+  // Proactive Google OAuth Token Expiry Warning
+  useEffect(() => {
+    const checkTokenExpiry = () => {
+      const token = getStoredGoogleToken();
+      if (!token) return;
+
+      const acquiredAtStr = sessionStorage.getItem('google_token_acquired_at');
+      if (!acquiredAtStr) return;
+
+      const acquiredAt = parseInt(acquiredAtStr, 10);
+      const age = Date.now() - acquiredAt;
+      const fiftyMins = 50 * 60 * 1000;
+
+      if (age > fiftyMins) {
+        addToast({
+          type: 'warning',
+          title: 'Google Session Expiring',
+          message: 'Your Google workspace token will expire soon. Reconnect to keep sync active.',
+          actionLabel: 'Reconnect',
+          actionUrl: '#reconnect-google',
+        });
+      }
+    };
+
+    const interval = setInterval(checkTokenExpiry, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [addToast]);
+
   // Google Sign In Handler
   const handleGoogleSignIn = async (requestWorkspace = true) => {
     setIsLoggingIn(true);
@@ -1290,6 +1397,78 @@ export default function App() {
     });
   };
 
+  // Google Drive & Canvas direct submission workflow
+  const handleSubmitAssignment = async (assignment: CanvasAssignment, fileId: string) => {
+    const token = getStoredGoogleToken();
+    if (!token && !isDemoMode) {
+      addToast({
+        type: 'error',
+        title: 'Google Connection Required',
+        message: 'Please connect your Google Account to submit files from Google Drive.',
+      });
+      return;
+    }
+
+    try {
+      // 1. Auto-share document permissions (anyone with link can view)
+      if (token) {
+        await shareGoogleDriveFile(token, fileId);
+      }
+
+      // 2. Generate standard document URL
+      const fileUrl = `https://docs.google.com/document/d/${fileId}/edit`;
+
+      // 3. Submit directly to Canvas if REST API credentials exist
+      if (canvasSettings.apiToken && canvasSettings.apiDomain && assignment.courseId) {
+        await submitCanvasAssignment(
+          canvasSettings.apiDomain,
+          canvasSettings.apiToken,
+          assignment.courseId,
+          assignment.id,
+          fileUrl
+        );
+      }
+
+      // 4. Sync done status to Master Google Sheet tracker
+      const targetSheetItem = assignments.find(
+        (a) =>
+          a.assignmentName.toLowerCase().trim() === assignment.name.toLowerCase().trim() ||
+          assignment.name.toLowerCase().includes(a.assignmentName.toLowerCase().trim())
+      );
+
+      if (targetSheetItem) {
+        await handleUpdateStatus(targetSheetItem, 'Done');
+      }
+
+      // 5. Update state
+      setCanvasAssignments((prev) =>
+        prev.map((c) => (c.id === assignment.id ? { ...c, isCompleted: true } : c))
+      );
+
+      // Trigger celebration confetti
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.65 },
+        colors: ['#3b82f6', '#10b981', '#6366f1', '#f59e0b'],
+      });
+
+      addToast({
+        type: 'success',
+        title: 'Assignment Submitted!',
+        message: `Successfully shared and submitted "${assignment.name}" to Canvas.`,
+      });
+    } catch (err: any) {
+      console.error('Canvas submit workflow error:', err);
+      addToast({
+        type: 'error',
+        title: 'Submission Failed',
+        message: err.message || 'Failed to complete Canvas submission.',
+      });
+      throw err;
+    }
+  };
+
 
   // Keyboard Shortcuts Listener
   useEffect(() => {
@@ -1510,7 +1689,7 @@ export default function App() {
         </nav>
 
         {/* Right Main Column with Top Header, Scrollable Content, and Bottom Status Bar */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#F8FAFC] dark:bg-slate-950">
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#F8FAFC] dark:bg-[#0B1120]">
           {/* Top Header */}
           <Navbar
             activeTab={activeTab}
@@ -1532,6 +1711,7 @@ export default function App() {
             onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
             onOpenNewAssignment={() => setActiveTab('tracker')}
             sheetUrl={masterSheetUrl}
+            notifications={notifications}
           />
 
           {/* Mobile Tab Navigation Bar (shown only on small screens) */}
@@ -1580,6 +1760,9 @@ export default function App() {
                   onSyncToSheet={handleSyncCanvasToSheet}
                   onSyncAllPending={handleSyncAllPendingCanvas}
                   onCreateDocFromCanvas={handleCreateDocFromCanvas}
+                  recentFiles={recentFiles}
+                  isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                  onSubmitAssignment={handleSubmitAssignment}
                 />
               )}
 
@@ -1595,6 +1778,7 @@ export default function App() {
                   }}
                   onNavigateToTab={setActiveTab}
                   urgentCanvasItems={canvasAssignments.filter((c) => !c.isSynced).slice(0, 3)}
+                  allCanvasAssignments={canvasAssignments}
                   isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
                   onConnectGoogle={() => handleGoogleSignIn(true)}
                   calendarError={calendarError}
@@ -1660,6 +1844,7 @@ export default function App() {
                     setApiActivationModalInfo(info);
                     setApiActivationModalOpen(true);
                   }}
+                  googleToken={getStoredGoogleToken() || undefined}
                 />
               )}
             </div>
