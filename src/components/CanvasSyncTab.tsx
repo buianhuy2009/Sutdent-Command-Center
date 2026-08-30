@@ -221,10 +221,10 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
           <h3 className="text-xs font-bold uppercase text-slate-800 dark:text-slate-200 tracking-wider">
             Canvas LMS Connection Configuration
           </h3>
-          <form onSubmit={handleSave} className="space-y-3">
+          <form onSubmit={handleSave} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Canvas Calendar Feed URL (.ics / webcal://)
+                Option A: Canvas Calendar Feed URL (.ics / webcal://)
               </label>
               <input
                 type="text"
@@ -233,14 +233,60 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                 placeholder="webcal://canvas.instructure.com/feeds/calendars/user_...ics"
                 className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 dark:text-white"
               />
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                Found on Canvas ➔ Calendar ➔ Calendar Feed (bottom right of screen).
+              </p>
             </div>
-            <div className="flex justify-end gap-2">
+
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Option B: Canvas API Access Token (Recommended for Auto-Submitted Detection)
+                </span>
+                <span className="px-2 py-0.5 text-[10px] font-bold bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300 rounded-md">
+                  Auto-Detects Done Tasks
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
+                Connecting with your API token automatically detects which assignments you have submitted or completed on Canvas.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Canvas Domain / School URL
+                  </label>
+                  <input
+                    type="text"
+                    value={apiDomain}
+                    onChange={(e) => setApiDomain(e.target.value)}
+                    placeholder="https://canvas.instructure.com"
+                    className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 dark:text-white font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Canvas API Access Token
+                  </label>
+                  <input
+                    type="password"
+                    value={apiToken}
+                    onChange={(e) => setApiToken(e.target.value)}
+                    placeholder="Canvas -> Account -> Settings -> New Access Token"
+                    className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 dark:text-white font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow-xs"
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-colors"
               >
-                {isSaving ? 'Saving...' : 'Save Settings'}
+                {isSaving ? 'Saving...' : 'Save & Sync Canvas'}
               </button>
             </div>
           </form>

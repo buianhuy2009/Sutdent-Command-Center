@@ -177,7 +177,8 @@ export async function fetchCanvasAssignmentsFromFeed(feedUrl: string): Promise<C
 }
 
 /**
- * Fetch Canvas assignments directly via Canvas REST API (optional token)
+ * Fetch Canvas assignments directly via Canvas REST API (using Access Token)
+ * Automatically detects submitted and graded assignments
  */
 export async function fetchCanvasAssignmentsFromApi(
   domain: string,
@@ -186,7 +187,52 @@ export async function fetchCanvasAssignmentsFromApi(
   if (!domain || !token) return [];
 
   const cleanDomain = domain.replace(/\/$/, '');
-  const url = `${cleanDomain}/api/v1/users/self/upcoming_events`;
+
+  // 1. Try Canvas Planner Items (contains live submission statuses)
+  try {
+    const plannerUrl = `${cleanDomain}/api/v1/planner/items?order=desc&per_page=50`;
+    const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(plannerUrl)}`;
+    const res = await fetch(proxyUrl, {
+      headers: { 'x-canvas-token': token },
+    });
+
+    if (res.ok) {
+      const items = await res.json();
+      if (Array.isArray(items) && items.length > 0) {
+        return items
+          .filter((item: any) => item.plannable_type === 'assignment' || item.plannable_type === 'quiz' || item.plannable)
+          .map((item: any) => {
+            const p = item.plannable || {};
+            const sub = item.submissions || {};
+            const isFinished = Boolean(
+              sub.submitted ||
+              sub.graded ||
+              item.workflow_state === 'completed' ||
+              sub.workflow_state === 'submitted' ||
+              sub.workflow_state === 'graded'
+            );
+
+            return {
+              id: `canvas-planner-${item.plannable_id || item.id}`,
+              name: p.title || item.plannable_title || 'Canvas Assignment',
+              courseName: item.context_name || 'Canvas Course',
+              courseId: item.course_id ? String(item.course_id) : undefined,
+              dueAt: (p.due_at || item.plannable_date || '').split('T')[0] || '',
+              pointsPossible: p.points_possible,
+              htmlUrl: item.html_url || p.html_url,
+              description: p.details || p.description || '',
+              isSynced: false,
+              isCompleted: isFinished,
+            };
+          });
+      }
+    }
+  } catch (err) {
+    console.warn('Canvas Planner API query error, falling back to upcoming events:', err);
+  }
+
+  // 2. Fallback: Query upcoming events with submissions included
+  const url = `${cleanDomain}/api/v1/users/self/upcoming_events?include[]=submission`;
   const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(url)}`;
 
   const res = await fetch(proxyUrl, {
@@ -215,6 +261,15 @@ export async function fetchCanvasAssignmentsFromApi(
     .filter((e: any) => e.assignment || e.type === 'assignment')
     .map((e: any) => {
       const a = e.assignment || {};
+      const sub = a.submission || {};
+      const isFinished = Boolean(
+        a.user_submitted ||
+        a.has_submitted_submissions ||
+        sub.workflow_state === 'submitted' ||
+        sub.workflow_state === 'graded' ||
+        sub.submitted_at
+      );
+
       return {
         id: `canvas-api-${e.id || a.id}`,
         name: a.name || e.title || 'Canvas Task',
@@ -225,6 +280,7 @@ export async function fetchCanvasAssignmentsFromApi(
         htmlUrl: a.html_url || e.html_url,
         description: a.description || '',
         isSynced: false,
+        isCompleted: isFinished,
       };
     });
 }

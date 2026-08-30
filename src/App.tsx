@@ -610,13 +610,14 @@ export default function App() {
     if (!isSilent) setIsLoadingCanvas(true);
     try {
       let fetched: CanvasAssignment[] = [];
-      if (canvasSettings.calendarFeedUrl) {
-        fetched = await fetchCanvasAssignmentsFromFeed(canvasSettings.calendarFeedUrl);
-      } else if (canvasSettings.apiDomain && canvasSettings.apiToken) {
+      if (canvasSettings.apiToken && canvasSettings.apiDomain) {
         fetched = await fetchCanvasAssignmentsFromApi(
           canvasSettings.apiDomain,
           canvasSettings.apiToken
         );
+      }
+      if (fetched.length === 0 && canvasSettings.calendarFeedUrl) {
+        fetched = await fetchCanvasAssignmentsFromFeed(canvasSettings.calendarFeedUrl);
       }
 
       const crossRef = crossReferenceCanvasWithSheet(fetched, assignments);
