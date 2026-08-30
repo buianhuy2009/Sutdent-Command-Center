@@ -8,11 +8,9 @@ import {
   AlertTriangle,
   BookOpen,
   Calendar,
-  Layers,
-  Sparkles,
 } from 'lucide-react';
 import { CanvasAssignment } from '../types';
-import { fetchAllClassroomAssignments, getDemoClassroomAssignments } from '../services/googleClassroom';
+import { fetchAllClassroomAssignments } from '../services/googleClassroom';
 
 interface GoogleClassroomPanelProps {
   googleToken?: string;
@@ -38,24 +36,9 @@ export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [syncedIds, setSyncedIds] = useState<Set<string>>(new Set());
-  const [isDemoActive, setIsDemoActive] = useState(false);
 
-  const loadAssignments = async (forceDemo = false) => {
-    if (forceDemo) {
-      const demoData = getDemoClassroomAssignments();
-      setAssignments(demoData);
-      setIsDemoActive(true);
-      setError(null);
-      return;
-    }
-
+  const loadAssignments = async () => {
     if (!googleToken) {
-      if (isGoogleConnected) {
-        // Connected via Firebase but token might need refresh, fallback to demo if needed
-        const demoData = getDemoClassroomAssignments();
-        setAssignments(demoData);
-        setIsDemoActive(true);
-      }
       return;
     }
 
@@ -63,29 +46,24 @@ export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
     setError(null);
     try {
       const data = await fetchAllClassroomAssignments(googleToken);
-      if (data.length === 0) {
-        // No active courses or empty coursework
-        setAssignments(getDemoClassroomAssignments());
-        setIsDemoActive(true);
-      } else {
-        setAssignments(data);
-        setIsDemoActive(false);
-        try {
-          localStorage.setItem('scc_cached_classroom_assignments', JSON.stringify(data));
-        } catch {}
-      }
+      setAssignments(data);
+      try {
+        localStorage.setItem('scc_cached_classroom_assignments', JSON.stringify(data));
+      } catch {}
     } catch (err: any) {
-      console.warn('Classroom API call failed, falling back to demo coursework:', err);
-      setError(err?.message || 'Could not connect to Google Classroom API. Google Classroom API may need to be enabled in Google Cloud Console.');
-      setAssignments(getDemoClassroomAssignments());
-      setIsDemoActive(true);
+      console.warn('Classroom API call failed:', err);
+      setError(
+        err?.message ||
+          'Could not connect to Google Classroom API. Please verify Google Classroom API is enabled on your Google Cloud Console.'
+      );
+      setAssignments([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (assignments.length === 0) {
+    if (googleToken && assignments.length === 0) {
       loadAssignments();
     }
   }, [googleToken]);
@@ -110,12 +88,12 @@ export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
               </h2>
               {isGoogleConnected && (
                 <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 rounded-full">
-                  {isDemoActive ? 'Demo Coursework' : 'Google Connected'}
+                  Google Connected
                 </span>
               )}
             </div>
             <p className="text-xs text-[#8C897F] mt-0.5">
-              Sync teacher assignments, due dates, and rubrics from Google Classroom
+              Sync real teacher assignments, due dates, and rubrics from Google Classroom
             </p>
           </div>
         </div>
@@ -131,9 +109,9 @@ export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
           )}
 
           <button
-            onClick={() => loadAssignments(false)}
-            disabled={isLoading}
-            className="px-3 py-1.5 text-xs font-semibold bg-[#FAF9F5] dark:bg-[#252422] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] transition-colors cursor-pointer flex items-center gap-1.5"
+            onClick={loadAssignments}
+            disabled={isLoading || !googleToken}
+            className="px-3 py-1.5 text-xs font-semibold bg-[#FAF9F5] dark:bg-[#252422] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
             title="Refresh Classroom Coursework"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-[#D97757]' : ''}`} />
@@ -158,9 +136,9 @@ export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
           <div className="flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold">Google Classroom API Note</p>
+              <p className="font-bold">Google Classroom Connection Note</p>
               <p className="text-[11px] mt-0.5">
-                Showing sample coursework for demonstration. To sync live school classes, ensure &quot;Google Classroom API&quot; is enabled on your Google Cloud project console.
+                {error} Ensure &quot;Google Classroom API&quot; is enabled on your Google Cloud project console.
               </p>
             </div>
           </div>
@@ -186,15 +164,28 @@ export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
         </div>
 
         <div className="mt-4 space-y-3">
-          {assignments.length === 0 ? (
+          {!isGoogleConnected ? (
+            <div className="py-12 px-4 text-center bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-dashed border-[#DFDACB] dark:border-[#2C2B27]">
+              <GraduationCap className="w-10 h-10 mx-auto text-emerald-600 mb-2 opacity-80" />
+              <h4 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">Connect School Google Account</h4>
+              <p className="text-xs text-[#8C897F] mt-1 max-w-sm mx-auto">
+                Sign in with your Google account to sync real classes, coursework, and assignments from Google Classroom.
+              </p>
+              {onConnectGoogle && (
+                <button
+                  onClick={onConnectGoogle}
+                  className="mt-3.5 px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                >
+                  Connect Google
+                </button>
+              )}
+            </div>
+          ) : assignments.length === 0 ? (
             <div className="py-12 text-center text-[#8C897F] text-xs">
-              <p>No coursework found in active Classroom courses.</p>
-              <button
-                onClick={() => loadAssignments(true)}
-                className="mt-2 text-[#D97757] hover:underline font-semibold cursor-pointer"
-              >
-                Load sample demo coursework
-              </button>
+              <p>No active coursework found in your Google Classroom courses.</p>
+              <p className="text-[11px] text-[#8C897F]/80 mt-1">
+                When your instructors publish assignments or tests on Classroom, click &quot;Sync Classroom&quot; to bring them into your checklist.
+              </p>
             </div>
           ) : (
             assignments.map((work) => {

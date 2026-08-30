@@ -952,3 +952,65 @@ export async function shareGoogleDriveFile(token: string, fileId: string): Promi
 
   return res.json();
 }
+
+/**
+ * Create a formatted Google Doc in student's Google Drive as a NotebookLM source brief
+ */
+export async function createNotebookLMSourceDoc(
+  token: string,
+  topic: string,
+  content: string
+): Promise<{ documentId: string; webViewLink: string }> {
+  try {
+    const title = `[NotebookLM Source] ${topic}`;
+    const createRes = await fetch('https://docs.googleapis.com/v1/documents', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title }),
+    });
+
+    if (createRes.status === 401) {
+      clearStoredGoogleToken();
+      throw new Error('Google Workspace session expired (401). Please reconnect Google Account.');
+    }
+
+    if (!createRes.ok) {
+      const errBody = await createRes.text();
+      throw parseGoogleApiResponseError(createRes.status, errBody, 'Google Docs API', 'docs.googleapis.com');
+    }
+
+    const createdDoc = await createRes.json();
+    const documentId = createdDoc.documentId;
+
+    const fullText = `SOURCE BRIEF FOR NOTEBOOKLM: ${topic.toUpperCase()}\nGenerated: ${new Date().toLocaleDateString()}\n\n${content}\n`;
+
+    await fetch(`https://docs.googleapis.com/v1/documents/${documentId}:batchUpdate`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        requests: [
+          {
+            insertText: {
+              location: { index: 1 },
+              text: fullText,
+            },
+          },
+        ],
+      }),
+    });
+
+    return {
+      documentId,
+      webViewLink: `https://docs.google.com/document/d/${documentId}/edit`,
+    };
+  } catch (error) {
+    console.error('Error creating NotebookLM Doc:', error);
+    throw error;
+  }
+}

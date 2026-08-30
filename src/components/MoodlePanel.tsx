@@ -15,7 +15,6 @@ import {
   saveMoodleSettings,
   fetchMoodleAssignmentsFromIcs,
   fetchMoodleAssignmentsFromApi,
-  getDemoMoodleAssignments,
   MoodleSettings,
 } from '../services/moodle';
 
@@ -56,19 +55,9 @@ export const MoodlePanel: React.FC<MoodlePanelProps> = ({ onSyncToSheet }) => {
     loadAssignments(updated);
   };
 
-  const loadAssignments = async (overrideSettings?: MoodleSettings, forceDemo = false) => {
-    if (forceDemo) {
-      const demo = getDemoMoodleAssignments();
-      setAssignments(demo);
-      setError(null);
-      return;
-    }
-
+  const loadAssignments = async (overrideSettings?: MoodleSettings) => {
     const currentSettings = overrideSettings || settings;
     if (!currentSettings.calendarFeedUrl && (!currentSettings.moodleUrl || !currentSettings.moodleToken)) {
-      if (assignments.length === 0) {
-        setAssignments(getDemoMoodleAssignments());
-      }
       return;
     }
 
@@ -82,27 +71,20 @@ export const MoodlePanel: React.FC<MoodlePanelProps> = ({ onSyncToSheet }) => {
         data = await fetchMoodleAssignmentsFromApi(currentSettings.moodleUrl, currentSettings.moodleToken);
       }
 
-      if (data.length === 0) {
-        setAssignments(getDemoMoodleAssignments());
-      } else {
-        setAssignments(data);
-        try {
-          localStorage.setItem('scc_cached_moodle_assignments', JSON.stringify(data));
-        } catch {}
-      }
+      setAssignments(data);
+      try {
+        localStorage.setItem('scc_cached_moodle_assignments', JSON.stringify(data));
+      } catch {}
     } catch (err: any) {
-      console.warn('Moodle fetch failed, showing sample coursework:', err);
+      console.warn('Moodle fetch failed:', err);
       setError(err?.message || 'Could not fetch Moodle assignments. Please check URL or feed.');
-      if (assignments.length === 0) {
-        setAssignments(getDemoMoodleAssignments());
-      }
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (assignments.length === 0) {
+    if (isConfigured && assignments.length === 0) {
       loadAssignments();
     }
   }, []);
@@ -134,7 +116,7 @@ export const MoodlePanel: React.FC<MoodlePanelProps> = ({ onSyncToSheet }) => {
               )}
             </div>
             <p className="text-xs text-[#8C897F] mt-0.5">
-              Sync quizzes, homework, and deadlines from your school&apos;s Moodle portal
+              Sync real quizzes, homework, and deadlines from your school&apos;s Moodle portal
             </p>
           </div>
         </div>
@@ -149,9 +131,9 @@ export const MoodlePanel: React.FC<MoodlePanelProps> = ({ onSyncToSheet }) => {
           </button>
 
           <button
-            onClick={() => loadAssignments(undefined, false)}
-            disabled={isLoading}
-            className="px-3.5 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+            onClick={() => loadAssignments()}
+            disabled={isLoading || !isConfigured}
+            className="px-3.5 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>{isLoading ? 'Syncing...' : 'Sync Moodle'}</span>
@@ -243,10 +225,10 @@ export const MoodlePanel: React.FC<MoodlePanelProps> = ({ onSyncToSheet }) => {
             <span>{error}</span>
           </div>
           <button
-            onClick={() => loadAssignments(undefined, true)}
-            className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold shrink-0 text-xs"
+            onClick={() => setShowSettingsDrawer(true)}
+            className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold shrink-0 text-xs cursor-pointer"
           >
-            Load Sample Data
+            Edit Settings
           </button>
         </div>
       )}
@@ -261,15 +243,26 @@ export const MoodlePanel: React.FC<MoodlePanelProps> = ({ onSyncToSheet }) => {
         </div>
 
         <div className="mt-4 space-y-3">
-          {assignments.length === 0 ? (
-            <div className="py-12 text-center text-[#8C897F] text-xs">
-              <p>No Moodle assignments connected yet.</p>
+          {!isConfigured ? (
+            <div className="py-12 px-4 text-center bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-dashed border-[#DFDACB] dark:border-[#2C2B27]">
+              <BookOpen className="w-10 h-10 mx-auto text-amber-600 mb-2 opacity-80" />
+              <h4 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">Connect School Moodle Portal</h4>
+              <p className="text-xs text-[#8C897F] mt-1 max-w-sm mx-auto">
+                Paste your personal Moodle calendar export feed URL (.ics) or enter your Web Services API credentials to sync your school courses.
+              </p>
               <button
                 onClick={() => setShowSettingsDrawer(true)}
-                className="mt-2 text-[#D97757] hover:underline font-semibold cursor-pointer"
+                className="mt-3.5 px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
               >
-                Enter your Moodle calendar feed or token
+                Configure Moodle Settings
               </button>
+            </div>
+          ) : assignments.length === 0 ? (
+            <div className="py-12 text-center text-[#8C897F] text-xs">
+              <p>No assignments found in your connected Moodle feed.</p>
+              <p className="text-[11px] text-[#8C897F]/80 mt-1">
+                When new tasks are published on your Moodle portal, click &quot;Sync Moodle&quot; to refresh.
+              </p>
             </div>
           ) : (
             assignments.map((work) => {

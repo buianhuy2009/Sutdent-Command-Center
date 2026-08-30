@@ -104,38 +104,3 @@ export async function fetchMoodleAssignmentsFromApi(
     throw error;
   }
 }
-
-/**
- * Demo Moodle assignments for instant testing
- */
-export function getDemoMoodleAssignments(): CanvasAssignment[] {
-  const inThreeDays = new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0];
-  const inSixDays = new Date(Date.now() + 86400000 * 6).toISOString().split('T')[0];
-
-  return [
-    {
-      id: 'moodle-demo-1',
-      name: 'Linear Algebra: Eigenvalues & Matrix Diagonalization Quiz',
-      courseName: '[Moodle] MATH 250: Linear Algebra',
-      courseId: 'math-250',
-      dueAt: inThreeDays,
-      pointsPossible: 20,
-      htmlUrl: 'https://moodle.org',
-      description: 'Moodle online quiz. 45 minutes time limit with 2 attempts permitted. Bring formula reference sheet.',
-      isSynced: false,
-      submissionTypes: ['online_quiz'],
-    },
-    {
-      id: 'moodle-demo-2',
-      name: 'Computer Science: Dijkstra Algorithm Graph Implementation',
-      courseName: '[Moodle] CS 210: Data Structures',
-      courseId: 'cs-210',
-      dueAt: inSixDays,
-      pointsPossible: 100,
-      htmlUrl: 'https://moodle.org',
-      description: 'Submit your solution in Python/C++. Must achieve O((V+E)log V) time complexity and pass all test vectors.',
-      isSynced: false,
-      submissionTypes: ['online_upload'],
-    },
-  ];
-}

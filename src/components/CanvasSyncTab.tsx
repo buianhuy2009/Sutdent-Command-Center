@@ -24,6 +24,7 @@ import {
   GraduationCap,
   BookOpen,
   Palette,
+  Brain,
 } from 'lucide-react';
 import { CanvasAssignment, CanvasSettings } from '../types';
 import { loadCompletedCanvasIds, saveCompletedCanvasIds, resolveCanvasUrl, toMobileDeepLink } from '../services/canvas';
@@ -31,8 +32,10 @@ import { extractSubtasksFromCanvas, SubtaskResult } from '../services/gemini';
 import { GoogleClassroomPanel } from './GoogleClassroomPanel';
 import { MoodlePanel } from './MoodlePanel';
 import { CanvaStudioTab } from './CanvaStudioTab';
+import { NotebookLMStudioTab } from './NotebookLMStudioTab';
+import { FlashcardStudioTab } from './FlashcardStudioTab';
 
-export type LmsPlatform = 'canvas' | 'classroom' | 'moodle' | 'canva';
+export type LmsPlatform = 'canvas' | 'classroom' | 'moodle' | 'notebooklm' | 'canva' | 'flashcards';
 
 interface CanvasSyncTabProps {
   settings: CanvasSettings;
@@ -192,7 +195,9 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
           { id: 'canvas', label: 'Canvas LMS', icon: Layers, badge: canvasAssignments.length },
           { id: 'classroom', label: 'Google Classroom', icon: GraduationCap, badge: undefined },
           { id: 'moodle', label: 'Moodle LMS', icon: BookOpen, badge: undefined },
+          { id: 'notebooklm', label: 'NotebookLM', icon: BookOpen, badge: undefined },
           { id: 'canva', label: 'Canva Studio', icon: Palette, badge: undefined },
+          { id: 'flashcards', label: 'Flashcards', icon: Brain, badge: undefined },
         ].map((tab) => {
           const isActive = activePlatform === tab.id;
           const Icon = tab.icon;
@@ -231,7 +236,16 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
         <MoodlePanel onSyncToSheet={onSyncToSheet} />
       )}
 
+      {activePlatform === 'notebooklm' && (
+        <NotebookLMStudioTab
+          googleToken={googleToken}
+          isGoogleConnected={isGoogleConnected}
+        />
+      )}
+
       {activePlatform === 'canva' && <CanvaStudioTab />}
+
+      {activePlatform === 'flashcards' && <FlashcardStudioTab />}
 
       {activePlatform === 'canvas' && (
         <>

@@ -134,38 +134,3 @@ export async function fetchAllClassroomAssignments(token: string): Promise<Canva
     throw error;
   }
 }
-
-/**
- * Demo fallback courses & assignments for testing when Classroom API is not yet activated on GCP
- */
-export function getDemoClassroomAssignments(): CanvasAssignment[] {
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-  const nextWeek = new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0];
-
-  return [
-    {
-      id: 'gclass-demo-1',
-      name: 'AP Chemistry: Chemical Equilibrium Problem Set 4',
-      courseName: 'AP Chemistry Period 3',
-      courseId: 'chem-301',
-      dueAt: tomorrow,
-      pointsPossible: 50,
-      htmlUrl: 'https://classroom.google.com',
-      description: 'Complete problems 1-12 on page 412. Show all work and unit cancellations. Upload PDF scan to Google Classroom.',
-      isSynced: false,
-      submissionTypes: ['online_upload'],
-    },
-    {
-      id: 'gclass-demo-2',
-      name: 'World History: Primary Source Analysis - Silk Road Trade',
-      courseName: 'AP World History',
-      courseId: 'hist-201',
-      dueAt: nextWeek,
-      pointsPossible: 100,
-      htmlUrl: 'https://classroom.google.com',
-      description: 'Read the three excerpted travel logs and answer the 4 document-based synthesis prompts. Include citations.',
-      isSynced: false,
-      submissionTypes: ['online_text_entry', 'online_upload'],
-    },
-  ];
-}

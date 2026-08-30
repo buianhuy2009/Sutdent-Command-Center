@@ -33,24 +33,7 @@ function loadSavedCanvaProjects(): CanvaProject[] {
   } catch (e) {
     console.error('Error loading Canva projects:', e);
   }
-  return [
-    {
-      id: 'canva-default-1',
-      title: 'AP Biology: Cellular Respiration Presentation',
-      subject: 'Biology',
-      url: 'https://www.canva.com/design/DAFexample1/view?embed',
-      type: 'Presentation',
-      createdAt: new Date().toLocaleDateString(),
-    },
-    {
-      id: 'canva-default-2',
-      title: 'History: Causes of World War I Infographic',
-      subject: 'World History',
-      url: 'https://www.canva.com/design/DAFexample2/view?embed',
-      type: 'Infographic',
-      createdAt: new Date().toLocaleDateString(),
-    },
-  ];
+  return [];
 }
 
 function saveCanvaProjects(list: CanvaProject[]) {

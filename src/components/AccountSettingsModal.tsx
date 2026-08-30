@@ -364,12 +364,14 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                       </p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
                     {[
                       { label: 'Google Classroom', status: user ? 'Ready' : 'Not Connected', color: user ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800' : 'text-slate-500 bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700' },
                       { label: 'Canvas LMS', status: 'Active', color: 'text-orange-600 bg-orange-50 dark:bg-orange-950/60 border-orange-200 dark:border-orange-800' },
-                      { label: 'Moodle LMS', status: 'Configured', color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800' },
+                      { label: 'Moodle LMS', status: 'Ready', color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800' },
+                      { label: 'Google NotebookLM', status: 'Active', color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800' },
                       { label: 'Canva Studio', status: 'Active', color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800' },
+                      { label: 'Flashcard Studio', status: 'Active', color: 'text-teal-600 bg-teal-50 dark:bg-teal-950/60 border-teal-200 dark:border-teal-800' },
                     ].map((item) => (
                       <div key={item.label} className={`p-2.5 rounded-xl border text-center ${item.color}`}>
                         <div className="text-[11px] font-bold truncate">{item.label}</div>
