@@ -1,11 +1,11 @@
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-canvas-token");
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    const targetUrl = req.query.url as string;
+    const targetUrl = req.query.url;
     if (!targetUrl) {
       return res.status(400).json({ error: "Missing 'url' query parameter" });
     }
@@ -14,11 +14,11 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: "Invalid URL protocol" });
     }
 
-    const headers: Record<string, string> = {
+    const headers = {
       "User-Agent": "StudentCommandCenter/1.0",
     };
 
-    const canvasToken = req.headers["x-canvas-token"] as string;
+    const canvasToken = req.headers["x-canvas-token"];
     if (canvasToken) {
       headers["Authorization"] = `Bearer ${canvasToken}`;
     }
@@ -40,7 +40,7 @@ export default async function handler(req: any, res: any) {
       const text = await response.text();
       return res.status(200).send(text);
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error("Canvas proxy error:", err);
     res.status(500).json({ error: err.message || "Failed to fetch from Canvas" });
   }

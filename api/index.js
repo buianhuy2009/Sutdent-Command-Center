@@ -5,7 +5,7 @@ import handleParseAssignment from "./gemini/parse-assignment.js";
 import handleSummarizeEmails from "./gemini/summarize-emails.js";
 import handleQuickDraft from "./gemini/quick-draft.js";
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-canvas-token, Accept");

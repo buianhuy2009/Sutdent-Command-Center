@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
-let genAI: GoogleGenAI | null = null;
-function getGenAI(): GoogleGenAI {
+let genAI = null;
+function getGenAI() {
   if (!genAI) {
     const apiKey = process.env.GEMINI_API_KEY || "";
     genAI = new GoogleGenAI({ apiKey });
@@ -9,7 +9,7 @@ function getGenAI(): GoogleGenAI {
   return genAI;
 }
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -25,7 +25,7 @@ Keep your responses structured, encouraging, concise, and highly actionable with
 Current student context:
 ${JSON.stringify(context || {}, null, 2)}`;
 
-    const formattedContents = (messages || []).map((m: any) => ({
+    const formattedContents = (messages || []).map((m) => ({
       role: m.role === "assistant" ? "model" : "user",
       parts: [{ text: m.content || "" }],
     }));
@@ -50,7 +50,7 @@ ${JSON.stringify(context || {}, null, 2)}`;
         response.text ||
         "I'm here to help you organize and conquer your school tasks!",
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Study assistant error:", err);
     res.status(200).json({
       reply:
