@@ -190,7 +190,26 @@ export async function fetchCanvasAssignmentsFromApi(
   const headers = { 'x-canvas-token': token };
   const allAssignments: CanvasAssignment[] = [];
 
-  // Method 1: Fetch active courses and their assignments with full submission metadata
+  // 1. Fetch Canvas "To Do" list (Canvas authoritative pending homework list)
+  const todoIds = new Set<string>();
+  try {
+    const todoUrl = `${cleanDomain}/api/v1/users/self/todo?per_page=100`;
+    const proxyTodoUrl = `/api/canvas/proxy?url=${encodeURIComponent(todoUrl)}`;
+    const todoRes = await fetch(proxyTodoUrl, { headers });
+    if (todoRes.ok) {
+      const todoItems = await todoRes.json();
+      if (Array.isArray(todoItems)) {
+        todoItems.forEach((t: any) => {
+          const id = t.assignment?.id || t.quiz?.id || t.id;
+          if (id) todoIds.add(String(id));
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Canvas To Do list query error:', err);
+  }
+
+  // 2. Fetch active courses and their assignments with full submission metadata
   try {
     const coursesUrl = `${cleanDomain}/api/v1/courses?enrollment_state=active&per_page=50`;
     const proxyCoursesUrl = `/api/canvas/proxy?url=${encodeURIComponent(coursesUrl)}`;
@@ -203,7 +222,7 @@ export async function fetchCanvasAssignmentsFromApi(
           .filter((c: any) => c.id && (c.name || c.course_code))
           .map(async (course: any) => {
             try {
-              const assignUrl = `${cleanDomain}/api/v1/courses/${course.id}/assignments?include[]=submission&per_page=50&order_by=due_at`;
+              const assignUrl = `${cleanDomain}/api/v1/courses/${course.id}/assignments?include[]=submission&per_page=100&order_by=due_at`;
               const proxyAssignUrl = `/api/canvas/proxy?url=${encodeURIComponent(assignUrl)}`;
               const assignRes = await fetch(proxyAssignUrl, { headers });
               if (!assignRes.ok) return [];
@@ -213,16 +232,29 @@ export async function fetchCanvasAssignmentsFromApi(
 
               return assignData.map((a: any) => {
                 const sub = a.submission || {};
-                const isSubmitted = Boolean(
-                  sub.submitted_at ||
-                  sub.workflow_state === 'submitted' ||
-                  sub.workflow_state === 'graded' ||
-                  sub.workflow_state === 'pending_review' ||
-                  (sub.score !== undefined && sub.score !== null) ||
-                  (sub.grade !== undefined && sub.grade !== null) ||
-                  a.has_submitted_submissions ||
-                  a.user_submitted
-                );
+                const subTypes = a.submission_types || [];
+
+                // Detect 0-point non-submittable posts/readings
+                const isNoSubmission =
+                  subTypes.includes('none') ||
+                  subTypes.includes('not_graded') ||
+                  (a.points_possible === 0 && (!subTypes.length || subTypes.includes('none')));
+
+                const isInTodo = todoIds.has(String(a.id));
+                const isExplicitlyUnsubmitted = sub.workflow_state === 'unsubmitted' && !sub.submitted_at;
+
+                let isFinished = false;
+                if (isInTodo) {
+                  isFinished = false;
+                } else if (isExplicitlyUnsubmitted) {
+                  isFinished = false;
+                } else if (sub.submitted_at || sub.workflow_state === 'submitted' || (sub.workflow_state === 'graded' && sub.submitted_at)) {
+                  isFinished = true;
+                } else if (a.user_submitted || a.has_submitted_submissions) {
+                  isFinished = true;
+                } else if (isNoSubmission) {
+                  isFinished = true;
+                }
 
                 return {
                   id: `canvas-assign-${a.id}`,
@@ -234,8 +266,9 @@ export async function fetchCanvasAssignmentsFromApi(
                   htmlUrl: a.html_url,
                   description: a.description || '',
                   isSynced: false,
-                  isCompleted: isSubmitted,
-                  submissionTypes: a.submission_types,
+                  isCompleted: isFinished,
+                  isInformational: isNoSubmission,
+                  submissionTypes: subTypes,
                 };
               });
             } catch (err) {

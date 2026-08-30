@@ -93,6 +93,7 @@ export interface CanvasAssignment {
   description?: string;
   isSynced: boolean;
   isCompleted?: boolean;
+  isInformational?: boolean;
   submissionTypes?: string[];
 }
 
