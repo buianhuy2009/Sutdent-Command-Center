@@ -8,6 +8,9 @@ import {
   handleParseAssignment,
   handleSummarizeEmails,
   handleQuickDraft,
+  handleExtractSubtasks,
+  handleEstimateEffort,
+  handleSuggestStudySlots,
 } from "./src/server/handlers";
 
 async function startServer() {
@@ -23,6 +26,9 @@ async function startServer() {
   app.post("/api/gemini/parse-assignment", handleParseAssignment);
   app.post("/api/gemini/summarize-emails", handleSummarizeEmails);
   app.post("/api/gemini/quick-draft", handleQuickDraft);
+  app.post("/api/gemini/extract-subtasks", handleExtractSubtasks);
+  app.post("/api/gemini/estimate-effort", handleEstimateEffort);
+  app.post("/api/gemini/suggest-study-slots", handleSuggestStudySlots);
 
   // Vite middleware setup
   if (process.env.NODE_ENV !== "production") {

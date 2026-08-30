@@ -3,7 +3,6 @@ import { User } from 'firebase/auth';
 import {
   Compass,
   CheckSquare,
-  FileText,
   Layers,
   GraduationCap,
   Sparkles,
@@ -21,7 +20,6 @@ import { Navbar } from './components/Navbar';
 import { DailyRadarTab } from './components/DailyRadarTab';
 import { GmailRadarTab } from './components/GmailRadarTab';
 import { AssignmentTrackerTab } from './components/AssignmentTrackerTab';
-import { ProjectStarterTab } from './components/ProjectStarterTab';
 import { CanvasSyncTab } from './components/CanvasSyncTab';
 import { LandingPage } from './components/LandingPage';
 import { QuickDraftModal } from './components/QuickDraftModal';
@@ -56,7 +54,6 @@ import {
   updateAssignmentInSheet,
   syncAllAssignmentsToSheet,
   fetchRecentSchoolFiles,
-  createAssignmentDoc,
   shareGoogleDriveFile,
 } from './services/googleWorkspace';
 import {
@@ -83,7 +80,6 @@ import {
   CanvasSettings,
   ToastNotification,
   ConfirmationModalState,
-  CreateDocParams,
   QuickDraftRequest,
   AssignmentStatus,
   ApiEnablementInfo,
@@ -296,7 +292,6 @@ export default function App() {
   const [isLoadingCanvas, setIsLoadingCanvas] = useState(false);
   const [isRefreshingAll, setIsRefreshingAll] = useState(false);
   const [isParsingAI, setIsParsingAI] = useState(false);
-  const [isCreatingDoc, setIsCreatingDoc] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
 
@@ -1334,85 +1329,6 @@ export default function App() {
     }
   };
 
-  // Create Assignment Doc in Drive
-  const handleCreateDoc = async (params: CreateDocParams): Promise<string | null> => {
-    setIsCreatingDoc(true);
-    const token = getStoredGoogleToken();
-
-    try {
-      if (token) {
-        const res = await createAssignmentDoc(token, params);
-        const docUrl = res.webViewLink;
-
-        await loadRecentFiles();
-
-        addToast({
-          type: 'success',
-          title: 'Google Doc Created in Drive!',
-          message: `Created "${params.title}" with MLA/APA formatting.`,
-          actionLabel: 'Open Document',
-          actionUrl: docUrl,
-        });
-
-        // Prompt to add to Master Assignment Tracker if not already there
-        const existsInTracker = assignments.some(
-          (a) => a.assignmentName.toLowerCase() === params.title.toLowerCase()
-        );
-        if (!existsInTracker) {
-          setConfirmationModal({
-            isOpen: true,
-            title: 'Add New Doc to Master Assignment Tracker?',
-            description: `Would you like to link "${params.title}" (${params.subject}) to your Master Google Sheet tracker?`,
-            confirmLabel: 'Add to Sheet Tracker',
-            cancelLabel: 'Skip',
-            onConfirm: async () => {
-              await handleAddAssignment({
-                assignmentName: params.title,
-                subject: params.subject,
-                dueDate: new Date(Date.now() + 86400000 * 4).toISOString().split('T')[0],
-                priority: 'Med',
-                status: 'In Progress',
-                docUrl: docUrl,
-                notes: params.objectives,
-                source: 'Manual',
-              });
-            },
-          });
-        }
-
-        return docUrl;
-      } else {
-        addToast({
-          type: 'warning',
-          title: 'Google Drive Not Connected',
-          message: 'Connect your Google account to create live Google Docs in Drive.',
-        });
-        return null;
-      }
-    } catch (err: any) {
-      console.error('Doc creation error:', err);
-      if (err?.isServiceDisabled) {
-        setApiActivationModalInfo({
-          serviceName: err.serviceName || 'Google Docs API',
-          serviceId: err.serviceId || 'docs.googleapis.com',
-          activationUrl: err.activationUrl,
-          projectId: err.projectId || '614024702267',
-        });
-        setApiActivationModalOpen(true);
-      }
-      addToast({
-        type: 'error',
-        title: err?.isServiceDisabled ? 'Docs/Drive API Disabled' : 'Doc Creation Failed',
-        message: err.message || 'Could not generate Google Doc in Drive.',
-        actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
-        actionUrl: err?.activationUrl,
-      });
-      return null;
-    } finally {
-      setIsCreatingDoc(false);
-    }
-  };
-
   // Save Gmail Draft
   const handleSaveToGmailDrafts = async (to: string, subject: string, body: string) => {
     setIsSavingDraft(true);
@@ -1514,23 +1430,6 @@ export default function App() {
       message: `Added ${pending.length} pending Canvas tasks to your Master Google Sheet!`,
       actionLabel: masterSheetUrl ? 'Open Sheet' : undefined,
       actionUrl: masterSheetUrl,
-    });
-  };
-
-  // Create Doc from Canvas Assignment
-  const handleCreateDocFromCanvas = (canvasItem: CanvasAssignment) => {
-    handleTabTransition('projects');
-    handleCreateDoc({
-      title: canvasItem.name,
-      subject: canvasItem.courseName,
-      formatStyle: 'MLA',
-      objectives: canvasItem.description || `Complete ${canvasItem.name} for ${canvasItem.courseName}.`,
-      checklist: [
-        'Review Canvas prompt guidelines & rubric breakdown',
-        'Gather research citations & references',
-        'Draft structured sections & analysis',
-        'Final proofread & submit to Canvas portal',
-      ],
     });
   };
 
@@ -1794,15 +1693,6 @@ export default function App() {
                 badge: (!clearedTabBadges.has('tracker') && pendingAssignmentCount > 0) ? `${pendingAssignmentCount}` : undefined,
                 badgeColor: 'bg-emerald-600 text-white',
               },
-              {
-                id: 'projects',
-                label: 'Project Starter',
-                description: 'Drive Files & MLA Docs',
-                icon: FileText,
-                key: '5',
-                badge: undefined,
-                badgeColor: '',
-              },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
               const Icon = tab.icon;
@@ -1984,7 +1874,6 @@ export default function App() {
               { id: 'radar', label: 'Daily Schedule', icon: Compass },
               { id: 'gmail', label: 'Gmail Scanner', icon: Mail },
               { id: 'tracker', label: 'Assignment Tracker', icon: CheckSquare },
-              { id: 'projects', label: 'Project Starter', icon: FileText },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
               const Icon = tab.icon;
@@ -2032,7 +1921,6 @@ export default function App() {
                   onFetchCanvas={() => loadCanvasData(false)}
                   onSyncToSheet={handleSyncCanvasToSheet}
                   onSyncAllPending={handleSyncAllPendingCanvas}
-                  onCreateDocFromCanvas={handleCreateDocFromCanvas}
                   recentFiles={recentFiles}
                   isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
                   onSubmitAssignment={handleSubmitAssignment}
@@ -2056,6 +1944,8 @@ export default function App() {
                   onConnectGoogle={() => handleGoogleSignIn(true)}
                   calendarError={calendarError}
                   calendarApiInfo={calendarApiInfo}
+                  pendingAssignments={assignments.filter((a) => a.status !== 'Done')}
+                  onAddStudyBlock={handleScheduleStudyBlock}
                 />
               )}
 
@@ -2099,25 +1989,6 @@ export default function App() {
                   onClearCompleted={handleClearCompletedAssignments}
                   sheetError={sheetError}
                   sheetApiInfo={sheetApiInfo}
-                />
-              )}
-
-              {activeTab === 'projects' && (
-                <ProjectStarterTab
-                  recentFiles={recentFiles}
-                  isLoadingFiles={isLoadingFiles}
-                  onRefreshFiles={() => loadRecentFiles(false)}
-                  onCreateDoc={handleCreateDoc}
-                  isCreatingDoc={isCreatingDoc}
-                  isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
-                  onConnectGoogle={() => handleGoogleSignIn(true)}
-                  driveError={driveError}
-                  driveApiInfo={driveApiInfo}
-                  onOpenActivationModal={(info) => {
-                    setApiActivationModalInfo(info);
-                    setApiActivationModalOpen(true);
-                  }}
-                  googleToken={getStoredGoogleToken() || undefined}
                 />
               )}
             </div>
@@ -2167,6 +2038,7 @@ export default function App() {
         onGenerateDraft={generateQuickDraft}
         onSaveToGmailDrafts={handleSaveToGmailDrafts}
         isSavingDraft={isSavingDraft}
+        recentFiles={recentFiles}
       />
 
       {/* Schedule Study Session Modal */}

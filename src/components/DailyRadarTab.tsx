@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -14,9 +14,10 @@ import {
   ArrowRight,
   BookOpen,
 } from 'lucide-react';
-import { CalendarEvent, CanvasAssignment, ApiEnablementInfo } from '../types';
+import { CalendarEvent, CanvasAssignment, ApiEnablementInfo, Assignment } from '../types';
 import { ApiActivationBanner } from './ApiActivationBanner';
 import { toMobileDeepLink } from '../services/canvas';
+import { suggestStudySlots, StudySlotResult, StudySlotSuggestion } from '../services/gemini';
 
 interface DailyRadarTabProps {
   events: CalendarEvent[];
@@ -30,6 +31,8 @@ interface DailyRadarTabProps {
   onConnectGoogle?: () => void;
   calendarError?: string | null;
   calendarApiInfo?: ApiEnablementInfo | null;
+  pendingAssignments?: Assignment[];
+  onAddStudyBlock?: (eventData: { title: string; description: string; startDateTime: string; endDateTime: string }) => Promise<void>;
 }
 
 export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
@@ -44,6 +47,8 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
   onConnectGoogle,
   calendarError,
   calendarApiInfo,
+  pendingAssignments = [],
+  onAddStudyBlock,
 }) => {
   const now = new Date();
   
@@ -52,6 +57,52 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
   const localMonth = String(now.getMonth() + 1).padStart(2, '0');
   const localDay = String(now.getDate()).padStart(2, '0');
   const todayStr = `${localYear}-${localMonth}-${localDay}`;
+
+  // AI Chronotype Study Slot states
+  const [showChronotypePanel, setShowChronotypePanel] = useState(false);
+  const [chronotype, setChronotype] = useState<'morning' | 'balanced' | 'evening'>('morning');
+  const [isSuggestingSlots, setIsSuggestingSlots] = useState(false);
+  const [studySlotResult, setStudySlotResult] = useState<StudySlotResult | null>(null);
+  const [schedulingSlotIndex, setSchedulingSlotIndex] = useState<number | null>(null);
+
+  const handleGenerateSlots = async () => {
+    setIsSuggestingSlots(true);
+    try {
+      const result = await suggestStudySlots(events, pendingAssignments, chronotype, todayStr);
+      setStudySlotResult(result);
+    } catch (err) {
+      console.error('Failed to suggest study slots:', err);
+    } finally {
+      setIsSuggestingSlots(false);
+    }
+  };
+
+  const handleApplySlot = async (slot: StudySlotSuggestion, idx: number) => {
+    if (!onAddStudyBlock) return;
+    setSchedulingSlotIndex(idx);
+    try {
+      const startDateTime = `${todayStr}T${slot.startTime}:00`;
+      const endDateTime = `${todayStr}T${slot.endTime}:00`;
+      await onAddStudyBlock({
+        title: `📚 Focus: ${slot.taskName} (${slot.taskSubject})`,
+        description: `Scheduled via AI Chronotype Blocker.\nReason: ${slot.reason}`,
+        startDateTime,
+        endDateTime,
+      });
+      setStudySlotResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              suggestedSlots: prev.suggestedSlots.filter((_, i) => i !== idx),
+            }
+          : null
+      );
+    } catch (err) {
+      console.error('Error applying study slot:', err);
+    } finally {
+      setSchedulingSlotIndex(null);
+    }
+  };
 
   const canvasTimelineItems = allCanvasAssignments
     .filter((a) => a.dueAt === todayStr && !a.isCompleted)
@@ -119,6 +170,19 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
 
         <div className="flex items-center gap-2 shrink-0">
           <button
+            onClick={() => setShowChronotypePanel(!showChronotypePanel)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border ${
+              showChronotypePanel
+                ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                : 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 border-purple-200 dark:border-purple-800'
+            }`}
+            title="AI automatically finds calendar gaps and schedules study blocks based on your energy rhythm"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>⚡ AI Chronotype Blocker</span>
+          </button>
+
+          <button
             onClick={() => onOpenScheduleModal()}
             className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
           >
@@ -137,6 +201,128 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
           </button>
         </div>
       </div>
+
+      {/* AI Chronotype Focus Blocker Panel */}
+      {showChronotypePanel && (
+        <div className="bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/50 dark:from-indigo-950/30 dark:via-slate-900 dark:to-purple-950/20 rounded-2xl p-5 border border-indigo-100 dark:border-indigo-900/40 shadow-xs space-y-4 animate-in fade-in slide-in-from-top-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-indigo-100/80 dark:border-indigo-900/40">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span>AI Peak-Focus Chronotype Blocker</span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                AI analyzes your calendar gaps and pending tasks to schedule optimal focus windows during your peak alertness hours.
+              </p>
+            </div>
+
+            {/* Chronotype selection chips */}
+            <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+              <button
+                type="button"
+                onClick={() => setChronotype('morning')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                  chronotype === 'morning'
+                    ? 'bg-indigo-600 text-white shadow-2xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                🌅 Morning (7am-12pm)
+              </button>
+              <button
+                type="button"
+                onClick={() => setChronotype('balanced')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                  chronotype === 'balanced'
+                    ? 'bg-indigo-600 text-white shadow-2xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                ⚖️ Balanced
+              </button>
+              <button
+                type="button"
+                onClick={() => setChronotype('evening')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                  chronotype === 'evening'
+                    ? 'bg-indigo-600 text-white shadow-2xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                🌙 Night Owl (4pm-10pm)
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {pendingAssignments.length} pending tasks eligible for study scheduling
+            </span>
+            <button
+              onClick={handleGenerateSlots}
+              disabled={isSuggestingSlots}
+              className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${isSuggestingSlots ? 'animate-spin' : ''}`} />
+              <span>{isSuggestingSlots ? 'Calculating Gaps...' : 'Generate Study Blocks'}</span>
+            </button>
+          </div>
+
+          {/* Render Suggestions */}
+          {studySlotResult && (
+            <div className="space-y-3 pt-2">
+              {studySlotResult.chronotypeAdvice && (
+                <div className="p-3 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-xl text-xs text-indigo-900 dark:text-indigo-200 flex items-start gap-2">
+                  <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                  <span>{studySlotResult.chronotypeAdvice}</span>
+                </div>
+              )}
+
+              {studySlotResult.suggestedSlots.length === 0 ? (
+                <p className="text-xs text-slate-500 italic py-2">
+                  All suggested slots have been added to your calendar!
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {studySlotResult.suggestedSlots.map((slot, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs flex flex-col justify-between gap-2.5"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold font-mono text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{slot.startTime} - {slot.endTime}</span>
+                          </span>
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                            {slot.taskSubject}
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white mt-1.5">
+                          {slot.taskName}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                          {slot.reason}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => handleApplySlot(slot, idx)}
+                        disabled={schedulingSlotIndex === idx}
+                        className="w-full py-1.5 px-3 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-600 text-indigo-700 dark:text-indigo-300 hover:text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 border border-indigo-200 dark:border-indigo-800 transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>{schedulingSlotIndex === idx ? 'Scheduling...' : 'Add to Calendar'}</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Main Schedule Container */}
       <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs">

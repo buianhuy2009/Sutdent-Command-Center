@@ -119,6 +119,8 @@ export interface QuickDraftRequest {
   tone?: string;
   studentName?: string;
   language?: 'en' | 'vi' | 'other';
+  attachments?: { name: string; url: string }[];
+  links?: string[];
 }
 
 export interface QuickDraftResponse {

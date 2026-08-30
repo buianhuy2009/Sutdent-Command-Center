@@ -18,6 +18,7 @@ import {
 import confetti from 'canvas-confetti';
 import { Assignment, PriorityLevel, AssignmentStatus, ApiEnablementInfo } from '../types';
 import { ApiActivationBanner } from './ApiActivationBanner';
+import { estimateAssignmentEffort, EffortEstimate } from '../services/gemini';
 
 interface AssignmentTrackerTabProps {
   assignments: Assignment[];
@@ -63,6 +64,28 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
   const [isClearingDone, setIsClearingDone] = useState(false);
   const [showAiAdd, setShowAiAdd] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+
+  // AI Dynamic Priority & Effort state
+  const [effortEstimates, setEffortEstimates] = useState<Record<string, EffortEstimate>>({});
+  const [isEstimating, setIsEstimating] = useState(false);
+  const [sortByAIFocus, setSortByAIFocus] = useState(false);
+
+  const handleRunAIEstimates = async () => {
+    setIsEstimating(true);
+    try {
+      const estimates = await estimateAssignmentEffort(assignments);
+      const map: Record<string, EffortEstimate> = {};
+      estimates.forEach((e) => {
+        map[e.id] = e;
+      });
+      setEffortEstimates(map);
+      setSortByAIFocus(true);
+    } catch (err) {
+      console.error('Error running AI estimates:', err);
+    } finally {
+      setIsEstimating(false);
+    }
+  };
 
   // New assignment modal state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -189,11 +212,17 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
         return bDate - aDate;
       }
 
+      if (sortByAIFocus) {
+        const aOrder = effortEstimates[a.id]?.focusOrder ?? 999;
+        const bOrder = effortEstimates[b.id]?.focusOrder ?? 999;
+        if (aOrder !== bOrder) return aOrder - bOrder;
+      }
+
       return aDate - bDate;
     });
 
     return { filteredAssignments: filtered, oldCompletedCount: oldDone };
-  }, [assignments, searchQuery, filterSubject, filterStatus, filterPriority, showArchived]);
+  }, [assignments, searchQuery, filterSubject, filterStatus, filterPriority, showArchived, sortByAIFocus, effortEstimates]);
 
   // Calculate relative due date
   const getDueBadge = (dueDateStr: string) => {
@@ -306,6 +335,20 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
+
+          <button
+            onClick={handleRunAIEstimates}
+            disabled={isEstimating || assignments.length === 0}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors cursor-pointer ${
+              sortByAIFocus
+                ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
+                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-200 dark:border-amber-800'
+            }`}
+            title="AI predicts dynamic risk scores (1-10), estimated time, and prioritizes urgent tasks"
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${isEstimating ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{isEstimating ? 'Analyzing...' : sortByAIFocus ? 'AI Ranked' : '⚡ AI Ranker'}</span>
+          </button>
 
           <button
             onClick={() => setShowAiAdd(!showAiAdd)}
@@ -626,7 +669,29 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                                 Doc
                               </a>
                             )}
+                            {effortEstimates[assignment.id] && (
+                              <span
+                                className={`inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                  effortEstimates[assignment.id].riskScore >= 8
+                                    ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                                    : effortEstimates[assignment.id].riskScore >= 5
+                                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                                    : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                }`}
+                                title={effortEstimates[assignment.id].aiTip}
+                              >
+                                <Sparkles className="w-2.5 h-2.5" />
+                                <span>Risk {effortEstimates[assignment.id].riskScore}/10</span>
+                                <span className="font-normal opacity-80">• ~{effortEstimates[assignment.id].estimatedMinutes}m</span>
+                              </span>
+                            )}
                           </p>
+                          {effortEstimates[assignment.id]?.aiTip && (
+                            <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-1 flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 shrink-0 text-amber-500" />
+                              <span>AI Tip: {effortEstimates[assignment.id].aiTip}</span>
+                            </p>
+                          )}
                           {assignment.notes && (
                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
                               {assignment.notes}

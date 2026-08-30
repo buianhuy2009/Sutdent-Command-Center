@@ -17,9 +17,14 @@ import {
   Filter,
   MoreVertical,
   SlidersHorizontal,
+  Sparkles,
+  Clock,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { CanvasAssignment, CanvasSettings } from '../types';
 import { loadCompletedCanvasIds, saveCompletedCanvasIds, resolveCanvasUrl, toMobileDeepLink } from '../services/canvas';
+import { extractSubtasksFromCanvas, SubtaskResult } from '../services/gemini';
 
 interface CanvasSyncTabProps {
   settings: CanvasSettings;
@@ -31,7 +36,6 @@ interface CanvasSyncTabProps {
   onFetchCanvas: () => void;
   onSyncToSheet: (assignment: CanvasAssignment) => Promise<void>;
   onSyncAllPending: () => Promise<void>;
-  onCreateDocFromCanvas: (assignment: CanvasAssignment) => void;
   recentFiles?: any[];
   isGoogleConnected?: boolean;
   onSubmitAssignment?: (assignment: CanvasAssignment, fileId: string) => Promise<void>;
@@ -47,7 +51,6 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   onFetchCanvas,
   onSyncToSheet,
   onSyncAllPending,
-  onCreateDocFromCanvas,
   recentFiles = [],
   isGoogleConnected = true,
   onSubmitAssignment,
@@ -68,6 +71,12 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   const [selectedCourse, setSelectedCourse] = useState<string>('ALL');
   const [showFilters, setShowFilters] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  // AI Sub-task Extractor state
+  const [subtaskData, setSubtaskData] = useState<Record<string, SubtaskResult>>({});
+  const [extractingIds, setExtractingIds] = useState<Record<string, boolean>>({});
+  const [expandedSubtaskIds, setExpandedSubtaskIds] = useState<Set<string>>(new Set());
+  const [checkedSubtasks, setCheckedSubtasks] = useState<Record<string, Set<number>>>({});
   const [searchQuery, setSearchQuery] = useState('');
 
   // Google Drive submission state variables
@@ -718,17 +727,6 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
                       {activeMenuId === assignment.id && (
                         <div className="absolute right-0 bottom-full mb-1.5 w-48 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl shadow-xl py-1.5 z-30 animate-in fade-in zoom-in-95">
-                          <button
-                            onClick={() => {
-                              onCreateDocFromCanvas(assignment);
-                              setActiveMenuId(null);
-                            }}
-                            className="w-full px-3 py-2 text-xs text-left hover:bg-[#EFECE2] dark:hover:bg-[#252422] flex items-center gap-2 text-[#141413] dark:text-[#FAF9F5] transition-colors cursor-pointer"
-                          >
-                            <FileText className="w-3.5 h-3.5 text-[#D97757]" />
-                            <span>Start Google Doc (MLA)</span>
-                          </button>
-
                           {!assignment.isSynced && (
                             <button
                               onClick={() => {
@@ -741,10 +739,99 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                               <span>Sync to Master Sheet</span>
                             </button>
                           )}
+
+                          {/* AI Sub-task Extractor */}
+                          <button
+                            onClick={async () => {
+                              setActiveMenuId(null);
+                              if (subtaskData[assignment.id]) {
+                                // Toggle expand/collapse
+                                setExpandedSubtaskIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(assignment.id)) next.delete(assignment.id);
+                                  else next.add(assignment.id);
+                                  return next;
+                                });
+                                return;
+                              }
+                              setExtractingIds((prev) => ({ ...prev, [assignment.id]: true }));
+                              try {
+                                const result = await extractSubtasksFromCanvas(assignment);
+                                setSubtaskData((prev) => ({ ...prev, [assignment.id]: result }));
+                                setExpandedSubtaskIds((prev) => new Set(prev).add(assignment.id));
+                              } catch (err) {
+                                console.error('Sub-task extraction failed:', err);
+                              } finally {
+                                setExtractingIds((prev) => ({ ...prev, [assignment.id]: false }));
+                              }
+                            }}
+                            disabled={extractingIds[assignment.id]}
+                            className="w-full px-3 py-2 text-xs text-left hover:bg-[#EFECE2] dark:hover:bg-[#252422] flex items-center gap-2 text-[#141413] dark:text-[#FAF9F5] transition-colors cursor-pointer"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                            <span>{extractingIds[assignment.id] ? 'Extracting...' : subtaskData[assignment.id] ? 'Show Sub-tasks' : '⚡ Extract Sub-tasks'}</span>
+                          </button>
                         </div>
                       )}
                     </div>
                   </div>
+
+                  {/* AI Sub-task Checklist Panel */}
+                  {expandedSubtaskIds.has(assignment.id) && subtaskData[assignment.id] && (
+                    <div className="mt-3 p-3.5 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 rounded-xl space-y-2 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center justify-between">
+                        <h5 className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>AI Sub-tasks ({subtaskData[assignment.id].subtasks.length})</span>
+                          <span className="text-[10px] font-normal text-amber-600 dark:text-amber-400 ml-1">
+                            ~{subtaskData[assignment.id].totalEstimatedMinutes}min • {subtaskData[assignment.id].difficulty}
+                          </span>
+                        </h5>
+                        <button
+                          onClick={() => setExpandedSubtaskIds((prev) => { const n = new Set(prev); n.delete(assignment.id); return n; })}
+                          className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 p-0.5 cursor-pointer"
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="space-y-1">
+                        {subtaskData[assignment.id].subtasks
+                          .sort((a, b) => a.order - b.order)
+                          .map((st, idx) => {
+                            const checked = checkedSubtasks[assignment.id]?.has(idx) ?? false;
+                            return (
+                              <label
+                                key={idx}
+                                className={`flex items-start gap-2.5 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors group ${
+                                  checked
+                                    ? 'bg-emerald-100/60 dark:bg-emerald-950/40 line-through opacity-60'
+                                    : 'hover:bg-amber-100/60 dark:hover:bg-amber-900/30'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => {
+                                    setCheckedSubtasks((prev) => {
+                                      const set = new Set(prev[assignment.id] || []);
+                                      if (set.has(idx)) set.delete(idx); else set.add(idx);
+                                      return { ...prev, [assignment.id]: set };
+                                    });
+                                  }}
+                                  className="mt-0.5 w-3.5 h-3.5 rounded border-amber-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-xs text-[#141413] dark:text-[#FAF9F5] font-medium">{st.title}</span>
+                                  <span className="text-[10px] text-amber-600 dark:text-amber-400 ml-1.5 inline-flex items-center gap-0.5">
+                                    <Clock className="w-2.5 h-2.5" />{st.estimatedMinutes}m
+                                  </span>
+                                </div>
+                              </label>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );

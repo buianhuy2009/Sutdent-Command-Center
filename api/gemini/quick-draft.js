@@ -25,6 +25,8 @@ export default async function handler(req, res) {
       tone,
       studentName,
       language,
+      attachments,
+      links,
     } = req.body || {};
     const ai = getGenAI();
 
@@ -41,6 +43,8 @@ Parameters:
 - Topic / Specific Details: ${topic || ""}
 - Student's Context / Notes: ${studentNotes || "None"}
 - Desired Tone: ${tone || "Polite & Respectful / Lịch sự, tôn trọng"}
+- Google Drive Attachments: ${JSON.stringify(attachments || [])}
+- Included Links: ${JSON.stringify(links || [])}
 
 Guidelines:
 1. If drafting in Vietnamese:
@@ -48,6 +52,8 @@ Guidelines:
 2. If drafting in English:
    - Use standard formal academic greeting (e.g. "Dear Professor [Name],", "I am writing regarding...").
 3. Get straight to the point in the opening sentence.
+4. If Google Drive attachments are provided, refer to them naturally in the email body (e.g. "I have attached the document [File Name] (link: [File Link]) for your review").
+5. If links are provided, reference them naturally in the text.
 
 Respond with valid JSON:
 {

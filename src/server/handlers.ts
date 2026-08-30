@@ -251,6 +251,8 @@ export async function handleQuickDraft(req: any, res: any) {
       tone,
       studentName,
       language,
+      attachments,
+      links,
     } = req.body || {};
     const ai = getGenAI();
 
@@ -267,6 +269,8 @@ Parameters:
 - Topic / Specific Details: ${topic || ""}
 - Student's Context / Notes: ${studentNotes || "None"}
 - Desired Tone: ${tone || "Polite & Respectful / Lịch sự, tôn trọng"}
+- Google Drive Attachments: ${JSON.stringify(attachments || [])}
+- Included Links: ${JSON.stringify(links || [])}
 
 Guidelines:
 1. If drafting in Vietnamese:
@@ -274,6 +278,8 @@ Guidelines:
 2. If drafting in English:
    - Use standard formal academic greeting (e.g. "Dear Professor [Name],", "I am writing regarding...").
 3. Get straight to the point in the opening sentence.
+4. If Google Drive attachments are provided, refer to them naturally in the email body (e.g. "I have attached the document [File Name] (link: [File Link]) for your review").
+5. If links are provided, reference them naturally in the text.
 
 Respond with valid JSON:
 {
@@ -420,6 +426,175 @@ ${JSON.stringify(context || {}, null, 2)}`;
     res.status(200).json({
       reply:
         "I am ready to help you plan your study blocks, organize your assignments, and draft emails to your teachers! Let me know which task or class you want to tackle first.",
+    });
+  }
+}
+
+// 7. AI Smart-Breakdown Task Extractor (Canvas)
+export async function handleExtractSubtasks(req: any, res: any) {
+  if (setCorsHeaders(req, res)) return;
+  try {
+    const { assignmentName, courseName, description, dueAt, pointsPossible } = req.body || {};
+    if (!assignmentName) {
+      return res.status(400).json({ error: "Assignment name is required" });
+    }
+
+    const ai = getGenAI();
+    const prompt = `You are an AI academic task planner for a student command center.
+Given the following Canvas LMS assignment, break it down into a clear, ordered checklist of actionable sub-tasks that a student can follow step-by-step to complete the assignment.
+
+Assignment Details:
+- Name: ${assignmentName}
+- Course: ${courseName || "Unknown"}
+- Due Date: ${dueAt || "Not specified"}
+- Points: ${pointsPossible || "N/A"}
+- Description / Instructions:
+${description || "No description provided. Infer reasonable sub-tasks from the assignment name."}
+
+Guidelines:
+1. Extract 3-8 concrete, actionable sub-tasks (not vague like "do research" — be specific like "Find 3 peer-reviewed sources on [topic]").
+2. Order them logically (research first, then draft, then review, then submit).
+3. For each sub-task, estimate minutes needed.
+4. If the description is in Vietnamese, write sub-tasks in Vietnamese. Otherwise use English.
+
+Respond with valid JSON:
+{
+  "subtasks": [
+    { "title": "Clear actionable sub-task title", "estimatedMinutes": 20, "order": 1 },
+    { "title": "Another sub-task", "estimatedMinutes": 15, "order": 2 }
+  ],
+  "totalEstimatedMinutes": 60,
+  "difficulty": "Easy" | "Medium" | "Hard"
+}
+Return only JSON.`;
+
+    const response = await ai.models.generateContent({
+      model: process.env.GEMINI_MODEL || "gemini-3.6-flash",
+      contents: prompt,
+      config: { responseMimeType: "application/json" },
+    });
+
+    const parsed = JSON.parse(response.text || "{}");
+    res.status(200).json(parsed);
+  } catch (err: any) {
+    console.error("Extract subtasks error:", err);
+    res.status(200).json({
+      subtasks: [
+        { title: "Read the assignment instructions carefully", estimatedMinutes: 10, order: 1 },
+        { title: "Research and gather materials", estimatedMinutes: 30, order: 2 },
+        { title: "Create first draft", estimatedMinutes: 45, order: 3 },
+        { title: "Review, proofread, and finalize", estimatedMinutes: 20, order: 4 },
+        { title: "Submit before deadline", estimatedMinutes: 5, order: 5 },
+      ],
+      totalEstimatedMinutes: 110,
+      difficulty: "Medium",
+    });
+  }
+}
+
+// 8. Dynamic Priority & Effort Estimator (Assignment Tracker)
+export async function handleEstimateEffort(req: any, res: any) {
+  if (setCorsHeaders(req, res)) return;
+  try {
+    const { assignments } = req.body || {};
+    if (!assignments || !Array.isArray(assignments) || assignments.length === 0) {
+      return res.status(200).json({ estimates: [] });
+    }
+
+    const ai = getGenAI();
+    const today = new Date().toISOString().split("T")[0];
+    const prompt = `You are an AI academic advisor. Analyze the following student assignments and for each one, calculate:
+1. A dynamic "riskScore" from 1-10 based on: how close the due date is to today (${today}), the assignment type difficulty, and current status.
+2. An "estimatedMinutes" for how long the task should take.
+3. A recommended "focusOrder" (1 = do first, 2 = do second, etc.)
+4. A short "aiTip" (max 12 words) with specific advice.
+
+Assignments:
+${JSON.stringify(assignments.map((a: any) => ({
+  id: a.id, name: a.assignmentName, subject: a.subject, dueDate: a.dueDate, priority: a.priority, status: a.status, estimatedMinutes: a.estimatedMinutes,
+})), null, 2)}
+
+Respond with valid JSON:
+{
+  "estimates": [
+    { "id": "matching assignment id", "riskScore": 8, "estimatedMinutes": 45, "focusOrder": 1, "aiTip": "Due tomorrow — start the outline now" }
+  ]
+}
+Return only JSON.`;
+
+    const response = await ai.models.generateContent({
+      model: process.env.GEMINI_MODEL || "gemini-3.6-flash",
+      contents: prompt,
+      config: { responseMimeType: "application/json" },
+    });
+
+    const parsed = JSON.parse(response.text || "{}");
+    res.status(200).json(parsed);
+  } catch (err: any) {
+    console.error("Estimate effort error:", err);
+    const fallback = ((req.body && req.body.assignments) || []).map((a: any, i: number) => {
+      const daysLeft = Math.max(0, Math.floor((new Date(a.dueDate).getTime() - Date.now()) / 86400000));
+      const riskScore = Math.min(10, Math.max(1, 10 - daysLeft));
+      return {
+        id: a.id, riskScore, estimatedMinutes: a.estimatedMinutes || 45, focusOrder: i + 1,
+        aiTip: daysLeft <= 1 ? "Due very soon — start immediately" : daysLeft <= 3 ? "Due this week — prioritize" : "On track — plan ahead",
+      };
+    });
+    res.status(200).json({ estimates: fallback });
+  }
+}
+
+// 9. AI Peak-Focus Chronotype Study Slot Suggester (Daily Schedule)
+export async function handleSuggestStudySlots(req: any, res: any) {
+  if (setCorsHeaders(req, res)) return;
+  try {
+    const { existingEvents, pendingTasks, chronotype, date } = req.body || {};
+    const ai = getGenAI();
+    const targetDate = date || new Date().toISOString().split("T")[0];
+    const prompt = `You are an AI study planner that schedules optimal focus blocks for a student.
+
+Today's date: ${targetDate}
+Student chronotype preference: ${chronotype || "balanced (no preference)"}
+
+Existing calendar events today (DO NOT overlap with these):
+${JSON.stringify(existingEvents || [], null, 2)}
+
+Pending tasks that need study time:
+${JSON.stringify((pendingTasks || []).map((t: any) => ({
+  name: t.assignmentName || t.name, subject: t.subject || t.courseName, dueDate: t.dueDate || t.dueAt, priority: t.priority, estimatedMinutes: t.estimatedMinutes || 45,
+})), null, 2)}
+
+Guidelines:
+1. Suggest 2-4 study blocks of 25-50 minutes each with 5-10 min breaks between them.
+2. If chronotype is "morning", prefer slots 7am-12pm. If "evening", prefer 4pm-10pm. If "balanced", spread across the day.
+3. Avoid overlapping with existing events. Leave at least 15 min buffer.
+4. Assign the highest-priority pending task to the first suggested slot.
+
+Respond with valid JSON:
+{
+  "suggestedSlots": [
+    { "startTime": "09:00", "endTime": "09:45", "taskName": "Task name", "taskSubject": "Subject", "reason": "Brief reason" }
+  ],
+  "chronotypeAdvice": "Short personalized tip about their study pattern"
+}
+Return only JSON.`;
+
+    const response = await ai.models.generateContent({
+      model: process.env.GEMINI_MODEL || "gemini-3.6-flash",
+      contents: prompt,
+      config: { responseMimeType: "application/json" },
+    });
+
+    const parsed = JSON.parse(response.text || "{}");
+    res.status(200).json(parsed);
+  } catch (err: any) {
+    console.error("Suggest study slots error:", err);
+    res.status(200).json({
+      suggestedSlots: [
+        { startTime: "09:00", endTime: "09:45", taskName: "Study Block 1", taskSubject: "General", reason: "Morning focus window" },
+        { startTime: "14:00", endTime: "14:45", taskName: "Study Block 2", taskSubject: "General", reason: "Afternoon review session" },
+      ],
+      chronotypeAdvice: "Try studying during your most alert hours for best results!",
     });
   }
 }

@@ -1,4 +1,4 @@
-import { EmailAlert, EmailMessage, QuickDraftRequest, QuickDraftResponse, Assignment } from '../types';
+import { EmailAlert, EmailMessage, QuickDraftRequest, QuickDraftResponse, Assignment, CanvasAssignment, CalendarEvent } from '../types';
 
 export async function summarizeEmailsWithGemini(emails: EmailMessage[]): Promise<EmailAlert[]> {
   try {
@@ -24,7 +24,6 @@ export async function summarizeEmailsWithGemini(emails: EmailMessage[]): Promise
     return alerts;
   } catch (error) {
     console.error('Error calling summarize emails API:', error);
-    // Fallback alerts
     return emails.map((e) => ({
       id: e.id,
       sender: e.sender,
@@ -88,4 +87,91 @@ export async function sendStudyAssistantMessage(
 
   const data = await res.json();
   return data.reply || "I'm here to help you stay ahead in all your classes!";
+}
+
+// AI Smart-Breakdown Task Extractor
+export interface SubtaskResult {
+  subtasks: { title: string; estimatedMinutes: number; order: number }[];
+  totalEstimatedMinutes: number;
+  difficulty: string;
+}
+
+export async function extractSubtasksFromCanvas(assignment: CanvasAssignment): Promise<SubtaskResult> {
+  const res = await fetch('/api/gemini/extract-subtasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      assignmentName: assignment.name,
+      courseName: assignment.courseName,
+      description: assignment.description,
+      dueAt: assignment.dueAt,
+      pointsPossible: assignment.pointsPossible,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Extract subtasks error: ${res.statusText}`);
+  }
+
+  return await res.json();
+}
+
+// Dynamic Priority & Effort Estimator
+export interface EffortEstimate {
+  id: string;
+  riskScore: number;
+  estimatedMinutes: number;
+  focusOrder: number;
+  aiTip: string;
+}
+
+export async function estimateAssignmentEffort(assignments: Assignment[]): Promise<EffortEstimate[]> {
+  const notDone = assignments.filter((a) => a.status !== 'Done');
+  if (notDone.length === 0) return [];
+
+  const res = await fetch('/api/gemini/estimate-effort', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ assignments: notDone }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Estimate effort error: ${res.statusText}`);
+  }
+
+  const data = await res.json();
+  return data.estimates || [];
+}
+
+// AI Peak-Focus Chronotype Study Slot Suggester
+export interface StudySlotSuggestion {
+  startTime: string;
+  endTime: string;
+  taskName: string;
+  taskSubject: string;
+  reason: string;
+}
+
+export interface StudySlotResult {
+  suggestedSlots: StudySlotSuggestion[];
+  chronotypeAdvice: string;
+}
+
+export async function suggestStudySlots(
+  existingEvents: CalendarEvent[],
+  pendingTasks: Assignment[],
+  chronotype?: string,
+  date?: string
+): Promise<StudySlotResult> {
+  const res = await fetch('/api/gemini/suggest-study-slots', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ existingEvents, pendingTasks, chronotype, date }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Suggest study slots error: ${res.statusText}`);
+  }
+
+  return await res.json();
 }

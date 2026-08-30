@@ -10,8 +10,12 @@ import {
   ExternalLink,
   Save,
   Globe,
+  Link,
+  Paperclip,
+  Trash2,
+  Plus,
 } from 'lucide-react';
-import { QuickDraftRequest, QuickDraftResponse, EmailMessage, EmailAlert } from '../types';
+import { QuickDraftRequest, QuickDraftResponse, EmailMessage, EmailAlert, SchoolFile } from '../types';
 
 interface QuickDraftModalProps {
   isOpen: boolean;
@@ -21,6 +25,7 @@ interface QuickDraftModalProps {
   onGenerateDraft: (req: QuickDraftRequest) => Promise<QuickDraftResponse>;
   onSaveToGmailDrafts?: (to: string, subject: string, body: string) => Promise<void>;
   isSavingDraft?: boolean;
+  recentFiles?: SchoolFile[];
 }
 
 export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
@@ -31,6 +36,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
   onGenerateDraft,
   onSaveToGmailDrafts,
   isSavingDraft = false,
+  recentFiles = [],
 }) => {
   const [teacherName, setTeacherName] = useState('');
   const [teacherEmail, setTeacherEmail] = useState('');
@@ -46,6 +52,12 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
   const [generatedSubject, setGeneratedSubject] = useState('');
   const [generatedBody, setGeneratedBody] = useState('');
   const [copied, setCopied] = useState(false);
+
+  // Auto Gmail Drafter attachments & links states
+  const [selectedFiles, setSelectedFiles] = useState<SchoolFile[]>([]);
+  const [customLinks, setCustomLinks] = useState<string[]>([]);
+  const [newLinkText, setNewLinkText] = useState('');
+  const [fileSearchQuery, setFileSearchQuery] = useState('');
 
   // Pre-fill if email or alert provided
   useEffect(() => {
@@ -89,6 +101,8 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
         draftType: intent,
         tone: tone === 'polite_respectful' ? 'Polite & Respectful' : tone === 'formal' ? 'Formal Academic' : 'Brief',
         language,
+        attachments: selectedFiles.map((f) => ({ name: f.name, url: f.webViewLink })),
+        links: customLinks,
       });
 
       setGeneratedSubject(res.subject);
@@ -143,12 +157,12 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                {language === 'vi' ? 'Trợ lý Soạn Email Thầy Cô' : 'Teacher Quick Draft Assistant'}
+                {language === 'vi' ? 'Trình Soạn Thư Lịch Sự (Polite Mailer)' : 'Polite Mailer Assistant'}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {language === 'vi'
-                  ? 'AI tự động soạn email kính trọng, chuẩn mực lễ nghi học vụ Việt Nam & Quốc tế.'
-                  : 'AI generates polite, academic emails with appropriate student etiquette.'}
+                  ? 'AI tự động chuyển đổi nháp nháp ngắn, tài liệu Drive và liên kết thành email học vụ lịch sự, chuẩn mực.'
+                  : 'AI drafts polite, formal academic emails from your informal drafts, attachments, and links.'}
               </p>
             </div>
           </div>
@@ -257,6 +271,131 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
               }
               className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 dark:text-white"
             />
+          </div>
+
+          {/* File attachments & Custom reference links */}
+          <div className="space-y-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+            <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <Paperclip className="w-3.5 h-3.5 text-rose-500" />
+              <span>{language === 'vi' ? 'Tài liệu Đính kèm & Đường dẫn' : 'Attachments & Reference Links'}</span>
+            </h4>
+
+            {/* Selected items badges */}
+            {(selectedFiles.length > 0 || customLinks.length > 0) && (
+              <div className="flex flex-wrap gap-1.5 pb-2 border-b border-slate-200/60 dark:border-slate-700/60">
+                {selectedFiles.map((file) => (
+                  <span
+                    key={file.id}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-lg border border-blue-200 dark:border-blue-800"
+                  >
+                    <Paperclip className="w-3 h-3 text-blue-500" />
+                    <span className="truncate max-w-[120px]">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFiles(selectedFiles.filter((f) => f.id !== file.id))}
+                      className="text-blue-400 hover:text-blue-600 dark:hover:text-blue-200 font-bold ml-1 cursor-pointer"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+
+                {customLinks.map((link, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 rounded-lg border border-emerald-200 dark:border-emerald-800"
+                  >
+                    <Link className="w-3 h-3 text-emerald-500" />
+                    <span className="truncate max-w-[120px]" title={link}>
+                      {link.replace(/^https?:\/\//i, '')}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCustomLinks(customLinks.filter((_, i) => i !== idx))}
+                      className="text-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-200 font-bold ml-1 cursor-pointer"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              {/* Google Drive Selection */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  {language === 'vi' ? 'Chọn tài liệu từ Google Drive' : 'Attach from Google Drive'}
+                </label>
+                {recentFiles.length === 0 ? (
+                  <span className="text-[10px] text-slate-400 block py-1.5">
+                    {language === 'vi' ? 'Chưa kết nối Drive / Không có tài liệu' : 'No Drive files loaded'}
+                  </span>
+                ) : (
+                  <div className="flex gap-1.5">
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const fileId = e.target.value;
+                        if (!fileId) return;
+                        const fileObj = recentFiles.find((f) => f.id === fileId);
+                        if (fileObj && !selectedFiles.some((f) => f.id === fileId)) {
+                          setSelectedFiles([...selectedFiles, fileObj]);
+                        }
+                        e.target.value = "";
+                      }}
+                      className="flex-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 cursor-pointer outline-none focus:ring-1 focus:ring-rose-500 truncate"
+                    >
+                      <option value="">
+                        {language === 'vi' ? '-- Chọn file Drive gần đây --' : '-- Choose recent Drive file --'}
+                      </option>
+                      {recentFiles.map((file) => (
+                        <option key={file.id} value={file.id}>
+                          {file.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* Add Custom URL Link */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  {language === 'vi' ? 'Thêm liên kết (URL, Github, Vercel...)' : 'Add custom URL link'}
+                </label>
+                <div className="flex gap-1.5">
+                  <input
+                    type="url"
+                    value={newLinkText}
+                    onChange={(e) => setNewLinkText(e.target.value)}
+                    placeholder="https://..."
+                    className="flex-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-rose-500 outline-none"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newLinkText.trim() && !customLinks.includes(newLinkText.trim())) {
+                          setCustomLinks([...customLinks, newLinkText.trim()]);
+                          setNewLinkText('');
+                        }
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newLinkText.trim() && !customLinks.includes(newLinkText.trim())) {
+                        setCustomLinks([...customLinks, newLinkText.trim()]);
+                        setNewLinkText('');
+                      }
+                    }}
+                    className="px-2.5 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl text-slate-800 dark:text-slate-200 font-bold transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Tone Selector & Generate Button */}
