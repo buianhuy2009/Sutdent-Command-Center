@@ -229,18 +229,40 @@ export async function fetchCanvasAssignmentsFromApi(
     });
 }
 
+const LOCAL_STORAGE_CANVAS_COMPLETED_KEY = 'scc_canvas_completed_ids_v1';
+
+export function loadCompletedCanvasIds(): string[] {
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_CANVAS_COMPLETED_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch (e) {
+    console.error('Error loading completed Canvas IDs:', e);
+  }
+  return [];
+}
+
+export function saveCompletedCanvasIds(ids: string[]) {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_CANVAS_COMPLETED_KEY, JSON.stringify(ids));
+  } catch (e) {
+    console.error('Error saving completed Canvas IDs:', e);
+  }
+}
+
 /**
- * Cross-reference Canvas assignments with Master Google Sheet assignments
+ * Cross-reference Canvas assignments with Master Google Sheet assignments and completion status
  */
 export function crossReferenceCanvasWithSheet(
   canvasList: CanvasAssignment[],
-  sheetAssignments: Assignment[]
+  sheetAssignments: Assignment[],
+  completedIds: string[] = loadCompletedCanvasIds()
 ): CanvasAssignment[] {
   if (!Array.isArray(canvasList)) return [];
-  if (!Array.isArray(sheetAssignments)) return canvasList;
+
+  const completedSet = new Set(completedIds);
 
   return canvasList.map((canvasItem) => {
-    const isAlreadyInSheet = sheetAssignments.some((sheetItem) => {
+    const matchingSheetItem = (sheetAssignments || []).find((sheetItem) => {
       const nameMatch =
         sheetItem.assignmentName.toLowerCase().trim() ===
         canvasItem.name.toLowerCase().trim();
@@ -250,9 +272,14 @@ export function crossReferenceCanvasWithSheet(
       return nameMatch || (courseMatch && sheetItem.dueDate === canvasItem.dueAt);
     });
 
+    const isAlreadyInSheet = Boolean(matchingSheetItem);
+    const isDoneInSheet = matchingSheetItem?.status === 'Done';
+    const isCompleted = completedSet.has(canvasItem.id) || isDoneInSheet || Boolean(canvasItem.isCompleted);
+
     return {
       ...canvasItem,
       isSynced: isAlreadyInSheet,
+      isCompleted,
     };
   });
 }

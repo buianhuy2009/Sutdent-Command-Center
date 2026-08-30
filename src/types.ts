@@ -92,6 +92,7 @@ export interface CanvasAssignment {
   htmlUrl?: string;
   description?: string;
   isSynced: boolean;
+  isCompleted?: boolean;
   submissionTypes?: string[];
 }
 

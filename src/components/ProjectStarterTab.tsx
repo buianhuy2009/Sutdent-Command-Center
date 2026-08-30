@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   FileText,
   Plus,
@@ -6,12 +6,10 @@ import {
   RefreshCw,
   Folder,
   CheckCircle2,
-  Clock,
   Sparkles,
-  BookOpen,
-  Copy,
   Trash2,
-  ShieldAlert,
+  Search,
+  Layers,
 } from 'lucide-react';
 import { CreateDocParams, SchoolFile, ApiEnablementInfo } from '../types';
 import { ApiActivationBanner } from './ApiActivationBanner';
@@ -41,24 +39,20 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
   driveApiInfo,
   onOpenActivationModal,
 }) => {
-  // Create Doc Form State
+  // Create Doc Form State - clean defaults (no pre-filled dummy content)
   const [docTitle, setDocTitle] = useState('');
-  const [docSubject, setDocSubject] = useState('AP US History');
+  const [docSubject, setDocSubject] = useState('');
   const [formatStyle, setFormatStyle] = useState<'MLA' | 'APA' | 'Academic Standard'>('MLA');
   const [teacherName, setTeacherName] = useState('');
   const [studentName, setStudentName] = useState('');
-  const [objectives, setObjectives] = useState(
-    '1. Analyze primary and secondary source arguments with critical context.\n2. Develop a defensible thesis statement with structured evidentiary paragraphs.\n3. Follow formal academic citation guidelines.'
-  );
-  const [checklistItems, setChecklistItems] = useState<string[]>([
-    'Synthesize core thesis & prompt guidelines',
-    'Compile at least 4 verified references / citations',
-    'Draft body paragraphs with textual evidence',
-    'Self-review against rubric standards',
-    'Final proofread and bibliography formatting',
-  ]);
+  const [objectives, setObjectives] = useState('');
+  const [checklistItems, setChecklistItems] = useState<string[]>([]);
   const [newChecklistText, setNewChecklistText] = useState('');
   const [createdDocUrl, setCreatedDocUrl] = useState<string | null>(null);
+
+  // Drive files categorization & search
+  const [fileCategory, setFileCategory] = useState<'ALL' | 'DOCS' | 'SHEETS' | 'SLIDES' | 'PDF'>('ALL');
+  const [fileSearchQuery, setFileSearchQuery] = useState('');
 
   const handleAddChecklistItem = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +71,7 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
 
     const url = await onCreateDoc({
       title: docTitle.trim(),
-      subject: docSubject.trim(),
+      subject: docSubject.trim() || 'General',
       formatStyle,
       teacherName: teacherName.trim() || undefined,
       studentName: studentName.trim() || undefined,
@@ -142,19 +136,59 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
     );
   };
 
+  // Drive Categorization Counts
+  const docsCount = useMemo(
+    () => recentFiles.filter((f) => f.mimeType.includes('document') || f.mimeType.includes('docx')).length,
+    [recentFiles]
+  );
+  const sheetsCount = useMemo(
+    () => recentFiles.filter((f) => f.mimeType.includes('spreadsheet') || f.mimeType.includes('sheet')).length,
+    [recentFiles]
+  );
+  const slidesCount = useMemo(
+    () => recentFiles.filter((f) => f.mimeType.includes('presentation') || f.mimeType.includes('slides')).length,
+    [recentFiles]
+  );
+  const pdfCount = useMemo(
+    () => recentFiles.filter((f) => f.mimeType.includes('pdf')).length,
+    [recentFiles]
+  );
+
+  // Categorized & Filtered files
+  const filteredFiles = useMemo(() => {
+    return recentFiles.filter((file) => {
+      const isDoc = file.mimeType.includes('document') || file.mimeType.includes('docx');
+      const isSheet = file.mimeType.includes('spreadsheet') || file.mimeType.includes('sheet');
+      const isSlide = file.mimeType.includes('presentation') || file.mimeType.includes('slides');
+      const isPdf = file.mimeType.includes('pdf');
+
+      if (fileCategory === 'DOCS' && !isDoc) return false;
+      if (fileCategory === 'SHEETS' && !isSheet) return false;
+      if (fileCategory === 'SLIDES' && !isSlide) return false;
+      if (fileCategory === 'PDF' && !isPdf) return false;
+
+      if (fileSearchQuery.trim()) {
+        const q = fileSearchQuery.toLowerCase();
+        if (!file.name.toLowerCase().includes(q)) return false;
+      }
+
+      return true;
+    });
+  }, [recentFiles, fileCategory, fileSearchQuery]);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Top Section: Recent Google Drive & School Files */}
+      {/* Top Section: Recent Google Drive Files with Category Organization */}
       <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs">
-        <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 bg-blue-500 rounded-full" />
             <h2 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm uppercase tracking-wider">
-              Recent Google Drive Files
+              Google Drive Files
             </h2>
             {isGoogleConnected && recentFiles.length > 0 && (
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                {recentFiles.length} Live Files
+                {recentFiles.length} Total
               </span>
             )}
           </div>
@@ -163,24 +197,25 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
             <button
               onClick={onRefreshFiles}
               disabled={isLoadingFiles}
-              className="p-1.5 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
-              title="Refresh Google Drive"
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingFiles ? 'animate-spin text-indigo-500' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingFiles ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
             </button>
+
             <a
               href="https://drive.google.com"
               target="_blank"
               rel="noreferrer"
-              className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 inline-flex items-center gap-1 px-2 py-1 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
             >
-              <span>Drive Web</span>
-              <ExternalLink className="w-3 h-3" />
+              <span>Open Drive</span>
+              <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
         </div>
 
-        {/* API Disabled or Error Alert if Drive API failed */}
+        {/* API Disabled or Error Banner */}
         {driveApiInfo ? (
           <div className="mt-4">
             <ApiActivationBanner
@@ -190,7 +225,7 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
             />
           </div>
         ) : driveError ? (
-          <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200">
+          <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
               <span>{driveError}</span>
@@ -206,6 +241,56 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
           </div>
         ) : null}
 
+        {/* Category Filter Tabs & Search Bar */}
+        {isGoogleConnected && recentFiles.length > 0 && (
+          <div className="mt-4 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* Category Pills */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  { id: 'ALL', label: 'All Files', count: recentFiles.length },
+                  { id: 'DOCS', label: 'Docs', count: docsCount },
+                  { id: 'SHEETS', label: 'Sheets', count: sheetsCount },
+                  { id: 'SLIDES', label: 'Slides', count: slidesCount },
+                  { id: 'PDF', label: 'PDFs', count: pdfCount },
+                ].map((tab) => {
+                  const isActive = fileCategory === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setFileCategory(tab.id as any)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                        isActive
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                      }`}>
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Search bar */}
+              <div className="relative sm:w-64">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Filter Drive files..."
+                  value={fileSearchQuery}
+                  onChange={(e) => setFileSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-200"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Files Cards */}
         <div className="mt-4">
           {!isGoogleConnected ? (
@@ -213,7 +298,7 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
               <Folder className="w-10 h-10 mx-auto text-indigo-500 mb-2 opacity-80" />
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">Google Workspace Disconnected</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
-                Connect your Google account with Drive permissions to see and sync all your Google Docs, Sheets, and files live.
+                Connect your Google account with Drive permissions to view and categorize your school documents live.
               </p>
               {onConnectGoogle && (
                 <button
@@ -230,24 +315,19 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
               <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
               <p className="text-xs font-medium">Scanning Google Drive for recent documents...</p>
             </div>
-          ) : recentFiles.length === 0 ? (
+          ) : filteredFiles.length === 0 ? (
             <div className="py-8 px-4 text-center bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
               <FileText className="w-8 h-8 mx-auto text-slate-400 mb-2" />
-              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">No Recent Documents Found</h3>
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                {fileSearchQuery ? `No files match "${fileSearchQuery}"` : 'No files in this category'}
+              </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Create a new document below or in Google Docs, and click refresh to sync.
               </p>
-              <button
-                onClick={onRefreshFiles}
-                className="mt-3 px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                <RefreshCw className="w-3 h-3" />
-                <span>Refresh Drive</span>
-              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {recentFiles.map((file) => (
+              {filteredFiles.map((file) => (
                 <div
                   key={file.id}
                   id={`recent-file-${file.id}`}
@@ -356,7 +436,7 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
                 required
                 value={docSubject}
                 onChange={(e) => setDocSubject(e.target.value)}
-                placeholder="e.g. AP US History"
+                placeholder="e.g. AP US History, Physics, Literature..."
                 className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
               />
             </div>
@@ -415,7 +495,7 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
               rows={3}
               value={objectives}
               onChange={(e) => setObjectives(e.target.value)}
-              placeholder="Outline the core targets and prompt rules..."
+              placeholder="List key objectives or rubric requirements (optional)..."
               className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
             />
           </div>
@@ -427,68 +507,74 @@ export const ProjectStarterTab: React.FC<ProjectStarterTabProps> = ({
             </label>
 
             {/* Checklist Items list */}
-            <div className="space-y-2 mb-3">
-              {checklistItems.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between gap-2 p-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-4 h-4 rounded border border-slate-300 dark:border-slate-600 flex items-center justify-center text-[10px] text-slate-400 shrink-0 font-mono">
-                      {idx + 1}
-                    </span>
-                    <span className="text-slate-800 dark:text-slate-200 truncate">{item}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveChecklistItem(idx)}
-                    className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer"
-                    title="Remove item"
+            {checklistItems.length === 0 ? (
+              <div className="py-4 px-3 mb-3 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-400 dark:text-slate-500">
+                No milestone steps added yet. Add custom milestone steps below.
+              </div>
+            ) : (
+              <div className="space-y-2 mb-3">
+                {checklistItems.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between gap-2 p-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-4 h-4 rounded border border-slate-300 dark:border-slate-600 flex items-center justify-center text-[10px] text-slate-400 shrink-0 font-mono">
+                        {idx + 1}
+                      </span>
+                      <span className="text-slate-800 dark:text-slate-200 truncate">{item}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveChecklistItem(idx)}
+                      className="text-slate-400 hover:text-rose-500 p-1 cursor-pointer"
+                      title="Remove item"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
-            {/* Add checklist input */}
-            <div className="flex items-center gap-2">
+            {/* Add Step Input */}
+            <div className="flex gap-2">
               <input
                 type="text"
                 value={newChecklistText}
                 onChange={(e) => setNewChecklistText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (newChecklistText.trim()) {
+                      setChecklistItems([...checklistItems, newChecklistText.trim()]);
+                      setNewChecklistText('');
+                    }
+                  }
+                }}
                 placeholder="Add custom milestone step (e.g. 'Draft bibliography')..."
-                className="flex-1 px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white"
+                className="flex-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl dark:text-white"
               />
               <button
                 type="button"
                 onClick={handleAddChecklistItem}
-                className="px-3 py-1.5 text-xs font-semibold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-800 dark:text-slate-100 rounded-lg cursor-pointer"
+                className="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer"
               >
-                + Add Step
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Step</span>
               </button>
             </div>
           </div>
 
-          {/* Submit Action */}
-          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
+          {/* Submit Button */}
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
             <button
-              id="btn-submit-create-doc"
               type="submit"
               disabled={isCreatingDoc || !docTitle.trim()}
-              className="px-5 py-2.5 text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl shadow-md shadow-indigo-500/20 inline-flex items-center gap-2 transition-colors cursor-pointer"
+              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
             >
-              {isCreatingDoc ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Creating Google Doc in Drive...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Create Assignment Doc in Drive</span>
-                </>
-              )}
+              <FileText className="w-4 h-4" />
+              <span>{isCreatingDoc ? 'Formatting & Generating Doc...' : 'Generate Google Doc'}</span>
             </button>
           </div>
         </form>

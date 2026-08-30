@@ -150,6 +150,23 @@ Return only JSON, no markdown formatting.`;
 
     const responseText = response.text || "{}";
     const parsed = JSON.parse(responseText);
+    const nonAcademicTest = /unsubscribe|opt-?out|view in browser|khuyến mãi|voucher|giảm giá|shopee|tiki|lazada|grab|tiktok|facebook|instagram|youtube|twitter|linkedin|reddit|discord|spotify|netflix|duolingo|grammarly|canva|receipt|invoice|payment received|mã otp/i;
+    const academicTest = /professor|prof\.|teacher|giáo viên|thầy|cô|giảng viên|bài tập|assignment|homework|exam|kiểm tra|thi học kỳ|canvas|google classroom|moodle|blackboard|syllabus|hạn nộp|nộp bài|lab report/i;
+    if (parsed.alerts && Array.isArray(parsed.alerts)) {
+      parsed.alerts = parsed.alerts.map((alert: any) => {
+        const raw = emails.find((e: any) => e.id === alert.id);
+        const fullText = `${alert.sender || ""} ${alert.subject || ""} ${raw?.snippet || ""}`.toLowerCase();
+        if (!alert.isSpam && !academicTest.test(fullText) && nonAcademicTest.test(fullText)) {
+          alert.isSpam = true;
+          alert.category = "SPAM";
+          alert.categoryLabel = alert.language === "vi" ? "Thư rác / Quảng cáo" : "Spam / Promotion";
+          alert.urgency = "INFO";
+          alert.spamReason = alert.language === "vi" ? "Nội dung quảng cáo / dịch vụ ngoài trường học" : "Commercial or marketing email";
+          if (alert.detectedAssignment) alert.detectedAssignment.isAssignment = false;
+        }
+        return alert;
+      });
+    }
     res.status(200).json(parsed);
   } catch (err: any) {
     console.error("Email summarization error:", err);

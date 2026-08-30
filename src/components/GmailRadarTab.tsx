@@ -45,28 +45,72 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
   emailError,
   gmailApiInfo,
 }) => {
-  const [activeCategory, setActiveCategory] = useState<string>('academic');
-  const [hideSpam, setHideSpam] = useState<boolean>(true);
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [hideSpam, setHideSpam] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedLanguage, setSelectedLanguage] = useState<'all' | 'vi' | 'en'>('all');
   const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null);
+  const [overrides, setOverrides] = useState<Record<string, { isSpam?: boolean; category?: EmailCategory; categoryLabel?: string }>>({});
+
+  // Merge server alerts with user manual classification adjustments
+  const effectiveAlerts = useMemo(() => {
+    return emailAlerts.map((alert) => {
+      if (overrides[alert.id]) {
+        return { ...alert, ...overrides[alert.id] };
+      }
+      return alert;
+    });
+  }, [emailAlerts, overrides]);
+
+  const handleToggleSpam = (id: string, currentlySpam: boolean) => {
+    const isNowSpam = !currentlySpam;
+    setOverrides((prev) => ({
+      ...prev,
+      [id]: {
+        isSpam: isNowSpam,
+        category: isNowSpam ? 'SPAM' : 'GENERAL',
+        categoryLabel: isNowSpam ? 'Thư rác / Spam' : 'Thông báo học vụ',
+      },
+    }));
+  };
+
+  const handleChangeCategory = (id: string, newCat: EmailCategory) => {
+    const isSpam = newCat === 'SPAM' || newCat === 'PROMOTION';
+    const labelMap: Record<string, string> = {
+      ASSIGNMENT: 'Bài tập / Assignment',
+      EXAM: 'Lịch thi / Exam',
+      ANNOUNCEMENT: 'Thông báo / Announcement',
+      SCHEDULE: 'Lịch học / Schedule',
+      GENERAL: 'Thông báo chung',
+      SPAM: 'Thư rác / Spam',
+      PROMOTION: 'Khuyến mãi / Promotion',
+    };
+    setOverrides((prev) => ({
+      ...prev,
+      [id]: {
+        isSpam,
+        category: newCat,
+        categoryLabel: labelMap[newCat] || 'General',
+      },
+    }));
+  };
 
   // Stats calculation
   const spamCount = useMemo(() => {
-    return emailAlerts.filter((a) => a.isSpam || a.category === 'SPAM' || a.category === 'PROMOTION').length;
-  }, [emailAlerts]);
+    return effectiveAlerts.filter((a) => a.isSpam || a.category === 'SPAM' || a.category === 'PROMOTION').length;
+  }, [effectiveAlerts]);
 
   const urgentCount = useMemo(() => {
-    return emailAlerts.filter((a) => !a.isSpam && (a.urgency === 'HIGH' || a.category === 'EXAM')).length;
-  }, [emailAlerts]);
+    return effectiveAlerts.filter((a) => !a.isSpam && (a.urgency === 'HIGH' || a.category === 'EXAM')).length;
+  }, [effectiveAlerts]);
 
   const vietnameseCount = useMemo(() => {
-    return emailAlerts.filter((a) => a.language === 'vi').length;
-  }, [emailAlerts]);
+    return effectiveAlerts.filter((a) => a.language === 'vi').length;
+  }, [effectiveAlerts]);
 
   // Filtered emails
   const filteredAlerts = useMemo(() => {
-    return emailAlerts.filter((alert) => {
+    return effectiveAlerts.filter((alert) => {
       // 1. Spam filter toggle
       const isSpamItem = alert.isSpam || alert.category === 'SPAM' || alert.category === 'PROMOTION';
       if (hideSpam && isSpamItem && activeCategory !== 'spam') {
@@ -74,7 +118,9 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
       }
 
       // 2. Category tab
-      if (activeCategory === 'academic') {
+      if (activeCategory === 'all') {
+        // Show everything under all emails
+      } else if (activeCategory === 'academic') {
         if (isSpamItem) return false;
       } else if (activeCategory === 'assignments') {
         if (alert.category !== 'ASSIGNMENT') return false;
@@ -105,7 +151,7 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
 
       return true;
     });
-  }, [emailAlerts, hideSpam, activeCategory, selectedLanguage, searchQuery]);
+  }, [effectiveAlerts, hideSpam, activeCategory, selectedLanguage, searchQuery]);
 
   const getUrgencyBadge = (urgency: string, isSpam?: boolean) => {
     if (isSpam) {
@@ -215,12 +261,12 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
         <div className="flex items-center justify-between flex-wrap gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-1.5 flex-wrap">
             {[
-              { id: 'academic', label: 'Academic & School', count: emailAlerts.filter((a) => !a.isSpam).length },
-              { id: 'assignments', label: 'Assignments', count: emailAlerts.filter((a) => a.category === 'ASSIGNMENT').length },
-              { id: 'exams', label: 'Exams & Quizzes', count: emailAlerts.filter((a) => a.category === 'EXAM').length },
-              { id: 'announcements', label: 'Announcements', count: emailAlerts.filter((a) => a.category === 'ANNOUNCEMENT').length },
+              { id: 'all', label: 'All Emails', count: effectiveAlerts.length },
+              { id: 'academic', label: 'Academic & School', count: effectiveAlerts.filter((a) => !a.isSpam).length },
+              { id: 'assignments', label: 'Assignments', count: effectiveAlerts.filter((a) => a.category === 'ASSIGNMENT').length },
+              { id: 'exams', label: 'Exams & Quizzes', count: effectiveAlerts.filter((a) => a.category === 'EXAM').length },
+              { id: 'announcements', label: 'Announcements', count: effectiveAlerts.filter((a) => a.category === 'ANNOUNCEMENT' || a.category === 'SCHEDULE').length },
               { id: 'spam', label: 'Spam / Promotions', count: spamCount, isSpamTab: true },
-              { id: 'all', label: 'All Emails', count: emailAlerts.length },
             ].map((tab) => {
               const isActive = activeCategory === tab.id;
               return (
@@ -485,14 +531,44 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
                 )}
 
                 {/* Action Bar */}
-                <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                  <button
-                    onClick={() => setExpandedEmailId(isExpanded ? null : alert.id)}
-                    className="text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 inline-flex items-center gap-1 font-medium transition-colors cursor-pointer"
-                  >
-                    <span>{isExpanded ? 'Hide Full Content' : 'View Full Message'}</span>
-                    {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  </button>
+                <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap text-xs">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => setExpandedEmailId(isExpanded ? null : alert.id)}
+                      className="text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 inline-flex items-center gap-1 font-medium transition-colors cursor-pointer"
+                    >
+                      <span>{isExpanded ? 'Hide Full Content' : 'View Full Message'}</span>
+                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </button>
+
+                    <button
+                      onClick={() => handleToggleSpam(alert.id, Boolean(alert.isSpam))}
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
+                        alert.isSpam
+                          ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-amber-700 hover:bg-amber-50 dark:hover:text-amber-300 dark:hover:bg-amber-950/40 border border-slate-200 dark:border-slate-700'
+                      }`}
+                      title={alert.isSpam ? "Move to School/Academic" : "Mark as Spam / Promotion"}
+                    >
+                      {alert.isSpam ? '✓ Mark Not Spam' : '⚑ Mark as Spam'}
+                    </button>
+
+                    {!alert.isSpam && (
+                      <select
+                        aria-label="Category"
+                        value={alert.category}
+                        onChange={(e) => handleChangeCategory(alert.id, e.target.value as EmailCategory)}
+                        className="text-[10px] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-1.5 py-0.5 text-slate-600 dark:text-slate-300 cursor-pointer focus:outline-none"
+                      >
+                        <option value="ASSIGNMENT">Assignment</option>
+                        <option value="EXAM">Exam / Quiz</option>
+                        <option value="ANNOUNCEMENT">Announcement</option>
+                        <option value="SCHEDULE">Schedule</option>
+                        <option value="GENERAL">General</option>
+                        <option value="SPAM">Spam</option>
+                      </select>
+                    )}
+                  </div>
 
                   {!isSpam && (
                     <button

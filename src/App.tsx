@@ -19,6 +19,7 @@ import { GmailRadarTab } from './components/GmailRadarTab';
 import { AssignmentTrackerTab } from './components/AssignmentTrackerTab';
 import { ProjectStarterTab } from './components/ProjectStarterTab';
 import { CanvasSyncTab } from './components/CanvasSyncTab';
+import { LandingPage } from './components/LandingPage';
 import { QuickDraftModal } from './components/QuickDraftModal';
 import { ScheduleStudyModal } from './components/ScheduleStudyModal';
 import { ConfirmationModal } from './components/ConfirmationModal';
@@ -219,6 +220,182 @@ export default function App() {
   useEffect(() => {
     saveSavedAssignments(assignments);
   }, [assignments]);
+
+  // When demo mode is toggled, populate interactive sample data
+  useEffect(() => {
+    if (isDemoMode && !user) {
+      setCanvasAssignments([
+        {
+          id: 'demo-c1',
+          name: 'DBQ Essay: New Deal & Great Depression Policies',
+          courseName: 'AP US History',
+          dueAt: new Date(Date.now() + 86400000 * 2).toISOString(),
+          pointsPossible: 100,
+          htmlUrl: 'https://canvas.instructure.com',
+          description: 'Write a 4-page document-based essay analyzing primary sources 1-7.',
+          isSynced: false,
+          isCompleted: false,
+        },
+        {
+          id: 'demo-c2',
+          name: 'Problem Set 8: Integration by Parts & Series',
+          courseName: 'Calculus BC',
+          dueAt: new Date(Date.now() + 86400000 * 1).toISOString(),
+          pointsPossible: 50,
+          htmlUrl: 'https://canvas.instructure.com',
+          description: 'Complete problems 14 through 28 in chapter 7.',
+          isSynced: true,
+          isCompleted: false,
+        },
+        {
+          id: 'demo-c3',
+          name: 'Unit 4 Exam Review & Practice Quiz',
+          courseName: 'AP Physics C',
+          dueAt: new Date(Date.now() + 86400000 * 4).toISOString(),
+          pointsPossible: 30,
+          htmlUrl: 'https://canvas.instructure.com',
+          description: 'Online timed quiz on rotational dynamics.',
+          isSynced: false,
+          isCompleted: false,
+        },
+        {
+          id: 'demo-c4',
+          name: 'Hamlet Act 2 Soliloquy Critical Reflection',
+          courseName: 'English Lit',
+          dueAt: new Date(Date.now() - 86400000 * 1).toISOString(),
+          pointsPossible: 40,
+          htmlUrl: 'https://canvas.instructure.com',
+          description: 'Close textual analysis of Act 2 Scene 2.',
+          isSynced: true,
+          isCompleted: true,
+        },
+      ]);
+
+      setEmailAlerts([
+        {
+          id: 'demo-email-1',
+          sender: 'Dr. Rebecca Vance (AP Physics)',
+          subject: 'Office Hours & Unit 4 Quiz Prep',
+          oneLineSummary: 'Extra help session tomorrow at 3:30 PM in Room 204.',
+          urgency: 'HIGH',
+          category: 'EXAM',
+          categoryLabel: 'Lịch thi / Kiểm tra',
+          isSpam: false,
+          language: 'en',
+          rawEmail: {
+            id: 'demo-raw-1',
+            threadId: 't1',
+            sender: 'Dr. Rebecca Vance',
+            senderEmail: 'rvance@school.edu',
+            subject: 'Office Hours & Unit 4 Quiz Prep',
+            snippet: 'Hi students, I will be holding extra office hours tomorrow at 3:30 PM for anyone needing help before Friday quiz.',
+            date: new Date().toISOString(),
+            unread: true,
+          },
+        },
+        {
+          id: 'demo-email-2',
+          sender: 'Mr. David Miller (AP US History)',
+          subject: 'DBQ Rubric & Primary Source Packet',
+          oneLineSummary: 'Updated rubric uploaded to Canvas. Due date unchanged.',
+          urgency: 'MEDIUM',
+          category: 'ASSIGNMENT',
+          categoryLabel: 'Bài tập & Hạn nộp',
+          isSpam: false,
+          language: 'en',
+          rawEmail: {
+            id: 'demo-raw-2',
+            threadId: 't2',
+            sender: 'Mr. David Miller',
+            senderEmail: 'dmiller@school.edu',
+            subject: 'DBQ Rubric & Primary Source Packet',
+            snippet: 'Please review the attached rubric for the New Deal DBQ. Be sure to cite at least 4 documents.',
+            date: new Date().toISOString(),
+            unread: false,
+          },
+        },
+        {
+          id: 'demo-email-3',
+          sender: 'Shopee Deals',
+          subject: 'Super Flash Sale 50% Off Back to School',
+          oneLineSummary: 'Limited time coupon discounts on supplies.',
+          urgency: 'INFO',
+          category: 'SPAM',
+          categoryLabel: 'Thư rác / Quảng cáo',
+          isSpam: true,
+          spamReason: 'Commercial e-commerce promotion',
+          language: 'en',
+          rawEmail: {
+            id: 'demo-raw-3',
+            threadId: 't3',
+            sender: 'Shopee Deals',
+            senderEmail: 'promo@shopee.vn',
+            subject: 'Super Flash Sale 50% Off Back to School',
+            snippet: 'Claim your 50% voucher today only! Click to view discounts on stationery and backpacks.',
+            date: new Date().toISOString(),
+            unread: false,
+          },
+        },
+        {
+          id: 'demo-email-4',
+          sender: 'Spotify Student',
+          subject: 'Your Weekly Student Playlist is Ready',
+          oneLineSummary: 'Music playlist digest newsletter.',
+          urgency: 'INFO',
+          category: 'SPAM',
+          categoryLabel: 'Thư rác / Quảng cáo',
+          isSpam: true,
+          spamReason: 'Marketing subscription newsletter',
+          language: 'en',
+          rawEmail: {
+            id: 'demo-raw-4',
+            threadId: 't4',
+            sender: 'Spotify',
+            senderEmail: 'no-reply@spotify.com',
+            subject: 'Your Weekly Student Playlist is Ready',
+            snippet: 'Check out new study focus tracks curated for university students this week.',
+            date: new Date().toISOString(),
+            unread: false,
+          },
+        },
+      ]);
+
+      setRecentFiles([
+        {
+          id: 'demo-file-1',
+          name: 'AP US History - DBQ Thesis Outline.docx',
+          mimeType: 'application/vnd.google-apps.document',
+          webViewLink: 'https://docs.google.com',
+          modifiedTime: new Date(Date.now() - 3600000 * 2).toISOString(),
+          size: '24 KB',
+        },
+        {
+          id: 'demo-file-2',
+          name: 'Physics Lab 3 - Pendulum Data & Graphs.xlsx',
+          mimeType: 'application/vnd.google-apps.spreadsheet',
+          webViewLink: 'https://sheets.google.com',
+          modifiedTime: new Date(Date.now() - 3600000 * 5).toISOString(),
+          size: '48 KB',
+        },
+        {
+          id: 'demo-file-3',
+          name: 'Calculus BC - Series & Tests Presentation.pptx',
+          mimeType: 'application/vnd.google-apps.presentation',
+          webViewLink: 'https://slides.google.com',
+          modifiedTime: new Date(Date.now() - 86400000 * 1).toISOString(),
+          size: '3.2 MB',
+        },
+        {
+          id: 'demo-file-4',
+          name: 'Hamlet Act 2 Text & Critical Commentary.pdf',
+          mimeType: 'application/pdf',
+          webViewLink: 'https://drive.google.com',
+          modifiedTime: new Date(Date.now() - 86400000 * 2).toISOString(),
+          size: '1.5 MB',
+        },
+      ]);
+    }
+  }, [isDemoMode, user]);
 
   // Listen to Auth State
   useEffect(() => {
@@ -1036,8 +1213,44 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleRefreshAll]);
 
+  if (!user && !isDemoMode) {
+    return (
+      <LandingPage
+        onSignIn={() => handleGoogleSignIn(true)}
+        onExploreDemo={() => setIsDemoMode(true)}
+        isLoggingIn={isLoggingIn}
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+      />
+    );
+  }
+
   return (
-    <div className="h-screen max-h-screen overflow-hidden bg-slate-100/70 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="h-screen max-h-screen overflow-hidden bg-slate-100/70 dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 transition-colors flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+      {/* Demo Mode Top Alert */}
+      {!user && isDemoMode && (
+        <div className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-4 py-2 text-xs font-semibold flex items-center justify-between shadow-xs z-50 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
+            <span>You are viewing in <strong>Live Demo Mode</strong>. Connect Google to sync live Canvas & Google Workspace.</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleGoogleSignIn(true)}
+              disabled={isLoggingIn}
+              className="px-3 py-1 bg-white text-indigo-700 hover:bg-indigo-50 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+            >
+              Sign In with Google
+            </button>
+            <button
+              onClick={() => setIsDemoMode(false)}
+              className="px-2 py-1 text-indigo-100 hover:text-white text-xs cursor-pointer"
+            >
+              Exit Demo
+            </button>
+          </div>
+        </div>
+      )}
       {/* Left Navigation Rail (Desktop) + Main Area Container */}
       <div className="flex-1 flex overflow-hidden h-full">
         {/* Sleek Navy Navigation Rail */}
@@ -1264,7 +1477,7 @@ export default function App() {
                   }}
                   onNavigateToTab={setActiveTab}
                   urgentCanvasItems={canvasAssignments.filter((c) => !c.isSynced).slice(0, 3)}
-                  isGoogleConnected={Boolean(getStoredGoogleToken())}
+                  isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
                   onConnectGoogle={() => handleGoogleSignIn(true)}
                   calendarError={calendarError}
                   calendarApiInfo={calendarApiInfo}
@@ -1283,7 +1496,7 @@ export default function App() {
                     setQuickDraftModalOpen(true);
                   }}
                   onExtractAssignment={handleExtractAssignment}
-                  isGoogleConnected={Boolean(getStoredGoogleToken())}
+                  isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
                   onConnectGoogle={() => handleGoogleSignIn(true)}
                   emailError={emailError}
                   gmailApiInfo={gmailApiInfo}
@@ -1306,7 +1519,7 @@ export default function App() {
                   }}
                   onParseNaturalText={handleParseNaturalText}
                   isParsingAI={isParsingAI}
-                  isGoogleConnected={Boolean(getStoredGoogleToken())}
+                  isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
                   onConnectGoogle={() => handleGoogleSignIn(true)}
                   sheetError={sheetError}
                   sheetApiInfo={sheetApiInfo}
@@ -1320,7 +1533,7 @@ export default function App() {
                   onRefreshFiles={() => loadRecentFiles(false)}
                   onCreateDoc={handleCreateDoc}
                   isCreatingDoc={isCreatingDoc}
-                  isGoogleConnected={Boolean(getStoredGoogleToken())}
+                  isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
                   onConnectGoogle={() => handleGoogleSignIn(true)}
                   driveError={driveError}
                   driveApiInfo={driveApiInfo}

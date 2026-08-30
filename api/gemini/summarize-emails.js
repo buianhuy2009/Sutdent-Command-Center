@@ -9,6 +9,33 @@ function getGenAI() {
   return genAI;
 }
 
+// Known commercial/promotional keywords and sender patterns
+const NON_ACADEMIC_PATTERNS = [
+  /unsubscribe/i,
+  /opt-?out/i,
+  /view in browser/i,
+  /privacy policy/i,
+  /manage preferences/i,
+  /khuyến mãi|voucher|giảm giá|ưu đãi|sale\s*\d+%|off\s*\d+%/i,
+  /shopee|tiki|lazada|grab|beamin|baemin|tiktok|facebook|instagram|youtube|twitter|linkedin|reddit|discord|spotify|netflix/i,
+  /duolingo|grammarly|canva|adobe|coursera|udemy|edx/i,
+  /receipt|invoice|order confirmation|payment received|billing|hóa đơn|thanh toán|mã otp|mã xác minh/i,
+  /newsletter|digest|weekly update|special offer|limited time|flash sale|discount|cashback/i,
+];
+
+function isLikelySpamOrPromo(email) {
+  const fullText = `${email.sender || ""} ${email.subject || ""} ${email.snippet || ""}`.toLowerCase();
+  
+  // Exclude school/teacher indicators
+  const hasAcademicIndicators = /professor|prof\.|teacher|giáo viên|thầy|cô|giảng viên|bài tập|assignment|homework|exam|kiểm tra|thi học kỳ|canvas|google classroom|moodle|blackboard|syllabus|hạn nộp|nộp bài|lab report/i.test(fullText);
+  if (hasAcademicIndicators) return false;
+
+  for (const pattern of NON_ACADEMIC_PATTERNS) {
+    if (pattern.test(fullText)) return true;
+  }
+  return false;
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -22,21 +49,30 @@ export default async function handler(req, res) {
     }
 
     const ai = getGenAI();
-    const prompt = `You are an intelligent bilingual academic email scanner for a student command center.
-Analyze the following ${emails.length} emails. Note that emails may be in English or Vietnamese (tiếng Việt).
+    const prompt = `You are an expert bilingual academic email organizer and spam filter for students.
+Analyze the following ${emails.length} student emails. Emails may be in English or Vietnamese (tiếng Việt).
 
-Your tasks:
-1. DETECT SPAM / PROMOTIONS / MARKETING:
-   - Identify whether an email is commercial spam, shopping discount (Shopee, Tiki, Lazada, Grab, etc.), marketing newsletter, subscription update, or phishing.
-   - For spam/promotions, set "isSpam": true, "category": "SPAM" or "PROMOTION", "urgency": "INFO" or "LOW", and provide a clear "spamReason".
-2. FOR ACADEMIC / SCHOOL / INSTRUCTOR EMAILS:
-   - Categorize into: "ASSIGNMENT", "EXAM", "GRADE", "SCHEDULE", "ANNOUNCEMENT", or "GENERAL".
-   - Extract actionable deadlines, quizzes, test dates, homework, lab reports, or office hours.
-   - Set urgency: "HIGH" for imminent deadlines (<48h) or critical exam dates; "MEDIUM" for standard assignments/requests; "LOW" for general info; "INFO" for newsletters/spam.
-3. LANGUAGE HANDLING:
-   - Identify the language ("vi" for Vietnamese, "en" for English).
-   - Write "oneLineSummary" concisely (under 14 words) in the SAME language as the email.
-   - If an assignment is detected, extract title and course name cleanly.
+CRITICAL CLASSIFICATION RULES:
+1. WHAT COUNTS AS SPAM / PROMOTION / NON-ACADEMIC (isSpam: true):
+   - Shopping discounts, coupons, e-commerce (Shopee, Lazada, Tiki, Grab, Amazon, etc.).
+   - App newsletters & commercial subscriptions (Spotify, Netflix, Duolingo, Grammarly, Canva, Medium, etc.).
+   - Social media digests & notifications (YouTube, LinkedIn, Facebook, Instagram, Twitter/X, Discord, Reddit).
+   - Automated account security alerts, OTP codes, password resets, purchase receipts, billing invoices that are NOT school tuition.
+   - ANY email that is NOT from a school, university, instructor, teacher, educational institution, or academic LMS.
+   -> For all these: set "isSpam": true, "category": "SPAM" or "PROMOTION", "urgency": "INFO" or "LOW", "detectedAssignment.isAssignment": false.
+
+2. WHAT COUNTS AS ACADEMIC (isSpam: false):
+   - Only emails from instructors, professors, teaching assistants, academic departments, schools, or learning management systems (Canvas, Google Classroom, Moodle).
+   - Categories:
+     * "ASSIGNMENT": homework, projects, problem sets, lab reports, essays, reading assignments, deadlines.
+     * "EXAM": midterm exams, final exams, pop quizzes, unit tests, oral exams, exam review schedules.
+     * "SCHEDULE": timetable changes, office hours, lecture room swaps, class cancellations.
+     * "ANNOUNCEMENT": official school announcements, syllabus updates, grade releases, academic policy.
+     * "GENERAL": peer study group coordination, questions to/from classmates regarding class.
+
+3. SUMMARY & LANGUAGE:
+   - Identify language: "vi" or "en".
+   - "oneLineSummary": Maximum 12 words. Clear, informative summary in the SAME language as the email.
 
 Emails to scan:
 ${JSON.stringify(emails, null, 2)}
@@ -48,24 +84,24 @@ Respond with valid JSON matching this schema:
       "id": "matching email id",
       "sender": "clean sender name or role",
       "subject": "email subject",
-      "oneLineSummary": "concise 1-line alert under 14 words with specific dates and action items",
+      "oneLineSummary": "concise 1-line summary under 12 words",
       "urgency": "HIGH" | "MEDIUM" | "LOW" | "INFO",
       "category": "ASSIGNMENT" | "EXAM" | "GRADE" | "SCHEDULE" | "ANNOUNCEMENT" | "SPAM" | "PROMOTION" | "GENERAL",
-      "categoryLabel": "human-friendly label like 'Bài tập / Assignment' or 'Thư rác / Spam'",
+      "categoryLabel": "human-friendly label (e.g., 'Bài tập / Assignment' or 'Thư rác / Spam')",
       "isSpam": boolean,
       "spamReason": "reason if spam/promo or empty string",
       "language": "vi" | "en" | "other",
       "detectedAssignment": {
         "isAssignment": boolean,
-        "name": "concise assignment name",
-        "subject": "detected course/subject like Toán, Vật lý, AP Physics, Literature, etc.",
+        "name": "concise assignment name or empty string",
+        "subject": "course/subject or empty string",
         "dueDate": "YYYY-MM-DD or empty string",
         "priority": "High" | "Med" | "Low"
       }
     }
   ]
 }
-Return only JSON, no markdown formatting.`;
+Return only JSON.`;
 
     const response = await ai.models.generateContent({
       model: process.env.GEMINI_MODEL || "gemini-3.6-flash",
@@ -77,27 +113,35 @@ Return only JSON, no markdown formatting.`;
 
     const responseText = response.text || "{}";
     const parsed = JSON.parse(responseText);
+    
+    // Double-check with heuristic validator to guarantee no spam slips through
+    if (parsed.alerts && Array.isArray(parsed.alerts)) {
+      parsed.alerts = parsed.alerts.map((alert) => {
+        const raw = emails.find((e) => e.id === alert.id);
+        if (raw && !alert.isSpam && isLikelySpamOrPromo(raw)) {
+          alert.isSpam = true;
+          alert.category = "SPAM";
+          alert.categoryLabel = alert.language === "vi" ? "Thư rác / Quảng cáo" : "Spam / Promotion";
+          alert.urgency = "INFO";
+          alert.spamReason = alert.spamReason || (alert.language === "vi" ? "Nội dung quảng cáo / thương mại" : "Commercial or marketing email");
+          if (alert.detectedAssignment) alert.detectedAssignment.isAssignment = false;
+        }
+        return alert;
+      });
+    }
+
     res.status(200).json(parsed);
   } catch (err) {
     console.error("Email summarization error:", err);
     const fallbackAlerts = ((req.body && req.body.emails) || []).map((e) => {
       const fullText = `${e.subject || ""} ${e.snippet || ""} ${e.sender || ""}`.toLowerCase();
-      const isSpamKeywords =
-        /khuyến mãi|voucher|giảm giá|ưu đãi|shopee|tiki|lazada|sale\s*\d+%|off\s*\d+%|quảng cáo|discount|coupon|unsubscribe|marketing|bản tin|deal|cashback/i.test(
-          fullText
-        );
+      const isVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(fullText);
+      const isSpam = isLikelySpamOrPromo(e);
       const isExam = /thi|kiểm tra|exam|quiz|test|midterm|final/i.test(fullText);
-      const isAssignment =
-        /bài tập|assignment|homework|lab|report|nộp bài|deadline|hạn nộp|rubric/i.test(fullText);
-      const isAnnouncement =
-        /thông báo|announcement|notice|nhắc nhở|schedule|lịch/i.test(fullText);
-      const isVietnamese =
-        /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(
-          fullText
-        );
+      const isAssignment = /bài tập|assignment|homework|lab|report|nộp bài|deadline|hạn nộp/i.test(fullText);
+      const isAnnouncement = /thông báo|announcement|notice|nhắc nhở|schedule|lịch/i.test(fullText);
 
       let category = "GENERAL";
-      let isSpam = isSpamKeywords;
       let urgency = "LOW";
       let categoryLabel = isVietnamese ? "Thông báo chung" : "General Update";
 
@@ -128,11 +172,7 @@ Return only JSON, no markdown formatting.`;
         category,
         categoryLabel,
         isSpam,
-        spamReason: isSpam
-          ? isVietnamese
-            ? "Thư quảng cáo / Khuyến mãi"
-            : "Commercial promotion"
-          : "",
+        spamReason: isSpam ? (isVietnamese ? "Thư quảng cáo / dịch vụ ngoài trường học" : "Non-academic promotional email") : "",
         language: isVietnamese ? "vi" : "en",
         detectedAssignment: {
           isAssignment: !isSpam && isAssignment,

@@ -3,23 +3,18 @@ import {
   Layers,
   RefreshCw,
   CheckCircle2,
-  AlertCircle,
   ExternalLink,
   Plus,
   FileText,
   Key,
   Globe,
-  ArrowRight,
-  ShieldCheck,
-  CheckSquare,
   Search,
-  BookOpen,
   Calendar,
-  Sparkles,
   AlertTriangle,
-  Radio,
+  CheckSquare,
 } from 'lucide-react';
-import { CanvasAssignment, CanvasSettings, Assignment } from '../types';
+import { CanvasAssignment, CanvasSettings } from '../types';
+import { loadCompletedCanvasIds, saveCompletedCanvasIds } from '../services/canvas';
 
 interface CanvasSyncTabProps {
   settings: CanvasSettings;
@@ -54,10 +49,12 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
 
-  // Filters
+  // Completion state loaded from local storage
+  const [completedIds, setCompletedIds] = useState<string[]>(() => loadCompletedCanvasIds());
+
+  // Tabs: 'UNFINISHED' (default on open), 'ALL', 'FINISHED', or Course Name
+  const [activeTab, setActiveTab] = useState<string>('UNFINISHED');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState('ALL');
-  const [syncFilter, setSyncFilter] = useState<'ALL' | 'UNSYNCED' | 'SYNCED'>('ALL');
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +74,17 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
     }, 300);
   };
 
+  const handleToggleComplete = (id: string) => {
+    setCompletedIds((prev) => {
+      const set = new Set(prev);
+      if (set.has(id)) set.delete(id);
+      else set.add(id);
+      const arr = Array.from(set);
+      saveCompletedCanvasIds(arr);
+      return arr;
+    });
+  };
+
   // Distinct courses
   const courses = useMemo(() => {
     const set = new Set<string>();
@@ -86,21 +94,30 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
     return Array.from(set);
   }, [canvasAssignments]);
 
-  const pendingAssignments = canvasAssignments.filter((a) => !a.isSynced);
-  const syncedAssignments = canvasAssignments.filter((a) => a.isSynced);
+  const unfinishedCount = useMemo(() => {
+    return canvasAssignments.filter((a) => !a.isCompleted && !completedIds.includes(a.id)).length;
+  }, [canvasAssignments, completedIds]);
 
-  // Filtered assignments
+  const finishedCount = useMemo(() => {
+    return canvasAssignments.filter((a) => a.isCompleted || completedIds.includes(a.id)).length;
+  }, [canvasAssignments, completedIds]);
+
+  const pendingSyncAssignments = canvasAssignments.filter((a) => !a.isSynced);
+
+  // Filtered assignments based on activeTab (UNFINISHED by default)
   const filteredAssignments = useMemo(() => {
     return canvasAssignments.filter((item) => {
-      if (selectedCourse !== 'ALL' && item.courseName !== selectedCourse) {
-        return false;
+      const isDone = item.isCompleted || completedIds.includes(item.id);
+
+      if (activeTab === 'UNFINISHED') {
+        if (isDone) return false;
+      } else if (activeTab === 'FINISHED') {
+        if (!isDone) return false;
+      } else if (activeTab !== 'ALL') {
+        // Course name selected: show both finished & unfinished for this course
+        if (item.courseName !== activeTab) return false;
       }
-      if (syncFilter === 'UNSYNCED' && item.isSynced) {
-        return false;
-      }
-      if (syncFilter === 'SYNCED' && !item.isSynced) {
-        return false;
-      }
+
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchName = item.name.toLowerCase().includes(q);
@@ -108,9 +125,10 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
         const matchDesc = item.description?.toLowerCase().includes(q) || false;
         if (!matchName && !matchCourse && !matchDesc) return false;
       }
+
       return true;
     });
-  }, [canvasAssignments, selectedCourse, syncFilter, searchQuery]);
+  }, [canvasAssignments, completedIds, activeTab, searchQuery]);
 
   const handleSyncAll = async () => {
     setIsSyncingAll(true);
@@ -143,7 +161,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
               )}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Coursework, due dates, and rubrics
+              Synced coursework, assignments, and quizzes
             </p>
           </div>
         </div>
@@ -197,76 +215,30 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
         </div>
       )}
 
-      {/* Settings Box (Collapsible) */}
+      {/* Settings Drawer */}
       {showSettingsDrawer && (
-        <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs animate-in fade-in">
-          <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
-            <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">
-              Canvas Connection Settings
-            </h3>
-          </div>
-
-          <form onSubmit={handleSave} className="mt-4 space-y-4">
+        <section className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-700/80 shadow-xs space-y-4">
+          <h3 className="text-xs font-bold uppercase text-slate-800 dark:text-slate-200 tracking-wider">
+            Canvas LMS Connection Configuration
+          </h3>
+          <form onSubmit={handleSave} className="space-y-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Calendar Feed URL (.ics)
+                Canvas Calendar Feed URL (.ics / webcal://)
               </label>
               <input
-                id="input-canvas-feed"
-                type="url"
+                type="text"
                 value={feedUrl}
                 onChange={(e) => setFeedUrl(e.target.value)}
-                placeholder="https://canvas.instructure.com/feeds/calendars/user_...ics"
-                className="w-full px-3 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-white"
+                placeholder="webcal://canvas.instructure.com/feeds/calendars/user_...ics"
+                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500 dark:text-white"
               />
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                Found on Canvas under <strong>Calendar → Calendar Feed</strong>
-              </p>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <div>
-                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                  Canvas Domain (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={apiDomain}
-                  onChange={(e) => setApiDomain(e.target.value)}
-                  placeholder="https://canvas.instructure.com"
-                  className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
-                  Access Token (Optional)
-                </label>
-                <input
-                  type="password"
-                  value={apiToken}
-                  onChange={(e) => setApiToken(e.target.value)}
-                  placeholder="Canvas Settings → Access Token"
-                  className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              <label className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 font-medium cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={autoSync}
-                  onChange={(e) => setAutoSync(e.target.checked)}
-                  className="w-4 h-4 text-orange-600 rounded"
-                />
-                <span>Background auto-sync</span>
-              </label>
-
+            <div className="flex justify-end gap-2">
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-4 py-2 text-xs font-bold bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl shadow-xs"
               >
                 {isSaving ? 'Saving...' : 'Save Settings'}
               </button>
@@ -275,41 +247,8 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
         </section>
       )}
 
-      {/* Clean Connect Card if not configured yet */}
-      {!isConfigured && !showSettingsDrawer && (
-        <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 text-center shadow-xs">
-          <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center mx-auto mb-3">
-            <Layers className="w-5 h-5" />
-          </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            Connect Canvas Calendar Feed
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
-            Paste your Canvas calendar URL below to import assignments and due dates.
-          </p>
-
-          <form onSubmit={handleSave} className="mt-4 max-w-lg mx-auto flex flex-col sm:flex-row gap-2">
-            <input
-              type="url"
-              value={feedUrl}
-              onChange={(e) => setFeedUrl(e.target.value)}
-              placeholder="Paste Canvas .ics feed URL..."
-              required
-              className="flex-1 px-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-white"
-            />
-            <button
-              type="submit"
-              disabled={isSaving || !feedUrl.trim()}
-              className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-colors shrink-0 shadow-xs cursor-pointer"
-            >
-              {isSaving ? 'Connecting...' : 'Connect'}
-            </button>
-          </form>
-        </section>
-      )}
-
-      {/* Filter & Search Bar */}
-      {isConfigured && (
+      {/* Primary Status & Course Tabs */}
+      {(isConfigured || canvasAssignments.length > 0) && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs space-y-3.5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* Search Box */}
@@ -317,49 +256,15 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search Canvas assignments, courses, or descriptions..."
+                placeholder="Search assignments, quizzes, courses..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-800 dark:text-slate-200"
               />
             </div>
 
-            {/* Sync status pills */}
-            <div className="flex items-center gap-1.5 shrink-0 bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
-              <button
-                onClick={() => setSyncFilter('ALL')}
-                className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
-                  syncFilter === 'ALL'
-                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-bold shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                All ({canvasAssignments.length})
-              </button>
-              <button
-                onClick={() => setSyncFilter('UNSYNCED')}
-                className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
-                  syncFilter === 'UNSYNCED'
-                    ? 'bg-amber-500 text-white font-bold shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                Pending ({pendingAssignments.length})
-              </button>
-              <button
-                onClick={() => setSyncFilter('SYNCED')}
-                className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
-                  syncFilter === 'SYNCED'
-                    ? 'bg-emerald-600 text-white font-bold shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                Synced ({syncedAssignments.length})
-              </button>
-            </div>
-
             {/* Bulk Sync Button */}
-            {pendingAssignments.length > 0 && (
+            {pendingSyncAssignments.length > 0 && (
               <button
                 id="btn-sync-all-canvas-top"
                 onClick={handleSyncAll}
@@ -367,42 +272,88 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
               >
                 <CheckSquare className="w-3.5 h-3.5" />
-                <span>{isSyncingAll ? 'Syncing...' : `Sync All Pending (${pendingAssignments.length})`}</span>
+                <span>{isSyncingAll ? 'Syncing...' : `Sync All to Sheet (${pendingSyncAssignments.length})`}</span>
               </button>
             )}
           </div>
 
-          {/* Course Filter Pills */}
-          {courses.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100 dark:border-slate-800">
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mr-1">
-                Course:
+          {/* Navigation Filter Tabs: Unfinished (Default), All Assignments, Finished, and Course Subjects */}
+          <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100 dark:border-slate-800">
+            {/* 1. Unfinished Tab (DEFAULT) */}
+            <button
+              onClick={() => setActiveTab('UNFINISHED')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'UNFINISHED'
+                  ? 'bg-orange-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <span>Unfinished</span>
+              <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
+                activeTab === 'UNFINISHED' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+              }`}>
+                {unfinishedCount}
               </span>
-              <button
-                onClick={() => setSelectedCourse('ALL')}
-                className={`px-2.5 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-                  selectedCourse === 'ALL'
-                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                }`}
-              >
-                All Courses
-              </button>
-              {courses.map((c) => (
+            </button>
+
+            {/* 2. All Assignments Tab */}
+            <button
+              onClick={() => setActiveTab('ALL')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'ALL'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <span>All Assignments</span>
+              <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
+                activeTab === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+              }`}>
+                {canvasAssignments.length}
+              </span>
+            </button>
+
+            {/* 3. Finished Tab */}
+            <button
+              onClick={() => setActiveTab('FINISHED')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'FINISHED'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <span>Finished</span>
+              <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
+                activeTab === 'FINISHED' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+              }`}>
+                {finishedCount}
+              </span>
+            </button>
+
+            {/* 4. Course / Subject Pills (shows both finished & unfinished for that subject) */}
+            {courses.map((course) => {
+              const isActive = activeTab === course;
+              const courseCount = canvasAssignments.filter((a) => a.courseName === course).length;
+              return (
                 <button
-                  key={c}
-                  onClick={() => setSelectedCourse(c)}
-                  className={`px-2.5 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-                    selectedCourse === c
-                      ? 'bg-orange-600 text-white font-bold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  key={course}
+                  onClick={() => setActiveTab(course)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    isActive
+                      ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
-                  {c}
+                  <span>{course}</span>
+                  <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
+                    isActive ? 'bg-white/20 text-white dark:bg-black/20 dark:text-slate-900' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                  }`}>
+                    {courseCount}
+                  </span>
                 </button>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -421,55 +372,88 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             <Layers className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
             <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
               {isConfigured
-                ? 'No Canvas assignments found in feed'
+                ? activeTab === 'UNFINISHED'
+                  ? 'All Caught Up! Zero Unfinished Assignments'
+                  : 'No assignments found in this view'
                 : 'Canvas LMS not yet connected'}
             </h3>
             <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
               {isConfigured
-                ? searchQuery
-                  ? `No assignments found matching "${searchQuery}".`
-                  : 'You have zero pending assignments in this calendar feed right now. Auto-sync is active.'
+                ? activeTab === 'UNFINISHED'
+                  ? 'You have completed all assignments currently listed in this feed. Great job!'
+                  : `No assignments found for "${activeTab}".`
                 : 'Add your Canvas Calendar URL above to sync your real school tasks.'}
             </p>
           </div>
         ) : (
           filteredAssignments.map((assignment) => {
+            const isCompleted = assignment.isCompleted || completedIds.includes(assignment.id);
             const isDueSoon =
               assignment.dueAt &&
               new Date(assignment.dueAt).getTime() - Date.now() < 86400000 * 3 &&
               new Date(assignment.dueAt).getTime() > Date.now();
+
+            const canvasLink =
+              assignment.htmlUrl ||
+              `${settings.apiDomain || 'https://canvas.instructure.com'}/courses/${assignment.courseId || ''}`;
 
             return (
               <div
                 key={assignment.id}
                 id={`canvas-assignment-card-${assignment.id}`}
                 className={`bg-white dark:bg-slate-900 rounded-2xl border p-4 sm:p-5 shadow-xs transition-all flex flex-col justify-between ${
-                  !assignment.isSynced
-                    ? 'border-orange-200 dark:border-orange-950/70 bg-orange-50/15 dark:bg-orange-950/10 hover:border-orange-400'
-                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                  isCompleted
+                    ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/10 dark:bg-emerald-950/10 opacity-80'
+                    : isDueSoon
+                    ? 'border-rose-200 dark:border-rose-900/70 hover:border-rose-400'
+                    : 'border-slate-200 dark:border-slate-800 hover:border-orange-300'
                 }`}
               >
                 <div>
-                  {/* Top line: Course & Sync status */}
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 text-orange-900 dark:bg-orange-950 dark:text-orange-300 uppercase tracking-wider">
-                      {assignment.courseName}
-                    </span>
+                  {/* Top line: Course badge, Status pill & Finished Toggle */}
+                  <div className="flex items-start justify-between gap-2 mb-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 text-orange-900 dark:bg-orange-950 dark:text-orange-300 uppercase tracking-wider">
+                        {assignment.courseName}
+                      </span>
 
-                    {assignment.isSynced ? (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        <span>SYNCED TO SHEET</span>
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300">
-                        PENDING SYNC
-                      </span>
-                    )}
+                      {isCompleted ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>FINISHED</span>
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300">
+                          UNFINISHED
+                        </span>
+                      )}
+
+                      {assignment.isSynced && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                          In Sheet
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Mark as Finished Toggle Checkbox */}
+                    <button
+                      onClick={() => handleToggleComplete(assignment.id)}
+                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+                        isCompleted
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:border-emerald-800 dark:text-emerald-300'
+                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300'
+                      }`}
+                      title={isCompleted ? 'Click to mark as Unfinished' : 'Click to mark as Finished'}
+                    >
+                      <CheckCircle2 className={`w-3.5 h-3.5 ${isCompleted ? 'text-emerald-600 fill-emerald-100 dark:fill-emerald-950' : 'text-slate-400'}`} />
+                      <span>{isCompleted ? 'Finished' : 'Mark Done'}</span>
+                    </button>
                   </div>
 
                   {/* Title */}
-                  <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug">
+                  <h4 className={`text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug ${
+                    isCompleted ? 'line-through text-slate-500 dark:text-slate-400' : ''
+                  }`}>
                     {assignment.name}
                   </h4>
 
@@ -477,7 +461,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                   <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-2 font-mono">
                     <span
                       className={`flex items-center gap-1 font-semibold ${
-                        isDueSoon
+                        isDueSoon && !isCompleted
                           ? 'text-rose-600 dark:text-rose-400'
                           : 'text-slate-600 dark:text-slate-300'
                       }`}
@@ -493,14 +477,14 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
                   {/* Description snippet */}
                   {assignment.description && (
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-2.5 line-clamp-3 leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-2.5 line-clamp-3 leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
                       {assignment.description.replace(/<[^>]*>?/gm, '')}
                     </p>
                   )}
                 </div>
 
-                {/* Bottom Actions */}
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                {/* Bottom Actions Bar with Direct Redirect Button */}
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-2">
                     {!assignment.isSynced ? (
                       <button
@@ -527,18 +511,17 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                     </button>
                   </div>
 
-                  {assignment.htmlUrl && (
-                    <a
-                      href={assignment.htmlUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1.5 rounded-lg transition-colors flex items-center gap-1"
-                      title="Open on Canvas"
-                    >
-                      <span className="hidden lg:inline text-[11px]">Canvas</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
+                  {/* Prominent Redirect Button to Canvas */}
+                  <a
+                    href={canvasLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Open this quiz or assignment directly in Canvas"
+                  >
+                    <span>Open on Canvas</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
                 </div>
               </div>
             );
@@ -548,4 +531,3 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
     </div>
   );
 };
-
