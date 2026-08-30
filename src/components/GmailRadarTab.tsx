@@ -582,28 +582,32 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
                   )}
                 </div>
 
-                {/* Expanded Raw Email Body */}
-                {isExpanded && alert.rawEmail && (
-                  <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs space-y-1.5 animate-in fade-in">
-                    <div className="text-slate-500 dark:text-slate-400 text-[11px] space-y-0.5">
-                      <p>
-                        <strong className="text-slate-700 dark:text-slate-300">From:</strong>{' '}
-                        {alert.rawEmail.sender} {alert.rawEmail.senderEmail && `<${alert.rawEmail.senderEmail}>`}
-                      </p>
-                      <p>
-                        <strong className="text-slate-700 dark:text-slate-300">Subject:</strong>{' '}
-                        {alert.rawEmail.subject}
-                      </p>
-                      <p>
-                        <strong className="text-slate-700 dark:text-slate-300">Date:</strong>{' '}
-                        {alert.rawEmail.date}
-                      </p>
-                    </div>
-                    <div className="pt-2 border-t border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed font-sans text-xs">
-                      {alert.rawEmail.snippet}
-                    </div>
+                {/* Expanded Raw Email Body with Fluid CSS Grid Accordion */}
+                <div className={`accordion-wrapper ${isExpanded && alert.rawEmail ? 'is-expanded' : ''}`}>
+                  <div className="accordion-inner">
+                    {alert.rawEmail && (
+                      <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs space-y-1.5">
+                        <div className="text-slate-500 dark:text-slate-400 text-[11px] space-y-0.5">
+                          <p>
+                            <strong className="text-slate-700 dark:text-slate-300">From:</strong>{' '}
+                            {alert.rawEmail.sender} {alert.rawEmail.senderEmail && `<${alert.rawEmail.senderEmail}>`}
+                          </p>
+                          <p>
+                            <strong className="text-slate-700 dark:text-slate-300">Subject:</strong>{' '}
+                            {alert.rawEmail.subject}
+                          </p>
+                          <p>
+                            <strong className="text-slate-700 dark:text-slate-300">Date:</strong>{' '}
+                            {alert.rawEmail.date}
+                          </p>
+                        </div>
+                        <div className="pt-2 border-t border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed font-sans text-xs">
+                          {alert.rawEmail.snippet}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             );
           })

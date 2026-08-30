@@ -228,7 +228,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                 <div
                   key={event.id || idx}
                   id={`event-timeline-${event.id}`}
-                  className="flex items-start gap-3.5 group"
+                  className="flex items-start gap-3.5 group timeline-reveal-item"
                 >
                   {/* Time on left */}
                   <div className="w-16 text-xs font-mono font-medium text-slate-500 dark:text-slate-400 pt-2.5 shrink-0 text-right">

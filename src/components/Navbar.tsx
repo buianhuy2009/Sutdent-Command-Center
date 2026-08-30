@@ -81,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="h-16 sm:h-20 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-8 flex items-center justify-between shadow-xs z-20 shrink-0 transition-colors">
+    <header className="h-16 sm:h-20 bg-[#FAF9F6]/90 dark:bg-[#0B1120]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-4 sm:px-8 flex items-center justify-between shadow-xs z-20 shrink-0 transition-colors">
       {/* Left: Brand & Connection Status */}
       <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
         {/* Mobile App Icon */}
@@ -199,7 +199,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl py-2 z-50 animate-in fade-in zoom-in-95">
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-[#FAF9F6]/95 dark:bg-[#0F172A]/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-2xl py-2 z-50 animate-in fade-in zoom-in-95">
               <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                 <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                   Notification Center

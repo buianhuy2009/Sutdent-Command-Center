@@ -12,6 +12,8 @@ import {
   Send,
   Mail,
   Radio,
+  X,
+  ArrowRight,
 } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { DailyRadarTab } from './components/DailyRadarTab';
@@ -133,6 +135,18 @@ export default function App() {
 
   // Active Tab - Canvas is prioritized #1
   const [activeTab, setActiveTab] = useState('canvas');
+  const onboardingDialogRef = useRef<HTMLDialogElement | null>(null);
+
+  // Smooth View Transitions for workspace switching
+  const handleTabTransition = useCallback((newTab: string) => {
+    if (typeof document !== 'undefined' && (document as any).startViewTransition) {
+      (document as any).startViewTransition(() => {
+        setActiveTab(newTab);
+      });
+    } else {
+      setActiveTab(newTab);
+    }
+  }, []);
 
   // Real Data State (Zero Fake Data)
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
@@ -300,6 +314,21 @@ export default function App() {
   useEffect(() => {
     saveSavedAssignments(assignments);
   }, [assignments]);
+
+  // Show Onboarding Tour dialog on initial visit
+  useEffect(() => {
+    try {
+      const tourSeen = localStorage.getItem('scc_tour_seen');
+      if (!tourSeen && onboardingDialogRef.current) {
+        const timer = setTimeout(() => {
+          onboardingDialogRef.current?.showModal();
+        }, 800);
+        return () => clearTimeout(timer);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // When demo mode is toggled, populate interactive sample data
   useEffect(() => {
@@ -1382,7 +1411,7 @@ export default function App() {
 
   // Create Doc from Canvas Assignment
   const handleCreateDocFromCanvas = (canvasItem: CanvasAssignment) => {
-    setActiveTab('projects');
+    handleTabTransition('projects');
     handleCreateDoc({
       title: canvasItem.name,
       subject: canvasItem.courseName,
@@ -1486,15 +1515,15 @@ export default function App() {
         e.preventDefault();
         setCommandPaletteOpen((prev) => !prev);
       } else if (e.key === '1') {
-        setActiveTab('canvas');
+        handleTabTransition('canvas');
       } else if (e.key === '2') {
-        setActiveTab('radar');
+        handleTabTransition('radar');
       } else if (e.key === '3') {
-        setActiveTab('gmail');
+        handleTabTransition('gmail');
       } else if (e.key === '4') {
-        setActiveTab('tracker');
+        handleTabTransition('tracker');
       } else if (e.key === '5') {
-        setActiveTab('projects');
+        handleTabTransition('projects');
       } else if (e.key === 'r' || e.key === 'R') {
         handleRefreshAll();
       } else if (e.key === 'd' || e.key === 'D') {
@@ -1553,11 +1582,11 @@ export default function App() {
         {/* Sleek Navy Navigation Rail */}
         <nav
           aria-label="Primary Navigation"
-          className="w-20 bg-[#0F172A] hidden md:flex flex-col items-center py-5 border-r border-slate-800 shadow-xl shrink-0 justify-between z-30 select-none h-full"
+          className="w-20 bg-[#0F172A]/95 dark:bg-[#0B1120]/95 backdrop-blur-md hidden md:flex flex-col items-center py-5 border-r border-slate-800/80 shadow-xl shrink-0 justify-between z-30 select-none h-full"
         >
           {/* Brand Logo Monogram */}
           <div
-            onClick={() => setActiveTab('canvas')}
+            onClick={() => handleTabTransition('canvas')}
             className="w-12 h-12 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/40 hover:scale-105 transition-transform cursor-pointer"
             title="Canvas LMS Hub & Student Command Center"
           >
@@ -1569,7 +1598,7 @@ export default function App() {
             {/* 1. Canvas LMS Tab (Prioritized) */}
             <button
               id="rail-tab-canvas"
-              onClick={() => setActiveTab('canvas')}
+              onClick={() => handleTabTransition('canvas')}
               className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer relative group ${
                 activeTab === 'canvas'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
@@ -1587,7 +1616,7 @@ export default function App() {
             {/* 2. Daily Schedule Tab */}
             <button
               id="rail-tab-radar"
-              onClick={() => setActiveTab('radar')}
+              onClick={() => handleTabTransition('radar')}
               className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer relative group ${
                 activeTab === 'radar'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
@@ -1605,7 +1634,7 @@ export default function App() {
             {/* 3. Gmail Scanner Tab */}
             <button
               id="rail-tab-gmail"
-              onClick={() => setActiveTab('gmail')}
+              onClick={() => handleTabTransition('gmail')}
               className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer relative group ${
                 activeTab === 'gmail'
                   ? 'bg-rose-600 text-white shadow-md shadow-rose-500/30'
@@ -1623,7 +1652,7 @@ export default function App() {
             {/* 4. Assignment Tracker Tab */}
             <button
               id="rail-tab-tracker"
-              onClick={() => setActiveTab('tracker')}
+              onClick={() => handleTabTransition('tracker')}
               className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer relative group ${
                 activeTab === 'tracker'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
@@ -1641,7 +1670,7 @@ export default function App() {
             {/* 5. Project Starter Tab */}
             <button
               id="rail-tab-projects"
-              onClick={() => setActiveTab('projects')}
+              onClick={() => handleTabTransition('projects')}
               className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all cursor-pointer relative group ${
                 activeTab === 'projects'
                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30'
@@ -1689,11 +1718,11 @@ export default function App() {
         </nav>
 
         {/* Right Main Column with Top Header, Scrollable Content, and Bottom Status Bar */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#F8FAFC] dark:bg-[#0B1120]">
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#FAF9F6] dark:bg-[#0B1120]">
           {/* Top Header */}
           <Navbar
             activeTab={activeTab}
-            setActiveTab={setActiveTab}
+            setActiveTab={handleTabTransition}
             user={user}
             isDemoMode={isDemoMode}
             setIsDemoMode={setIsDemoMode}
@@ -1709,13 +1738,13 @@ export default function App() {
             onOpenDeploymentGuide={() => setDeploymentModalOpen(true)}
             onOpenOAuthGuide={() => setOauthGuideModalOpen(true)}
             onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
-            onOpenNewAssignment={() => setActiveTab('tracker')}
+            onOpenNewAssignment={() => handleTabTransition('tracker')}
             sheetUrl={masterSheetUrl}
             notifications={notifications}
           />
 
           {/* Mobile Tab Navigation Bar (shown only on small screens) */}
-          <div className="md:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2 flex space-x-2 overflow-x-auto scrollbar-none">
+          <div className="md:hidden bg-[#FAF9F6]/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-2 flex space-x-2 overflow-x-auto scrollbar-none">
             {[
               { id: 'canvas', label: 'Canvas LMS', icon: Layers },
               { id: 'radar', label: 'Daily Schedule', icon: Compass },
@@ -1728,7 +1757,7 @@ export default function App() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabTransition(tab.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
                     isActive
                       ? 'bg-indigo-600 text-white font-semibold shadow-xs'
@@ -1912,14 +1941,14 @@ export default function App() {
       <CommandPalette
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
-        onSelectTab={setActiveTab}
+        onSelectTab={handleTabTransition}
         onOpenQuickDraft={() => {
           setDraftInitialEmail(null);
           setDraftInitialAlert(null);
           setQuickDraftModalOpen(true);
         }}
         onOpenNewAssignment={() => {
-          setActiveTab('tracker');
+          handleTabTransition('tracker');
         }}
         onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
         onToggleDarkMode={() => setDarkMode(!darkMode)}
@@ -1960,6 +1989,76 @@ export default function App() {
           handleRefreshAll();
         }}
       />
+
+      {/* Declarative Native <dialog> Onboarding Tour */}
+      <dialog
+        ref={onboardingDialogRef}
+        id="onboarding-tour-dialog"
+        className="backdrop:bg-slate-950/70 backdrop:backdrop-blur-xs rounded-2xl p-0 border border-slate-200 dark:border-slate-800 shadow-2xl bg-[#FAF9F6] dark:bg-[#0F172A] text-slate-900 dark:text-white max-w-lg w-full m-auto overflow-hidden"
+      >
+        <div className="p-6 space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md shadow-indigo-500/30">
+                S
+              </div>
+              <div>
+                <h3 className="text-base font-bold leading-tight">Welcome to Student Command Center</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Eye-friendly, distraction-free academic workspace</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem('scc_tour_seen', 'true');
+                onboardingDialogRef.current?.close();
+              }}
+              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="space-y-3 text-xs">
+            <div className="p-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-start gap-3">
+              <span className="p-1.5 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 shrink-0 font-bold">1</span>
+              <div>
+                <strong className="text-slate-900 dark:text-white block font-semibold">Canvas LMS Direct Sync</strong>
+                <p className="text-slate-500 dark:text-slate-400 mt-0.5">Filter unfinished vs. completed homework, open quizzes directly in Canvas, or submit files from Google Drive.</p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-start gap-3">
+              <span className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 shrink-0 font-bold">2</span>
+              <div>
+                <strong className="text-slate-900 dark:text-white block font-semibold">Unified Daily Timeline</strong>
+                <p className="text-slate-500 dark:text-slate-400 mt-0.5">Your Google Calendar classes, study focus blocks, and today's Canvas deadlines merged in chronological order.</p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-start gap-3">
+              <span className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 shrink-0 font-bold">3</span>
+              <div>
+                <strong className="text-slate-900 dark:text-white block font-semibold">Anti-Eyestrain Linen Theme</strong>
+                <p className="text-slate-500 dark:text-slate-400 mt-0.5">Custom calibrated #FAF9F6 soft background eliminates blue-light glare and eye fatigue during late study sessions.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2 flex items-center justify-between gap-3">
+            <span className="text-[11px] text-slate-400 font-mono">Press 1-5 for fast keyboard switching</span>
+            <button
+              onClick={() => {
+                localStorage.setItem('scc_tour_seen', 'true');
+                onboardingDialogRef.current?.close();
+              }}
+              className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>Get Started</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </dialog>
 
       {/* Toast Notification Container */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

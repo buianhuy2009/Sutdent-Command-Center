@@ -5,6 +5,8 @@
 @layer base {
   html {
     color-scheme: light;
+    background-color: #FAF9F6;
+    color: #1E293B;
   }
   html.dark {
     color-scheme: dark;
@@ -13,7 +15,17 @@
   }
   body {
     @apply antialiased;
+    background-color: #FAF9F6;
   }
+  .dark body {
+    background-color: #0B1120;
+  }
+
+  /* Balanced typography for headings */
+  h1, h2, h3, h4, h5 {
+    text-wrap: balance;
+  }
+
   /* Enhanced dark mode readability and contrast */
   .dark {
     --tw-border-opacity: 1;
@@ -26,5 +38,97 @@
   }
   .dark .text-slate-600 {
     color: #e2e8f0;
+  }
+}
+
+/* Native View Transitions API Styling */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.22s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom Modern Themed Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+.dark * {
+  scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+/* Fluid 60fps CSS Grid Accordions */
+.accordion-wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+.accordion-wrapper.is-expanded {
+  grid-template-rows: 1fr;
+}
+.accordion-inner {
+  min-height: 0;
+}
+
+/* Glassmorphism Shell Utilities */
+.glass-panel {
+  background-color: rgba(250, 249, 246, 0.88);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+}
+.dark .glass-panel {
+  background-color: rgba(11, 17, 32, 0.88);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+}
+
+.glass-card {
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.dark .glass-card {
+  background-color: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Scroll-Driven Timeline Reveal Animations */
+@keyframes timelineCardReveal {
+  from {
+    opacity: 0.3;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@supports (animation-timeline: view()) {
+  .timeline-reveal-item {
+    view-timeline-name: --timelineItem;
+    view-timeline-axis: block;
+    animation-timeline: --timelineItem;
+    animation-name: timelineCardReveal;
+    animation-range: entry 5% cover 25%;
+    animation-fill-mode: both;
   }
 }
