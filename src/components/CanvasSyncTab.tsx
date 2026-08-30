@@ -21,10 +21,18 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  GraduationCap,
+  BookOpen,
+  Palette,
 } from 'lucide-react';
 import { CanvasAssignment, CanvasSettings } from '../types';
 import { loadCompletedCanvasIds, saveCompletedCanvasIds, resolveCanvasUrl, toMobileDeepLink } from '../services/canvas';
 import { extractSubtasksFromCanvas, SubtaskResult } from '../services/gemini';
+import { GoogleClassroomPanel } from './GoogleClassroomPanel';
+import { MoodlePanel } from './MoodlePanel';
+import { CanvaStudioTab } from './CanvaStudioTab';
+
+export type LmsPlatform = 'canvas' | 'classroom' | 'moodle' | 'canva';
 
 interface CanvasSyncTabProps {
   settings: CanvasSettings;
@@ -39,6 +47,8 @@ interface CanvasSyncTabProps {
   recentFiles?: any[];
   isGoogleConnected?: boolean;
   onSubmitAssignment?: (assignment: CanvasAssignment, fileId: string) => Promise<void>;
+  googleToken?: string;
+  onConnectGoogle?: () => void;
 }
 
 export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
@@ -54,7 +64,10 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   recentFiles = [],
   isGoogleConnected = true,
   onSubmitAssignment,
+  googleToken,
+  onConnectGoogle,
 }) => {
+  const [activePlatform, setActivePlatform] = useState<LmsPlatform>('canvas');
   const [feedUrl, setFeedUrl] = useState(settings.calendarFeedUrl || '');
   const [apiDomain, setApiDomain] = useState(settings.apiDomain || 'https://canvas.instructure.com');
   const [apiToken, setApiToken] = useState(settings.apiToken || '');
@@ -173,17 +186,66 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Top Clean Header */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-orange-500/10 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
-            <Layers className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                Canvas LMS
-              </h2>
+      {/* Top Multi-Platform LMS & Tools Hub Switcher */}
+      <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-1.5 flex items-center gap-1.5 overflow-x-auto scrollbar-none shadow-xs">
+        {[
+          { id: 'canvas', label: 'Canvas LMS', icon: Layers, badge: canvasAssignments.length },
+          { id: 'classroom', label: 'Google Classroom', icon: GraduationCap, badge: undefined },
+          { id: 'moodle', label: 'Moodle LMS', icon: BookOpen, badge: undefined },
+          { id: 'canva', label: 'Canva Studio', icon: Palette, badge: undefined },
+        ].map((tab) => {
+          const isActive = activePlatform === tab.id;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActivePlatform(tab.id as LmsPlatform)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+                isActive
+                  ? 'bg-[#D97757] text-white shadow-xs'
+                  : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27]'
+              }`}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              <span>{tab.label}</span>
+              {tab.badge !== undefined && tab.badge > 0 && (
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-[#D97757]/15 text-[#D97757]'}`}>
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {activePlatform === 'classroom' && (
+        <GoogleClassroomPanel
+          googleToken={googleToken}
+          isGoogleConnected={isGoogleConnected}
+          onConnectGoogle={onConnectGoogle}
+          onSyncToSheet={onSyncToSheet}
+        />
+      )}
+
+      {activePlatform === 'moodle' && (
+        <MoodlePanel onSyncToSheet={onSyncToSheet} />
+      )}
+
+      {activePlatform === 'canva' && <CanvaStudioTab />}
+
+      {activePlatform === 'canvas' && (
+        <>
+          {/* Top Clean Header */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-500/10 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+                <Layers className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                    Canvas LMS
+                  </h2>
               {isConfigured && (
                 <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 rounded-full">
                   Connected
@@ -838,6 +900,8 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
           })
         )}
       </div>
+        </>
+      )}
     </div>
   );
 };

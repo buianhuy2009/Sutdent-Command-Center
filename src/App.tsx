@@ -49,6 +49,7 @@ import {
   fetchTodayCalendarEvents,
   insertCalendarEvent,
   fetchAcademicEmails,
+  FetchEmailOptions,
   createGmailDraft,
   getOrCreateMasterSheet,
   fetchSheetAssignments,
@@ -719,7 +720,7 @@ export default function App() {
   }, [addToast]);
 
   // Fetch Academic Emails & Summarize with Gemini
-  const loadEmailsAndAlerts = useCallback(async (isSilent = false, forceResort = false) => {
+  const loadEmailsAndAlerts = useCallback(async (isSilent = false, forceResort = false, options?: FetchEmailOptions) => {
     const token = getStoredGoogleToken();
     if (!token) {
       setRawEmails([]);
@@ -731,7 +732,7 @@ export default function App() {
 
     if (!isSilent) setIsLoadingEmails(true);
     try {
-      const emails = await fetchAcademicEmails(token);
+      const emails = await fetchAcademicEmails(token, options);
       setEmailError(null);
       setGmailApiInfo(null);
 
@@ -2005,6 +2006,8 @@ export default function App() {
                   recentFiles={recentFiles}
                   isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
                   onSubmitAssignment={handleSubmitAssignment}
+                  googleToken={getStoredGoogleToken() || undefined}
+                  onConnectGoogle={() => handleGoogleSignIn(true)}
                 />
               )}
 
@@ -2035,7 +2038,7 @@ export default function App() {
                   emailAlerts={emailAlerts}
                   rawEmails={rawEmails}
                   isLoadingEmails={isLoadingEmails}
-                  onRefreshEmails={() => loadEmailsAndAlerts(false, true)}
+                  onRefreshEmails={(forceResort, options) => loadEmailsAndAlerts(false, forceResort ?? true, options)}
                   onOpenQuickDraft={(email, alert) => {
                     setDraftInitialEmail(email || null);
                     setDraftInitialAlert(alert || null);

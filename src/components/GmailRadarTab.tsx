@@ -25,7 +25,7 @@ interface GmailRadarTabProps {
   emailAlerts: EmailAlert[];
   rawEmails: EmailMessage[];
   isLoadingEmails: boolean;
-  onRefreshEmails: () => void;
+  onRefreshEmails: (forceResort?: boolean, options?: { maxResults?: number; mode?: 'inbox' | 'academic' }) => void;
   onOpenQuickDraft: (email?: EmailMessage, alert?: EmailAlert) => void;
   onExtractAssignment: (alert: EmailAlert) => void;
   isGoogleConnected?: boolean;
@@ -46,6 +46,8 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
   emailError,
   gmailApiInfo,
 }) => {
+  const [scanLimit, setScanLimit] = useState<number>(25);
+  const [scanMode, setScanMode] = useState<'inbox' | 'academic'>('inbox');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [hideSpam, setHideSpam] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -207,12 +209,35 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
               Gmail Scanner
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Teacher emails, announcements, and action items
+              {rawEmails.length} recent inbox emails scanned &amp; classified by Gemini AI
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {/* Mode Selector */}
+          <select
+            value={scanMode}
+            onChange={(e) => setScanMode(e.target.value as any)}
+            className="px-2.5 py-1.5 bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs font-semibold cursor-pointer focus:ring-2 focus:ring-[#D97757]"
+            title="Scan Filter Mode"
+          >
+            <option value="inbox">All Recent Inbox</option>
+            <option value="academic">Academic Keywords</option>
+          </select>
+
+          {/* Limit Selector */}
+          <select
+            value={scanLimit}
+            onChange={(e) => setScanLimit(Number(e.target.value))}
+            className="px-2.5 py-1.5 bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs font-semibold cursor-pointer focus:ring-2 focus:ring-[#D97757]"
+            title="Max Emails to Scan"
+          >
+            <option value={15}>15 emails</option>
+            <option value={25}>25 emails (default)</option>
+            <option value={50}>50 emails</option>
+          </select>
+
           <button
             id="btn-open-quick-draft-top"
             onClick={() => onOpenQuickDraft()}
@@ -224,7 +249,7 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
 
           <button
             id="btn-scan-inbox-now"
-            onClick={onRefreshEmails}
+            onClick={() => onRefreshEmails(true, { maxResults: scanLimit, mode: scanMode })}
             disabled={isLoadingEmails}
             className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
           >

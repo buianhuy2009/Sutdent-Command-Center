@@ -25,6 +25,8 @@ import {
   CheckSquare,
   FileText,
   Bot,
+  GraduationCap,
+  BookOpen,
 } from 'lucide-react';
 
 export interface ShortcutSettings {
@@ -350,6 +352,31 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                     <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-[#D97757]' : ''}`} />
                     <span>{isRefreshing ? 'Syncing...' : 'Sync Now (R)'}</span>
                   </button>
+                </div>
+
+                {/* Academic Integrations Hub Card */}
+                <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">Multi-Platform Academic Hub</h4>
+                      <p className="text-[11px] text-[#8C897F] mt-0.5">
+                        Connected LMS and design tools configured in your Command Center.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                    {[
+                      { label: 'Google Classroom', status: user ? 'Ready' : 'Not Connected', color: user ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800' : 'text-slate-500 bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700' },
+                      { label: 'Canvas LMS', status: 'Active', color: 'text-orange-600 bg-orange-50 dark:bg-orange-950/60 border-orange-200 dark:border-orange-800' },
+                      { label: 'Moodle LMS', status: 'Configured', color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800' },
+                      { label: 'Canva Studio', status: 'Active', color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800' },
+                    ].map((item) => (
+                      <div key={item.label} className={`p-2.5 rounded-xl border text-center ${item.color}`}>
+                        <div className="text-[11px] font-bold truncate">{item.label}</div>
+                        <div className="text-[10px] opacity-80 mt-0.5">{item.status}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Developer / OAuth Setup */}

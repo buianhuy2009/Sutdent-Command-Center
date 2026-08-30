@@ -314,12 +314,32 @@ export function findSuggestedStudySlot(
 // GMAIL API
 // ==========================================
 
-export async function fetchAcademicEmails(token: string): Promise<EmailMessage[]> {
+export interface FetchEmailOptions {
+  maxResults?: number;
+  mode?: 'inbox' | 'academic';
+  customQuery?: string;
+}
+
+export async function fetchAcademicEmails(
+  token: string,
+  options?: FetchEmailOptions
+): Promise<EmailMessage[]> {
   try {
-    const query = 'assignment OR quiz OR due OR test OR project OR syllabus OR exam OR homework OR rubric OR grade';
+    const maxResults = options?.maxResults || 25;
+    let query = options?.customQuery;
+    if (!query) {
+      if (options?.mode === 'academic') {
+        query =
+          'in:inbox (assignment OR quiz OR exam OR due OR test OR project OR syllabus OR homework OR rubric OR grade OR "bài tập" OR "kiểm tra" OR "hạn nộp" OR "thông báo" OR teacher OR professor OR canvas OR classroom)';
+      } else {
+        // Default to real-time latest inbox messages
+        query = 'in:inbox -in:chats';
+      }
+    }
+
     const listUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(
       query
-    )}&maxResults=8`;
+    )}&maxResults=${maxResults}`;
 
     const listRes = await fetch(listUrl, {
       headers: { Authorization: `Bearer ${token}` },
