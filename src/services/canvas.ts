@@ -178,7 +178,7 @@ export async function fetchCanvasAssignmentsFromFeed(feedUrl: string): Promise<C
 
 /**
  * Fetch Canvas assignments directly via Canvas REST API (using Access Token)
- * Automatically fetches all active courses and inspects live submission status
+ * Automatically fetches all active courses & favorites, inspecting authentic user-specific submission status
  */
 export async function fetchCanvasAssignmentsFromApi(
   domain: string,
@@ -188,9 +188,8 @@ export async function fetchCanvasAssignmentsFromApi(
 
   const cleanDomain = domain.replace(/\/$/, '');
   const headers = { 'x-canvas-token': token };
-  const allAssignments: CanvasAssignment[] = [];
 
-  // 1. Fetch Canvas "To Do" list (Canvas authoritative pending homework list)
+  // 1. Fetch Canvas "To Do" list (authoritative pending homework list)
   const todoIds = new Set<string>();
   try {
     const todoUrl = `${cleanDomain}/api/v1/users/self/todo?per_page=100`;
@@ -209,87 +208,123 @@ export async function fetchCanvasAssignmentsFromApi(
     console.warn('Canvas To Do list query error:', err);
   }
 
-  // 2. Fetch active courses and their assignments with full submission metadata
+  // 2. Fetch all enrolled courses (combining /users/self/courses, /users/self/favorites/courses, and /courses)
+  const courseMap = new Map<number, any>();
   try {
-    const coursesUrl = `${cleanDomain}/api/v1/courses?enrollment_state=active&per_page=50`;
-    const proxyCoursesUrl = `/api/canvas/proxy?url=${encodeURIComponent(coursesUrl)}`;
-    const coursesRes = await fetch(proxyCoursesUrl, { headers });
+    const courseEndpoints = [
+      `${cleanDomain}/api/v1/users/self/courses?enrollment_state=active&include[]=term&include[]=total_scores&per_page=100`,
+      `${cleanDomain}/api/v1/users/self/favorites/courses?include[]=term&per_page=50`,
+      `${cleanDomain}/api/v1/courses?enrollment_state=active&per_page=50`,
+    ];
 
-    if (coursesRes.ok) {
-      const courses = await coursesRes.json();
-      if (Array.isArray(courses) && courses.length > 0) {
-        const coursePromises = courses
-          .filter((c: any) => c.id && (c.name || c.course_code))
-          .map(async (course: any) => {
-            try {
-              const assignUrl = `${cleanDomain}/api/v1/courses/${course.id}/assignments?include[]=submission&per_page=100&order_by=due_at`;
-              const proxyAssignUrl = `/api/canvas/proxy?url=${encodeURIComponent(assignUrl)}`;
-              const assignRes = await fetch(proxyAssignUrl, { headers });
-              if (!assignRes.ok) return [];
-
-              const assignData = await assignRes.json();
-              if (!Array.isArray(assignData)) return [];
-
-              return assignData.map((a: any) => {
-                const sub = a.submission || {};
-                const subTypes = a.submission_types || [];
-
-                // Detect 0-point non-submittable posts/readings
-                const isNoSubmission =
-                  subTypes.includes('none') ||
-                  subTypes.includes('not_graded') ||
-                  (a.points_possible === 0 && (!subTypes.length || subTypes.includes('none')));
-
-                const isInTodo = todoIds.has(String(a.id));
-                const isExplicitlyUnsubmitted = sub.workflow_state === 'unsubmitted' && !sub.submitted_at;
-
-                let isFinished = false;
-                if (isInTodo) {
-                  isFinished = false;
-                } else if (isExplicitlyUnsubmitted) {
-                  isFinished = false;
-                } else if (sub.submitted_at || sub.workflow_state === 'submitted' || (sub.workflow_state === 'graded' && sub.submitted_at)) {
-                  isFinished = true;
-                } else if (a.user_submitted || a.has_submitted_submissions) {
-                  isFinished = true;
-                } else if (isNoSubmission) {
-                  isFinished = true;
-                }
-
-                return {
-                  id: `canvas-assign-${a.id}`,
-                  name: a.name || 'Canvas Assignment',
-                  courseName: course.name || course.course_code || 'Canvas Course',
-                  courseId: String(course.id),
-                  dueAt: (a.due_at || a.lock_at || '').split('T')[0] || '',
-                  pointsPossible: a.points_possible,
-                  htmlUrl: a.html_url,
-                  description: a.description || '',
-                  isSynced: false,
-                  isCompleted: isFinished,
-                  isInformational: isNoSubmission,
-                  submissionTypes: subTypes,
-                };
-              });
-            } catch (err) {
-              console.warn(`Error fetching assignments for course ${course.id}:`, err);
-              return [];
-            }
-          });
-
-        const courseResults = await Promise.all(coursePromises);
-        courseResults.flat().forEach((a) => allAssignments.push(a));
-
-        if (allAssignments.length > 0) {
-          return allAssignments;
+    for (const ep of courseEndpoints) {
+      try {
+        const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(ep)}`;
+        const res = await fetch(proxyUrl, { headers });
+        if (res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list)) {
+            list.forEach((c: any) => {
+              if (c && c.id && (c.name || c.course_code)) {
+                courseMap.set(c.id, c);
+              }
+            });
+          }
         }
+      } catch (e) {
+        // Continue to next endpoint
       }
     }
   } catch (err) {
-    console.warn('Canvas courses assignment query error:', err);
+    console.warn('Error fetching courses list:', err);
   }
 
-  // Method 2: Planner Items with 6-month window
+  const courses = Array.from(courseMap.values());
+  const allAssignments: CanvasAssignment[] = [];
+  const assignmentIdSet = new Set<string>();
+
+  // 3. For every active enrolled course, fetch all assignments with submission data
+  if (courses.length > 0) {
+    const coursePromises = courses.map(async (course: any) => {
+      try {
+        const assignUrl = `${cleanDomain}/api/v1/courses/${course.id}/assignments?include[]=submission&per_page=100&order_by=due_at`;
+        const proxyAssignUrl = `/api/canvas/proxy?url=${encodeURIComponent(assignUrl)}`;
+        const assignRes = await fetch(proxyAssignUrl, { headers });
+        if (!assignRes.ok) return [];
+
+        const assignData = await assignRes.json();
+        if (!Array.isArray(assignData)) return [];
+
+        return assignData.map((a: any) => {
+          const sub = a.submission || {};
+          const subTypes = a.submission_types || [];
+
+          // 0-point non-submittable informational posts/readings
+          const isNoSubmission =
+            subTypes.includes('none') ||
+            subTypes.includes('not_graded') ||
+            (a.points_possible === 0 && (!subTypes.length || subTypes.includes('none')));
+
+          const isInTodo = todoIds.has(String(a.id));
+
+          // STRICT USER-LEVEL SUBMISSION CHECK
+          // DO NOT use a.has_submitted_submissions (which is true if ANY classmate submitted!)
+          const hasUserSubmitted = Boolean(
+            sub.submitted_at ||
+            a.user_submitted === true ||
+            sub.workflow_state === 'submitted' ||
+            sub.workflow_state === 'pending_review' ||
+            (sub.workflow_state === 'graded' && sub.submitted_at)
+          );
+
+          const isExplicitlyUnsubmitted =
+            sub.workflow_state === 'unsubmitted' ||
+            (!sub.submitted_at && !a.user_submitted && sub.workflow_state !== 'submitted');
+
+          let isFinished = false;
+          if (isInTodo) {
+            isFinished = false;
+          } else if (hasUserSubmitted) {
+            isFinished = true;
+          } else if (isExplicitlyUnsubmitted) {
+            isFinished = false;
+          } else if (isNoSubmission) {
+            isFinished = true;
+          } else {
+            isFinished = false;
+          }
+
+          return {
+            id: `canvas-assign-${a.id}`,
+            name: a.name || 'Canvas Assignment',
+            courseName: course.name || course.course_code || 'Canvas Course',
+            courseId: String(course.id),
+            dueAt: (a.due_at || a.lock_at || '').split('T')[0] || '',
+            pointsPossible: a.points_possible,
+            htmlUrl: a.html_url,
+            description: a.description || '',
+            isSynced: false,
+            isCompleted: isFinished,
+            isInformational: isNoSubmission,
+            submissionTypes: subTypes,
+          };
+        });
+      } catch (err) {
+        console.warn(`Error fetching assignments for course ${course.id}:`, err);
+        return [];
+      }
+    });
+
+    const courseResults = await Promise.all(coursePromises);
+    courseResults.flat().forEach((a) => {
+      if (a && !assignmentIdSet.has(a.id)) {
+        assignmentIdSet.add(a.id);
+        allAssignments.push(a);
+      }
+    });
+  }
+
+  // 4. Planner items query (6-month range) to capture any additional assignments/quizzes
   try {
     const startDate = new Date(Date.now() - 86400000 * 90).toISOString();
     const plannerUrl = `${cleanDomain}/api/v1/planner/items?start_date=${startDate}&order=desc&per_page=100`;
@@ -299,32 +334,35 @@ export async function fetchCanvasAssignmentsFromApi(
     if (plannerRes.ok) {
       const items = await plannerRes.json();
       if (Array.isArray(items) && items.length > 0) {
-        return items
+        items
           .filter((item: any) => item.plannable_type === 'assignment' || item.plannable_type === 'quiz' || item.plannable)
-          .map((item: any) => {
+          .forEach((item: any) => {
             const p = item.plannable || {};
             const sub = item.submissions || {};
+            const aid = `canvas-assign-${item.plannable_id || item.id}`;
+
             const isSubmitted = Boolean(
               sub.submitted ||
-              sub.graded ||
-              item.workflow_state === 'completed' ||
-              sub.workflow_state === 'submitted' ||
-              sub.workflow_state === 'graded' ||
-              sub.submitted_at
+              sub.submitted_at ||
+              item.user_submitted ||
+              (sub.workflow_state === 'submitted' || sub.workflow_state === 'pending_review')
             );
 
-            return {
-              id: `canvas-planner-${item.plannable_id || item.id}`,
-              name: p.title || item.plannable_title || 'Canvas Assignment',
-              courseName: item.context_name || 'Canvas Course',
-              courseId: item.course_id ? String(item.course_id) : undefined,
-              dueAt: (p.due_at || item.plannable_date || '').split('T')[0] || '',
-              pointsPossible: p.points_possible,
-              htmlUrl: item.html_url || p.html_url,
-              description: p.details || p.description || '',
-              isSynced: false,
-              isCompleted: isSubmitted,
-            };
+            if (!assignmentIdSet.has(aid)) {
+              assignmentIdSet.add(aid);
+              allAssignments.push({
+                id: aid,
+                name: p.title || item.plannable_title || 'Canvas Assignment',
+                courseName: item.context_name || 'Canvas Course',
+                courseId: item.course_id ? String(item.course_id) : undefined,
+                dueAt: (p.due_at || item.plannable_date || '').split('T')[0] || '',
+                pointsPossible: p.points_possible,
+                htmlUrl: item.html_url || p.html_url,
+                description: p.details || p.description || '',
+                isSynced: false,
+                isCompleted: isSubmitted,
+              });
+            }
           });
       }
     }
@@ -332,7 +370,11 @@ export async function fetchCanvasAssignmentsFromApi(
     console.warn('Planner items query failed:', err);
   }
 
-  // Method 3: Upcoming events fallback
+  if (allAssignments.length > 0) {
+    return allAssignments;
+  }
+
+  // 5. Upcoming events fallback
   const url = `${cleanDomain}/api/v1/users/self/upcoming_events?include[]=submission`;
   const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(url)}`;
   const res = await fetch(proxyUrl, { headers });
@@ -347,11 +389,9 @@ export async function fetchCanvasAssignmentsFromApi(
           const sub = a.submission || {};
           const isSubmitted = Boolean(
             a.user_submitted ||
-            a.has_submitted_submissions ||
-            sub.workflow_state === 'submitted' ||
-            sub.workflow_state === 'graded' ||
             sub.submitted_at ||
-            (sub.score !== undefined && sub.score !== null)
+            sub.workflow_state === 'submitted' ||
+            sub.workflow_state === 'pending_review'
           );
 
           return {
@@ -406,19 +446,16 @@ export function crossReferenceCanvasWithSheet(
   const completedSet = new Set(completedIds);
 
   return canvasList.map((canvasItem) => {
+    const cName = canvasItem.name.toLowerCase().trim();
     const matchingSheetItem = (sheetAssignments || []).find((sheetItem) => {
-      const nameMatch =
-        sheetItem.assignmentName.toLowerCase().trim() ===
-        canvasItem.name.toLowerCase().trim();
-      const courseMatch =
-        sheetItem.subject.toLowerCase().includes(canvasItem.courseName.toLowerCase().slice(0, 5)) ||
-        canvasItem.courseName.toLowerCase().includes(sheetItem.subject.toLowerCase().slice(0, 5));
-      return nameMatch || (courseMatch && sheetItem.dueDate === canvasItem.dueAt);
+      const sName = sheetItem.assignmentName.toLowerCase().trim();
+      if (!sName || !cName) return false;
+      return sName === cName || sName.includes(cName) || cName.includes(sName);
     });
 
     const isAlreadyInSheet = Boolean(matchingSheetItem);
     const isDoneInSheet = matchingSheetItem?.status === 'Done';
-    const isCompleted = completedSet.has(canvasItem.id) || isDoneInSheet || Boolean(canvasItem.isCompleted);
+    const isCompleted = isDoneInSheet || Boolean(canvasItem.isCompleted) || completedSet.has(canvasItem.id);
 
     return {
       ...canvasItem,
