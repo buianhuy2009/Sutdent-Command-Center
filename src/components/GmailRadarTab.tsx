@@ -16,6 +16,7 @@ import {
   Tag,
   AlertTriangle,
   FileText,
+  MoreVertical,
 } from 'lucide-react';
 import { EmailAlert, EmailMessage, EmailCategory, ApiEnablementInfo } from '../types';
 import { ApiActivationBanner } from './ApiActivationBanner';
@@ -50,6 +51,8 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedLanguage, setSelectedLanguage] = useState<'all' | 'vi' | 'en'>('all');
   const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [overrides, setOverrides] = useState<Record<string, { isSpam?: boolean; category?: EmailCategory; categoryLabel?: string }>>({});
 
   // Merge server alerts with user manual classification adjustments
@@ -255,18 +258,15 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
         </div>
       ) : null}
 
-      {/* Filter & Control Bar */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs space-y-4">
-        {/* Category Tabs */}
-        <div className="flex items-center justify-between flex-wrap gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+      {/* Streamlined Filter & Control Bar */}
+      <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-3 sm:p-4 shadow-xs space-y-3">
+        {/* Main Category Tabs & Tools Toggle */}
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-1.5 flex-wrap">
             {[
               { id: 'all', label: 'All Emails', count: effectiveAlerts.length },
               { id: 'academic', label: 'Academic & School', count: effectiveAlerts.filter((a) => !a.isSpam).length },
-              { id: 'assignments', label: 'Assignments', count: effectiveAlerts.filter((a) => a.category === 'ASSIGNMENT').length },
-              { id: 'exams', label: 'Exams & Quizzes', count: effectiveAlerts.filter((a) => a.category === 'EXAM').length },
-              { id: 'announcements', label: 'Announcements', count: effectiveAlerts.filter((a) => a.category === 'ANNOUNCEMENT' || a.category === 'SCHEDULE').length },
-              { id: 'spam', label: 'Spam / Promotions', count: spamCount, isSpamTab: true },
+              { id: 'spam', label: 'Spam & Promo', count: spamCount, isSpamTab: true },
             ].map((tab) => {
               const isActive = activeCategory === tab.id;
               return (
@@ -276,12 +276,12 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
                     setActiveCategory(tab.id);
                     if (tab.id === 'spam') setHideSpam(false);
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     isActive
                       ? tab.isSpamTab
-                        ? 'bg-amber-600 text-white font-semibold shadow-xs'
-                        : 'bg-indigo-600 text-white font-semibold shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'bg-[#D97757] text-white shadow-xs'
+                      : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27]'
                   }`}
                 >
                   <span>{tab.label}</span>
@@ -289,9 +289,7 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
                     className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
                       isActive
                         ? 'bg-white/20 text-white'
-                        : tab.isSpamTab && tab.count > 0
-                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        : 'bg-black/5 dark:bg-white/10'
                     }`}
                   >
                     {tab.count}
@@ -301,74 +299,105 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
             })}
           </div>
 
-          {/* Spam Toggle Checkbox */}
-          <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none ml-auto">
-            <input
-              type="checkbox"
-              checked={hideSpam}
-              onChange={(e) => setHideSpam(e.target.checked)}
-              className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 border-slate-300 dark:border-slate-700"
-            />
-            <span className="flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Hide Spam & Promotions</span>
-            </span>
-          </label>
+          <div className="flex items-center gap-2">
+            {/* Filter & Search Collapsible Toggle */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 border ${
+                showFilters || searchQuery.trim() || selectedLanguage !== 'all'
+                  ? 'bg-[#D97757]/10 text-[#D97757] border-[#D97757]/40'
+                  : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] border-[#DFDACB] dark:border-[#2C2B27] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26]'
+              }`}
+              title="Search and category filters"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{showFilters ? 'Hide Tools' : 'Search & Filters'}</span>
+              {(searchQuery.trim() || selectedLanguage !== 'all') && (
+                <span className="w-2 h-2 rounded-full bg-[#D97757]" />
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Search & Language Bar */}
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          {/* Search Box */}
-          <div className="relative flex-1 w-full">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search sender, subject, assignment, or keywords..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
-            />
-          </div>
+        {/* Collapsible Search & Extended Category Drawer */}
+        {showFilters && (
+          <div className="pt-3 border-t border-[#DFDACB]/60 dark:border-[#2C2B27] space-y-3 animate-in fade-in duration-150">
+            {/* Search Box */}
+            <div className="relative flex-1 w-full">
+              <Search className="w-3.5 h-3.5 text-[#8C897F] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search sender, subject, keywords..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-8 py-1.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] placeholder:text-[#8C897F]"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] text-xs font-bold cursor-pointer"
+                >
+                  ×
+                </button>
+              )}
+            </div>
 
-          {/* Language Selector */}
-          <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-auto">
-            <Globe className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-xs text-slate-500 font-medium">Language:</span>
-            <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
-              <button
-                onClick={() => setSelectedLanguage('all')}
-                className={`px-2 py-1 text-[11px] font-medium rounded-md transition-colors ${
-                  selectedLanguage === 'all'
-                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs font-semibold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setSelectedLanguage('vi')}
-                className={`px-2 py-1 text-[11px] font-medium rounded-md transition-colors ${
-                  selectedLanguage === 'vi'
-                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-2xs font-bold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                }`}
-                title="Tiếng Việt (Vietnamese emails)"
-              >
-                Tiếng Việt ({vietnameseCount})
-              </button>
-              <button
-                onClick={() => setSelectedLanguage('en')}
-                className={`px-2 py-1 text-[11px] font-medium rounded-md transition-colors ${
-                  selectedLanguage === 'en'
-                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs font-semibold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                }`}
-              >
-                English
-              </button>
+            {/* Sub-Filters: Specific School Categories & Language & Spam */}
+            <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  { id: 'assignments', label: 'Assignments' },
+                  { id: 'exams', label: 'Exams & Quizzes' },
+                  { id: 'announcements', label: 'Announcements' },
+                ].map((sub) => (
+                  <button
+                    key={sub.id}
+                    onClick={() => setActiveCategory(activeCategory === sub.id ? 'all' : sub.id)}
+                    className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer border ${
+                      activeCategory === sub.id
+                        ? 'bg-[#D97757] text-white border-[#D97757]'
+                        : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] border-[#DFDACB] dark:border-[#2C2B27]'
+                    }`}
+                  >
+                    {sub.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Language Selector & Spam Toggle */}
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-1">
+                  <Globe className="w-3 h-3 text-[#8C897F]" />
+                  <div className="flex bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-lg p-0.5 border border-[#DFDACB] dark:border-[#2C2B27]">
+                    {(['all', 'vi', 'en'] as const).map((lang) => (
+                      <button
+                        key={lang}
+                        onClick={() => setSelectedLanguage(lang)}
+                        className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-colors ${
+                          selectedLanguage === lang
+                            ? 'bg-[#D97757] text-white'
+                            : 'text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5]'
+                        }`}
+                      >
+                        {lang === 'all' ? 'All' : lang === 'vi' ? 'Tiếng Việt' : 'English'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-[#5C5A54] dark:text-[#B5B2A8] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={hideSpam}
+                    onChange={(e) => setHideSpam(e.target.checked)}
+                    className="rounded text-[#D97757] focus:ring-[#D97757] h-3.5 w-3.5 border-[#DFDACB] dark:border-[#2C2B27]"
+                  />
+                  <span>Hide Spam</span>
+                </label>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Email List Feed */}
@@ -531,55 +560,71 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
                 )}
 
                 {/* Action Bar */}
-                <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap text-xs">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      onClick={() => setExpandedEmailId(isExpanded ? null : alert.id)}
-                      className="text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 inline-flex items-center gap-1 font-medium transition-colors cursor-pointer"
-                    >
-                      <span>{isExpanded ? 'Hide Full Content' : 'View Full Message'}</span>
-                      {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                    </button>
+                <div className="mt-3 pt-2.5 border-t border-[#DFDACB]/60 dark:border-[#2C2B27] flex items-center justify-between gap-2 text-xs">
+                  <button
+                    onClick={() => setExpandedEmailId(isExpanded ? null : alert.id)}
+                    className="text-[11px] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer"
+                  >
+                    <span>{isExpanded ? 'Hide Message' : 'View Message'}</span>
+                    {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
 
-                    <button
-                      onClick={() => handleToggleSpam(alert.id, Boolean(alert.isSpam))}
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
-                        alert.isSpam
-                          ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-amber-700 hover:bg-amber-50 dark:hover:text-amber-300 dark:hover:bg-amber-950/40 border border-slate-200 dark:border-slate-700'
-                      }`}
-                      title={alert.isSpam ? "Move to School/Academic" : "Mark as Spam / Promotion"}
-                    >
-                      {alert.isSpam ? '✓ Mark Not Spam' : '⚑ Mark as Spam'}
-                    </button>
-
-                    {!alert.isSpam && (
-                      <select
-                        aria-label="Category"
-                        value={alert.category}
-                        onChange={(e) => handleChangeCategory(alert.id, e.target.value as EmailCategory)}
-                        className="text-[10px] font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-1.5 py-0.5 text-slate-600 dark:text-slate-300 cursor-pointer focus:outline-none"
+                  <div className="flex items-center gap-1.5">
+                    {!isSpam && (
+                      <button
+                        id={`btn-reply-${alert.id}`}
+                        onClick={() => onOpenQuickDraft(alert.rawEmail, alert)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold text-[#D97757] bg-[#D97757]/10 hover:bg-[#D97757]/20 border border-[#D97757]/30 inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                       >
-                        <option value="ASSIGNMENT">Assignment</option>
-                        <option value="EXAM">Exam / Quiz</option>
-                        <option value="ANNOUNCEMENT">Announcement</option>
-                        <option value="SCHEDULE">Schedule</option>
-                        <option value="GENERAL">General</option>
-                        <option value="SPAM">Spam</option>
-                      </select>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Quick Reply</span>
+                      </button>
                     )}
-                  </div>
 
-                  {!isSpam && (
-                    <button
-                      id={`btn-reply-${alert.id}`}
-                      onClick={() => onOpenQuickDraft(alert.rawEmail, alert)}
-                      className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Quick Draft Reply</span>
-                    </button>
-                  )}
+                    {/* Compact More Actions Dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setActiveMenuId(activeMenuId === alert.id ? null : alert.id)}
+                        className="p-1.5 rounded-xl text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] hover:bg-[#FAF9F5] dark:hover:bg-[#252422] border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27] transition-colors cursor-pointer"
+                        title="More options"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {activeMenuId === alert.id && (
+                        <div className="absolute right-0 bottom-full mb-1.5 w-44 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl shadow-xl py-1.5 z-30 animate-in fade-in zoom-in-95">
+                          <button
+                            onClick={() => {
+                              handleToggleSpam(alert.id, Boolean(alert.isSpam));
+                              setActiveMenuId(null);
+                            }}
+                            className="w-full px-3 py-2 text-xs text-left hover:bg-[#EFECE2] dark:hover:bg-[#252422] flex items-center gap-2 text-[#141413] dark:text-[#FAF9F5] transition-colors cursor-pointer"
+                          >
+                            <span>{alert.isSpam ? '✓ Mark Not Spam' : '⚑ Mark as Spam'}</span>
+                          </button>
+                          {!alert.isSpam && (
+                            <div className="px-3 py-1 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]">
+                              <span className="text-[10px] font-bold text-[#8C897F] block mb-1">Move Category</span>
+                              <select
+                                value={alert.category}
+                                onChange={(e) => {
+                                  handleChangeCategory(alert.id, e.target.value as EmailCategory);
+                                  setActiveMenuId(null);
+                                }}
+                                className="w-full text-[11px] font-semibold bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg px-2 py-1 text-[#141413] dark:text-[#FAF9F5] cursor-pointer"
+                              >
+                                <option value="ASSIGNMENT">Assignment</option>
+                                <option value="EXAM">Exam / Quiz</option>
+                                <option value="ANNOUNCEMENT">Announcement</option>
+                                <option value="SCHEDULE">Schedule</option>
+                                <option value="GENERAL">General</option>
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Expanded Raw Email Body with Fluid CSS Grid Accordion */}

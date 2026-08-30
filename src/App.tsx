@@ -235,6 +235,21 @@ export default function App() {
     } catch {}
   }, [highContrast]);
 
+  // Zen Focus Mode (Distraction-Free Experience)
+  const [zenFocusMode, setZenFocusMode] = useState<boolean>(false);
+  const [focusTimerSeconds, setFocusTimerSeconds] = useState<number>(25 * 60);
+  const [isFocusTimerRunning, setIsFocusTimerRunning] = useState<boolean>(false);
+
+  useEffect(() => {
+    let interval: any;
+    if (isFocusTimerRunning && focusTimerSeconds > 0) {
+      interval = setInterval(() => {
+        setFocusTimerSeconds((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isFocusTimerRunning, focusTimerSeconds]);
+
   // Calculate live badge counts for sidebar
   const completedCanvasIds = useMemo(() => new Set(loadCompletedCanvasIds()), [canvasAssignments]);
   const canvasUnfinishedCount = useMemo(
@@ -1607,6 +1622,7 @@ export default function App() {
       // Check if global shortcuts are enabled
       if (!shortcutSettings.masterEnabled) {
         if (e.key === 'Escape') {
+          if (zenFocusMode) setZenFocusMode(false);
           setAccountSettingsOpen(false);
           setAiChatOpen(false);
           setCommandPaletteOpen(false);
@@ -1614,7 +1630,9 @@ export default function App() {
         return;
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      if (e.key.toLowerCase() === 'f' && !e.metaKey && !e.ctrlKey) {
+        setZenFocusMode((prev) => !prev);
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         if (shortcutSettings.keys.search) {
           e.preventDefault();
           setCommandPaletteOpen((prev) => !prev);
@@ -1633,7 +1651,8 @@ export default function App() {
         handleRefreshAll();
       } else if (e.key === '?' && shortcutSettings.keys.help) {
         setAccountSettingsOpen(true);
-      } else if (e.key === 'Escape' && shortcutSettings.keys.esc) {
+      } else if (e.key === 'Escape') {
+        if (zenFocusMode) setZenFocusMode(false);
         setAccountSettingsOpen(false);
         setAiChatOpen(false);
         setCommandPaletteOpen(false);
@@ -1642,7 +1661,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleRefreshAll, shortcutSettings, handleTabTransition]);
+  }, [handleRefreshAll, shortcutSettings, handleTabTransition, zenFocusMode]);
 
   if (!user && !isDemoMode) {
     return (
@@ -1657,7 +1676,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden bg-slate-100/70 dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 transition-colors flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="h-screen max-h-screen overflow-hidden bg-[#FAF9F5] dark:bg-[#141413] text-[#141413] dark:text-[#FAF9F5] transition-colors flex flex-col font-sans selection:bg-[#D97757] selection:text-white">
       {/* Demo Mode Top Alert */}
       {!user && isDemoMode && (
         <div className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-4 py-2 text-xs font-semibold flex items-center justify-between shadow-xs z-50 shrink-0">
@@ -1689,7 +1708,7 @@ export default function App() {
           aria-label="Primary Navigation"
           className={`${
             isSidebarExpanded ? 'w-64' : 'w-20'
-          } bg-[#EFECE2] dark:bg-[#1F1E1B] border-r border-[#DFDACB] dark:border-[#2C2B27] shadow-xl hidden md:flex flex-col py-5 px-3 shrink-0 justify-between z-30 select-none h-full transition-[width] duration-300 ease-in-out`}
+          } ${zenFocusMode ? 'hidden' : 'hidden md:flex'} bg-[#EFECE2] dark:bg-[#1F1E1B] border-r border-[#DFDACB] dark:border-[#2C2B27] shadow-xl flex-col py-5 px-3 shrink-0 justify-between z-30 select-none h-full transition-[width] duration-300 ease-in-out`}
         >
           {/* Top Brand Monogram / Insignia Header */}
           <div className="flex items-center justify-between gap-3 px-2 mb-6">
@@ -1903,7 +1922,60 @@ export default function App() {
             onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
             notifications={notifications}
             isAiChatOpen={aiChatOpen}
+            zenFocusMode={zenFocusMode}
+            onToggleZenFocus={() => setZenFocusMode((prev) => !prev)}
           />
+
+          {/* Zen Focus Mode Tranquil Banner */}
+          {zenFocusMode && (
+            <div className="bg-[#FAF9F5] dark:bg-[#1A1917] border-b border-[#DFDACB] dark:border-[#2C2B27] px-4 sm:px-6 py-2.5 flex items-center justify-between shrink-0 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2.5">
+                <span className="text-base sm:text-lg">🧘</span>
+                <div>
+                  <h3 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] uppercase tracking-wider">
+                    Zen Focus Mode
+                  </h3>
+                  <p className="text-[10px] text-[#8C897F] hidden sm:block">
+                    Distractions cleared. Focus on your active coursework.
+                  </p>
+                </div>
+              </div>
+
+              {/* Focus Pomodoro Timer */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-2 bg-[#EFECE2] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl px-3 py-1 font-mono text-xs sm:text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">
+                  <span>
+                    {Math.floor(focusTimerSeconds / 60)}:
+                    {(focusTimerSeconds % 60).toString().padStart(2, '0')}
+                  </span>
+                  <button
+                    onClick={() => setIsFocusTimerRunning(!isFocusTimerRunning)}
+                    className="px-2 py-0.5 rounded-lg text-xs font-bold bg-[#D97757] text-white hover:bg-[#C86646] transition-colors cursor-pointer"
+                  >
+                    {isFocusTimerRunning ? 'Pause' : 'Start'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsFocusTimerRunning(false);
+                      setFocusTimerSeconds(25 * 60);
+                    }}
+                    className="text-[10px] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] cursor-pointer hidden sm:inline"
+                    title="Reset to 25 mins"
+                  >
+                    Reset
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setZenFocusMode(false)}
+                  className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs font-bold bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27] transition-colors cursor-pointer whitespace-nowrap"
+                  title="Exit Focus Mode (Esc)"
+                >
+                  ✕ Exit
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Mobile Tab Navigation Bar (shown only on small screens) */}
           <div className="md:hidden bg-[#FAF9F6]/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-2 flex space-x-2 overflow-x-auto scrollbar-none">

@@ -11,6 +11,8 @@ interface NavbarProps {
   onToggleAiChat: () => void;
   notifications?: any[];
   isAiChatOpen?: boolean;
+  zenFocusMode?: boolean;
+  onToggleZenFocus?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -18,6 +20,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onToggleAiChat,
   notifications = [],
   isAiChatOpen = false,
+  zenFocusMode = false,
+  onToggleZenFocus,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [hasDismissedBadge, setHasDismissedBadge] = useState(false);
@@ -52,6 +56,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             ⌘K
           </span>
         </div>
+
+        {/* Zen Focus Mode Button */}
+        {onToggleZenFocus && (
+          <button
+            id="btn-nav-zen-focus"
+            onClick={onToggleZenFocus}
+            className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
+              zenFocusMode
+                ? 'bg-[#141413] dark:bg-[#FAF9F5] text-white dark:text-[#141413] border-[#141413] dark:border-[#FAF9F5] shadow-xs'
+                : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border-[#DFDACB] dark:border-[#2C2B27]'
+            }`}
+            title="Toggle Zen Focus Mode (Distraction-Free Workspace)"
+          >
+            <span>🧘</span>
+            <span className="hidden sm:inline">{zenFocusMode ? 'Focusing' : 'Focus'}</span>
+          </button>
+        )}
 
         {/* AI Study Coach Button */}
         <button

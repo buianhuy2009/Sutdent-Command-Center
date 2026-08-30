@@ -61,6 +61,8 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
   const [filterPriority, setFilterPriority] = useState('ALL');
   const [showArchived, setShowArchived] = useState(false);
   const [isClearingDone, setIsClearingDone] = useState(false);
+  const [showAiAdd, setShowAiAdd] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   // New assignment modal state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -306,35 +308,60 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
           )}
 
           <button
+            onClick={() => setShowAiAdd(!showAiAdd)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors cursor-pointer ${
+              showAiAdd
+                ? 'bg-[#D97757] text-white border-[#D97757] shadow-xs'
+                : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border-[#DFDACB] dark:border-[#2C2B27]'
+            }`}
+            title="Toggle Quick AI task parser"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#D97757] shrink-0" />
+            <span className="hidden sm:inline">Smart Add</span>
+          </button>
+
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors cursor-pointer ${
+              showFilters || searchQuery.trim() || filterSubject !== 'ALL' || filterStatus !== 'ALL' || filterPriority !== 'ALL'
+                ? 'bg-[#D97757]/10 text-[#D97757] border-[#D97757]/40'
+                : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border-[#DFDACB] dark:border-[#2C2B27]'
+            }`}
+            title="Toggle search and filters"
+          >
+            <Filter className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Filters</span>
+            {(searchQuery.trim() || filterSubject !== 'ALL' || filterStatus !== 'ALL' || filterPriority !== 'ALL') && (
+              <span className="w-2 h-2 rounded-full bg-[#D97757]" />
+            )}
+          </button>
+
+          <button
             onClick={onRefresh}
             disabled={isLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#5C5A54] dark:text-[#B5B2A8] bg-[#FAF9F5] dark:bg-[#252422] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl transition-colors cursor-pointer"
             title="Reload from Google Sheet"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Sync</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-[#D97757]' : ''}`} />
+            <span className="hidden sm:inline">Sync</span>
           </button>
 
           {doneCount > 0 && onClearCompleted && (
             <button
               onClick={handleClearDone}
               disabled={isClearingDone}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 rounded-xl border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer"
-              title="Clear and remove finished tasks from your tracker and Google Sheet"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 rounded-xl border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer"
+              title="Clear finished tasks"
             >
-              {isClearingDone ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <CheckCircle className="w-3.5 h-3.5" />
-              )}
-              <span>Clear Done ({doneCount})</span>
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Clear Done</span>
             </button>
           )}
 
           <button
             id="btn-add-assignment-top"
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-[#D97757] hover:bg-[#C86646] rounded-xl transition-colors shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Task</span>
@@ -366,103 +393,107 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
         </div>
       ) : null}
 
-      {/* AI Quick Task Input Bar */}
-      <form
-        onSubmit={handleQuickSubmit}
-        className="bg-slate-100/80 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
-      >
-        <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 pl-1 shrink-0">
-          <Sparkles className="w-4 h-4" />
-          <span className="text-xs font-bold uppercase tracking-wider hidden md:inline">
-            Quick AI Parse:
-          </span>
-        </div>
-
-        <input
-          id="input-quick-assignment"
-          type="text"
-          value={quickInput}
-          onChange={(e) => setQuickInput(e.target.value)}
-          placeholder="Type naturally: 'AP Physics Lab 3 report due this Friday high priority'..."
-          disabled={isParsingAI}
-          className="flex-1 px-3.5 py-2 text-xs sm:text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
-        />
-
-        <button
-          type="submit"
-          id="btn-quick-parse-submit"
-          disabled={isParsingAI || !quickInput.trim()}
-          className="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl flex items-center justify-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+      {/* Collapsible AI Quick Task Input Bar */}
+      {showAiAdd && (
+        <form
+          onSubmit={handleQuickSubmit}
+          className="bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-in fade-in duration-150"
         >
-          {isParsingAI ? (
-            <>
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              <span>Parsing AI...</span>
-            </>
-          ) : (
-            <>
-              <Zap className="w-3.5 h-3.5" />
-              <span>Smart Add</span>
-            </>
-          )}
-        </button>
-      </form>
-
-      {/* Filter and Search Bar */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Search */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search assignments or notes..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
-          />
-        </div>
-
-        {/* Dropdown Filters */}
-        <div className="flex items-center gap-2 flex-wrap text-xs">
-          <div className="flex items-center gap-1">
-            <Filter className="w-3 h-3 text-slate-400" />
-            <select
-              value={filterSubject}
-              onChange={(e) => setFilterSubject(e.target.value)}
-              className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 font-medium"
-            >
-              <option value="ALL">All Subjects</option>
-              {subjects.map((sub) => (
-                <option key={sub} value={sub}>
-                  {sub}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center gap-2 text-[#D97757] pl-1 shrink-0">
+            <Sparkles className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider hidden md:inline">
+              Smart AI Parse:
+            </span>
           </div>
 
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 font-medium"
-          >
-            <option value="ALL">All Status</option>
-            <option value="Not Started">Not Started</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Done">Done</option>
-          </select>
+          <input
+            id="input-quick-assignment"
+            type="text"
+            value={quickInput}
+            onChange={(e) => setQuickInput(e.target.value)}
+            placeholder="Type naturally: 'AP Physics Lab 3 report due this Friday high priority'..."
+            disabled={isParsingAI}
+            className="flex-1 px-3.5 py-2 text-xs sm:text-sm bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] placeholder:text-[#8C897F]"
+          />
 
-          <select
-            value={filterPriority}
-            onChange={(e) => setFilterPriority(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-200 font-medium"
+          <button
+            type="submit"
+            id="btn-quick-parse-submit"
+            disabled={isParsingAI || !quickInput.trim()}
+            className="px-4 py-2 text-xs font-bold bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl flex items-center justify-center gap-1.5 shrink-0 transition-colors cursor-pointer shadow-xs"
           >
-            <option value="ALL">All Priorities</option>
-            <option value="High">High</option>
-            <option value="Med">Medium</option>
-            <option value="Low">Low</option>
-          </select>
+            {isParsingAI ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>Parsing...</span>
+              </>
+            ) : (
+              <>
+                <Zap className="w-3.5 h-3.5" />
+                <span>Add Task</span>
+              </>
+            )}
+          </button>
+        </form>
+      )}
+
+      {/* Collapsible Filter and Search Bar */}
+      {showFilters && (
+        <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-3.5 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 animate-in fade-in duration-150">
+          {/* Search */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-3.5 h-3.5 text-[#8C897F] absolute left-3 top-2.5" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search tasks, subjects, notes..."
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] placeholder:text-[#8C897F]"
+            />
+          </div>
+
+          {/* Dropdown Filters */}
+          <div className="flex items-center gap-2 flex-wrap text-xs">
+            <div className="flex items-center gap-1">
+              <Filter className="w-3 h-3 text-[#8C897F]" />
+              <select
+                value={filterSubject}
+                onChange={(e) => setFilterSubject(e.target.value)}
+                className="px-2.5 py-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[#141413] dark:text-[#FAF9F5] font-semibold cursor-pointer outline-none"
+              >
+                <option value="ALL">All Subjects</option>
+                {subjects.map((sub) => (
+                  <option key={sub} value={sub}>
+                    {sub}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-2.5 py-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[#141413] dark:text-[#FAF9F5] font-semibold cursor-pointer outline-none"
+            >
+              <option value="ALL">All Status</option>
+              <option value="Not Started">Not Started</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Done">Done</option>
+            </select>
+
+            <select
+              value={filterPriority}
+              onChange={(e) => setFilterPriority(e.target.value)}
+              className="px-2.5 py-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[#141413] dark:text-[#FAF9F5] font-semibold cursor-pointer outline-none"
+            >
+              <option value="ALL">All Priorities</option>
+              <option value="High">High</option>
+              <option value="Med">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Auto-Archived Tasks Notice */}
       {oldCompletedCount > 0 && filterStatus !== 'Done' && (

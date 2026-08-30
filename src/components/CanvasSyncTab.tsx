@@ -14,6 +14,9 @@ import {
   CheckSquare,
   FolderOpen,
   UploadCloud,
+  Filter,
+  MoreVertical,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { CanvasAssignment, CanvasSettings } from '../types';
 import { loadCompletedCanvasIds, saveCompletedCanvasIds, resolveCanvasUrl, toMobileDeepLink } from '../services/canvas';
@@ -60,8 +63,11 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   // Completion state loaded from local storage
   const [completedIds, setCompletedIds] = useState<string[]>(() => loadCompletedCanvasIds());
 
-  // Tabs: 'UNFINISHED' (default on open), 'ALL', 'FINISHED', or Course Name
+  // Tabs: 'UNFINISHED' (default on open), 'ALL', 'FINISHED'
   const [activeTab, setActiveTab] = useState<string>('UNFINISHED');
+  const [selectedCourse, setSelectedCourse] = useState<string>('ALL');
+  const [showFilters, setShowFilters] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Google Drive submission state variables
@@ -118,7 +124,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
   const pendingSyncAssignments = canvasAssignments.filter((a) => !a.isSynced);
 
-  // Filtered assignments based on activeTab (UNFINISHED by default)
+  // Filtered assignments based on activeTab (UNFINISHED by default) & selectedCourse
   const filteredAssignments = useMemo(() => {
     return canvasAssignments.filter((item) => {
       const isDone = item.isCompleted || completedIds.includes(item.id);
@@ -127,9 +133,10 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
         if (isDone) return false;
       } else if (activeTab === 'FINISHED') {
         if (!isDone) return false;
-      } else if (activeTab !== 'ALL') {
-        // Course name selected: show both finished & unfinished for this course
-        if (item.courseName !== activeTab) return false;
+      }
+
+      if (selectedCourse !== 'ALL' && item.courseName !== selectedCourse) {
+        return false;
       }
 
       if (searchQuery.trim()) {
@@ -142,7 +149,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
       return true;
     });
-  }, [canvasAssignments, completedIds, activeTab, searchQuery]);
+  }, [canvasAssignments, completedIds, activeTab, selectedCourse, searchQuery]);
 
   const handleSyncAll = async () => {
     setIsSyncingAll(true);
@@ -307,113 +314,136 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
         </section>
       )}
 
-      {/* Primary Status & Course Tabs */}
+      {/* Streamlined Status & Filter Bar */}
       {(isConfigured || canvasAssignments.length > 0) && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs space-y-3.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            {/* Search Box */}
-            <div className="relative flex-1">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search assignments, quizzes, courses..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 text-slate-800 dark:text-slate-200"
-              />
+        <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-3 sm:p-4 shadow-xs space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            {/* Primary Status Tabs */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                onClick={() => setActiveTab('UNFINISHED')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'UNFINISHED'
+                    ? 'bg-[#D97757] text-white shadow-xs'
+                    : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27]'
+                }`}
+              >
+                <span>Unfinished</span>
+                <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
+                  activeTab === 'UNFINISHED' ? 'bg-white/20 text-white' : 'bg-black/5 dark:bg-white/10'
+                }`}>
+                  {unfinishedCount}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('ALL')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'ALL'
+                    ? 'bg-[#141413] text-white dark:bg-[#FAF9F5] dark:text-[#141413] shadow-xs'
+                    : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27]'
+                }`}
+              >
+                <span>All</span>
+                <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
+                  activeTab === 'ALL' ? 'bg-white/20 text-white dark:bg-black/20 dark:text-[#141413]' : 'bg-black/5 dark:bg-white/10'
+                }`}>
+                  {canvasAssignments.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('FINISHED')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeTab === 'FINISHED'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27]'
+                }`}
+              >
+                <span>Finished</span>
+                <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
+                  activeTab === 'FINISHED' ? 'bg-white/20 text-white' : 'bg-black/5 dark:bg-white/10'
+                }`}>
+                  {finishedCount}
+                </span>
+              </button>
             </div>
 
-            {/* Bulk Sync Button */}
-            {pendingSyncAssignments.length > 0 && (
+            {/* Right Controls: Subject Dropdown + Filter & Search Toggle */}
+            <div className="flex items-center gap-2">
+              {/* Clean Subject Dropdown (replaces wrapping pills) */}
+              {courses.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <select
+                    value={selectedCourse}
+                    onChange={(e) => setSelectedCourse(e.target.value)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#FAF9F5] dark:bg-[#252422] text-[#141413] dark:text-[#FAF9F5] border border-[#DFDACB] dark:border-[#2C2B27] cursor-pointer outline-none focus:ring-1 focus:ring-[#D97757] max-w-[180px] truncate"
+                    title="Filter by specific course subject"
+                  >
+                    <option value="ALL">All Subjects</option>
+                    {courses.map((course) => (
+                      <option key={course} value={course}>
+                        {course}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Filter & Search Collapsible Toggle */}
               <button
-                id="btn-sync-all-canvas-top"
-                onClick={handleSyncAll}
-                disabled={isSyncingAll}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
+                onClick={() => setShowFilters(!showFilters)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 border ${
+                  showFilters || searchQuery.trim()
+                    ? 'bg-[#D97757]/10 text-[#D97757] border-[#D97757]/40'
+                    : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] border-[#DFDACB] dark:border-[#2C2B27] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26]'
+                }`}
+                title="Search and bulk sync tools"
               >
-                <CheckSquare className="w-3.5 h-3.5" />
-                <span>{isSyncingAll ? 'Syncing...' : `Sync All to Sheet (${pendingSyncAssignments.length})`}</span>
+                <Search className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{showFilters ? 'Hide Tools' : 'Search & Tools'}</span>
+                {searchQuery.trim() && (
+                  <span className="w-2 h-2 rounded-full bg-[#D97757]" />
+                )}
               </button>
-            )}
+            </div>
           </div>
 
-          {/* Navigation Filter Tabs: Unfinished (Default), All Assignments, Finished, and Course Subjects */}
-          <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100 dark:border-slate-800">
-            {/* 1. Unfinished Tab (DEFAULT) */}
-            <button
-              onClick={() => setActiveTab('UNFINISHED')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'UNFINISHED'
-                  ? 'bg-orange-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
-            >
-              <span>Unfinished</span>
-              <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
-                activeTab === 'UNFINISHED' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-              }`}>
-                {unfinishedCount}
-              </span>
-            </button>
+          {/* Collapsible Utility Panel (Search & Bulk Sync) */}
+          {showFilters && (
+            <div className="pt-3 border-t border-[#DFDACB]/60 dark:border-[#2C2B27] flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-150">
+              <div className="relative flex-1">
+                <Search className="w-3.5 h-3.5 text-[#8C897F] absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search assignments, quizzes, instructions..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-8 py-1.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] placeholder:text-[#8C897F]"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] text-xs font-bold cursor-pointer"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
 
-            {/* 2. All Assignments Tab */}
-            <button
-              onClick={() => setActiveTab('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'ALL'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
-            >
-              <span>All Assignments</span>
-              <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
-                activeTab === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-              }`}>
-                {canvasAssignments.length}
-              </span>
-            </button>
-
-            {/* 3. Finished Tab */}
-            <button
-              onClick={() => setActiveTab('FINISHED')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'FINISHED'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
-            >
-              <span>Finished</span>
-              <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
-                activeTab === 'FINISHED' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-              }`}>
-                {finishedCount}
-              </span>
-            </button>
-
-            {/* 4. Course / Subject Pills (shows both finished & unfinished for that subject) */}
-            {courses.map((course) => {
-              const isActive = activeTab === course;
-              const courseCount = canvasAssignments.filter((a) => a.courseName === course).length;
-              return (
+              {pendingSyncAssignments.length > 0 && (
                 <button
-                  key={course}
-                  onClick={() => setActiveTab(course)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    isActive
-                      ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                  }`}
+                  id="btn-sync-all-canvas-top"
+                  onClick={handleSyncAll}
+                  disabled={isSyncingAll}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
                 >
-                  <span>{course}</span>
-                  <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
-                    isActive ? 'bg-white/20 text-white dark:bg-black/20 dark:text-slate-900' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-                  }`}>
-                    {courseCount}
-                  </span>
+                  <CheckSquare className="w-3.5 h-3.5" />
+                  <span>{isSyncingAll ? 'Syncing...' : `Sync All to Sheet (${pendingSyncAssignments.length})`}</span>
                 </button>
-              );
-            })}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -631,34 +661,10 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                   </div>
                 </div>
 
-                {/* Bottom Actions Bar with Direct Redirect Button */}
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+                {/* Bottom Actions Bar with Direct Redirect Button & Clean Dropdown */}
+                <div className="mt-4 pt-3 border-t border-[#DFDACB]/60 dark:border-[#2C2B27] flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    {!assignment.isSynced ? (
-                      <button
-                        onClick={() => onSyncToSheet(assignment)}
-                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1 shadow-2xs cursor-pointer"
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>Sync to Sheet</span>
-                      </button>
-                    ) : (
-                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        <span>In Master Sheet</span>
-                      </span>
-                    )}
-
-                    <button
-                      onClick={() => onCreateDocFromCanvas(assignment)}
-                      className="px-2.5 py-1.5 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer"
-                      title="Generate formatted MLA/APA Doc for this assignment"
-                    >
-                      <FileText className="w-3 h-3" />
-                      <span className="hidden sm:inline">Start Doc</span>
-                    </button>
-
-                    {!isCompleted && onSubmitAssignment && (
+                    {!isCompleted && onSubmitAssignment ? (
                       <button
                         onClick={() => {
                           if (expandedSubmitId === assignment.id) {
@@ -669,30 +675,76 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                             setFileSearchQuery('');
                           }
                         }}
-                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer border ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border ${
                           expandedSubmitId === assignment.id
-                            ? 'bg-blue-600 border-blue-700 text-white shadow-xs'
-                            : 'bg-blue-50 border-blue-200 dark:bg-blue-950/40 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100'
+                            ? 'bg-[#D97757] border-[#D97757] text-white shadow-xs'
+                            : 'bg-[#D97757]/10 border-[#D97757]/30 text-[#D97757] hover:bg-[#D97757]/20'
                         }`}
                         title="Submit directly from Google Drive"
                       >
                         <FolderOpen className="w-3.5 h-3.5 shrink-0" />
                         <span>Submit Work</span>
                       </button>
-                    )}
+                    ) : assignment.isSynced ? (
+                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>In Master Sheet</span>
+                      </span>
+                    ) : null}
                   </div>
 
-                  {/* Prominent Redirect Button to Canvas */}
-                  <a
-                    href={toMobileDeepLink(canvasLink)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                    title="Open this quiz or assignment directly in Canvas"
-                  >
-                    <span>Open on Canvas</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+                  <div className="flex items-center gap-1.5">
+                    {/* Direct link to Canvas */}
+                    <a
+                      href={toMobileDeepLink(canvasLink)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 bg-[#FAF9F5] dark:bg-[#252422] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] text-[#141413] dark:text-[#FAF9F5] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                      title="Open this assignment directly on Canvas"
+                    >
+                      <span>Canvas</span>
+                      <ExternalLink className="w-3 h-3 text-[#8C897F]" />
+                    </a>
+
+                    {/* Clean More Actions Menu (...) */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setActiveMenuId(activeMenuId === assignment.id ? null : assignment.id)}
+                        className="p-1.5 rounded-xl text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] hover:bg-[#FAF9F5] dark:hover:bg-[#252422] border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27] transition-colors cursor-pointer"
+                        title="More options"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {activeMenuId === assignment.id && (
+                        <div className="absolute right-0 bottom-full mb-1.5 w-48 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl shadow-xl py-1.5 z-30 animate-in fade-in zoom-in-95">
+                          <button
+                            onClick={() => {
+                              onCreateDocFromCanvas(assignment);
+                              setActiveMenuId(null);
+                            }}
+                            className="w-full px-3 py-2 text-xs text-left hover:bg-[#EFECE2] dark:hover:bg-[#252422] flex items-center gap-2 text-[#141413] dark:text-[#FAF9F5] transition-colors cursor-pointer"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-[#D97757]" />
+                            <span>Start Google Doc (MLA)</span>
+                          </button>
+
+                          {!assignment.isSynced && (
+                            <button
+                              onClick={() => {
+                                onSyncToSheet(assignment);
+                                setActiveMenuId(null);
+                              }}
+                              className="w-full px-3 py-2 text-xs text-left hover:bg-[#EFECE2] dark:hover:bg-[#252422] flex items-center gap-2 text-[#141413] dark:text-[#FAF9F5] transition-colors cursor-pointer"
+                            >
+                              <Plus className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Sync to Master Sheet</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             );
