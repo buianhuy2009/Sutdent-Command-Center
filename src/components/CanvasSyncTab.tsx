@@ -14,7 +14,7 @@ import {
   CheckSquare,
 } from 'lucide-react';
 import { CanvasAssignment, CanvasSettings } from '../types';
-import { loadCompletedCanvasIds, saveCompletedCanvasIds } from '../services/canvas';
+import { loadCompletedCanvasIds, saveCompletedCanvasIds, resolveCanvasUrl } from '../services/canvas';
 
 interface CanvasSyncTabProps {
   settings: CanvasSettings;
@@ -95,7 +95,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   }, [canvasAssignments]);
 
   const unfinishedCount = useMemo(() => {
-    return canvasAssignments.filter((a) => !a.isCompleted && !completedIds.includes(a.id) && !a.isInformational).length;
+    return canvasAssignments.filter((a) => !a.isCompleted && !completedIds.includes(a.id)).length;
   }, [canvasAssignments, completedIds]);
 
   const finishedCount = useMemo(() => {
@@ -110,7 +110,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
       const isDone = item.isCompleted || completedIds.includes(item.id);
 
       if (activeTab === 'UNFINISHED') {
-        if (isDone || item.isInformational) return false;
+        if (isDone) return false;
       } else if (activeTab === 'FINISHED') {
         if (!isDone) return false;
       } else if (activeTab !== 'ALL') {
@@ -439,9 +439,13 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
               new Date(assignment.dueAt).getTime() - Date.now() < 86400000 * 3 &&
               new Date(assignment.dueAt).getTime() > Date.now();
 
-            const canvasLink =
-              assignment.htmlUrl ||
-              `${settings.apiDomain || 'https://canvas.instructure.com'}/courses/${assignment.courseId || ''}`;
+            const canvasLink = resolveCanvasUrl(
+              assignment.htmlUrl,
+              settings.apiDomain,
+              settings.calendarFeedUrl,
+              assignment.courseId,
+              assignment.id
+            );
 
             return (
               <div

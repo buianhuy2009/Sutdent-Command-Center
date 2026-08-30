@@ -10,6 +10,52 @@ export const DEFAULT_CANVAS_SETTINGS: CanvasSettings = {
 
 const LOCAL_STORAGE_CANVAS_KEY = 'scc_canvas_settings_v1';
 
+/**
+ * Extract root Canvas domain from calendarFeedUrl or return fallback
+ */
+export function extractCanvasDomain(feedUrl?: string, defaultDomain = 'https://canvas.instructure.com'): string {
+  if (!feedUrl || !feedUrl.trim()) return defaultDomain;
+  try {
+    const clean = feedUrl.trim().replace(/^webcal:\/\//i, 'https://');
+    const u = new URL(clean);
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return defaultDomain;
+  }
+}
+
+/**
+ * Resolve authentic full Canvas URL for redirecting directly to Canvas
+ */
+export function resolveCanvasUrl(
+  htmlUrl?: string,
+  settingsDomain?: string,
+  feedUrl?: string,
+  courseId?: string,
+  assignmentId?: string
+): string {
+  const extractedDomain = extractCanvasDomain(feedUrl, settingsDomain || 'https://canvas.instructure.com');
+  const baseDomain = (extractedDomain || settingsDomain || 'https://canvas.instructure.com').replace(/\/+$/, '');
+
+  if (htmlUrl && htmlUrl.trim()) {
+    const trimmed = htmlUrl.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    const cleanPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    return `${baseDomain}${cleanPath}`;
+  }
+
+  const rawAssignId = (assignmentId || '').replace(/^(canvas-assign-|canvas-planner-|canvas-api-|canvas-ics-)/, '');
+  if (courseId && rawAssignId && !isNaN(Number(rawAssignId))) {
+    return `${baseDomain}/courses/${courseId}/assignments/${rawAssignId}`;
+  }
+  if (courseId) {
+    return `${baseDomain}/courses/${courseId}/assignments`;
+  }
+  return `${baseDomain}`;
+}
+
 export function loadCanvasSettings(): CanvasSettings {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_CANVAS_KEY);
@@ -111,15 +157,27 @@ export function parseCanvasICS(icsText: string): CanvasAssignment[] {
         const pointsMatch = cleanDesc.match(/(\d+(\.\d+)?)\s*(pts|points)/i);
         const pointsPossible = pointsMatch ? parseFloat(pointsMatch[1]) : undefined;
 
+        // Clean link extraction
+        let finalUrl = currentUrl;
+        if (!finalUrl) {
+          const match = cleanDesc.match(/https?:\/\/[^\s\n"']+/);
+          if (match) finalUrl = match[0];
+        }
+
+        const courseIdMatch = (finalUrl || cleanDesc).match(/courses\/(\d+)/);
+        const courseId = courseIdMatch ? courseIdMatch[1] : undefined;
+
         assignments.push({
           id: currentUid || `canvas-ics-${Math.random().toString(36).substring(2, 9)}`,
           name,
           courseName,
+          courseId,
           dueAt: dueAt || new Date().toISOString().split('T')[0],
           pointsPossible,
-          htmlUrl: currentUrl || (cleanDesc.match(/https?:\/\/[^\s]+/)?.[0] || ''),
+          htmlUrl: finalUrl,
           description: cleanDesc,
           isSynced: false,
+          isCompleted: false,
         });
       }
     } else if (inEvent) {
@@ -131,8 +189,8 @@ export function parseCanvasICS(icsText: string): CanvasAssignment[] {
         currentDtStart = line.substring(line.indexOf(':') + 1).trim();
       } else if (line.startsWith('DESCRIPTION:')) {
         currentDescription = line.substring(12).trim();
-      } else if (line.startsWith('URL:')) {
-        currentUrl = line.substring(4).trim();
+      } else if (line.startsWith('URL:') || line.startsWith('URL;')) {
+        currentUrl = line.substring(line.indexOf(':') + 1).trim();
       } else if (line.startsWith('UID:')) {
         currentUid = line.substring(4).trim();
       }
@@ -281,17 +339,17 @@ export async function fetchCanvasAssignmentsFromApi(
             sub.workflow_state === 'unsubmitted' ||
             (!sub.submitted_at && !a.user_submitted && sub.workflow_state !== 'submitted');
 
-          let isFinished = false;
-          if (isInTodo) {
-            isFinished = false;
-          } else if (hasUserSubmitted) {
-            isFinished = true;
-          } else if (isExplicitlyUnsubmitted) {
-            isFinished = false;
-          } else if (isNoSubmission) {
-            isFinished = true;
-          } else {
-            isFinished = false;
+          // An assignment is ONLY finished if the student has actually submitted it!
+          // NEVER mark it finished just because it has 0 points or no submission type!
+          const isFinished = hasUserSubmitted;
+
+          // Convert relative link to absolute link using cleanDomain
+          let directUrl = a.html_url || '';
+          if (directUrl && !directUrl.startsWith('http')) {
+            directUrl = `${cleanDomain}${directUrl.startsWith('/') ? '' : '/'}${directUrl}`;
+          }
+          if (!directUrl) {
+            directUrl = `${cleanDomain}/courses/${course.id}/assignments/${a.id}`;
           }
 
           return {
@@ -301,11 +359,11 @@ export async function fetchCanvasAssignmentsFromApi(
             courseId: String(course.id),
             dueAt: (a.due_at || a.lock_at || '').split('T')[0] || '',
             pointsPossible: a.points_possible,
-            htmlUrl: a.html_url,
+            htmlUrl: directUrl,
             description: a.description || '',
             isSynced: false,
             isCompleted: isFinished,
-            isInformational: isNoSubmission,
+            isInformational: a.points_possible === 0,
             submissionTypes: subTypes,
           };
         });
@@ -348,6 +406,14 @@ export async function fetchCanvasAssignmentsFromApi(
               (sub.workflow_state === 'submitted' || sub.workflow_state === 'pending_review')
             );
 
+            let directUrl = item.html_url || p.html_url || '';
+            if (directUrl && !directUrl.startsWith('http')) {
+              directUrl = `${cleanDomain}${directUrl.startsWith('/') ? '' : '/'}${directUrl}`;
+            }
+            if (!directUrl && item.course_id && item.plannable_id) {
+              directUrl = `${cleanDomain}/courses/${item.course_id}/assignments/${item.plannable_id}`;
+            }
+
             if (!assignmentIdSet.has(aid)) {
               assignmentIdSet.add(aid);
               allAssignments.push({
@@ -357,7 +423,7 @@ export async function fetchCanvasAssignmentsFromApi(
                 courseId: item.course_id ? String(item.course_id) : undefined,
                 dueAt: (p.due_at || item.plannable_date || '').split('T')[0] || '',
                 pointsPossible: p.points_possible,
-                htmlUrl: item.html_url || p.html_url,
+                htmlUrl: directUrl,
                 description: p.details || p.description || '',
                 isSynced: false,
                 isCompleted: isSubmitted,

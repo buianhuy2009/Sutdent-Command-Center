@@ -610,16 +610,57 @@ export default function App() {
 
     if (!isSilent) setIsLoadingCanvas(true);
     try {
-      let fetched: CanvasAssignment[] = [];
+      let apiFetched: CanvasAssignment[] = [];
+      let feedFetched: CanvasAssignment[] = [];
+
+      // 1. Fetch via REST API if configured
       if (canvasSettings.apiToken && canvasSettings.apiDomain) {
-        fetched = await fetchCanvasAssignmentsFromApi(
-          canvasSettings.apiDomain,
-          canvasSettings.apiToken
-        );
+        try {
+          apiFetched = await fetchCanvasAssignmentsFromApi(
+            canvasSettings.apiDomain,
+            canvasSettings.apiToken
+          );
+        } catch (e) {
+          console.warn('Canvas REST API query error:', e);
+        }
       }
-      if (fetched.length === 0 && canvasSettings.calendarFeedUrl) {
-        fetched = await fetchCanvasAssignmentsFromFeed(canvasSettings.calendarFeedUrl);
+
+      // 2. Fetch via Calendar Feed if configured
+      if (canvasSettings.calendarFeedUrl) {
+        try {
+          feedFetched = await fetchCanvasAssignmentsFromFeed(canvasSettings.calendarFeedUrl);
+        } catch (e) {
+          console.warn('Canvas Calendar Feed query error:', e);
+        }
       }
+
+      // 3. Intelligent Union Merge so all courses (KHTN, Ngữ Văn, etc.) are captured
+      const mergedMap = new Map<string, CanvasAssignment>();
+
+      // Put feed items first
+      for (const item of feedFetched) {
+        const key = item.name.toLowerCase().trim();
+        mergedMap.set(key, item);
+      }
+
+      // Merge API items, overlaying authentic live submission states & URLs
+      for (const item of apiFetched) {
+        const key = item.name.toLowerCase().trim();
+        const existing = mergedMap.get(key);
+        if (existing) {
+          mergedMap.set(key, {
+            ...existing,
+            ...item,
+            htmlUrl: item.htmlUrl || existing.htmlUrl,
+            courseName: item.courseName || existing.courseName,
+            isCompleted: Boolean(item.isCompleted),
+          });
+        } else {
+          mergedMap.set(key, item);
+        }
+      }
+
+      const fetched = Array.from(mergedMap.values());
 
       const crossRef = crossReferenceCanvasWithSheet(fetched, assignments);
       setCanvasAssignments(crossRef);
@@ -631,13 +672,22 @@ export default function App() {
       let updatedSheetCount = 0;
 
       const updatedAssignments = assignments.map((sheetItem) => {
+        const sName = sheetItem.assignmentName.toLowerCase().trim();
+        const sSub = sheetItem.subject.toLowerCase().trim();
+
         const matchingCanvas = crossRef.find((c) => {
-          const nameMatch =
-            sheetItem.assignmentName.toLowerCase().trim() === c.name.toLowerCase().trim();
+          const cName = c.name.toLowerCase().trim();
+          const cCourse = c.courseName.toLowerCase().trim();
+
+          const exactName = sName === cName;
+          const substringMatch =
+            (sName.length >= 3 && cName.includes(sName)) ||
+            (cName.length >= 3 && sName.includes(cName));
           const courseMatch =
-            sheetItem.subject.toLowerCase().includes(c.courseName.toLowerCase().slice(0, 5)) ||
-            c.courseName.toLowerCase().includes(sheetItem.subject.toLowerCase().slice(0, 5));
-          return nameMatch || (courseMatch && sheetItem.dueDate === c.dueAt);
+            (sSub.length >= 2 && cCourse.includes(sSub)) ||
+            (cCourse.length >= 2 && sSub.includes(cCourse));
+
+          return exactName || (substringMatch && (courseMatch || !sSub || sSub === 'general'));
         });
 
         if (matchingCanvas && matchingCanvas.isCompleted && sheetItem.status !== 'Done') {
