@@ -123,7 +123,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
                   AI Study Coach
                 </h3>
                 <p className="text-[10px] text-[#8C897F]">
-                  Powered by Gemini 2.5 Flash
+                  Powered by Gemini 3.5 Flash
                 </p>
               </div>
             </div>

@@ -24,22 +24,62 @@ export async function summarizeEmailsWithGemini(emails: EmailMessage[]): Promise
     return alerts;
   } catch (error) {
     console.error('Error calling summarize emails API:', error);
-    return emails.map((e) => ({
-      id: e.id,
-      sender: e.sender,
-      subject: e.subject,
-      oneLineSummary: `${e.sender}: ${e.snippet.slice(0, 80)}...`,
-      urgency: 'MEDIUM',
-      category: 'ASSIGNMENT',
-      detectedAssignment: {
-        isAssignment: true,
-        name: e.subject,
-        subject: 'General',
-        dueDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-        priority: 'Med',
-      },
-      rawEmail: e,
-    }));
+    const nonAcademicTest =
+      /\b\d+%\s*(?:off|giảm)\b|\b(?:sale|giảm|off|discount|deal|save)\s*\d+%\b|khuyến mãi|voucher|giảm giá|ưu đãi|tiết kiệm|clearance|coupon|flash sale|black friday|quà tặng|free shipping|miễn phí vận chuyển|mua \d+ tặng \d+|shopee|tiki|lazada|grab|be |gojek|sendo|amazon|shein|aliexpress|temu|zalopay|momo|viettel money|starbucks|highlands|kfc|mcdonald|netflix|spotify|canva|duolingo|grammarly|linkedin|facebook|instagram|tiktok|youtube|twitter|x\.com|medium|newsletter|bản tin|digest|unsubscribe|hủy đăng ký|opt-?out|view in browser|xem trên trình duyệt|privacy policy|manage preferences|receipt|invoice|order confirmation|payment received|mã otp/i;
+    const academicTest =
+      /professor|prof\.|teacher|giáo viên|thầy|cô|giảng viên|khoa|phòng đào tạo|trường|bài tập|assignment|homework|exam|kiểm tra|thi học kỳ|canvas|google classroom|moodle|blackboard|syllabus|hạn nộp|nộp bài|lab report/i;
+
+    return emails.map((e) => {
+      const fullText = `${e.subject || ""} ${e.snippet || ""} ${e.sender || ""}`.toLowerCase();
+      const isCommercial = !academicTest.test(fullText) && nonAcademicTest.test(fullText);
+      const isVietnamese =
+        /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(fullText);
+
+      if (isCommercial) {
+        return {
+          id: e.id,
+          sender: e.sender,
+          subject: e.subject,
+          oneLineSummary: `${(e.snippet || e.subject || "").slice(0, 75)}...`,
+          urgency: 'INFO' as const,
+          category: 'PROMOTION' as const,
+          categoryLabel: isVietnamese ? 'Khuyến mãi / Quảng cáo' : 'Promotion / Spam',
+          isSpam: true,
+          spamReason: isVietnamese ? 'Nội dung quảng cáo / dịch vụ ngoài trường học' : 'Commercial promotion',
+          language: isVietnamese ? 'vi' : 'en',
+          rawEmail: e,
+        };
+      }
+
+      const isExam = /thi học kỳ|kỳ thi|lịch thi|kiểm tra|midterm|final exam|quiz due/i.test(fullText);
+      const isAssignment = /bài tập|assignment|homework|lab report|nộp bài/i.test(fullText);
+      const urgency: 'HIGH' | 'LOW' = isExam || isAssignment ? 'HIGH' : 'LOW';
+      const category: 'EXAM' | 'ASSIGNMENT' | 'GENERAL' = isExam ? 'EXAM' : isAssignment ? 'ASSIGNMENT' : 'GENERAL';
+
+      return {
+        id: e.id,
+        sender: e.sender,
+        subject: e.subject,
+        oneLineSummary: `${(e.snippet || e.subject || "").slice(0, 75)}...`,
+        urgency,
+        category,
+        categoryLabel: isExam
+          ? (isVietnamese ? 'Lịch thi / Kiểm tra' : 'Exam / Quiz')
+          : isAssignment
+          ? (isVietnamese ? 'Bài tập & Hạn nộp' : 'Assignment')
+          : (isVietnamese ? 'Thông báo chung' : 'General Update'),
+        isSpam: false,
+        language: isVietnamese ? 'vi' : 'en',
+        detectedAssignment: {
+          isAssignment: isExam || isAssignment,
+          name: e.subject,
+          subject: isVietnamese ? 'Môn học' : 'General',
+          dueDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+          priority: isExam || isAssignment ? 'High' : 'Med',
+        },
+        rawEmail: e,
+      };
+    });
   }
 }
 

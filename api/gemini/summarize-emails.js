@@ -9,31 +9,31 @@ function getGenAI() {
   return genAI;
 }
 
-// Known commercial/promotional keywords and sender patterns
-const NON_ACADEMIC_PATTERNS = [
-  /unsubscribe/i,
-  /opt-?out/i,
-  /view in browser/i,
-  /privacy policy/i,
-  /manage preferences/i,
-  /khuyến mãi|voucher|giảm giá|ưu đãi|sale\s*\d+%|off\s*\d+%/i,
-  /shopee|tiki|lazada|grab|beamin|baemin|tiktok|facebook|instagram|youtube|twitter|linkedin|reddit|discord|spotify|netflix/i,
-  /duolingo|grammarly|canva|adobe|coursera|udemy|edx/i,
-  /receipt|invoice|order confirmation|payment received|billing|hóa đơn|thanh toán|mã otp|mã xác minh/i,
-  /newsletter|digest|weekly update|special offer|limited time|flash sale|discount|cashback/i,
-];
+const CANDIDATE_MODELS = [
+  process.env.GEMINI_MODEL,
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3-flash-preview",
+  "gemini-2.5-flash",
+].filter(Boolean);
 
-function isLikelySpamOrPromo(email) {
-  const fullText = `${email.sender || ""} ${email.subject || ""} ${email.snippet || ""}`.toLowerCase();
-  
-  // Exclude school/teacher indicators
-  const hasAcademicIndicators = /professor|prof\.|teacher|giáo viên|thầy|cô|giảng viên|bài tập|assignment|homework|exam|kiểm tra|thi học kỳ|canvas|google classroom|moodle|blackboard|syllabus|hạn nộp|nộp bài|lab report/i.test(fullText);
-  if (hasAcademicIndicators) return false;
-
-  for (const pattern of NON_ACADEMIC_PATTERNS) {
-    if (pattern.test(fullText)) return true;
+async function generateWithModelFallback(params) {
+  const ai = getGenAI();
+  let lastError = null;
+  for (const model of CANDIDATE_MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: params.contents,
+        config: params.config,
+      });
+      return response;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Model ${model} attempt failed: ${err.message || err}. Trying next fallback...`);
+    }
   }
-  return false;
+  throw lastError || new Error("All candidate Gemini models failed.");
 }
 
 export default async function handler(req, res) {
@@ -48,31 +48,23 @@ export default async function handler(req, res) {
       return res.status(200).json({ alerts: [] });
     }
 
-    const ai = getGenAI();
-    const prompt = `You are an expert bilingual academic email organizer and spam filter for students.
-Analyze the following ${emails.length} student emails. Emails may be in English or Vietnamese (tiếng Việt).
+    const prompt = `You are an intelligent bilingual academic email scanner for a student command center.
+Analyze the following ${emails.length} emails. Note that emails may be in English or Vietnamese (tiếng Việt).
 
-CRITICAL CLASSIFICATION RULES:
-1. WHAT COUNTS AS SPAM / PROMOTION / NON-ACADEMIC (isSpam: true):
-   - Shopping discounts, coupons, e-commerce (Shopee, Lazada, Tiki, Grab, Amazon, etc.).
-   - App newsletters & commercial subscriptions (Spotify, Netflix, Duolingo, Grammarly, Canva, Medium, etc.).
-   - Social media digests & notifications (YouTube, LinkedIn, Facebook, Instagram, Twitter/X, Discord, Reddit).
-   - Automated account security alerts, OTP codes, password resets, purchase receipts, billing invoices that are NOT school tuition.
-   - ANY email that is NOT from a school, university, instructor, teacher, educational institution, or academic LMS.
-   -> For all these: set "isSpam": true, "category": "SPAM" or "PROMOTION", "urgency": "INFO" or "LOW", "detectedAssignment.isAssignment": false.
-
-2. WHAT COUNTS AS ACADEMIC (isSpam: false):
-   - Only emails from instructors, professors, teaching assistants, academic departments, schools, or learning management systems (Canvas, Google Classroom, Moodle).
-   - Categories:
-     * "ASSIGNMENT": homework, projects, problem sets, lab reports, essays, reading assignments, deadlines.
-     * "EXAM": midterm exams, final exams, pop quizzes, unit tests, oral exams, exam review schedules.
-     * "SCHEDULE": timetable changes, office hours, lecture room swaps, class cancellations.
-     * "ANNOUNCEMENT": official school announcements, syllabus updates, grade releases, academic policy.
-     * "GENERAL": peer study group coordination, questions to/from classmates regarding class.
-
-3. SUMMARY & LANGUAGE:
-   - Identify language: "vi" or "en".
-   - "oneLineSummary": Maximum 12 words. Clear, informative summary in the SAME language as the email.
+Your tasks:
+1. DETECT SPAM / PROMOTIONS / MARKETING (CRITICAL PRIORITY):
+   - Identify whether an email is commercial spam, shopping discounts, retail sales, vouchers, coupons, marketing newsletters, subscription updates, or phishing.
+   - Examples of PROMOTIONS: "50% off", "Flash sale", "Voucher giảm 50k", "Shopee/Lazada deal", "Grab discount", "Sale ends midnight".
+   - For any promotional/marketing emails, set "isSpam": true, "category": "PROMOTION", "urgency": "INFO", and provide a clear "spamReason".
+   - CRITICAL: NEVER mark a marketing or sales email as "ASSIGNMENT" or "EXAM", even if it uses marketing words like "deadline", "urgent", "expires", or "final hours"!
+2. FOR ACADEMIC / SCHOOL / INSTRUCTOR EMAILS ONLY:
+   - Only emails genuinely from schools, teachers, professors, or academic LMS platforms (Canvas, Classroom, Blackboard) about coursework may be categorized into: "ASSIGNMENT", "EXAM", "GRADE", "SCHEDULE", "ANNOUNCEMENT", or "GENERAL".
+   - Extract actionable deadlines, quizzes, test dates, homework, lab reports, or office hours.
+   - Set urgency: "HIGH" for imminent school deadlines (<48h) or critical exam dates; "MEDIUM" for standard assignments/requests; "LOW" for general school info; "INFO" for newsletters/spam.
+3. LANGUAGE HANDLING:
+   - Identify the language ("vi" for Vietnamese, "en" for English).
+   - Write "oneLineSummary" concisely (under 14 words) in the SAME language as the email.
+   - If an assignment is detected, extract title and course name cleanly.
 
 Emails to scan:
 ${JSON.stringify(emails, null, 2)}
@@ -84,27 +76,26 @@ Respond with valid JSON matching this schema:
       "id": "matching email id",
       "sender": "clean sender name or role",
       "subject": "email subject",
-      "oneLineSummary": "concise 1-line summary under 12 words",
+      "oneLineSummary": "concise 1-line alert under 14 words with specific dates and action items",
       "urgency": "HIGH" | "MEDIUM" | "LOW" | "INFO",
       "category": "ASSIGNMENT" | "EXAM" | "GRADE" | "SCHEDULE" | "ANNOUNCEMENT" | "SPAM" | "PROMOTION" | "GENERAL",
-      "categoryLabel": "human-friendly label (e.g., 'Bài tập / Assignment' or 'Thư rác / Spam')",
+      "categoryLabel": "human-friendly label like 'Bài tập / Assignment' or 'Khuyến mãi / Promotion'",
       "isSpam": boolean,
       "spamReason": "reason if spam/promo or empty string",
       "language": "vi" | "en" | "other",
       "detectedAssignment": {
         "isAssignment": boolean,
-        "name": "concise assignment name or empty string",
-        "subject": "course/subject or empty string",
+        "name": "concise assignment name",
+        "subject": "detected course/subject like Toán, Vật lý, AP Physics, Literature, etc.",
         "dueDate": "YYYY-MM-DD or empty string",
         "priority": "High" | "Med" | "Low"
       }
     }
   ]
 }
-Return only JSON.`;
+Return only JSON, no markdown formatting.`;
 
-    const response = await ai.models.generateContent({
-      model: process.env.GEMINI_MODEL || "gemini-3.6-flash",
+    const response = await generateWithModelFallback({
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -113,54 +104,78 @@ Return only JSON.`;
 
     const responseText = response.text || "{}";
     const parsed = JSON.parse(responseText);
-    
-    // Double-check with heuristic validator to guarantee no spam slips through
+    const nonAcademicTest =
+      /\b\d+%\s*(?:off|giảm)\b|\b(?:sale|giảm|off|discount|deal|save)\s*\d+%\b|khuyến mãi|voucher|giảm giá|ưu đãi|tiết kiệm|clearance|coupon|flash sale|black friday|quà tặng|free shipping|miễn phí vận chuyển|mua \d+ tặng \d+|shopee|tiki|lazada|grab|be |gojek|sendo|amazon|shein|aliexpress|temu|zalopay|momo|viettel money|starbucks|highlands|kfc|mcdonald|netflix|spotify|canva|duolingo|grammarly|linkedin|facebook|instagram|tiktok|youtube|twitter|x\.com|medium|newsletter|bản tin|digest|unsubscribe|hủy đăng ký|opt-?out|view in browser|xem trên trình duyệt|privacy policy|manage preferences|receipt|invoice|order confirmation|payment received|mã otp/i;
+    const academicTest =
+      /professor|prof\.|teacher|giáo viên|thầy|cô|giảng viên|khoa|phòng đào tạo|trường|bài tập|assignment|homework|exam|kiểm tra|thi học kỳ|canvas|google classroom|moodle|blackboard|syllabus|hạn nộp|nộp bài|lab report/i;
+
     if (parsed.alerts && Array.isArray(parsed.alerts)) {
       parsed.alerts = parsed.alerts.map((alert) => {
         const raw = emails.find((e) => e.id === alert.id);
-        if (raw && !alert.isSpam && isLikelySpamOrPromo(raw)) {
+        const fullText = `${alert.sender || ""} ${alert.subject || ""} ${raw?.snippet || ""}`.toLowerCase();
+        const isCommercial = !academicTest.test(fullText) && nonAcademicTest.test(fullText);
+
+        if (isCommercial || alert.isSpam || alert.category === "SPAM" || alert.category === "PROMOTION") {
           alert.isSpam = true;
-          alert.category = "SPAM";
-          alert.categoryLabel = alert.language === "vi" ? "Thư rác / Quảng cáo" : "Spam / Promotion";
+          alert.category = alert.category === "SPAM" ? "SPAM" : "PROMOTION";
+          alert.categoryLabel = alert.language === "vi" ? "Khuyến mãi / Thư rác" : "Promotion / Spam";
           alert.urgency = "INFO";
-          alert.spamReason = alert.spamReason || (alert.language === "vi" ? "Nội dung quảng cáo / thương mại" : "Commercial or marketing email");
-          if (alert.detectedAssignment) alert.detectedAssignment.isAssignment = false;
+          alert.spamReason =
+            alert.spamReason ||
+            (alert.language === "vi"
+              ? "Nội dung quảng cáo / dịch vụ ngoài trường học"
+              : "Commercial promotion or marketing email");
+          if (alert.detectedAssignment) {
+            alert.detectedAssignment.isAssignment = false;
+          }
         }
         return alert;
       });
     }
-
     res.status(200).json(parsed);
   } catch (err) {
     console.error("Email summarization error:", err);
+    // Robust heuristic fallback for English & Vietnamese emails
+    const nonAcademicFallback =
+      /\b\d+%\s*(?:off|giảm)\b|\b(?:sale|giảm|off|discount|deal|save)\s*\d+%\b|khuyến mãi|voucher|giảm giá|ưu đãi|tiết kiệm|clearance|coupon|flash sale|black friday|quà tặng|free shipping|miễn phí vận chuyển|mua \d+ tặng \d+|shopee|tiki|lazada|grab|be |gojek|sendo|amazon|shein|aliexpress|temu|zalopay|momo|viettel money|starbucks|highlands|kfc|mcdonald|netflix|spotify|canva|duolingo|grammarly|linkedin|facebook|instagram|tiktok|youtube|twitter|x\.com|medium|newsletter|bản tin|digest|unsubscribe|hủy đăng ký|opt-?out|view in browser|xem trên trình duyệt|privacy policy|manage preferences|receipt|invoice|order confirmation|payment received|mã otp/i;
+    const academicFallback =
+      /professor|prof\.|teacher|giáo viên|thầy|cô|giảng viên|khoa|phòng đào tạo|trường|bài tập|assignment|homework|exam|kiểm tra|thi học kỳ|canvas|google classroom|moodle|blackboard|syllabus|hạn nộp|nộp bài|lab report/i;
+
     const fallbackAlerts = ((req.body && req.body.emails) || []).map((e) => {
       const fullText = `${e.subject || ""} ${e.snippet || ""} ${e.sender || ""}`.toLowerCase();
-      const isVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(fullText);
-      const isSpam = isLikelySpamOrPromo(e);
-      const isExam = /thi|kiểm tra|exam|quiz|test|midterm|final/i.test(fullText);
-      const isAssignment = /bài tập|assignment|homework|lab|report|nộp bài|deadline|hạn nộp/i.test(fullText);
-      const isAnnouncement = /thông báo|announcement|notice|nhắc nhở|schedule|lịch/i.test(fullText);
+      const isCommercial = !academicFallback.test(fullText) && nonAcademicFallback.test(fullText);
+      const isVietnamese =
+        /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(
+          fullText
+        );
 
       let category = "GENERAL";
+      let isSpam = isCommercial;
       let urgency = "LOW";
       let categoryLabel = isVietnamese ? "Thông báo chung" : "General Update";
 
       if (isSpam) {
-        category = "SPAM";
+        category = "PROMOTION";
         urgency = "INFO";
-        categoryLabel = isVietnamese ? "Thư rác / Quảng cáo" : "Spam / Promotion";
-      } else if (isExam) {
-        category = "EXAM";
-        urgency = "HIGH";
-        categoryLabel = isVietnamese ? "Lịch thi / Kiểm tra" : "Exam / Quiz";
-      } else if (isAssignment) {
-        category = "ASSIGNMENT";
-        urgency = "HIGH";
-        categoryLabel = isVietnamese ? "Bài tập & Hạn nộp" : "Assignment";
-      } else if (isAnnouncement) {
-        category = "ANNOUNCEMENT";
-        urgency = "MEDIUM";
-        categoryLabel = isVietnamese ? "Thông báo học vụ" : "Announcement";
+        categoryLabel = isVietnamese ? "Khuyến mãi / Quảng cáo" : "Promotion / Spam";
+      } else {
+        const isExam = /thi học kỳ|kỳ thi|lịch thi|kiểm tra 15p|kiểm tra 1 tiết|midterm exam|final exam|quiz due|test date/i.test(fullText);
+        const isAssignment = /bài tập về nhà|bài tập lớn|hạn nộp bài|nộp bài tập|deadline nộp|assignment due|homework due|lab report due|submit essay/i.test(fullText);
+        const isAnnouncement = /thông báo học vụ|nghỉ học|học bù|lịch học|thay đổi phòng học|class announcement|lecture update|syllabus update/i.test(fullText);
+
+        if (isExam) {
+          category = "EXAM";
+          urgency = "HIGH";
+          categoryLabel = isVietnamese ? "Lịch thi / Kiểm tra" : "Exam / Quiz";
+        } else if (isAssignment) {
+          category = "ASSIGNMENT";
+          urgency = "HIGH";
+          categoryLabel = isVietnamese ? "Bài tập & Hạn nộp" : "Assignment";
+        } else if (isAnnouncement) {
+          category = "ANNOUNCEMENT";
+          urgency = "MEDIUM";
+          categoryLabel = isVietnamese ? "Thông báo học vụ" : "Announcement";
+        }
       }
 
       return {
@@ -172,14 +187,18 @@ Return only JSON.`;
         category,
         categoryLabel,
         isSpam,
-        spamReason: isSpam ? (isVietnamese ? "Thư quảng cáo / dịch vụ ngoài trường học" : "Non-academic promotional email") : "",
+        spamReason: isSpam
+          ? isVietnamese
+            ? "Thư quảng cáo / Khuyến mãi"
+            : "Commercial promotion"
+          : "",
         language: isVietnamese ? "vi" : "en",
         detectedAssignment: {
-          isAssignment: !isSpam && isAssignment,
+          isAssignment: !isSpam && (category === "ASSIGNMENT" || category === "EXAM"),
           name: e.subject || "New Assignment",
           subject: isVietnamese ? "Môn học" : "General",
           dueDate: new Date(Date.now() + 86400000 * 3).toISOString().split("T")[0],
-          priority: isExam || isAssignment ? "High" : "Med",
+          priority: urgency === "HIGH" ? "High" : "Med",
         },
       };
     });

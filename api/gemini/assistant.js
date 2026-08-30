@@ -9,6 +9,33 @@ function getGenAI() {
   return genAI;
 }
 
+const CANDIDATE_MODELS = [
+  process.env.GEMINI_MODEL,
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3-flash-preview",
+  "gemini-2.5-flash",
+].filter(Boolean);
+
+async function generateWithModelFallback(params) {
+  const ai = getGenAI();
+  let lastError = null;
+  for (const model of CANDIDATE_MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: params.contents,
+        config: params.config,
+      });
+      return response;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Model ${model} attempt failed: ${err.message || err}. Trying next fallback...`);
+    }
+  }
+  throw lastError || new Error("All candidate Gemini models failed.");
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -17,7 +44,6 @@ export default async function handler(req, res) {
 
   try {
     const { messages, context } = req.body || {};
-    const ai = getGenAI();
 
     const systemInstruction = `You are the Student Command Center AI Study Advisor & Academic Coach.
 You help high school and university students manage their coursework, plan 45-minute focus sessions, break down large essays/projects into milestones, draft professional emails to professors, and master challenging concepts.
@@ -25,10 +51,19 @@ Keep your responses structured, encouraging, concise, and highly actionable with
 Current student context:
 ${JSON.stringify(context || {}, null, 2)}`;
 
-    const formattedContents = (messages || []).map((m) => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content || "" }],
-    }));
+    // Sanitize messages so that turn 0 is ALWAYS 'user' (Gemini requirement)
+    const formattedContents = [];
+    for (const m of messages || []) {
+      const role = m.role === "assistant" ? "model" : "user";
+      if (formattedContents.length === 0 && role === "model") {
+        // Skip assistant welcome greeting if it's at index 0
+        continue;
+      }
+      formattedContents.push({
+        role,
+        parts: [{ text: m.content || "" }],
+      });
+    }
 
     if (formattedContents.length === 0) {
       formattedContents.push({
@@ -37,8 +72,7 @@ ${JSON.stringify(context || {}, null, 2)}`;
       });
     }
 
-    const response = await ai.models.generateContent({
-      model: process.env.GEMINI_MODEL || "gemini-3.6-flash",
+    const response = await generateWithModelFallback({
       contents: formattedContents,
       config: {
         systemInstruction,

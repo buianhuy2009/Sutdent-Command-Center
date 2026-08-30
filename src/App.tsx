@@ -15,12 +15,14 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  HardDrive,
 } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { DailyRadarTab } from './components/DailyRadarTab';
 import { GmailRadarTab } from './components/GmailRadarTab';
 import { AssignmentTrackerTab } from './components/AssignmentTrackerTab';
 import { CanvasSyncTab } from './components/CanvasSyncTab';
+import { GoogleDriveTab } from './components/GoogleDriveTab';
 import { LandingPage } from './components/LandingPage';
 import { QuickDraftModal } from './components/QuickDraftModal';
 import { ScheduleStudyModal } from './components/ScheduleStudyModal';
@@ -86,6 +88,8 @@ import {
 } from './types';
 
 const LOCAL_ASSIGNMENTS_KEY = 'scc_user_assignments_v2';
+const LOCAL_EMAIL_ALERTS_KEY = 'scc_cached_email_alerts_v2';
+const LOCAL_RAW_EMAILS_KEY = 'scc_cached_raw_emails_v2';
 
 function loadSavedAssignments(): Assignment[] {
   try {
@@ -105,6 +109,48 @@ function saveSavedAssignments(list: Assignment[]) {
     localStorage.setItem(LOCAL_ASSIGNMENTS_KEY, JSON.stringify(list));
   } catch (e) {
     console.error('Error saving assignments:', e);
+  }
+}
+
+function loadSavedEmailAlerts(): EmailAlert[] {
+  try {
+    const saved = localStorage.getItem(LOCAL_EMAIL_ALERTS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    console.error('Error loading cached email alerts:', e);
+  }
+  return [];
+}
+
+function loadSavedRawEmails(): EmailMessage[] {
+  try {
+    const saved = localStorage.getItem(LOCAL_RAW_EMAILS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    console.error('Error loading cached raw emails:', e);
+  }
+  return [];
+}
+
+function saveEmailAlerts(list: EmailAlert[]) {
+  try {
+    localStorage.setItem(LOCAL_EMAIL_ALERTS_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.error('Error saving cached email alerts:', e);
+  }
+}
+
+function saveRawEmails(list: EmailMessage[]) {
+  try {
+    localStorage.setItem(LOCAL_RAW_EMAILS_KEY, JSON.stringify(list));
+  } catch (e) {
+    console.error('Error saving cached raw emails:', e);
   }
 }
 
@@ -155,8 +201,12 @@ export default function App() {
 
   // Real Data State (Zero Fake Data)
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
-  const [emailAlerts, setEmailAlerts] = useState<EmailAlert[]>([]);
-  const [rawEmails, setRawEmails] = useState<EmailMessage[]>([]);
+  const [emailAlerts, setEmailAlerts] = useState<EmailAlert[]>(loadSavedEmailAlerts);
+  const [rawEmails, setRawEmails] = useState<EmailMessage[]>(loadSavedRawEmails);
+  const rawEmailsRef = useRef(rawEmails);
+  rawEmailsRef.current = rawEmails;
+  const emailAlertsRef = useRef(emailAlerts);
+  emailAlertsRef.current = emailAlerts;
   const [assignments, setAssignments] = useState<Assignment[]>(loadSavedAssignments());
   const [recentFiles, setRecentFiles] = useState<SchoolFile[]>([]);
   const [canvasAssignments, setCanvasAssignments] = useState<CanvasAssignment[]>([]);
@@ -669,7 +719,7 @@ export default function App() {
   }, [addToast]);
 
   // Fetch Academic Emails & Summarize with Gemini
-  const loadEmailsAndAlerts = useCallback(async (isSilent = false) => {
+  const loadEmailsAndAlerts = useCallback(async (isSilent = false, forceResort = false) => {
     const token = getStoredGoogleToken();
     if (!token) {
       setRawEmails([]);
@@ -682,15 +732,36 @@ export default function App() {
     if (!isSilent) setIsLoadingEmails(true);
     try {
       const emails = await fetchAcademicEmails(token);
-      setRawEmails(emails);
       setEmailError(null);
       setGmailApiInfo(null);
+
+      // Check if emails match cached emails (same IDs in same order)
+      const currentRaw = rawEmailsRef.current;
+      const currentAlerts = emailAlertsRef.current;
+      const isSameSet =
+        !forceResort &&
+        currentRaw.length > 0 &&
+        currentRaw.length === emails.length &&
+        currentRaw.every((re, i) => re.id === emails[i]?.id);
+
+      if (isSameSet && currentAlerts.length > 0) {
+        // Cached classification is valid and up to date! Do not re-call Gemini!
+        setRawEmails(emails);
+        return;
+      }
+
+      setRawEmails(emails);
+      saveRawEmails(emails);
 
       if (emails.length > 0) {
         const alerts = await summarizeEmailsWithGemini(emails);
         setEmailAlerts(alerts);
+        saveEmailAlerts(alerts);
       } else {
         setEmailAlerts([]);
+        try {
+          localStorage.removeItem(LOCAL_EMAIL_ALERTS_KEY);
+        } catch {}
       }
     } catch (err: any) {
       console.error('Email fetch error:', err);
@@ -1545,7 +1616,7 @@ export default function App() {
       } else if (e.key === '4' && shortcutSettings.keys.tab4) {
         handleTabTransition('tracker');
       } else if (e.key === '5' && shortcutSettings.keys.tab5) {
-        handleTabTransition('projects');
+        handleTabTransition('drive');
       } else if ((e.key === 'r' || e.key === 'R') && shortcutSettings.keys.sync) {
         handleRefreshAll();
       } else if (e.key === '?' && shortcutSettings.keys.help) {
@@ -1692,6 +1763,15 @@ export default function App() {
                 key: '4',
                 badge: (!clearedTabBadges.has('tracker') && pendingAssignmentCount > 0) ? `${pendingAssignmentCount}` : undefined,
                 badgeColor: 'bg-emerald-600 text-white',
+              },
+              {
+                id: 'drive',
+                label: 'Google Drive',
+                description: 'School Files & Docs',
+                icon: HardDrive,
+                key: '5',
+                badge: (!clearedTabBadges.has('drive') && recentFiles.length > 0) ? `${recentFiles.length}` : undefined,
+                badgeColor: 'bg-blue-600 text-white',
               },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
@@ -1874,6 +1954,7 @@ export default function App() {
               { id: 'radar', label: 'Daily Schedule', icon: Compass },
               { id: 'gmail', label: 'Gmail Scanner', icon: Mail },
               { id: 'tracker', label: 'Assignment Tracker', icon: CheckSquare },
+              { id: 'drive', label: 'Drive', icon: HardDrive },
             ].map((tab) => {
               const isActive = activeTab === tab.id;
               const Icon = tab.icon;
@@ -1954,7 +2035,7 @@ export default function App() {
                   emailAlerts={emailAlerts}
                   rawEmails={rawEmails}
                   isLoadingEmails={isLoadingEmails}
-                  onRefreshEmails={loadEmailsAndAlerts}
+                  onRefreshEmails={() => loadEmailsAndAlerts(false, true)}
                   onOpenQuickDraft={(email, alert) => {
                     setDraftInitialEmail(email || null);
                     setDraftInitialAlert(alert || null);
@@ -1989,6 +2070,19 @@ export default function App() {
                   onClearCompleted={handleClearCompletedAssignments}
                   sheetError={sheetError}
                   sheetApiInfo={sheetApiInfo}
+                />
+              )}
+
+              {activeTab === 'drive' && (
+                <GoogleDriveTab
+                  recentFiles={recentFiles}
+                  isLoadingFiles={isLoadingFiles}
+                  onRefreshFiles={() => loadRecentFiles(false)}
+                  isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                  onConnectGoogle={() => handleGoogleSignIn(true)}
+                  driveError={driveError}
+                  driveApiInfo={driveApiInfo}
+                  googleToken={getStoredGoogleToken() || undefined}
                 />
               )}
             </div>

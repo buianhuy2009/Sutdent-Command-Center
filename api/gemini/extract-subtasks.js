@@ -9,6 +9,33 @@ function getGenAI() {
   return genAI;
 }
 
+const CANDIDATE_MODELS = [
+  process.env.GEMINI_MODEL,
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3-flash-preview",
+  "gemini-2.5-flash",
+].filter(Boolean);
+
+async function generateWithModelFallback(params) {
+  const ai = getGenAI();
+  let lastError = null;
+  for (const model of CANDIDATE_MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: params.contents,
+        config: params.config,
+      });
+      return response;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Model ${model} attempt failed: ${err.message || err}. Trying next fallback...`);
+    }
+  }
+  throw lastError || new Error("All candidate Gemini models failed.");
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -21,7 +48,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Assignment name is required" });
     }
 
-    const ai = getGenAI();
     const prompt = `You are an AI academic task planner for a student command center.
 Given the following Canvas LMS assignment, break it down into a clear, ordered checklist of actionable sub-tasks that a student can follow step-by-step to complete the assignment.
 
@@ -50,8 +76,7 @@ Respond with valid JSON:
 }
 Return only JSON.`;
 
-    const response = await ai.models.generateContent({
-      model: process.env.GEMINI_MODEL || "gemini-3.6-flash",
+    const response = await generateWithModelFallback({
       contents: prompt,
       config: { responseMimeType: "application/json" },
     });
