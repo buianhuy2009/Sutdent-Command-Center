@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Search,
   CheckSquare,
-  Compass,
   FileText,
   Layers,
   Sparkles,
@@ -13,13 +12,21 @@ import {
   X,
   ExternalLink,
   Mail,
+  Calculator,
+  PenTool,
+  Atom,
+  Brain,
+  FolderOpen,
+  Columns2,
+  Timer,
+  BookOpen,
 } from 'lucide-react';
-import { Assignment } from '../types';
+import { Assignment, WorkspaceId } from '../types';
 
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectTab: (tab: string) => void;
+  onSelectWorkspace: (workspace: WorkspaceId) => void;
   onOpenQuickDraft: () => void;
   onOpenNewAssignment: () => void;
   onToggleAiChat: () => void;
@@ -31,7 +38,7 @@ interface CommandPaletteProps {
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isOpen,
   onClose,
-  onSelectTab,
+  onSelectWorkspace,
   onOpenQuickDraft,
   onOpenNewAssignment,
   onToggleAiChat,
@@ -53,71 +60,107 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   if (!isOpen) return null;
 
+  // Simple math solver for equations like "25 * 4" or "15 + 85"
+  let mathResult: string | null = null;
+  if (/^[0-9+\-*/().\s^%]+$/.test(query.trim()) && /[0-9]/.test(query.trim()) && /[+\-*/^%]/.test(query.trim())) {
+    try {
+      // Safe evaluation of pure math expressions
+      const sanitized = query.replace(/\^/g, '**');
+      const val = Function(`'use strict'; return (${sanitized})`)();
+      if (typeof val === 'number' && !isNaN(val)) {
+        mathResult = `${query.trim()} = ${val}`;
+      }
+    } catch {}
+  }
+
   const actions = [
+    // Workspaces
     {
-      id: 'tab-canvas',
-      title: 'Go to Canvas LMS Hub (Prioritized)',
-      category: 'Navigation',
-      icon: Layers,
-      run: () => {
-        onSelectTab('canvas');
-        onClose();
-      },
-    },
-    {
-      id: 'tab-radar',
-      title: 'Go to Daily Schedule & Calendar',
-      category: 'Navigation',
-      icon: Compass,
-      run: () => {
-        onSelectTab('radar');
-        onClose();
-      },
-    },
-    {
-      id: 'tab-gmail',
-      title: 'Go to Gmail AI Scanner (Spam & Multi-language Filter)',
-      category: 'Navigation',
-      icon: Mail,
-      run: () => {
-        onSelectTab('gmail');
-        onClose();
-      },
-    },
-    {
-      id: 'tab-tracker',
-      title: 'Go to Master Assignment Tracker',
-      category: 'Navigation',
+      id: 'ws-dashboard',
+      title: 'Home Dashboard (Overview)',
+      category: 'Workspaces',
       icon: CheckSquare,
       run: () => {
-        onSelectTab('tracker');
+        onSelectWorkspace('dashboard');
         onClose();
       },
     },
     {
-      id: 'tab-projects',
-      title: 'Go to Project Starter & Drive Files',
-      category: 'Navigation',
-      icon: FileText,
+      id: 'ws-academic',
+      title: 'Academic Radar & LMS Hub (Canvas, Classroom, Deadlines)',
+      category: 'Workspaces',
+      icon: Layers,
       run: () => {
-        onSelectTab('projects');
+        onSelectWorkspace('academic');
         onClose();
       },
     },
+    {
+      id: 'ws-stem',
+      title: 'STEM & Calculation Lab (Desmos, GeoGebra, PhET)',
+      category: 'Workspaces',
+      icon: Atom,
+      run: () => {
+        onSelectWorkspace('stem');
+        onClose();
+      },
+    },
+    {
+      id: 'ws-creation',
+      title: 'Creation & Whiteboard Studio (Excalidraw, Canva)',
+      category: 'Workspaces',
+      icon: PenTool,
+      run: () => {
+        onSelectWorkspace('creation');
+        onClose();
+      },
+    },
+    {
+      id: 'ws-retention',
+      title: 'Active Study & Retention Vault (Pomodoro, SRS, NotebookLM)',
+      category: 'Workspaces',
+      icon: Brain,
+      run: () => {
+        onSelectWorkspace('retention');
+        onClose();
+      },
+    },
+    {
+      id: 'ws-documents',
+      title: 'Document & Resource Hub (Markdown, Google Drive)',
+      category: 'Workspaces',
+      icon: FolderOpen,
+      run: () => {
+        onSelectWorkspace('documents');
+        onClose();
+      },
+    },
+    {
+      id: 'ws-split',
+      title: 'Split-Screen Dual-Pane Dock',
+      category: 'Workspaces',
+      icon: Columns2,
+      run: () => {
+        onSelectWorkspace('splitscreen');
+        onClose();
+      },
+    },
+
+    // Quick Actions
     {
       id: 'act-new-assignment',
-      title: 'Create New Assignment (Google Sheet)',
+      title: 'Create New Assignment',
       category: 'Actions',
       icon: Plus,
       run: () => {
-        onSelectTab('tracker');
+        onSelectWorkspace('academic');
         onOpenNewAssignment();
         onClose();
       },
     },
     {
       id: 'act-quick-draft',
-      title: 'Quick Draft Email to Teacher (English / Tiếng Việt)',
+      title: 'Draft Teacher Email (AI Quick-Drafter)',
       category: 'Actions',
       icon: Send,
       run: () => {
@@ -126,8 +169,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
     },
     {
-      id: 'act-ai-chat',
-      title: 'Open AI Study Coach Chat',
+      id: 'act-ai-coach',
+      title: 'Open AI Study Coach',
       category: 'Actions',
       icon: Sparkles,
       run: () => {
@@ -147,10 +190,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     },
   ];
 
-  // Filter actions and assignments by search query
-  const filteredActions = actions.filter((a) =>
-    a.title.toLowerCase().includes(query.toLowerCase()) ||
-    a.category.toLowerCase().includes(query.toLowerCase())
+  const filteredActions = actions.filter(
+    (a) =>
+      a.title.toLowerCase().includes(query.toLowerCase()) ||
+      a.category.toLowerCase().includes(query.toLowerCase())
   );
 
   const matchedAssignments = assignments
@@ -169,30 +212,72 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden animate-in zoom-in-95">
+      <div className="bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden animate-in zoom-in-95">
         {/* Search Input Bar */}
-        <div className="flex items-center px-4 py-3.5 border-b border-slate-100 dark:border-slate-800">
-          <Search className="w-5 h-5 text-slate-400 mr-3 shrink-0" />
+        <div className="flex items-center px-4 py-3.5 border-b border-[#DFDACB] dark:border-[#2C2B27]">
+          <Search className="w-5 h-5 text-[#8C897F] mr-3 shrink-0" />
           <input
             type="text"
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type a command, assignment name, or class..."
-            className="w-full text-sm bg-transparent border-none outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+            placeholder="Type a workspace, tool, equation (e.g. 25*4), or course..."
+            className="w-full text-sm bg-transparent border-none outline-none text-[#141413] dark:text-[#FAF9F5] placeholder:text-[#8C897F]"
           />
-          <kbd className="px-2 py-0.5 text-[10px] font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 rounded border border-slate-200 dark:border-slate-700">
+          <kbd className="px-2 py-0.5 text-[10px] font-mono font-semibold bg-[#FAF9F5] dark:bg-[#252422] text-[#8C897F] rounded border border-[#DFDACB] dark:border-[#2C2B27]">
             ESC
           </kbd>
         </div>
 
+        {/* Math Calculation Quick Solve */}
+        {mathResult && (
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200">
+            <div className="flex items-center gap-2">
+              <Calculator className="w-4 h-4 text-amber-600 shrink-0" />
+              <span className="font-mono font-bold">{mathResult}</span>
+            </div>
+            <span className="text-[10px] opacity-75">Calculated in real-time</span>
+          </div>
+        )}
+
         {/* Results List */}
-        <div className="max-h-96 overflow-y-auto p-2 space-y-4">
-          {/* Actions */}
+        <div className="max-h-96 overflow-y-auto p-2 space-y-3">
+          {/* Matched Assignments */}
+          {matchedAssignments.length > 0 && (
+            <div>
+              <div className="px-2 py-1 text-[10px] font-bold text-[#8C897F] uppercase tracking-wider">
+                Matching Assignments
+              </div>
+              <div className="space-y-1 mt-1">
+                {matchedAssignments.map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => {
+                      onSelectWorkspace('academic');
+                      onClose();
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <CheckSquare className="w-4 h-4 text-[#D97757] shrink-0" />
+                      <span className="text-xs font-semibold text-[#141413] dark:text-[#FAF9F5] truncate">
+                        {a.assignmentName}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-[#8C897F]">
+                      {a.subject} • Due {a.dueDate}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Actions & Navigation */}
           {filteredActions.length > 0 && (
             <div>
-              <div className="px-2 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                Commands & Navigation
+              <div className="px-2 py-1 text-[10px] font-bold text-[#8C897F] uppercase tracking-wider">
+                Workspaces &amp; Commands
               </div>
               <div className="space-y-1 mt-1">
                 {filteredActions.map((action) => {
@@ -201,17 +286,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     <button
                       key={action.id}
                       onClick={action.run}
-                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors group cursor-pointer"
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B] transition-colors group cursor-pointer"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-[#FAF9F5] dark:bg-[#1F1E1B] text-[#5C5A54] dark:text-[#B5B2A8] flex items-center justify-center group-hover:bg-[#D97757] group-hover:text-white transition-colors shrink-0">
                           <Icon className="w-4 h-4" />
                         </div>
-                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                        <span className="text-xs font-semibold text-[#141413] dark:text-[#FAF9F5] truncate">
                           {action.title}
                         </span>
                       </div>
-                      <span className="text-[10px] text-slate-400 font-medium">
+                      <span className="text-[10px] text-[#8C897F] font-medium shrink-0 ml-2">
                         {action.category}
                       </span>
                     </button>
@@ -219,62 +304,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 })}
               </div>
             </div>
-          )}
-
-          {/* Assignments Search Results */}
-          {query.trim() && matchedAssignments.length > 0 && (
-            <div>
-              <div className="px-2 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                Matching Assignments
-              </div>
-              <div className="space-y-1 mt-1">
-                {matchedAssignments.map((a) => (
-                  <div
-                    key={a.id}
-                    onClick={() => {
-                      onSelectTab('tracker');
-                      onClose();
-                    }}
-                    className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
-                  >
-                    <div>
-                      <div className="text-xs font-bold text-slate-900 dark:text-white">
-                        {a.assignmentName}
-                      </div>
-                      <div className="text-[10px] text-slate-500">
-                        {a.subject} • Due {a.dueDate} • {a.status}
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400">
-                      Open in Tracker
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Fallback if empty */}
-          {filteredActions.length === 0 && matchedAssignments.length === 0 && (
-            <div className="p-8 text-center text-xs text-slate-400">
-              No results found for &ldquo;{query}&rdquo;
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
-          <span>Student Command Center Search</span>
-          {sheetUrl && (
-            <a
-              href={sheetUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline inline-flex items-center gap-1"
-            >
-              <span>Master Sheet</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
           )}
         </div>
       </div>

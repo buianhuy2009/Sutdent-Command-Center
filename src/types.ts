@@ -169,3 +169,48 @@ export interface ApiEnablementInfo {
   rawMessage?: string;
 }
 
+export type WorkspaceId =
+  | 'dashboard'
+  | 'academic'
+  | 'stem'
+  | 'creation'
+  | 'retention'
+  | 'documents'
+  | 'splitscreen';
+
+export type SplitScreenToolId =
+  | 'desmos-graphing'
+  | 'desmos-scientific'
+  | 'geogebra'
+  | 'excalidraw'
+  | 'canvas-agenda'
+  | 'notes-markdown'
+  | 'pomodoro'
+  | 'phet-sims'
+  | 'flashcards'
+  | 'notebooklm'
+  | 'canva';
+
+export interface SplitScreenConfig {
+  leftTool: SplitScreenToolId;
+  rightTool: SplitScreenToolId;
+  ratio: '50/50' | '60/40' | '70/30' | '40/60' | '30/70';
+  activeFullscreenPane?: 'left' | 'right' | null;
+}
+
+export interface DashboardWidgetConfig {
+  showDeadlines: boolean;
+  showPomodoroStreak: boolean;
+  showPinnedTools: boolean;
+  showScratchpad: boolean;
+}
+
+export interface MarkdownNote {
+  id: string;
+  title: string;
+  subject?: string;
+  content: string;
+  updatedAt: string;
+}
+
+

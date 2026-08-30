@@ -16,8 +16,22 @@ import {
   ChevronLeft,
   ChevronRight,
   HardDrive,
+  Atom,
+  Palette,
+  Brain,
+  FolderOpen,
+  Columns2,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Sidebar';
+import { DashboardHome } from './components/DashboardHome';
+import { AcademicRadarWorkspace } from './components/workspaces/AcademicRadarWorkspace';
+import { StemLabWorkspace } from './components/workspaces/StemLabWorkspace';
+import { CreationStudioWorkspace } from './components/workspaces/CreationStudioWorkspace';
+import { RetentionVaultWorkspace } from './components/workspaces/RetentionVaultWorkspace';
+import { DocumentHubWorkspace } from './components/workspaces/DocumentHubWorkspace';
+import { SplitScreenStudio } from './components/SplitScreenStudio';
 import { DailyRadarTab } from './components/DailyRadarTab';
 import { GmailRadarTab } from './components/GmailRadarTab';
 import { AssignmentTrackerTab } from './components/AssignmentTrackerTab';
@@ -36,6 +50,7 @@ import { OAuthGuideModal } from './components/OAuthGuideModal';
 import { ApiActivationModal } from './components/ApiActivationModal';
 import { ToastContainer } from './components/Toast';
 import confetti from 'canvas-confetti';
+import { WorkspaceId } from './types';
 
 import {
   signInWithGoogle,
@@ -179,6 +194,30 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+
+  // 5-Workspace Student OS Active Workspace
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>(() => {
+    try {
+      const saved = localStorage.getItem('scc_active_workspace_v1');
+      return (saved as WorkspaceId) || 'dashboard';
+    } catch {
+      return 'dashboard';
+    }
+  });
+
+  const handleWorkspaceTransition = useCallback((newWorkspace: WorkspaceId) => {
+    setAiChatOpen(false);
+    if (typeof document !== 'undefined' && (document as any).startViewTransition) {
+      (document as any).startViewTransition(() => {
+        setActiveWorkspace(newWorkspace);
+      });
+    } else {
+      setActiveWorkspace(newWorkspace);
+    }
+    try {
+      localStorage.setItem('scc_active_workspace_v1', newWorkspace);
+    } catch {}
+  }, []);
 
   // Active Tab - Canvas is prioritized #1
   const [activeTab, setActiveTab] = useState('canvas');
@@ -1276,6 +1315,13 @@ export default function App() {
     }
   };
 
+  const handleToggleAssignmentById = async (id: string) => {
+    const target = assignments.find((a) => a.id === id);
+    if (!target) return;
+    const nextStatus: AssignmentStatus = target.status === 'Done' ? 'Not Started' : 'Done';
+    await handleUpdateStatus(target, nextStatus);
+  };
+
   // Clear / Purge all completed assignments from Master Sheet and tracker
   const handleClearCompletedAssignments = async () => {
     const activeOnly = assignments.filter((a) => a.status !== 'Done');
@@ -1608,16 +1654,20 @@ export default function App() {
           e.preventDefault();
           setCommandPaletteOpen((prev) => !prev);
         }
-      } else if (e.key === '1' && shortcutSettings.keys.tab1) {
-        handleTabTransition('canvas');
-      } else if (e.key === '2' && shortcutSettings.keys.tab2) {
-        handleTabTransition('radar');
-      } else if (e.key === '3' && shortcutSettings.keys.tab3) {
-        handleTabTransition('gmail');
-      } else if (e.key === '4' && shortcutSettings.keys.tab4) {
-        handleTabTransition('tracker');
-      } else if (e.key === '5' && shortcutSettings.keys.tab5) {
-        handleTabTransition('drive');
+      } else if (e.key === '0') {
+        handleWorkspaceTransition('dashboard');
+      } else if (e.key === '1') {
+        handleWorkspaceTransition('academic');
+      } else if (e.key === '2') {
+        handleWorkspaceTransition('stem');
+      } else if (e.key === '3') {
+        handleWorkspaceTransition('creation');
+      } else if (e.key === '4') {
+        handleWorkspaceTransition('retention');
+      } else if (e.key === '5') {
+        handleWorkspaceTransition('documents');
+      } else if (e.key === '6') {
+        handleWorkspaceTransition('splitscreen');
       } else if ((e.key === 'r' || e.key === 'R') && shortcutSettings.keys.sync) {
         handleRefreshAll();
       } else if (e.key === '?' && shortcutSettings.keys.help) {
@@ -1632,7 +1682,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleRefreshAll, shortcutSettings, handleTabTransition, zenFocusMode]);
+  }, [handleRefreshAll, shortcutSettings, handleWorkspaceTransition, zenFocusMode]);
 
   if (!user && !isDemoMode) {
     return (
@@ -1674,216 +1724,26 @@ export default function App() {
       )}
       {/* Left Navigation Rail (Desktop) + Main Area Container */}
       <div className="flex-1 flex overflow-hidden h-full">
-        {/* Sleek Distinct Theme-Reactive Sidebar */}
-        <nav
-          aria-label="Primary Navigation"
-          className={`${
-            isSidebarExpanded ? 'w-64' : 'w-20'
-          } ${zenFocusMode ? 'hidden' : 'hidden md:flex'} bg-[#EFECE2] dark:bg-[#1F1E1B] border-r border-[#DFDACB] dark:border-[#2C2B27] shadow-xl flex-col py-5 px-3 shrink-0 justify-between z-30 select-none h-full transition-[width] duration-300 ease-in-out`}
-        >
-          {/* Top Brand Monogram / Insignia Header */}
-          <div className="flex items-center justify-between gap-3 px-2 mb-6">
-            <div
-              onClick={() => handleTabTransition('canvas')}
-              className="flex items-center gap-3 cursor-pointer group min-w-0"
-              title="Canvas LMS Hub & Student Command Center"
-            >
-              <div className="w-11 h-11 bg-gradient-to-tr from-[#D97757] via-[#E07A5F] to-[#F59E0B] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-[#D97757]/30 group-hover:scale-105 transition-transform shrink-0 relative overflow-hidden border border-white/20">
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2L1 7L12 12L23 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="rgba(255,255,255,0.2)"/>
-                  <path d="M5 10.5V16C5 17.5 8.13401 20 12 20C15.866 20 19 17.5 19 16V10.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12 12V22" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2 2"/>
-                  <circle cx="12" cy="7" r="1.5" fill="#FBBF24" />
-                </svg>
-              </div>
-              {isSidebarExpanded && (
-                <div className="min-w-0 overflow-hidden animate-in fade-in duration-200">
-                  <h2 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] tracking-tight leading-tight truncate">
-                    Student Center
-                  </h2>
-                  <p className="text-[10px] text-[#D97757] font-bold tracking-wide uppercase">
-                    Academic OS
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {isSidebarExpanded && (
-              <button
-                onClick={toggleSidebar}
-                className="p-1.5 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] hover:bg-[#FAF9F5] dark:hover:bg-[#2A2825] rounded-lg transition-colors cursor-pointer shrink-0 border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27]"
-                title="Collapse sidebar"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-            )}
+        {/* Sleek Modular macOS/Linear Sidebar */}
+        {!zenFocusMode && (
+          <div className="hidden md:flex shrink-0">
+            <Sidebar
+              activeWorkspace={activeWorkspace}
+              onSelectWorkspace={handleWorkspaceTransition}
+              isCollapsed={!isSidebarExpanded}
+              onToggleCollapse={toggleSidebar}
+              onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+              onOpenAiCoach={() => setAiChatOpen(true)}
+              onOpenSettings={() => setAccountSettingsOpen(true)}
+              isDarkMode={darkMode}
+              onToggleDarkMode={() => setDarkMode(!darkMode)}
+              user={user}
+              onGoogleSignIn={() => handleGoogleSignIn()}
+              onSignOut={handleLogout}
+              urgentDeadlinesCount={urgentEmailCount + canvasUnfinishedCount}
+            />
           </div>
-
-          {/* Navigation Items Group */}
-          <div className="flex flex-col space-y-2 my-auto">
-            {isSidebarExpanded && (
-              <div className="px-3 pb-1 text-[10px] font-bold text-[#8C897F] uppercase tracking-wider">
-                Workspaces
-              </div>
-            )}
-
-            {[
-              {
-                id: 'canvas',
-                label: 'Canvas LMS',
-                description: 'Assignments & Submissions',
-                icon: Layers,
-                key: '1',
-                badge: (!clearedTabBadges.has('canvas') && canvasUnfinishedCount > 0) ? `${canvasUnfinishedCount}` : undefined,
-                badgeColor: 'bg-[#D97757] text-white',
-              },
-              {
-                id: 'radar',
-                label: 'Daily Schedule',
-                description: 'Classes & Focus Blocks',
-                icon: Compass,
-                key: '2',
-                badge: (!clearedTabBadges.has('radar') && calendarEvents.length > 0) ? `${calendarEvents.length}` : undefined,
-                badgeColor: 'bg-[#D97757] text-white',
-              },
-              {
-                id: 'gmail',
-                label: 'Gmail AI Scanner',
-                description: 'Filtered School Inbox',
-                icon: Mail,
-                key: '3',
-                badge: (!clearedTabBadges.has('gmail') && urgentEmailCount > 0) ? `${urgentEmailCount}` : undefined,
-                badgeColor: 'bg-rose-500 text-white',
-              },
-              {
-                id: 'tracker',
-                label: 'Assignment Tracker',
-                description: 'Live Master Checklist',
-                icon: CheckSquare,
-                key: '4',
-                badge: (!clearedTabBadges.has('tracker') && pendingAssignmentCount > 0) ? `${pendingAssignmentCount}` : undefined,
-                badgeColor: 'bg-emerald-600 text-white',
-              },
-              {
-                id: 'drive',
-                label: 'Google Drive',
-                description: 'School Files & Docs',
-                icon: HardDrive,
-                key: '5',
-                badge: (!clearedTabBadges.has('drive') && recentFiles.length > 0) ? `${recentFiles.length}` : undefined,
-                badgeColor: 'bg-blue-600 text-white',
-              },
-            ].map((tab) => {
-              const isActive = activeTab === tab.id;
-              const Icon = tab.icon;
-
-              return (
-                <button
-                  key={tab.id}
-                  id={`rail-tab-${tab.id}`}
-                  onClick={() => handleTabTransition(tab.id)}
-                  className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative group ${
-                    isSidebarExpanded ? 'px-3 py-2.5 justify-between gap-3' : 'w-11 h-11 mx-auto justify-center'
-                  } ${
-                    isActive
-                      ? 'bg-[#D97757] text-white shadow-md shadow-[#D97757]/25'
-                      : 'bg-[#FAF9F5]/70 hover:bg-[#FAF9F5] dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#141413] dark:text-[#FAF9F5] border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27]'
-                  }`}
-                  title={`${tab.label} (Press ${tab.key})`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Icon className="w-5 h-5 shrink-0" />
-                    {isSidebarExpanded && (
-                      <div className="text-left min-w-0 overflow-hidden">
-                        <div className={`text-xs font-semibold truncate leading-tight ${isActive ? 'text-white' : 'text-[#141413] dark:text-[#FAF9F5]'}`}>
-                          {tab.label}
-                        </div>
-                        <div className={`text-[10px] truncate ${isActive ? 'text-white/80' : 'text-[#8C897F]'}`}>
-                          {tab.description}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {isSidebarExpanded ? (
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {tab.badge && (
-                        <span className={`px-1.5 py-0.2 text-[10px] font-bold rounded-full ${tab.badgeColor}`}>
-                          {tab.badge}
-                        </span>
-                      )}
-                      <span className={`text-[10px] font-mono px-1 py-0.2 rounded ${isActive ? 'bg-white/20 text-white' : 'bg-black/5 dark:bg-black/20 text-[#8C897F]'}`}>
-                        [{tab.key}]
-                      </span>
-                    </div>
-                  ) : (
-                    <>
-                      {tab.badge && (
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#D97757] ring-2 ring-[#EFECE2] dark:ring-[#1F1E1B]" />
-                      )}
-                      <span className="absolute left-14 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-[11px] font-semibold px-2.5 py-1 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">
-                        {tab.label} <span className="text-[#D97757] font-bold ml-1">[{tab.key}]</span>
-                      </span>
-                    </>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Bottom Actions: Expand Toggle & Account Settings Card */}
-          <div className="mt-auto pt-4 border-t border-[#DFDACB] dark:border-[#2C2B27] space-y-2">
-            {!isSidebarExpanded && (
-              <button
-                onClick={toggleSidebar}
-                className="w-11 h-11 mx-auto rounded-xl bg-[#FAF9F5]/70 hover:bg-[#FAF9F5] dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] flex items-center justify-center transition-colors cursor-pointer border border-[#DFDACB] dark:border-[#2C2B27]"
-                title="Expand sidebar"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            )}
-
-            {/* Click to open 2-Column Account & Settings Modal */}
-            <div
-              className={`flex items-center rounded-2xl p-1.5 cursor-pointer hover:bg-[#FAF9F5] dark:hover:bg-[#252422] transition-colors border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27] ${
-                isSidebarExpanded ? 'gap-3 justify-start' : 'justify-center'
-              }`}
-              title="Open Account & Settings"
-              onClick={() => setAccountSettingsOpen(true)}
-            >
-              {user ? (
-                <div className="w-9 h-9 rounded-xl bg-[#D97757]/20 border-2 border-[#D97757]/40 flex items-center justify-center text-xs font-bold text-[#D97757] overflow-hidden shrink-0 shadow-xs">
-                  {user.photoURL ? (
-                    <img
-                      src={user.photoURL}
-                      alt={user.displayName || 'User'}
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    (user.displayName || user.email || 'JD').slice(0, 2).toUpperCase()
-                  )}
-                </div>
-              ) : (
-                <div className="w-9 h-9 rounded-xl bg-[#D97757] border border-[#D97757] flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-xs">
-                  JD
-                </div>
-              )}
-
-              {isSidebarExpanded && (
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-semibold text-[#141413] dark:text-[#FAF9F5] truncate leading-tight">
-                    {user ? user.displayName || user.email?.split('@')[0] : 'Sign In'}
-                  </div>
-                  <div className="text-[10px] text-[#8C897F] truncate">
-                    {user ? user.email : 'Account & Settings'}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </nav>
+        )}
 
         {/* Right Main Column with Top Header, Scrollable Content, and Bottom Status Bar */}
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#FAF9F5] dark:bg-[#141413]">
@@ -1949,24 +1809,26 @@ export default function App() {
           )}
 
           {/* Mobile Tab Navigation Bar (shown only on small screens) */}
-          <div className="md:hidden bg-[#FAF9F6]/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-2 flex space-x-2 overflow-x-auto scrollbar-none">
+          <div className="md:hidden bg-[#FAF9F5]/90 dark:bg-[#1A1917]/90 backdrop-blur-md border-b border-[#DFDACB] dark:border-[#2C2B27] px-3 py-2 flex space-x-1.5 overflow-x-auto scrollbar-none">
             {[
-              { id: 'canvas', label: 'Canvas LMS', icon: Layers },
-              { id: 'radar', label: 'Daily Schedule', icon: Compass },
-              { id: 'gmail', label: 'Gmail Scanner', icon: Mail },
-              { id: 'tracker', label: 'Assignment Tracker', icon: CheckSquare },
-              { id: 'drive', label: 'Drive', icon: HardDrive },
+              { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
+              { id: 'academic', label: 'Academic Radar', icon: Layers },
+              { id: 'stem', label: 'STEM Lab', icon: Atom },
+              { id: 'creation', label: 'Creation Studio', icon: Palette },
+              { id: 'retention', label: 'Retention Vault', icon: Brain },
+              { id: 'documents', label: 'Documents & Drive', icon: FolderOpen },
+              { id: 'splitscreen', label: 'Split-Screen', icon: Columns2 },
             ].map((tab) => {
-              const isActive = activeTab === tab.id;
+              const isActive = activeWorkspace === tab.id;
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
-                  onClick={() => handleTabTransition(tab.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                  onClick={() => handleWorkspaceTransition(tab.id as WorkspaceId)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
                     isActive
-                      ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      ? 'bg-[#D97757] text-white shadow-xs'
+                      : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B]'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -1976,7 +1838,7 @@ export default function App() {
             })}
           </div>
 
-          {/* Main Area: Full-Screen AI Coach View OR Workspace Tabs */}
+          {/* Main Area: Full-Screen AI Coach View OR 5 OS Workspaces */}
           {aiChatOpen ? (
             <StudyAssistantChat
               isOpen={true}
@@ -1989,107 +1851,76 @@ export default function App() {
           ) : (
             <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 min-h-0">
               <div className="max-w-7xl mx-auto space-y-6">
-              {activeTab === 'canvas' && (
-                <CanvasSyncTab
-                  settings={canvasSettings}
-                  onSaveSettings={(newSettings) => {
-                    setCanvasSettings(newSettings);
-                    saveCanvasSettings(newSettings);
-                  }}
-                  canvasAssignments={canvasAssignments}
-                  isLoading={isLoadingCanvas}
-                  errorMessage={canvasError}
-                  lastSyncedAt={lastSyncedAt}
-                  onFetchCanvas={() => loadCanvasData(false)}
-                  onSyncToSheet={handleSyncCanvasToSheet}
-                  onSyncAllPending={handleSyncAllPendingCanvas}
-                  recentFiles={recentFiles}
-                  isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
-                  onSubmitAssignment={handleSubmitAssignment}
-                  googleToken={getStoredGoogleToken() || undefined}
-                  onConnectGoogle={() => handleGoogleSignIn(true)}
-                />
-              )}
+                {activeWorkspace === 'dashboard' && (
+                  <DashboardHome
+                    assignments={assignments}
+                    onToggleAssignment={handleToggleAssignmentById}
+                    onNavigateWorkspace={handleWorkspaceTransition}
+                    onOpenQuickDraft={() => {
+                      setDraftInitialEmail(null);
+                      setDraftInitialAlert(null);
+                      setQuickDraftModalOpen(true);
+                    }}
+                  />
+                )}
 
-              {activeTab === 'radar' && (
-                <DailyRadarTab
-                  events={calendarEvents}
-                  isLoadingEvents={isLoadingEvents}
-                  onRefreshEvents={loadCalendarEvents}
-                  onOpenScheduleModal={(evt) => {
-                    setSelectedEventForSchedule(evt || null);
-                    setSelectedAssignmentForSchedule(null);
-                    setScheduleModalOpen(true);
-                  }}
-                  onNavigateToTab={setActiveTab}
-                  urgentCanvasItems={canvasAssignments.filter((c) => !c.isSynced).slice(0, 3)}
-                  allCanvasAssignments={canvasAssignments}
-                  isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
-                  onConnectGoogle={() => handleGoogleSignIn(true)}
-                  calendarError={calendarError}
-                  calendarApiInfo={calendarApiInfo}
-                  pendingAssignments={assignments.filter((a) => a.status !== 'Done')}
-                  onAddStudyBlock={handleScheduleStudyBlock}
-                />
-              )}
+                {activeWorkspace === 'academic' && (
+                  <AcademicRadarWorkspace
+                    assignments={assignments}
+                    canvasAssignments={canvasAssignments}
+                    canvasSettings={canvasSettings}
+                    onSaveCanvasSettings={(newSettings) => {
+                      setCanvasSettings(newSettings);
+                      saveCanvasSettings(newSettings);
+                    }}
+                    isLoadingCanvas={isLoadingCanvas}
+                    canvasError={canvasError}
+                    lastSyncedAt={lastSyncedAt}
+                    onFetchCanvas={() => loadCanvasData(false)}
+                    onSyncCanvasToSheet={handleSyncCanvasToSheet}
+                    onSyncAllPendingCanvas={handleSyncAllPendingCanvas}
+                    onToggleStatus={handleToggleAssignmentById}
+                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    googleToken={getStoredGoogleToken() || undefined}
+                    onConnectGoogle={() => handleGoogleSignIn(true)}
+                    emailAlerts={emailAlerts}
+                    rawEmails={rawEmails}
+                    isLoadingEmails={isLoadingEmails}
+                    onRefreshEmails={(forceResort, options) => loadEmailsAndAlerts(false, forceResort ?? true, options)}
+                    onOpenQuickDraft={(email, alert) => {
+                      setDraftInitialEmail(email || null);
+                      setDraftInitialAlert(alert || null);
+                      setQuickDraftModalOpen(true);
+                    }}
+                    onExtractAssignment={handleExtractAssignment}
+                    emailError={emailError}
+                  />
+                )}
 
-              {activeTab === 'gmail' && (
-                <GmailRadarTab
-                  emailAlerts={emailAlerts}
-                  rawEmails={rawEmails}
-                  isLoadingEmails={isLoadingEmails}
-                  onRefreshEmails={(forceResort, options) => loadEmailsAndAlerts(false, forceResort ?? true, options)}
-                  onOpenQuickDraft={(email, alert) => {
-                    setDraftInitialEmail(email || null);
-                    setDraftInitialAlert(alert || null);
-                    setQuickDraftModalOpen(true);
-                  }}
-                  onExtractAssignment={handleExtractAssignment}
-                  isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
-                  onConnectGoogle={() => handleGoogleSignIn(true)}
-                  emailError={emailError}
-                  gmailApiInfo={gmailApiInfo}
-                />
-              )}
+                {activeWorkspace === 'stem' && <StemLabWorkspace />}
 
-              {activeTab === 'tracker' && (
-                <AssignmentTrackerTab
-                  assignments={assignments}
-                  sheetUrl={masterSheetUrl}
-                  sheetId={masterSheetId}
-                  isLoading={isLoadingAssignments}
-                  onRefresh={loadSheetAssignments}
-                  onAddAssignment={handleAddAssignment}
-                  onUpdateStatus={handleUpdateStatus}
-                  onScheduleStudyBlock={(assignment) => {
-                    setSelectedAssignmentForSchedule(assignment);
-                    setSelectedEventForSchedule(null);
-                    setScheduleModalOpen(true);
-                  }}
-                  onParseNaturalText={handleParseNaturalText}
-                  isParsingAI={isParsingAI}
-                  isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
-                  onConnectGoogle={() => handleGoogleSignIn(true)}
-                  onClearCompleted={handleClearCompletedAssignments}
-                  sheetError={sheetError}
-                  sheetApiInfo={sheetApiInfo}
-                />
-              )}
+                {activeWorkspace === 'creation' && <CreationStudioWorkspace />}
 
-              {activeTab === 'drive' && (
-                <GoogleDriveTab
-                  recentFiles={recentFiles}
-                  isLoadingFiles={isLoadingFiles}
-                  onRefreshFiles={() => loadRecentFiles(false)}
-                  isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
-                  onConnectGoogle={() => handleGoogleSignIn(true)}
-                  driveError={driveError}
-                  driveApiInfo={driveApiInfo}
-                  googleToken={getStoredGoogleToken() || undefined}
-                />
-              )}
-            </div>
-          </main>
+                {activeWorkspace === 'retention' && (
+                  <RetentionVaultWorkspace
+                    googleToken={getStoredGoogleToken() || undefined}
+                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                  />
+                )}
+
+                {activeWorkspace === 'documents' && (
+                  <DocumentHubWorkspace
+                    recentFiles={recentFiles}
+                    isLoadingFiles={isLoadingFiles}
+                    onRefreshFiles={() => loadRecentFiles(false)}
+                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    googleToken={getStoredGoogleToken() || undefined}
+                  />
+                )}
+
+                {activeWorkspace === 'splitscreen' && <SplitScreenStudio />}
+              </div>
+            </main>
           )}
         </div>
       </div>
@@ -2162,14 +1993,14 @@ export default function App() {
       <CommandPalette
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
-        onSelectTab={handleTabTransition}
+        onSelectWorkspace={handleWorkspaceTransition}
         onOpenQuickDraft={() => {
           setDraftInitialEmail(null);
           setDraftInitialAlert(null);
           setQuickDraftModalOpen(true);
         }}
         onOpenNewAssignment={() => {
-          handleTabTransition('tracker');
+          handleWorkspaceTransition('academic');
         }}
         onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
         onToggleDarkMode={() => setDarkMode(!darkMode)}
