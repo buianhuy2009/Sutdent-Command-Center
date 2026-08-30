@@ -1,16 +1,16 @@
-import {
-  handleHealth,
-  handleCanvasProxy,
-  handleAssistant,
-  handleParseAssignment,
-  handleSummarizeEmails,
-  handleQuickDraft,
-  setCorsHeaders
-} from "../src/server/handlers";
+import handleHealth from "./health.js";
+import handleCanvasProxy from "./canvas/proxy.js";
+import handleAssistant from "./gemini/assistant.js";
+import handleParseAssignment from "./gemini/parse-assignment.js";
+import handleSummarizeEmails from "./gemini/summarize-emails.js";
+import handleQuickDraft from "./gemini/quick-draft.js";
 
 export default async function handler(req: any, res: any) {
-  if (setCorsHeaders(req, res)) return;
-  
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-canvas-token, Accept");
+  if (req.method === "OPTIONS") return res.status(200).end();
+
   const rawUrl = req.headers["x-matched-path"] || req.url || "";
   const cleanPath = rawUrl.split("?")[0].replace(/^\/api/, "");
 
