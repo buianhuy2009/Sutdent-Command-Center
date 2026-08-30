@@ -178,6 +178,59 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         onClose();
       },
     },
+    // AI Slash Commands
+    {
+      id: 'slash-explain',
+      title: '/explain [concept] — Simplify difficult concepts with the Feynman Technique',
+      category: 'AI Slash Commands',
+      icon: Sparkles,
+      run: () => {
+        onSelectWorkspace('documents');
+        onClose();
+      },
+    },
+    {
+      id: 'slash-graph',
+      title: '/graph [equation] — AI prompt-to-graph injector for Desmos',
+      category: 'AI Slash Commands',
+      icon: Calculator,
+      run: () => {
+        onSelectWorkspace('stem');
+        onClose();
+      },
+    },
+    {
+      id: 'slash-breakdown',
+      title: '/breakdown [task] — Deconstruct assignment into 4 actionable sub-tasks',
+      category: 'AI Slash Commands',
+      icon: Layers,
+      run: () => {
+        onSelectWorkspace('academic');
+        onClose();
+      },
+    },
+    {
+      id: 'slash-pomodoro',
+      title: '/pomodoro 25 — Start 25m focus sprint with ambient soundscape',
+      category: 'AI Slash Commands',
+      icon: Timer,
+      run: () => {
+        onSelectWorkspace('retention');
+        onClose();
+      },
+    },
+    {
+      id: 'slash-quiz',
+      title: '/quiz [subject] — Launch AI Oral Exam (Viva) Simulator with voice dictation',
+      category: 'AI Slash Commands',
+      icon: Brain,
+      run: () => {
+        onSelectWorkspace('retention');
+        onClose();
+      },
+    },
+
+    // Settings
     {
       id: 'act-theme',
       title: 'Toggle Dark / Light Mode',

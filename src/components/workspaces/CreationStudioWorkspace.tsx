@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Palette,
   PenTool,
@@ -9,11 +9,19 @@ import {
   Sparkles,
   Layers,
   X,
+  Network,
+  Download,
+  Copy,
+  Check,
+  RefreshCw,
 } from 'lucide-react';
+import mermaid from 'mermaid';
 import { IframeErrorBoundary } from '../IframeErrorBoundary';
 import { CanvaStudioTab } from '../CanvaStudioTab';
+import { generateMermaidDiagram } from '../../services/gemini';
+import { MermaidDiagramResult } from '../../types';
 
-type CreationTab = 'excalidraw' | 'canva' | 'board';
+type CreationTab = 'excalidraw' | 'mermaid' | 'canva' | 'board';
 
 interface SharedBoard {
   id: string;
@@ -51,13 +59,82 @@ export const CreationStudioWorkspace: React.FC = () => {
     return saved.length > 0 ? saved[0].id : null;
   });
 
+  // --- Mermaid State ---
+  const [mermaidTopic, setMermaidTopic] = useState('');
+  const [diagramType, setDiagramType] = useState<'mindmap' | 'flowchart' | 'sequence'>('mindmap');
+  const [isGeneratingDiagram, setIsGeneratingDiagram] = useState(false);
+  const [diagramResult, setDiagramResult] = useState<MermaidDiagramResult | null>(null);
+  const [svgContent, setSvgContent] = useState<string>('');
+  const [copiedCode, setCopiedCode] = useState(false);
+  const mermaidContainerRef = useRef<HTMLDivElement>(null);
+
   // Modal State
   const [isAddBoardOpen, setIsAddBoardOpen] = useState(false);
   const [newBoardTitle, setNewBoardTitle] = useState('');
   const [newBoardUrl, setNewBoardUrl] = useState('');
   const [newBoardPlatform, setNewBoardPlatform] = useState<SharedBoard['platform']>('Padlet');
 
-  const activeBoard = boards.find((b) => b.id === activeBoardId) || null;
+  useEffect(() => {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'neutral',
+      securityLevel: 'loose',
+    });
+  }, []);
+
+  // Render Mermaid code to SVG whenever diagramResult changes
+  useEffect(() => {
+    if (!diagramResult?.code) {
+      setSvgContent('');
+      return;
+    }
+
+    const renderDiagram = async () => {
+      try {
+        const id = `mermaid-svg-${Date.now()}`;
+        const { svg } = await mermaid.render(id, diagramResult.code);
+        setSvgContent(svg);
+      } catch (err) {
+        console.error('Mermaid render error:', err);
+        setSvgContent(`<div class="p-4 text-xs text-rose-500 font-mono">Syntax parsing error. Click Copy Code to inspect.</div>`);
+      }
+    };
+
+    renderDiagram();
+  }, [diagramResult]);
+
+  const handleGenerateMindmap = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mermaidTopic.trim()) return;
+
+    setIsGeneratingDiagram(true);
+    try {
+      const res = await generateMermaidDiagram(mermaidTopic.trim(), diagramType);
+      setDiagramResult(res);
+    } catch (err) {
+      console.error('Failed to generate diagram:', err);
+    } finally {
+      setIsGeneratingDiagram(false);
+    }
+  };
+
+  const handleCopyMermaidCode = () => {
+    if (!diagramResult?.code) return;
+    navigator.clipboard.writeText(diagramResult.code);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const handleExportSvg = () => {
+    if (!svgContent) return;
+    const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(diagramResult?.title || 'diagram').replace(/\s+/g, '_')}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleAddBoard = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,6 +167,8 @@ export const CreationStudioWorkspace: React.FC = () => {
     }
   };
 
+  const activeBoard = boards.find((b) => b.id === activeBoardId) || null;
+
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* Header & Sub-Tab Bar */}
@@ -103,7 +182,7 @@ export const CreationStudioWorkspace: React.FC = () => {
               Creation &amp; Collaboration Studio
             </h2>
             <p className="text-xs text-[#8C897F] mt-0.5">
-              Whiteboard diagrams, slide presentations, and group project boards
+              Excalidraw whiteboard, Mermaid.js mindmaps, Canva design bridge, and group boards
             </p>
           </div>
         </div>
@@ -112,6 +191,7 @@ export const CreationStudioWorkspace: React.FC = () => {
         <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
           {[
             { id: 'excalidraw', label: 'Excalidraw Whiteboard', icon: PenTool },
+            { id: 'mermaid', label: 'AI Mindmap & Diagrams', icon: Network },
             { id: 'canva', label: 'Canva Design Studio', icon: Palette },
             { id: 'board', label: 'Padlet / FigJam Boards', icon: Share2 },
           ].map((tab) => {
@@ -144,10 +224,94 @@ export const CreationStudioWorkspace: React.FC = () => {
         />
       )}
 
-      {/* 2. Canva Creative Studio */}
+      {/* 2. AI Mindmap & Diagram Studio (Mermaid.js) */}
+      {activeTab === 'mermaid' && (
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-[#1A1917] rounded-2xl p-5 border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs space-y-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#D97757]" />
+              <span className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                AI Prompt-to-Mindmap &amp; Architecture (Gemini 2.5 Flash + Mermaid.js)
+              </span>
+            </div>
+
+            <form onSubmit={handleGenerateMindmap} className="flex flex-col sm:flex-row items-center gap-3">
+              <input
+                type="text"
+                value={mermaidTopic}
+                onChange={(e) => setMermaidTopic(e.target.value)}
+                placeholder="Type a topic or concept (e.g. 'Cellular Respiration stages', 'TCP/IP Model', 'World War 1 Alliances')..."
+                className="flex-1 w-full px-3.5 py-2.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
+              />
+
+              <select
+                value={diagramType}
+                onChange={(e) => setDiagramType(e.target.value as any)}
+                className="px-3 py-2.5 text-xs font-bold bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[#141413] dark:text-[#FAF9F5] cursor-pointer"
+              >
+                <option value="mindmap">Mindmap</option>
+                <option value="flowchart">Process Flowchart</option>
+                <option value="sequence">Sequence / Interaction</option>
+              </select>
+
+              <button
+                type="submit"
+                disabled={isGeneratingDiagram || !mermaidTopic.trim()}
+                className="w-full sm:w-auto px-5 py-2.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs shrink-0"
+              >
+                <Sparkles className={`w-3.5 h-3.5 ${isGeneratingDiagram ? 'animate-spin' : ''}`} />
+                <span>{isGeneratingDiagram ? 'Synthesizing...' : 'Generate Mindmap'}</span>
+              </button>
+            </form>
+          </div>
+
+          {/* Rendered Diagram Viewer */}
+          {diagramResult && (
+            <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs overflow-hidden">
+              <div className="p-4 border-b border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                    {diagramResult.title}
+                  </h3>
+                  {diagramResult.description && (
+                    <p className="text-[11px] text-[#8C897F]">{diagramResult.description}</p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleCopyMermaidCode}
+                    className="px-3 py-1.5 text-xs font-semibold bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    {copiedCode ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedCode ? 'Copied' : 'Copy Code'}</span>
+                  </button>
+
+                  <button
+                    onClick={handleExportSvg}
+                    className="px-3 py-1.5 text-xs font-bold bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+                  >
+                    <Download className="w-3 h-3" />
+                    <span>Export SVG</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Rendered SVG Preview */}
+              <div
+                ref={mermaidContainerRef}
+                className="p-8 flex items-center justify-center min-h-[450px] overflow-auto bg-slate-50/50 dark:bg-[#141413]/50"
+                dangerouslySetInnerHTML={{ __html: svgContent }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. Canva Creative Studio */}
       {activeTab === 'canva' && <CanvaStudioTab />}
 
-      {/* 3. Padlet / FigJam Group Project Boards */}
+      {/* 4. Padlet / FigJam Group Project Boards */}
       {activeTab === 'board' && (
         <div className="space-y-4">
           <div className="bg-white dark:bg-[#1A1917] rounded-2xl p-4 border border-[#DFDACB] dark:border-[#2C2B27] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">

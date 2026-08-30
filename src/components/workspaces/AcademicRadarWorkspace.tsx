@@ -13,12 +13,31 @@ import {
   Search,
   CheckSquare,
   Sparkles,
+  UploadCloud,
+  FileText,
+  X,
+  ListTodo,
+  Send,
+  CalendarClock,
+  ArrowRight,
 } from 'lucide-react';
-import { Assignment, CanvasAssignment, CanvasSettings, EmailAlert, EmailMessage } from '../../types';
+import {
+  Assignment,
+  CanvasAssignment,
+  CanvasSettings,
+  EmailAlert,
+  EmailMessage,
+  SyllabusParsedResult,
+  AssignmentSubTask,
+} from '../../types';
 import { CanvasSyncTab } from '../CanvasSyncTab';
 import { GoogleClassroomPanel } from '../GoogleClassroomPanel';
 import { MoodlePanel } from '../MoodlePanel';
 import { GmailRadarTab } from '../GmailRadarTab';
+import {
+  parseSyllabusMultimodal,
+  deconstructAssignment,
+} from '../../services/gemini';
 
 type AcademicSubTab = 'agenda' | 'canvas' | 'classroom' | 'moodle' | 'gmail';
 
@@ -74,6 +93,18 @@ export const AcademicRadarWorkspace: React.FC<AcademicRadarWorkspaceProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSubject, setFilterSubject] = useState('All');
 
+  // --- Multimodal Syllabus State ---
+  const [isSyllabusModalOpen, setIsSyllabusModalOpen] = useState(false);
+  const [isParsingSyllabus, setIsParsingSyllabus] = useState(false);
+  const [syllabusText, setSyllabusText] = useState('');
+  const [selectedFile, setSelectedFile] = useState<{ base64: string; mimeType: string; name: string } | null>(null);
+  const [parsedSyllabus, setParsedSyllabus] = useState<SyllabusParsedResult | null>(null);
+
+  // --- AI Assignment Deconstructor State ---
+  const [deconstructingItem, setDeconstructingItem] = useState<Assignment | null>(null);
+  const [isDeconstructing, setIsDeconstructing] = useState(false);
+  const [subtasks, setSubtasks] = useState<AssignmentSubTask[]>([]);
+
   // Calculate Unified Chronological Agenda & Milestone Alerts
   const agendaItems = useMemo(() => {
     const today = new Date();
@@ -124,6 +155,63 @@ export const AcademicRadarWorkspace: React.FC<AcademicRadarWorkspaceProps> = ({
     return ['All', ...Array.from(set)];
   }, [assignments]);
 
+  // Handle Syllabus File Upload
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.split(',')[1];
+      setSelectedFile({
+        base64,
+        mimeType: file.type || 'application/pdf',
+        name: file.name,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleParseSyllabus = async () => {
+    if (!selectedFile && !syllabusText.trim()) return;
+
+    setIsParsingSyllabus(true);
+    setParsedSyllabus(null);
+    try {
+      const res = await parseSyllabusMultimodal({
+        textContent: syllabusText,
+        fileBase64: selectedFile?.base64,
+        mimeType: selectedFile?.mimeType,
+      });
+      setParsedSyllabus(res);
+    } catch (err) {
+      console.error('Failed to parse syllabus:', err);
+    } finally {
+      setIsParsingSyllabus(false);
+    }
+  };
+
+  // Handle Assignment Breakdown
+  const handleOpenDeconstruct = async (assignment: Assignment) => {
+    setDeconstructingItem(assignment);
+    setIsDeconstructing(true);
+    setSubtasks([]);
+    try {
+      const tasks = await deconstructAssignment({
+        title: assignment.assignmentName,
+        course: assignment.subject,
+        dueAt: assignment.dueDate,
+        description: assignment.notes,
+      });
+      setSubtasks(tasks);
+    } catch (err) {
+      console.error('Deconstruct error:', err);
+    } finally {
+      setIsDeconstructing(false);
+    }
+  };
+
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* Header & Sub-Tab Bar */}
@@ -142,32 +230,42 @@ export const AcademicRadarWorkspace: React.FC<AcademicRadarWorkspaceProps> = ({
           </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
-          {[
-            { id: 'agenda', label: 'Chronological Agenda', icon: Calendar },
-            { id: 'canvas', label: 'Canvas LMS', icon: Layers },
-            { id: 'classroom', label: 'Google Classroom', icon: GraduationCap },
-            { id: 'moodle', label: 'Moodle LMS', icon: BookOpen },
-            { id: 'gmail', label: 'Gmail Scanner', icon: Mail },
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as AcademicSubTab)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-                  isActive
-                    ? 'bg-[#D97757] text-white shadow-xs'
-                    : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#FAF9F5]'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+        {/* Tab Switcher & Syllabus Launcher */}
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <button
+            onClick={() => setIsSyllabusModalOpen(true)}
+            className="px-3 py-1.5 bg-[#D97757]/10 hover:bg-[#D97757]/20 text-[#D97757] border border-[#D97757]/30 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+          >
+            <UploadCloud className="w-3.5 h-3.5" />
+            <span>AI Syllabus Engine</span>
+          </button>
+
+          <div className="flex items-center gap-1 overflow-x-auto p-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
+            {[
+              { id: 'agenda', label: 'Chronological Agenda', icon: Calendar },
+              { id: 'canvas', label: 'Canvas LMS', icon: Layers },
+              { id: 'classroom', label: 'Google Classroom', icon: GraduationCap },
+              { id: 'moodle', label: 'Moodle LMS', icon: BookOpen },
+              { id: 'gmail', label: 'Gmail Scanner', icon: Mail },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as AcademicSubTab)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                    isActive
+                      ? 'bg-[#D97757] text-white shadow-xs'
+                      : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#FAF9F5]'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -213,7 +311,7 @@ export const AcademicRadarWorkspace: React.FC<AcademicRadarWorkspaceProps> = ({
                   All Deadlines Clear!
                 </h4>
                 <p className="text-xs text-[#8C897F] mt-1 max-w-sm mx-auto">
-                  No upcoming assignments or tests matching your criteria. Sync Canvas, Classroom, or Moodle above to refresh coursework.
+                  No upcoming assignments or tests matching your criteria. Sync Canvas, Classroom, or Moodle above, or upload a syllabus via the AI Syllabus Engine.
                 </p>
               </div>
             ) : (
@@ -291,17 +389,45 @@ export const AcademicRadarWorkspace: React.FC<AcademicRadarWorkspaceProps> = ({
                       </div>
                     </div>
 
-                    {item.docUrl && (
-                      <a
-                        href={item.docUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2.5 py-1 text-xs font-semibold text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] flex items-center gap-1 shrink-0 self-end sm:self-center"
+                    {/* Action Buttons: AI Deconstruct, Draft Email, Doc */}
+                    <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                      <button
+                        onClick={() => handleOpenDeconstruct(item)}
+                        className="px-2.5 py-1 text-xs font-semibold bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                        title="Deconstruct into 4 actionable sub-tasks"
                       >
-                        <span>Open Document</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
+                        <ListTodo className="w-3 h-3 text-[#D97757]" />
+                        <span>Break Down</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          onOpenQuickDraft({
+                            id: `draft-${item.id}`,
+                            subject: `Question regarding ${item.assignmentName}`,
+                            sender: item.subject,
+                            date: item.dueDate,
+                            snippet: item.notes || item.assignmentName,
+                          });
+                        }}
+                        className="p-1.5 text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] hover:bg-[#FAF9F5] dark:hover:bg-[#252422] rounded-lg transition-colors cursor-pointer"
+                        title="Draft email to professor"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                      </button>
+
+                      {item.docUrl && (
+                        <a
+                          href={item.docUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] rounded-lg transition-colors"
+                          title="Open Document"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 );
               })
@@ -356,6 +482,231 @@ export const AcademicRadarWorkspace: React.FC<AcademicRadarWorkspaceProps> = ({
           onConnectGoogle={onConnectGoogle}
           emailError={emailError}
         />
+      )}
+
+      {/* --- Multimodal Syllabus Modal --- */}
+      {isSyllabusModalOpen && (
+        <div className="fixed inset-0 bg-[#141413]/70 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#1A1917] rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col border border-[#DFDACB] dark:border-[#2C2B27] shadow-2xl overflow-hidden">
+            <div className="p-5 border-b border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between bg-[#FAF9F5] dark:bg-[#1F1E1B]">
+              <div className="flex items-center gap-2.5">
+                <UploadCloud className="w-5 h-5 text-[#D97757]" />
+                <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">
+                  Multimodal Syllabus-to-Milestone Engine
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsSyllabusModalOpen(false)}
+                className="p-1.5 text-[#8C897F] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] rounded-xl cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              <p className="text-xs text-[#8C897F] leading-relaxed">
+                Upload your course syllabus document (PDF, PNG, JPG) or paste syllabus text. Gemini 2.5 Flash extracts exam dates, assignments, and automatically computes a 14-day, 7-day, and 2-day prep timeline.
+              </p>
+
+              {/* Upload Dropzone */}
+              <div className="border-2 border-dashed border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] rounded-2xl p-6 text-center transition-colors">
+                <input
+                  type="file"
+                  id="syllabus-file-input"
+                  accept=".pdf,image/png,image/jpeg"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <label htmlFor="syllabus-file-input" className="cursor-pointer block">
+                  <FileText className="w-8 h-8 text-[#D97757] mx-auto mb-2 opacity-80" />
+                  <span className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] block">
+                    {selectedFile ? selectedFile.name : 'Click to select syllabus PDF or image'}
+                  </span>
+                  <span className="text-[10px] text-[#8C897F]">
+                    Supports PDF, PNG, and JPG up to 10MB
+                  </span>
+                </label>
+              </div>
+
+              {/* Text Fallback */}
+              <div>
+                <label className="block text-xs font-bold text-[#5C5A54] dark:text-[#B5B2A8] mb-1">
+                  Or paste syllabus text directly:
+                </label>
+                <textarea
+                  rows={4}
+                  value={syllabusText}
+                  onChange={(e) => setSyllabusText(e.target.value)}
+                  placeholder="Paste syllabus course schedule, exam dates, or grading weights here..."
+                  className="w-full p-3 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] resize-none"
+                />
+              </div>
+
+              {/* Parse Results */}
+              {parsedSyllabus && (
+                <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3 animate-in fade-in">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60">
+                    <div>
+                      <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                        {parsedSyllabus.courseName}
+                      </h4>
+                      {parsedSyllabus.instructor && (
+                        <span className="text-[10px] text-[#8C897F]">
+                          Instructor: {parsedSyllabus.instructor}
+                        </span>
+                      )}
+                    </div>
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      Parsed Successfully
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C897F]">
+                      Extracted Exams &amp; Prep Milestones:
+                    </span>
+                    {parsedSyllabus.exams.map((exam, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 bg-white dark:bg-[#252422] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between font-bold text-[#141413] dark:text-[#FAF9F5]">
+                          <span>{exam.examName}</span>
+                          <span className="text-[#D97757] font-mono">{exam.examDate}</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1.5 text-[10px] pt-1">
+                          <div className="p-1.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 text-center">
+                            <span className="block font-bold">14-Day Prep</span>
+                            <span>{exam.timeline.prep14Days}</span>
+                          </div>
+                          <div className="p-1.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-center">
+                            <span className="block font-bold">7-Day Sprint</span>
+                            <span>{exam.timeline.sprint7Days}</span>
+                          </div>
+                          <div className="p-1.5 rounded bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 text-center">
+                            <span className="block font-bold">48h Review</span>
+                            <span>{exam.timeline.finalReview2Days}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex items-center justify-end gap-2.5">
+              <button
+                onClick={() => setIsSyllabusModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                onClick={handleParseSyllabus}
+                disabled={isParsingSyllabus || (!selectedFile && !syllabusText.trim())}
+                className="px-5 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Sparkles className={`w-3.5 h-3.5 ${isParsingSyllabus ? 'animate-spin' : ''}`} />
+                <span>{isParsingSyllabus ? 'Analyzing Syllabus...' : 'Extract Milestones'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- AI Assignment Deconstructor Modal --- */}
+      {deconstructingItem && (
+        <div className="fixed inset-0 bg-[#141413]/70 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#1A1917] rounded-3xl max-w-lg w-full border border-[#DFDACB] dark:border-[#2C2B27] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="p-5 border-b border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between bg-[#FAF9F5] dark:bg-[#1F1E1B]">
+              <div className="flex items-center gap-2.5">
+                <ListTodo className="w-5 h-5 text-[#D97757]" />
+                <div>
+                  <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">
+                    AI Assignment Deconstructor
+                  </h3>
+                  <p className="text-[11px] text-[#8C897F] truncate max-w-xs">
+                    {deconstructingItem.assignmentName}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDeconstructingItem(null)}
+                className="p-1.5 text-[#8C897F] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] rounded-xl cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {isDeconstructing ? (
+                <div className="py-12 text-center space-y-2">
+                  <Sparkles className="w-8 h-8 text-[#D97757] animate-spin mx-auto" />
+                  <p className="text-xs text-[#8C897F] font-semibold">
+                    Gemini is decomposing prompt into actionable sub-tasks...
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-bold text-[#8C897F] uppercase tracking-wider block">
+                    Actionable Sub-tasks (Estimated Completion Sprints)
+                  </span>
+
+                  {subtasks.map((task, idx) => (
+                    <div
+                      key={task.id || idx}
+                      className="p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex items-start gap-3"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={task.isCompleted}
+                        onChange={() => {
+                          setSubtasks((prev) =>
+                            prev.map((t, i) => (i === idx ? { ...t, isCompleted: !t.isCompleted } : t))
+                          );
+                        }}
+                        className="mt-1 rounded text-[#D97757] focus:ring-[#D97757] cursor-pointer"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h4
+                            className={`text-xs font-bold ${
+                              task.isCompleted ? 'line-through text-[#8C897F]' : 'text-[#141413] dark:text-[#FAF9F5]'
+                            }`}
+                          >
+                            {task.title}
+                          </h4>
+                          <span className="text-[10px] text-[#D97757] font-mono font-bold shrink-0 ml-2">
+                            ~{task.estimatedMinutes}m
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#8C897F] mt-0.5 leading-relaxed">
+                          {task.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex items-center justify-between">
+              <span className="text-xs text-[#8C897F]">
+                Total Estimated Time:{' '}
+                <strong>
+                  {subtasks.reduce((sum, t) => sum + (t.estimatedMinutes || 0), 0)} mins
+                </strong>
+              </span>
+              <button
+                onClick={() => setDeconstructingItem(null)}
+                className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -213,4 +213,88 @@ export interface MarkdownNote {
   updatedAt: string;
 }
 
+// --- AI Deep Integration Interfaces ---
+export interface SyllabusExamMilestone {
+  examName: string;
+  course: string;
+  examDate: string; // YYYY-MM-DD
+  weightPercent?: number;
+  topics?: string[];
+  timeline: {
+    prep14Days: string; // YYYY-MM-DD
+    sprint7Days: string;
+    finalReview2Days: string;
+  };
+}
+
+export interface SyllabusParsedResult {
+  courseName: string;
+  instructor?: string;
+  exams: SyllabusExamMilestone[];
+  keyAssignments: {
+    title: string;
+    dueDate: string;
+    weightPercent?: number;
+  }[];
+}
+
+export interface AssignmentSubTask {
+  id: string;
+  title: string;
+  description: string;
+  estimatedMinutes: number;
+  isCompleted: boolean;
+}
+
+export interface DesmosEquation {
+  id: string;
+  latex: string;
+  color?: string;
+  label?: string;
+}
+
+export interface StemChatTurn {
+  role: 'user' | 'model';
+  text: string;
+  imageBase64?: string;
+}
+
+export interface MermaidDiagramResult {
+  title: string;
+  code: string;
+  description?: string;
+}
+
+export interface FlashcardItem {
+  id: string;
+  front: string;
+  back: string;
+  category?: string;
+  mastered?: boolean;
+}
+
+export interface VivaTurn {
+  questionNumber: number;
+  question: string;
+  studentAnswer?: string;
+  score?: number; // 0 - 100
+  feedback?: string;
+  missingPoints?: string[];
+}
+
+export interface RubricCriterionResult {
+  criterion: string;
+  pointsEarned: number;
+  maxPoints: number;
+  feedback: string;
+  suggestion: string;
+}
+
+export interface RubricPreCheckResult {
+  overallScore: number;
+  overallFeedback: string;
+  criteria: RubricCriterionResult[];
+  actionableRevisions: string[];
+}
+
 

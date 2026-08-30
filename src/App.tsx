@@ -48,6 +48,8 @@ import { ShortcutsModal } from './components/ShortcutsModal';
 import { DeploymentModal } from './components/DeploymentModal';
 import { OAuthGuideModal } from './components/OAuthGuideModal';
 import { ApiActivationModal } from './components/ApiActivationModal';
+import { GeminiSettingsModal } from './components/GeminiSettingsModal';
+import { FloatingAiCopilot } from './components/FloatingAiCopilot';
 import { ToastContainer } from './components/Toast';
 import confetti from 'canvas-confetti';
 import { WorkspaceId } from './types';
@@ -463,6 +465,7 @@ export default function App() {
 
   // Modals & Panels
   const [quickDraftModalOpen, setQuickDraftModalOpen] = useState(false);
+  const [geminiSettingsOpen, setGeminiSettingsOpen] = useState(false);
   const [draftInitialEmail, setDraftInitialEmail] = useState<EmailMessage | null>(null);
   const [draftInitialAlert, setDraftInitialAlert] = useState<EmailAlert | null>(null);
 
@@ -1755,6 +1758,7 @@ export default function App() {
             isAiChatOpen={aiChatOpen}
             zenFocusMode={zenFocusMode}
             onToggleZenFocus={() => setZenFocusMode((prev) => !prev)}
+            onOpenGeminiSettings={() => setGeminiSettingsOpen(true)}
           />
 
           {/* Zen Focus Mode Tranquil Banner */}
@@ -2040,6 +2044,17 @@ export default function App() {
           setApiActivationModalOpen(false);
           handleRefreshAll();
         }}
+      />
+
+      {/* Persistent Gemini AI Settings Modal */}
+      <GeminiSettingsModal
+        isOpen={geminiSettingsOpen}
+        onClose={() => setGeminiSettingsOpen(false)}
+      />
+
+      {/* Global Floating AI Copilot */}
+      <FloatingAiCopilot
+        onNavigateWorkspace={(ws) => handleWorkspaceTransition(ws as WorkspaceId)}
       />
 
       {/* Declarative Native <dialog> Onboarding Tour */}

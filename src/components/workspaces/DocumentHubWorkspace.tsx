@@ -14,13 +14,22 @@ import {
   CheckSquare,
   Sparkles,
   Layers,
+  Scale,
+  Lightbulb,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowRight,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { GoogleDriveTab } from '../GoogleDriveTab';
 import { createFormattedAssignmentDoc } from '../../services/googleWorkspace';
-import { MarkdownNote, SchoolFile } from '../../types';
+import {
+  socraticRubricPreCheck,
+  feynmanSimplify,
+} from '../../services/gemini';
+import { MarkdownNote, SchoolFile, RubricPreCheckResult } from '../../types';
 
-type DocHubTab = 'notes' | 'drive' | 'generator';
+type DocHubTab = 'notes' | 'rubric' | 'feynman' | 'drive' | 'generator';
 
 const LOCAL_NOTES_KEY = 'scc_markdown_notes_v1';
 
@@ -50,10 +59,10 @@ E = mc^2
 F = G * (m1 * m2) / r^2
 \`\`\`
 
-### 3. Review Checklist
-- [x] Read Chapter 4 textbook excerpts
+### 3. Study Checkpoints
+- [x] Review lecture slides
 - [ ] Complete problem set derivations
-- [ ] Submit assignment PDF to Canvas
+- [ ] Self-test on Flashcard Studio
 `,
       updatedAt: new Date().toLocaleDateString(),
     },
@@ -84,41 +93,61 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
   googleToken,
 }) => {
   const [activeTab, setActiveTab] = useState<DocHubTab>('notes');
-
-  // --- Markdown Notes State ---
   const [notes, setNotes] = useState<MarkdownNote[]>(loadSavedNotes);
   const [activeNoteId, setActiveNoteId] = useState<string>(() => {
     const saved = loadSavedNotes();
     return saved.length > 0 ? saved[0].id : '';
   });
+
   const [copiedNote, setCopiedNote] = useState(false);
 
-  // --- Assignment Doc Generator State ---
-  const [genTitle, setGenTitle] = useState('');
-  const [genSubject, setGenSubject] = useState('');
-  const [genTeacher, setGenTeacher] = useState('');
-  const [genFormat, setGenFormat] = useState<'MLA' | 'APA' | 'Academic Standard'>('Academic Standard');
-  const [genChecklist, setGenChecklist] = useState('Introduction with thesis statement\nLiterature synthesis & evidence\nDiscussion & analysis\nConclusion & citations');
+  // --- Rubric Pre-Checker State ---
+  const [essayDraft, setEssayDraft] = useState('');
+  const [rubricText, setRubricText] = useState('');
+  const [isEvaluatingRubric, setIsEvaluatingRubric] = useState(false);
+  const [rubricResult, setRubricResult] = useState<RubricPreCheckResult | null>(null);
+
+  // --- Feynman Simplifier State ---
+  const [denseConcept, setDenseConcept] = useState('');
+  const [isSimplifyingFeynman, setIsSimplifyingFeynman] = useState(false);
+  const [feynmanResult, setFeynmanResult] = useState<{
+    coreIdea: string;
+    simplified: string;
+    analogy: string;
+  } | null>(null);
+
+  // --- 1-Click Doc Generator State ---
+  const [docTitle, setDocTitle] = useState('');
+  const [docSubject, setDocSubject] = useState('');
+  const [docRubric, setDocRubric] = useState('');
+  const [docStyle, setDocStyle] = useState<'MLA' | 'APA' | 'Academic Standard'>('Academic Standard');
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
   const [generatedDocUrl, setGeneratedDocUrl] = useState<string | null>(null);
+  const [docMessage, setDocMessage] = useState<string | null>(null);
 
-  const activeNote = notes.find((n) => n.id === activeNoteId) || notes[0] || null;
+  const activeNote = notes.find((n) => n.id === activeNoteId) || notes[0];
 
-  const handleUpdateActiveNoteContent = (content: string) => {
-    if (!activeNote) return;
-    const updated = notes.map((n) =>
-      n.id === activeNote.id ? { ...n, content, updatedAt: new Date().toLocaleDateString() } : n
-    );
+  const handleUpdateActiveNote = (updates: Partial<MarkdownNote>) => {
+    const updated = notes.map((n) => {
+      if (n.id === activeNoteId) {
+        return {
+          ...n,
+          ...updates,
+          updatedAt: new Date().toLocaleDateString(),
+        };
+      }
+      return n;
+    });
     setNotes(updated);
     saveNotes(updated);
   };
 
-  const handleCreateNewNote = () => {
+  const handleCreateNote = () => {
     const newNote: MarkdownNote = {
       id: `note-${Date.now()}`,
-      title: `Untitled Note ${notes.length + 1}`,
-      subject: 'Coursework',
-      content: `# Untitled Note\n\nStart typing lecture notes or equations here...`,
+      title: 'Untitled Lecture Note',
+      subject: 'General',
+      content: '# Untitled Note\n\nBegin typing notes...',
       updatedAt: new Date().toLocaleDateString(),
     };
     const updated = [newNote, ...notes];
@@ -128,10 +157,11 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
   };
 
   const handleDeleteNote = (id: string) => {
+    if (notes.length <= 1) return;
     const updated = notes.filter((n) => n.id !== id);
     setNotes(updated);
     saveNotes(updated);
-    if (activeNoteId === id && updated.length > 0) {
+    if (activeNoteId === id) {
       setActiveNoteId(updated[0].id);
     }
   };
@@ -143,7 +173,7 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
     setTimeout(() => setCopiedNote(false), 2000);
   };
 
-  const handleDownloadMarkdown = () => {
+  const handleDownloadNote = () => {
     if (!activeNote) return;
     const blob = new Blob([activeNote.content], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -154,29 +184,79 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  const handleGenerateGoogleDoc = async (e: React.FormEvent) => {
+  // Run Rubric Evaluation
+  const handlePreCheckRubric = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!genTitle.trim() || !googleToken) return;
+    if (!essayDraft.trim() || !rubricText.trim() || isEvaluatingRubric) return;
+
+    setIsEvaluatingRubric(true);
+    setRubricResult(null);
+    try {
+      const res = await socraticRubricPreCheck({
+        draftText: essayDraft.trim(),
+        rubricText: rubricText.trim(),
+      });
+      setRubricResult(res);
+    } catch (err) {
+      console.error('Rubric evaluation failed:', err);
+    } finally {
+      setIsEvaluatingRubric(false);
+    }
+  };
+
+  // Run Feynman Simplifier
+  const handleFeynmanSimplify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!denseConcept.trim() || isSimplifyingFeynman) return;
+
+    setIsSimplifyingFeynman(true);
+    setFeynmanResult(null);
+    try {
+      const res = await feynmanSimplify(denseConcept.trim());
+      setFeynmanResult(res);
+    } catch (err) {
+      console.error('Feynman simplification failed:', err);
+    } finally {
+      setIsSimplifyingFeynman(false);
+    }
+  };
+
+  // Run Google Doc Generator
+  const handleGenerateDoc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isGoogleConnected || !googleToken) {
+      setDocMessage('Please connect your Google Account first.');
+      return;
+    }
+    if (!docTitle.trim()) return;
 
     setIsGeneratingDoc(true);
+    setDocMessage(null);
     setGeneratedDocUrl(null);
-    try {
-      const checklistItems = genChecklist
-        .split('\n')
-        .map((s) => s.trim())
-        .filter(Boolean);
 
-      const res = await createFormattedAssignmentDoc(googleToken, {
-        title: genTitle.trim(),
-        subject: genSubject.trim() || 'Coursework',
-        teacherName: genTeacher.trim(),
-        formatStyle: genFormat,
-        checklist: checklistItems,
+    try {
+      const rubricChecklist = docRubric
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+
+      const result = await createFormattedAssignmentDoc(googleToken, {
+        title: docTitle.trim(),
+        subject: docSubject.trim() || 'General Coursework',
+        formatStyle: docStyle,
+        checklist: rubricChecklist,
       });
 
-      setGeneratedDocUrl(res.webViewLink);
+      if (result?.webViewLink) {
+        setGeneratedDocUrl(result.webViewLink);
+        setDocMessage(`Document created successfully! Document ID: ${result.documentId}`);
+        onRefreshFiles();
+      } else {
+        setDocMessage('Failed to create document.');
+      }
     } catch (err) {
-      console.error('Failed to generate assignment Doc:', err);
+      console.error('Doc generation error:', err);
+      setDocMessage('Error generating Google Doc. Please check permissions.');
     } finally {
       setIsGeneratingDoc(false);
     }
@@ -188,24 +268,26 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
       <div className="bg-white dark:bg-[#1A1917] rounded-2xl p-4 border border-[#DFDACB] dark:border-[#2C2B27] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-            <FolderOpen className="w-5 h-5" />
+            <FileText className="w-5 h-5" />
           </div>
           <div>
             <h2 className="text-base sm:text-lg font-bold text-[#141413] dark:text-[#FAF9F5] tracking-tight">
-              Document &amp; Resource Hub
+              Dynamic Document &amp; Research Hub
             </h2>
             <p className="text-xs text-[#8C897F] mt-0.5">
-              Markdown &amp; LaTeX note-taking, Google Drive files, and 1-click assignment template generator
+              Live split Markdown notes, Socratic Rubric Pre-checker, Feynman concept simplifier, and Drive
             </p>
           </div>
         </div>
 
-        {/* Tab Switcher */}
+        {/* Sub-Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
           {[
             { id: 'notes', label: 'Markdown & LaTeX Notes', icon: FileText },
+            { id: 'rubric', label: 'Socratic Rubric Checker', icon: Scale },
+            { id: 'feynman', label: 'Feynman Simplifier', icon: Lightbulb },
             { id: 'drive', label: 'Google Drive Files', icon: FolderOpen },
-            { id: 'generator', label: '1-Click Doc Generator', icon: Sparkles },
+            { id: 'generator', label: '1-Click Doc Generator', icon: Plus },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             const Icon = tab.icon;
@@ -227,124 +309,107 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
         </div>
       </div>
 
-      {/* 1. Quick Markdown & LaTeX Note-Taker with Live Split Preview */}
+      {/* 1. Markdown & LaTeX Note-Taker with Live Split Preview */}
       {activeTab === 'notes' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 h-[calc(85vh-160px)] min-h-[580px]">
-          {/* Notes Sidebar (3 cols) */}
-          <div className="lg:col-span-3 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 flex flex-col justify-between shadow-xs">
-            <div>
-              <div className="flex items-center justify-between pb-3 border-b border-[#DFDACB] dark:border-[#2C2B27]">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#141413] dark:text-[#FAF9F5]">
-                  My Notes ({notes.length})
-                </span>
-                <button
-                  onClick={handleCreateNewNote}
-                  className="p-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                  title="New Note"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="mt-3 space-y-2 max-h-[440px] overflow-y-auto pr-1">
-                {notes.map((note) => {
-                  const isSelected = note.id === activeNoteId;
-                  return (
-                    <div
-                      key={note.id}
-                      onClick={() => setActiveNoteId(note.id)}
-                      className={`p-3 rounded-xl border flex items-center justify-between gap-2 cursor-pointer transition-colors ${
-                        isSelected
-                          ? 'bg-[#D97757]/10 border-[#D97757] text-[#141413] dark:text-[#FAF9F5]'
-                          : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] hover:border-[#D97757]/40'
-                      }`}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-xs font-bold truncate">{note.title}</h4>
-                        <span className="text-[10px] text-[#8C897F]">{note.updatedAt}</span>
-                      </div>
-
-                      {notes.length > 1 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteNote(note.id);
-                          }}
-                          className="p-1 text-[#8C897F] hover:text-rose-600 rounded-md transition-colors"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          {/* Notes Sidebar */}
+          <div className="lg:col-span-3 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-[#DFDACB] dark:border-[#2C2B27]">
+              <span className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] uppercase tracking-wider">
+                Saved Notes ({notes.length})
+              </span>
+              <button
+                onClick={handleCreateNote}
+                className="p-1 text-[#D97757] hover:bg-[#D97757]/10 rounded-lg transition-colors cursor-pointer"
+                title="New Note"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
 
-            <div className="pt-3 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]/60 text-[11px] text-[#8C897F]">
-              <span>Saved locally in browser storage.</span>
+            <div className="space-y-1.5 max-h-[550px] overflow-y-auto">
+              {notes.map((note) => (
+                <div
+                  key={note.id}
+                  onClick={() => setActiveNoteId(note.id)}
+                  className={`p-3 rounded-xl border text-xs cursor-pointer transition-colors flex items-center justify-between ${
+                    activeNoteId === note.id
+                      ? 'bg-[#D97757]/10 border-[#D97757]/40 text-[#D97757] font-bold'
+                      : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] hover:border-[#D97757]'
+                  }`}
+                >
+                  <div className="min-w-0 flex-1 mr-2">
+                    <p className="truncate font-semibold">{note.title || 'Untitled Note'}</p>
+                    <span className="text-[10px] text-[#8C897F] font-mono">{note.updatedAt}</span>
+                  </div>
+                  {notes.length > 1 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteNote(note.id);
+                      }}
+                      className="p-1 text-[#8C897F] hover:text-rose-600 rounded cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Editor & Live Split Preview (9 cols) */}
-          <div className="lg:col-span-9 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex flex-col shadow-xs overflow-hidden">
+          {/* Live Split Editor & Preview */}
+          <div className="lg:col-span-9 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 shadow-xs flex flex-col space-y-4">
             {activeNote && (
               <>
-                {/* Note Title & Action Bar */}
-                <div className="p-3.5 border-b border-[#DFDACB] dark:border-[#2C2B27] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#FAF9F5] dark:bg-[#1F1E1B]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#DFDACB] dark:border-[#2C2B27]">
                   <input
                     type="text"
                     value={activeNote.title}
-                    onChange={(e) => {
-                      const title = e.target.value;
-                      const updated = notes.map((n) => (n.id === activeNote.id ? { ...n, title } : n));
-                      setNotes(updated);
-                      saveNotes(updated);
-                    }}
-                    className="text-sm font-bold bg-transparent border-0 focus:outline-none focus:ring-0 text-[#141413] dark:text-[#FAF9F5] flex-1"
+                    onChange={(e) => handleUpdateActiveNote({ title: e.target.value })}
                     placeholder="Note Title..."
+                    className="text-base font-bold bg-transparent border-b border-transparent hover:border-[#DFDACB] focus:border-[#D97757] focus:outline-none text-[#141413] dark:text-[#FAF9F5] px-1 py-0.5"
                   />
 
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={handleCopyMarkdown}
-                      className="px-2.5 py-1 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                      className="px-3 py-1.5 text-xs font-semibold bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
-                      {copiedNote ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                      <span>{copiedNote ? 'Copied' : 'Copy'}</span>
+                      {copiedNote ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedNote ? 'Copied' : 'Copy MD'}</span>
                     </button>
 
                     <button
-                      onClick={handleDownloadMarkdown}
-                      className="px-2.5 py-1 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                      onClick={handleDownloadNote}
+                      className="px-3 py-1.5 text-xs font-bold bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
-                      <Download className="w-3 h-3" />
-                      <span>Download .md</span>
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Export .md</span>
                     </button>
                   </div>
                 </div>
 
-                {/* 2-Pane Split: Left Markdown Editor, Right Live Rendered Preview */}
-                <div className="grid grid-cols-1 md:grid-cols-2 flex-1 min-h-0 divide-y md:divide-y-0 md:divide-x divide-[#DFDACB] dark:divide-[#2C2B27]">
-                  {/* Left: Raw Editor */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[550px]">
+                  {/* Editor */}
                   <div className="flex flex-col h-full">
-                    <div className="px-4 py-2 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60 text-[10px] font-bold uppercase tracking-wider text-[#8C897F] bg-[#FAF9F5]/50 dark:bg-[#1F1E1B]/50">
-                      Markdown &amp; LaTeX Editor
-                    </div>
+                    <span className="text-[10px] font-bold text-[#8C897F] uppercase tracking-wider mb-1">
+                      Raw Markdown / LaTeX Editor
+                    </span>
                     <textarea
                       value={activeNote.content}
-                      onChange={(e) => handleUpdateActiveNoteContent(e.target.value)}
-                      className="w-full flex-1 p-4 font-mono text-xs text-[#141413] dark:text-[#FAF9F5] bg-transparent border-0 focus:outline-none resize-none leading-relaxed overflow-y-auto"
-                      placeholder="Type markdown or LaTeX equations..."
+                      onChange={(e) => handleUpdateActiveNote({ content: e.target.value })}
+                      placeholder="Type markdown content here..."
+                      className="flex-1 w-full p-4 text-xs font-mono bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] resize-none leading-relaxed"
                     />
                   </div>
 
-                  {/* Right: Live Rendered Output */}
-                  <div className="flex flex-col h-full bg-[#FAF9F5]/30 dark:bg-[#141413]/30">
-                    <div className="px-4 py-2 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60 text-[10px] font-bold uppercase tracking-wider text-[#8C897F] bg-[#FAF9F5]/50 dark:bg-[#1F1E1B]/50">
-                      Live Preview
-                    </div>
-                    <div className="p-5 flex-1 overflow-y-auto prose dark:prose-invert prose-xs max-w-none text-xs text-[#141413] dark:text-[#FAF9F5] leading-relaxed">
+                  {/* Live Render Preview */}
+                  <div className="flex flex-col h-full">
+                    <span className="text-[10px] font-bold text-[#8C897F] uppercase tracking-wider mb-1">
+                      Live Formatted Preview
+                    </span>
+                    <div className="flex-1 p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl overflow-y-auto prose dark:prose-invert prose-xs max-w-none text-[#141413] dark:text-[#FAF9F5]">
                       <ReactMarkdown>{activeNote.content}</ReactMarkdown>
                     </div>
                   </div>
@@ -355,7 +420,197 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
         </div>
       )}
 
-      {/* 2. Google Drive Files */}
+      {/* 2. Socratic Rubric Pre-Checker */}
+      {activeTab === 'rubric' && (
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-[#1A1917] rounded-2xl p-6 border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs space-y-4">
+            <div>
+              <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-2">
+                <Scale className="w-4 h-4 text-[#D97757]" />
+                <span>Socratic Rubric Pre-Checker (Gemini 2.5 Flash)</span>
+              </h3>
+              <p className="text-xs text-[#8C897F] mt-1">
+                Paste your essay or project draft alongside the grading rubric. Gemini grades each criterion, flags weak arguments, and delivers concrete structural revisions before you turn it in.
+              </p>
+            </div>
+
+            <form onSubmit={handlePreCheckRubric} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#5C5A54] dark:text-[#B5B2A8] mb-1.5">
+                    Assignment Grading Rubric *
+                  </label>
+                  <textarea
+                    rows={8}
+                    required
+                    value={rubricText}
+                    onChange={(e) => setRubricText(e.target.value)}
+                    placeholder="Paste rubric criteria (e.g. 20% Thesis statement, 30% Textual evidence, 25% Critical analysis, 25% Mechanics & citations)..."
+                    className="w-full p-3.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] resize-none leading-relaxed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#5C5A54] dark:text-[#B5B2A8] mb-1.5">
+                    Student Essay / Project Draft *
+                  </label>
+                  <textarea
+                    rows={8}
+                    required
+                    value={essayDraft}
+                    onChange={(e) => setEssayDraft(e.target.value)}
+                    placeholder="Paste your draft essay paragraphs or argument outline here..."
+                    className="w-full p-3.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] resize-none leading-relaxed"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isEvaluatingRubric || !essayDraft.trim() || !rubricText.trim()}
+                  className="px-6 py-2.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${isEvaluatingRubric ? 'animate-spin' : ''}`} />
+                  <span>{isEvaluatingRubric ? 'Evaluating Draft against Rubric...' : 'Run Rubric Pre-Check'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {rubricResult && (
+            <div className="bg-white dark:bg-[#1A1917] rounded-2xl p-6 border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs space-y-5 animate-in fade-in">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[#DFDACB] dark:border-[#2C2B27] gap-3">
+                <div>
+                  <span className="text-[10px] font-bold text-[#8C897F] uppercase tracking-wider">
+                    Evaluation Result
+                  </span>
+                  <h4 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] mt-0.5">
+                    {rubricResult.overallFeedback}
+                  </h4>
+                </div>
+
+                <div className="px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-bold text-center">
+                  <span className="text-xl">{rubricResult.overallScore}</span>
+                  <span className="text-xs"> / 100</span>
+                </div>
+              </div>
+
+              {/* Criteria Breakdown */}
+              <div className="space-y-3">
+                <span className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                  Criterion Assessment:
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {rubricResult.criteria.map((c, i) => (
+                    <div
+                      key={i}
+                      className="p-3.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs space-y-1"
+                    >
+                      <div className="flex items-center justify-between font-bold">
+                        <span className="text-[#141413] dark:text-[#FAF9F5]">{c.criterion}</span>
+                        <span className="text-[#D97757]">
+                          {c.pointsEarned} / {c.maxPoints} pts
+                        </span>
+                      </div>
+                      <p className="text-[#5C5A54] dark:text-[#B5B2A8]">{c.feedback}</p>
+                      <p className="text-amber-700 dark:text-amber-300 pt-1 font-medium">
+                        💡 <strong>Suggestion:</strong> {c.suggestion}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Actionable Revisions */}
+              <div className="p-4 bg-amber-50/60 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800/80 space-y-2">
+                <span className="text-xs font-bold text-amber-900 dark:text-amber-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <CheckSquare className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Key Structural Revisions:</span>
+                </span>
+                <ul className="list-disc list-inside text-xs text-amber-800 dark:text-amber-300 space-y-1">
+                  {rubricResult.actionableRevisions.map((rev, i) => (
+                    <li key={i}>{rev}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 3. Feynman Technique Concept Simplifier */}
+      {activeTab === 'feynman' && (
+        <div className="max-w-3xl mx-auto space-y-5">
+          <div className="bg-white dark:bg-[#1A1917] rounded-2xl p-6 border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs space-y-4">
+            <div>
+              <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-2">
+                <Lightbulb className="w-4 h-4 text-[#D97757]" />
+                <span>The Feynman Technique Concept Simplifier</span>
+              </h3>
+              <p className="text-xs text-[#8C897F] mt-1">
+                Paste any dense academic paragraph or confusing theorem. Gemini boils it down to an ELI12 explanation with a relatable real-world analogy.
+              </p>
+            </div>
+
+            <form onSubmit={handleFeynmanSimplify} className="space-y-3">
+              <textarea
+                rows={5}
+                required
+                value={denseConcept}
+                onChange={(e) => setDenseConcept(e.target.value)}
+                placeholder="Paste complex textbook definition (e.g. 'Heisenberg Uncertainty Principle states that the position and momentum of a particle cannot both be measured with arbitrarily high precision...')"
+                className="w-full p-3.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] resize-none leading-relaxed"
+              />
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={isSimplifyingFeynman || !denseConcept.trim()}
+                  className="px-6 py-2.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${isSimplifyingFeynman ? 'animate-spin' : ''}`} />
+                  <span>{isSimplifyingFeynman ? 'Simplifying...' : 'Apply Feynman Simplification'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {feynmanResult && (
+            <div className="bg-white dark:bg-[#1A1917] rounded-2xl p-6 border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs space-y-4 animate-in fade-in">
+              <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800/80">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 block mb-1">
+                  Core Idea in One Sentence
+                </span>
+                <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                  &ldquo;{feynmanResult.coreIdea}&rdquo;
+                </p>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C897F] block mb-1">
+                  Plain English Explanation (ELI12)
+                </span>
+                <p className="text-xs text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed">
+                  {feynmanResult.simplified}
+                </p>
+              </div>
+
+              <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#D97757] flex items-center gap-1">
+                  <Lightbulb className="w-3.5 h-3.5" />
+                  <span>Real-World Everyday Analogy</span>
+                </span>
+                <p className="text-xs text-[#141413] dark:text-[#FAF9F5] italic leading-relaxed">
+                  {feynmanResult.analogy}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 4. Google Drive Files */}
       {activeTab === 'drive' && (
         <GoogleDriveTab
           recentFiles={recentFiles}
@@ -366,60 +621,44 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
         />
       )}
 
-      {/* 3. 1-Click Assignment Google Doc Generator */}
+      {/* 5. 1-Click Assignment Doc Generator */}
       {activeTab === 'generator' && (
-        <div className="max-w-3xl mx-auto bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs">
-          <div className="pb-4 border-b border-[#DFDACB] dark:border-[#2C2B27]">
-            <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[#D97757]" />
-              <span>1-Click Assignment Doc Generator</span>
+        <div className="max-w-2xl mx-auto bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs space-y-4">
+          <div className="pb-3 border-b border-[#DFDACB] dark:border-[#2C2B27]">
+            <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-2">
+              <Plus className="w-4 h-4 text-[#D97757]" />
+              <span>1-Click Assignment Google Doc Generator</span>
             </h3>
             <p className="text-xs text-[#8C897F] mt-1">
-              Auto-generate properly formatted school documents (MLA, APA, Academic Standard) with assignment criteria and rubric checklists pre-loaded into your Google Drive.
+              Creates a fresh Google Doc formatted with MLA / APA title block, header, and pre-loaded rubric checklist.
             </p>
           </div>
 
-          <form onSubmit={handleGenerateGoogleDoc} className="mt-5 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#5C5A54] dark:text-[#B5B2A8] mb-1">
-                  Assignment Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={genTitle}
-                  onChange={(e) => setGenTitle(e.target.value)}
-                  placeholder="e.g. Silk Road Trade DBQ Essay"
-                  className="w-full px-3 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#5C5A54] dark:text-[#B5B2A8] mb-1">
-                  Course / Subject *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={genSubject}
-                  onChange={(e) => setGenSubject(e.target.value)}
-                  placeholder="e.g. AP World History"
-                  className="w-full px-3 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
-                />
-              </div>
+          <form onSubmit={handleGenerateDoc} className="space-y-3.5">
+            <div>
+              <label className="block text-xs font-semibold text-[#5C5A54] dark:text-[#B5B2A8] mb-1">
+                Assignment Title *
+              </label>
+              <input
+                type="text"
+                required
+                value={docTitle}
+                onChange={(e) => setDocTitle(e.target.value)}
+                placeholder="e.g. Macbeth Tragic Hero Argumentative Essay"
+                className="w-full px-3 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
+              />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-[#5C5A54] dark:text-[#B5B2A8] mb-1">
-                  Instructor Name
+                  Subject / Course
                 </label>
                 <input
                   type="text"
-                  value={genTeacher}
-                  onChange={(e) => setGenTeacher(e.target.value)}
-                  placeholder="e.g. Dr. Martinez"
+                  value={docSubject}
+                  onChange={(e) => setDocSubject(e.target.value)}
+                  placeholder="e.g. AP English Literature"
                   className="w-full px-3 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
                 />
               </div>
@@ -429,59 +668,61 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                   Formatting Standard
                 </label>
                 <select
-                  value={genFormat}
-                  onChange={(e) => setGenFormat(e.target.value as any)}
+                  value={docStyle}
+                  onChange={(e) => setDocStyle(e.target.value as any)}
                   className="w-full px-3 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
                 >
                   <option value="Academic Standard">Academic Standard</option>
-                  <option value="MLA">MLA Format</option>
-                  <option value="APA">APA Format</option>
+                  <option value="MLA">MLA 9th Edition</option>
+                  <option value="APA">APA 7th Edition</option>
                 </select>
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-[#5C5A54] dark:text-[#B5B2A8] mb-1">
-                Rubric Checklist Items (One per line)
+                Rubric Checklist Items (1 per line)
               </label>
               <textarea
                 rows={4}
-                value={genChecklist}
-                onChange={(e) => setGenChecklist(e.target.value)}
-                placeholder="List required milestones..."
-                className="w-full px-3 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
+                value={docRubric}
+                onChange={(e) => setDocRubric(e.target.value)}
+                placeholder="Include 3 peer-reviewed citations&#10;Argue both sides of the thesis&#10;Word count between 1200 - 1500 words"
+                className="w-full p-3 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] resize-none"
               />
             </div>
 
-            <div className="pt-2 flex items-center justify-between">
-              {!isGoogleConnected ? (
-                <span className="text-xs text-amber-600">Connect your Google Account to create Docs in Drive.</span>
-              ) : <div />}
-
-              <button
-                type="submit"
-                disabled={isGeneratingDoc || !genTitle.trim() || !isGoogleConnected}
-                className="px-5 py-2.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
-              >
-                <Sparkles className={`w-4 h-4 ${isGeneratingDoc ? 'animate-spin' : ''}`} />
-                <span>{isGeneratingDoc ? 'Creating Doc in Google Drive...' : 'Generate Google Doc'}</span>
-              </button>
-            </div>
+            {docMessage && (
+              <p className="text-xs text-[#D97757] font-medium">{docMessage}</p>
+            )}
 
             {generatedDocUrl && (
-              <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center justify-between gap-3 text-xs text-emerald-900 dark:text-emerald-200 mt-4">
-                <span>Assignment document created successfully in your Google Drive!</span>
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
+                <span className="text-xs text-emerald-800 dark:text-emerald-300 font-bold">
+                  Document Created in Google Drive!
+                </span>
                 <a
                   href={generatedDocUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold flex items-center gap-1.5 shrink-0 shadow-xs"
+                  className="px-3 py-1 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
                 >
-                  <span>Open in Docs</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open Doc</span>
+                  <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
             )}
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={isGeneratingDoc || !docTitle.trim()}
+                className="px-5 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              >
+                <Sparkles className={`w-3.5 h-3.5 ${isGeneratingDoc ? 'animate-spin' : ''}`} />
+                <span>{isGeneratingDoc ? 'Creating Doc...' : 'Generate Google Doc'}</span>
+              </button>
+            </div>
           </form>
         </div>
       )}

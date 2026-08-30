@@ -4,6 +4,7 @@ import {
   Sparkles,
   Bell,
   ExternalLink,
+  Key,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -13,6 +14,7 @@ interface NavbarProps {
   isAiChatOpen?: boolean;
   zenFocusMode?: boolean;
   onToggleZenFocus?: () => void;
+  onOpenGeminiSettings?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -22,6 +24,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isAiChatOpen = false,
   zenFocusMode = false,
   onToggleZenFocus,
+  onOpenGeminiSettings,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [hasDismissedBadge, setHasDismissedBadge] = useState(false);
@@ -88,6 +91,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           <Sparkles className="w-3.5 h-3.5 text-[#D97757] shrink-0" />
           <span className="hidden sm:inline">AI Coach</span>
         </button>
+
+        {/* Gemini API Key Settings Button */}
+        {onOpenGeminiSettings && (
+          <button
+            onClick={onOpenGeminiSettings}
+            className="p-2 text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] hover:bg-[#EFECE2] dark:hover:bg-[#1F1E1B] rounded-xl transition-colors cursor-pointer border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27]"
+            title="Gemini AI Engine Settings (API Key)"
+          >
+            <Key className="w-4 h-4 text-[#D97757]" />
+          </button>
+        )}
 
         {/* Aggregated Notification Center with Click-To-Clear Badge */}
         <div className="relative">

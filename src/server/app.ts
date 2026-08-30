@@ -414,5 +414,30 @@ ${JSON.stringify(context || {}, null, 2)}`;
     }
   });
 
+  // Generic Gemini Generate endpoint with multimodal and schema support
+  app.post("/api/gemini/generate", async (req, res) => {
+    try {
+      const { contents, config, model } = req.body;
+      if (!contents) {
+        return res.status(400).json({ error: "contents is required" });
+      }
+
+      const ai = getGenAI();
+      const targetModel = model || process.env.GEMINI_MODEL || "gemini-2.5-flash";
+      const response = await ai.models.generateContent({
+        model: targetModel,
+        contents,
+        config,
+      });
+
+      res.json({
+        text: response.text || "",
+      });
+    } catch (err: any) {
+      console.error("Gemini generic generate error:", err);
+      res.status(500).json({ error: err.message || "Failed to generate content" });
+    }
+  });
+
   return app;
 }
