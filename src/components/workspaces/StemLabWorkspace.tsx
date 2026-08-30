@@ -24,8 +24,9 @@ import {
   injectDesmosGraph,
   socraticStemSpar,
   scribbleToLatex,
+  debugHandwrittenMath,
 } from '../../services/gemini';
-import { DesmosEquation, StemChatTurn } from '../../types';
+import { DesmosEquation, StemChatTurn, MathDebugResult } from '../../types';
 
 type StemToolTab =
   | 'desmos-graphing'
@@ -122,6 +123,7 @@ export const StemLabWorkspace: React.FC = () => {
   const [scribbleImage, setScribbleImage] = useState<string | null>(null);
   const [isConvertingScribble, setIsConvertingScribble] = useState(false);
   const [extractedLatex, setExtractedLatex] = useState<{ latex: string; explanation: string } | null>(null);
+  const [mathDebugResult, setMathDebugResult] = useState<MathDebugResult | null>(null);
   const [copiedLatex, setCopiedLatex] = useState(false);
 
   // --- PhET State ---
@@ -206,6 +208,20 @@ export const StemLabWorkspace: React.FC = () => {
       setExtractedLatex(res);
     } catch (err) {
       console.error('Scribble conversion failed:', err);
+    } finally {
+      setIsConvertingScribble(false);
+    }
+  };
+
+  const handleDebugMath = async () => {
+    if (!scribbleImage) return;
+    setIsConvertingScribble(true);
+    setMathDebugResult(null);
+    try {
+      const res = await debugHandwrittenMath(scribbleImage);
+      setMathDebugResult(res);
+    } catch (err) {
+      console.error('Math debug failed:', err);
     } finally {
       setIsConvertingScribble(false);
     }
@@ -500,18 +516,93 @@ export const StemLabWorkspace: React.FC = () => {
             </label>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex items-center justify-end gap-2">
             <button
               onClick={handleConvertScribble}
+              disabled={!scribbleImage || isConvertingScribble}
+              className="px-4 py-2 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] disabled:opacity-50 text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            >
+              Extract Raw LaTeX
+            </button>
+
+            <button
+              onClick={handleDebugMath}
               disabled={!scribbleImage || isConvertingScribble}
               className="px-5 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
             >
               <Sparkles className={`w-3.5 h-3.5 ${isConvertingScribble ? 'animate-spin' : ''}`} />
-              <span>{isConvertingScribble ? 'Converting...' : 'Extract LaTeX'}</span>
+              <span>{isConvertingScribble ? 'Analyzing Work...' : '🔍 Debug Derivation (Find Errors)'}</span>
             </button>
           </div>
 
-          {extractedLatex && (
+          {/* Math Debugger Result with Yellow Line Error Highlighter */}
+          {mathDebugResult && (
+            <div className="p-5 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-4 animate-in fade-in">
+              <div className="flex items-center justify-between pb-2 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60">
+                <span className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                  Step-by-Step Derivation Analysis
+                </span>
+                {mathDebugResult.hasError ? (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                    ⚠️ Algebra / Sign Discrepancy Found
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                    ✓ All Steps Algebraically Sound
+                  </span>
+                )}
+              </div>
+
+              {/* Line-by-line derivation view */}
+              <div className="space-y-1.5 font-mono text-xs">
+                {mathDebugResult.fullLatex.map((line, idx) => {
+                  const isErrorLine =
+                    mathDebugResult.hasError &&
+                    mathDebugResult.errorLineIndex !== undefined &&
+                    mathDebugResult.errorLineIndex === idx;
+
+                  return (
+                    <div
+                      key={idx}
+                      className={`p-2.5 rounded-xl border transition-all ${
+                        isErrorLine
+                          ? 'bg-amber-100 dark:bg-amber-950/70 border-2 border-amber-500 text-amber-950 dark:text-amber-200 shadow-xs ring-2 ring-amber-400/30'
+                          : 'bg-white dark:bg-[#252422] border-[#DFDACB] dark:border-[#2C2B27] text-[#141413] dark:text-[#FAF9F5]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-sans font-bold text-[#8C897F]">
+                          Line {idx + 1}
+                        </span>
+                        {isErrorLine && (
+                          <span className="text-[10px] font-sans font-bold text-amber-700 dark:text-amber-300 uppercase">
+                            ← Error Identified Here
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 break-all">{line}</div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Socratic Guidance Callout */}
+              {mathDebugResult.hasError && (
+                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-xs space-y-2">
+                  <div className="font-bold text-amber-900 dark:text-amber-200">
+                    ⚠️ {mathDebugResult.errorDescription}
+                  </div>
+                  {mathDebugResult.socraticHint && (
+                    <div className="text-amber-800 dark:text-amber-300 leading-relaxed font-medium">
+                      💡 <strong>Socratic Hint:</strong> {mathDebugResult.socraticHint}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {extractedLatex && !mathDebugResult && (
             <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3 animate-in fade-in">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-[#8C897F] uppercase tracking-wider">

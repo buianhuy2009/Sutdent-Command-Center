@@ -34,10 +34,13 @@ import { CanvasSyncTab } from '../CanvasSyncTab';
 import { GoogleClassroomPanel } from '../GoogleClassroomPanel';
 import { MoodlePanel } from '../MoodlePanel';
 import { GmailRadarTab } from '../GmailRadarTab';
+import confetti from 'canvas-confetti';
 import {
   parseSyllabusMultimodal,
   deconstructAssignment,
+  deploySemesterFromSyllabus,
 } from '../../services/gemini';
+import { DeployedSemesterResult } from '../../types';
 
 type AcademicSubTab = 'agenda' | 'canvas' | 'classroom' | 'moodle' | 'gmail';
 
@@ -99,6 +102,8 @@ export const AcademicRadarWorkspace: React.FC<AcademicRadarWorkspaceProps> = ({
   const [syllabusText, setSyllabusText] = useState('');
   const [selectedFile, setSelectedFile] = useState<{ base64: string; mimeType: string; name: string } | null>(null);
   const [parsedSyllabus, setParsedSyllabus] = useState<SyllabusParsedResult | null>(null);
+  const [isDeployingSemester, setIsDeployingSemester] = useState(false);
+  const [deployedResult, setDeployedResult] = useState<DeployedSemesterResult | null>(null);
 
   // --- AI Assignment Deconstructor State ---
   const [deconstructingItem, setDeconstructingItem] = useState<Assignment | null>(null);
@@ -189,6 +194,21 @@ export const AcademicRadarWorkspace: React.FC<AcademicRadarWorkspaceProps> = ({
       console.error('Failed to parse syllabus:', err);
     } finally {
       setIsParsingSyllabus(false);
+    }
+  };
+
+  const handleDeploySemester = async () => {
+    if (!parsedSyllabus) return;
+    setIsDeployingSemester(true);
+    setDeployedResult(null);
+    try {
+      const res = await deploySemesterFromSyllabus(parsedSyllabus);
+      setDeployedResult(res);
+      confetti({ particleCount: 60, spread: 60 });
+    } catch (err) {
+      console.error('Failed to deploy semester:', err);
+    } finally {
+      setIsDeployingSemester(false);
     }
   };
 
@@ -591,25 +611,64 @@ export const AcademicRadarWorkspace: React.FC<AcademicRadarWorkspaceProps> = ({
                       </div>
                     ))}
                   </div>
+
+                  {/* 1-Click Deploy Semester Result */}
+                  {deployedResult && (
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-300 dark:border-emerald-800 space-y-2 text-xs text-emerald-900 dark:text-emerald-200 animate-in fade-in">
+                      <div className="flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>Semester Deployed into StudentOS!</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 pt-1 text-[11px]">
+                        <div className="p-2 bg-white dark:bg-[#1A1917] rounded-xl border border-emerald-200 dark:border-emerald-800/80 text-center font-bold">
+                          <span className="text-[#D97757] text-sm block">{deployedResult.milestonesCount}</span>
+                          <span className="text-[#8C897F]">Study Milestones</span>
+                        </div>
+                        <div className="p-2 bg-white dark:bg-[#1A1917] rounded-xl border border-emerald-200 dark:border-emerald-800/80 text-center font-bold">
+                          <span className="text-[#D97757] text-sm block">{deployedResult.lectureNotesCount}</span>
+                          <span className="text-[#8C897F]">Lecture Notes</span>
+                        </div>
+                        <div className="p-2 bg-white dark:bg-[#1A1917] rounded-xl border border-emerald-200 dark:border-emerald-800/80 text-center font-bold">
+                          <span className="text-[#D97757] text-sm block">{deployedResult.flashcardDecksCount}</span>
+                          <span className="text-[#8C897F]">SRS Deck</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            <div className="p-4 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex items-center justify-end gap-2.5">
-              <button
-                onClick={() => setIsSyllabusModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] cursor-pointer"
-              >
-                Close
-              </button>
-              <button
-                onClick={handleParseSyllabus}
-                disabled={isParsingSyllabus || (!selectedFile && !syllabusText.trim())}
-                className="px-5 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
-              >
-                <Sparkles className={`w-3.5 h-3.5 ${isParsingSyllabus ? 'animate-spin' : ''}`} />
-                <span>{isParsingSyllabus ? 'Analyzing Syllabus...' : 'Extract Milestones'}</span>
-              </button>
+            <div className="p-4 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex items-center justify-between gap-2.5">
+              {parsedSyllabus ? (
+                <button
+                  onClick={handleDeploySemester}
+                  disabled={isDeployingSemester}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${isDeployingSemester ? 'animate-spin' : ''}`} />
+                  <span>{isDeployingSemester ? 'Deploying Semester...' : '🚀 Deploy Semester (1-Click)'}</span>
+                </button>
+              ) : (
+                <div />
+              )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsSyllabusModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={handleParseSyllabus}
+                  disabled={isParsingSyllabus || (!selectedFile && !syllabusText.trim())}
+                  className="px-5 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${isParsingSyllabus ? 'animate-spin' : ''}`} />
+                  <span>{isParsingSyllabus ? 'Analyzing Syllabus...' : 'Extract Milestones'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

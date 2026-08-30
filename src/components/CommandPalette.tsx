@@ -20,6 +20,7 @@ import {
   Columns2,
   Timer,
   BookOpen,
+  GraduationCap,
 } from 'lucide-react';
 import { Assignment, WorkspaceId } from '../types';
 
@@ -180,8 +181,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     },
     // AI Slash Commands
     {
+      id: 'slash-split',
+      title: '/split [left-tool] [right-tool] — Dock two academic tools side-by-side in Dual-Pane Studio',
+      category: 'AI Slash Commands',
+      icon: Columns2,
+      run: () => {
+        onSelectWorkspace('splitscreen');
+        onClose();
+      },
+    },
+    {
       id: 'slash-explain',
-      title: '/explain [concept] — Simplify difficult concepts with the Feynman Technique',
+      title: '/explain [concept] — 3-Tier Feynman Simplification (ELI5, High School, Undergrad)',
       category: 'AI Slash Commands',
       icon: Sparkles,
       run: () => {
@@ -191,7 +202,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     },
     {
       id: 'slash-graph',
-      title: '/graph [equation] — AI prompt-to-graph injector for Desmos',
+      title: '/graph [equation] — Natural language prompt-to-graph injector for Desmos',
       category: 'AI Slash Commands',
       icon: Calculator,
       run: () => {
@@ -201,7 +212,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     },
     {
       id: 'slash-breakdown',
-      title: '/breakdown [task] — Deconstruct assignment into 4 actionable sub-tasks',
+      title: '/breakdown [assignment-id] — Deconstruct assignment into 4 actionable sub-tasks',
       category: 'AI Slash Commands',
       icon: Layers,
       run: () => {
@@ -210,8 +221,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
     },
     {
-      id: 'slash-pomodoro',
-      title: '/pomodoro 25 — Start 25m focus sprint with ambient soundscape',
+      id: 'slash-focus',
+      title: '/focus 25 — Start 25m customizable focus session with Lo-Fi ambient sound',
       category: 'AI Slash Commands',
       icon: Timer,
       run: () => {
@@ -220,8 +231,28 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
     },
     {
+      id: 'slash-pomodoro',
+      title: '/pomodoro 25 — Launch Pomodoro sprint in Active Recall Vault',
+      category: 'AI Slash Commands',
+      icon: Timer,
+      run: () => {
+        onSelectWorkspace('retention');
+        onClose();
+      },
+    },
+    {
+      id: 'slash-viva',
+      title: '/viva [subject] — Start AI Oral Exam with voice dictation & speech synthesis',
+      category: 'AI Slash Commands',
+      icon: GraduationCap,
+      run: () => {
+        onSelectWorkspace('retention');
+        onClose();
+      },
+    },
+    {
       id: 'slash-quiz',
-      title: '/quiz [subject] — Launch AI Oral Exam (Viva) Simulator with voice dictation',
+      title: '/quiz [subject] — Generate active recall flashcards with SM-2 spaced repetition',
       category: 'AI Slash Commands',
       icon: Brain,
       run: () => {

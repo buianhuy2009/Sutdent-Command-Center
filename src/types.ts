@@ -297,4 +297,79 @@ export interface RubricPreCheckResult {
   actionableRevisions: string[];
 }
 
+// --- Agent Action Dispatcher Interfaces ---
+export type AgentAction =
+  | {
+      type: 'setWorkspaceLayout';
+      payload: {
+        leftPane: SplitScreenToolId;
+        rightPane: SplitScreenToolId;
+        ratio?: '50/50' | '60/40' | '70/30' | '40/60' | '30/70';
+      };
+    }
+  | {
+      type: 'injectDesmosEquation';
+      payload: {
+        expressions: string[];
+        title?: string;
+      };
+    }
+  | {
+      type: 'createCalendarMilestones';
+      payload: {
+        events: Array<{
+          title: string;
+          date: string;
+          type: string;
+          weight?: number;
+        }>;
+      };
+    }
+  | {
+      type: 'createSRSDeck';
+      payload: {
+        deckTitle: string;
+        subject?: string;
+        cards: Array<{
+          front: string;
+          back: string;
+          tags?: string[];
+        }>;
+      };
+    }
+  | {
+      type: 'generateMermaidDiagram';
+      payload: {
+        code: string;
+        title: string;
+      };
+    };
+
+export interface MathDebugResult {
+  fullLatex: string[];
+  hasError: boolean;
+  errorLineIndex?: number;
+  errorDescription?: string;
+  socraticHint?: string;
+  solutionDerivationGuidance?: string[];
+}
+
+export interface ThreeTierFeynmanResult {
+  concept: string;
+  corePrinciple: string;
+  tier1_eli5: string;
+  tier2_highschool: string;
+  tier3_undergrad: string;
+  analogy: string;
+}
+
+export interface DeployedSemesterResult {
+  milestonesCount: number;
+  lectureNotesCount: number;
+  flashcardDecksCount: number;
+  createdEvents: Array<{ title: string; date: string; type: string }>;
+  createdNotes: Array<{ title: string; subject: string }>;
+  createdDeckTitle: string;
+}
+
 

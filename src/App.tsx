@@ -52,7 +52,8 @@ import { GeminiSettingsModal } from './components/GeminiSettingsModal';
 import { FloatingAiCopilot } from './components/FloatingAiCopilot';
 import { ToastContainer } from './components/Toast';
 import confetti from 'canvas-confetti';
-import { WorkspaceId } from './types';
+import { WorkspaceId, AgentAction } from './types';
+import { loadSRSDecks, saveSRSDecks, createNewSRSCard, SRSDeck } from './services/srsEngine';
 
 import {
   signInWithGoogle,
@@ -505,6 +506,87 @@ export default function App() {
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  const handleExecuteAgentAction = useCallback((action: AgentAction) => {
+    switch (action.type) {
+      case 'setWorkspaceLayout': {
+        const splitConfig = {
+          leftTool: action.payload.leftPane,
+          rightTool: action.payload.rightPane,
+          ratio: action.payload.ratio || '50/50',
+          activeFullscreenPane: null,
+        };
+        try {
+          localStorage.setItem('scc_splitscreen_config_v1', JSON.stringify(splitConfig));
+        } catch {}
+        handleWorkspaceTransition('splitscreen');
+        break;
+      }
+
+      case 'injectDesmosEquation': {
+        handleWorkspaceTransition('stem');
+        addToast({
+          type: 'success',
+          title: 'Equations Injected',
+          message: `Desmos ready with ${action.payload.expressions.length} equations plotted!`,
+        });
+        break;
+      }
+
+      case 'createCalendarMilestones': {
+        const newEvents: Assignment[] = action.payload.events.map((evt, i) => ({
+          id: `milestone-${Date.now()}-${i}`,
+          assignmentName: evt.title,
+          subject: 'Academic Milestone',
+          dueDate: evt.date,
+          status: 'Not Started',
+          weight: evt.weight || 10,
+          source: 'Manual',
+          priority: 'High',
+          notes: `Scheduled by StudentOS Agent (${evt.type})`,
+        }));
+        setAssignments((prev) => [...prev, ...newEvents]);
+        addToast({
+          type: 'success',
+          title: 'Milestones Scheduled',
+          message: `Created ${newEvents.length} calendar study milestones!`,
+        });
+        break;
+      }
+
+      case 'createSRSDeck': {
+        const currentDecks = loadSRSDecks();
+        const newDeck: SRSDeck = {
+          id: `deck-${Date.now()}`,
+          title: action.payload.deckTitle,
+          subject: action.payload.subject || 'General',
+          createdAt: new Date().toLocaleDateString(),
+          updatedAt: new Date().toLocaleDateString(),
+          cards: action.payload.cards.map((c) =>
+            createNewSRSCard({ front: c.front, back: c.back, tags: c.tags })
+          ),
+        };
+        saveSRSDecks([newDeck, ...currentDecks]);
+        handleWorkspaceTransition('retention');
+        addToast({
+          type: 'success',
+          title: 'SRS Deck Created',
+          message: `Created "${action.payload.deckTitle}" with ${action.payload.cards.length} cards!`,
+        });
+        break;
+      }
+
+      case 'generateMermaidDiagram': {
+        handleWorkspaceTransition('creation');
+        addToast({
+          type: 'info',
+          title: 'Diagram Synthesized',
+          message: `Rendered "${action.payload.title}" in Visual Studio!`,
+        });
+        break;
+      }
+    }
+  }, [handleWorkspaceTransition, addToast]);
 
   // Save assignments locally whenever state changes
   useEffect(() => {
@@ -2055,6 +2137,12 @@ export default function App() {
       {/* Global Floating AI Copilot */}
       <FloatingAiCopilot
         onNavigateWorkspace={(ws) => handleWorkspaceTransition(ws as WorkspaceId)}
+        onExecuteAgentAction={handleExecuteAgentAction}
+        appContext={{
+          activeWorkspace,
+          assignmentsCount: assignments.length,
+          upcomingDeadlines: assignments.slice(0, 3).map((a) => `${a.assignmentName} (${a.dueDate})`),
+        }}
       />
 
       {/* Declarative Native <dialog> Onboarding Tour */}

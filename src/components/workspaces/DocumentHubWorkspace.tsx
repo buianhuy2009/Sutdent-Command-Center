@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   FileText,
   FolderOpen,
@@ -26,8 +26,9 @@ import { createFormattedAssignmentDoc } from '../../services/googleWorkspace';
 import {
   socraticRubricPreCheck,
   feynmanSimplify,
+  feynmanExplainThreeTiers,
 } from '../../services/gemini';
-import { MarkdownNote, SchoolFile, RubricPreCheckResult } from '../../types';
+import { MarkdownNote, SchoolFile, RubricPreCheckResult, ThreeTierFeynmanResult } from '../../types';
 
 type DocHubTab = 'notes' | 'rubric' | 'feynman' | 'drive' | 'generator';
 
@@ -115,6 +116,8 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
     simplified: string;
     analogy: string;
   } | null>(null);
+  const [threeTierResult, setThreeTierResult] = useState<ThreeTierFeynmanResult | null>(null);
+  const [selectedFeynmanTier, setSelectedFeynmanTier] = useState<'eli5' | 'highschool' | 'undergrad'>('highschool');
 
   // --- 1-Click Doc Generator State ---
   const [docTitle, setDocTitle] = useState('');
@@ -126,6 +129,19 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
   const [docMessage, setDocMessage] = useState<string | null>(null);
 
   const activeNote = notes.find((n) => n.id === activeNoteId) || notes[0];
+
+  const noteWordCount = useMemo(() => {
+    if (!activeNote?.content) return 0;
+    return activeNote.content.trim().split(/\s+/).filter(Boolean).length;
+  }, [activeNote]);
+
+  const noteCharCount = useMemo(() => {
+    return activeNote?.content?.length || 0;
+  }, [activeNote]);
+
+  const noteReadingTime = useMemo(() => {
+    return Math.max(1, Math.ceil(noteWordCount / 200));
+  }, [noteWordCount]);
 
   const handleUpdateActiveNote = (updates: Partial<MarkdownNote>) => {
     const updated = notes.map((n) => {
@@ -211,9 +227,14 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
 
     setIsSimplifyingFeynman(true);
     setFeynmanResult(null);
+    setThreeTierResult(null);
     try {
-      const res = await feynmanSimplify(denseConcept.trim());
+      const [res, threeTier] = await Promise.all([
+        feynmanSimplify(denseConcept.trim()),
+        feynmanExplainThreeTiers(denseConcept.trim()),
+      ]);
       setFeynmanResult(res);
+      setThreeTierResult(threeTier);
     } catch (err) {
       console.error('Feynman simplification failed:', err);
     } finally {
@@ -371,7 +392,15 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                     className="text-base font-bold bg-transparent border-b border-transparent hover:border-[#DFDACB] focus:border-[#D97757] focus:outline-none text-[#141413] dark:text-[#FAF9F5] px-1 py-0.5"
                   />
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-2 text-[11px] font-mono text-[#8C897F] px-2.5 py-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
+                      <span>{noteWordCount} words</span>
+                      <span>•</span>
+                      <span>{noteCharCount} chars</span>
+                      <span>•</span>
+                      <span>~{noteReadingTime} min read</span>
+                    </div>
+
                     <button
                       onClick={handleCopyMarkdown}
                       className="px-3 py-1.5 text-xs font-semibold bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
@@ -605,6 +634,66 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                   {feynmanResult.analogy}
                 </p>
               </div>
+
+              {/* 3-Tier Rigor Breakdown */}
+              {threeTierResult && (
+                <div className="pt-3 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]/60 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                      3-Tier Rigor Progression
+                    </span>
+                    <div className="flex items-center gap-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] p-1 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
+                      {[
+                        { id: 'eli5', label: 'ELI5' },
+                        { id: 'highschool', label: 'High School' },
+                        { id: 'undergrad', label: 'Undergraduate' },
+                      ].map((tier) => (
+                        <button
+                          key={tier.id}
+                          type="button"
+                          onClick={() => setSelectedFeynmanTier(tier.id as any)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                            selectedFeynmanTier === tier.id
+                              ? 'bg-[#D97757] text-white shadow-xs'
+                              : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#FAF9F5]'
+                          }`}
+                        >
+                          {tier.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-xs leading-relaxed text-[#141413] dark:text-[#FAF9F5]">
+                    {selectedFeynmanTier === 'eli5' && (
+                      <div>
+                        <span className="text-[10px] font-bold text-[#D97757] uppercase tracking-wider block mb-1">
+                          Tier 1: Explain Like I&apos;m 5
+                        </span>
+                        <p>{threeTierResult.tier1_eli5}</p>
+                      </div>
+                    )}
+
+                    {selectedFeynmanTier === 'highschool' && (
+                      <div>
+                        <span className="text-[10px] font-bold text-[#D97757] uppercase tracking-wider block mb-1">
+                          Tier 2: High School Physical Intuition
+                        </span>
+                        <p>{threeTierResult.tier2_highschool}</p>
+                      </div>
+                    )}
+
+                    {selectedFeynmanTier === 'undergrad' && (
+                      <div>
+                        <span className="text-[10px] font-bold text-[#D97757] uppercase tracking-wider block mb-1">
+                          Tier 3: Undergraduate Mathematical Formalism
+                        </span>
+                        <p className="font-mono text-[11px]">{threeTierResult.tier3_undergrad}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

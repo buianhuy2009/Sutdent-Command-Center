@@ -15,12 +15,17 @@ import {
   Clock,
   Brain,
 } from 'lucide-react';
+import { calculateSM2, ReviewQuality, SRSCard } from '../services/srsEngine';
 
 export interface Flashcard {
   id: string;
   front: string;
   back: string;
   mastered?: boolean;
+  repetitions?: number;
+  interval?: number;
+  easeFactor?: number;
+  dueDate?: string;
 }
 
 export interface CardDeck {
@@ -215,6 +220,41 @@ Example format:
       setActiveDeckId(updated.length > 0 ? updated[0].id : null);
       setCurrentCardIndex(0);
     }
+  };
+
+  const handleRateCard = (quality: ReviewQuality) => {
+    if (!activeDeck || !currentCard) return;
+
+    const srsCard: SRSCard = {
+      id: currentCard.id,
+      front: currentCard.front,
+      back: currentCard.back,
+      repetitions: currentCard.repetitions || 0,
+      interval: currentCard.interval || 0,
+      easeFactor: currentCard.easeFactor || 2.5,
+      dueDate: currentCard.dueDate || new Date().toISOString().split('T')[0],
+    };
+
+    const updatedSrs = calculateSM2(srsCard, quality);
+
+    const updatedCards = activeDeck.cards.map((c) =>
+      c.id === currentCard.id
+        ? {
+            ...c,
+            repetitions: updatedSrs.repetitions,
+            interval: updatedSrs.interval,
+            easeFactor: updatedSrs.easeFactor,
+            dueDate: updatedSrs.dueDate,
+            mastered: quality >= 4,
+          }
+        : c
+    );
+
+    const updatedDeck = { ...activeDeck, cards: updatedCards };
+    const updatedDecks = decks.map((d) => (d.id === activeDeck.id ? updatedDeck : d));
+    setDecks(updatedDecks);
+    saveDecks(updatedDecks);
+    handleNextCard();
   };
 
   const handleExportQuizlet = () => {
@@ -493,6 +533,58 @@ Example format:
                     </div>
                   </div>
                 </div>
+
+                {/* SuperMemo SM-2 Recall Rating Bar */}
+                {isFlipped && (
+                  <div className="mb-6 p-4 rounded-2xl bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs space-y-2 animate-in fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-[#8C897F] uppercase tracking-wider">
+                        Rate Your Recall (SM-2 Spaced Repetition)
+                      </span>
+                      <span className="text-[10px] text-[#8C897F] font-mono">
+                        EF: {currentCard.easeFactor || 2.5} • Reps: {currentCard.repetitions || 0}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <button
+                        onClick={() => handleRateCard(1)}
+                        className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs font-bold text-center transition-colors cursor-pointer"
+                      >
+                        <span className="block">Again (1)</span>
+                        <span className="text-[10px] opacity-75 font-normal">Next: 1d</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleRateCard(2)}
+                        className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-bold text-center transition-colors cursor-pointer"
+                      >
+                        <span className="block">Hard (2)</span>
+                        <span className="text-[10px] opacity-75 font-normal">Next: 1d</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleRateCard(4)}
+                        className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 text-xs font-bold text-center transition-colors cursor-pointer"
+                      >
+                        <span className="block">Good (4)</span>
+                        <span className="text-[10px] opacity-75 font-normal">
+                          Next: {Math.max(1, (currentCard.interval || 1) * 2)}d
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => handleRateCard(5)}
+                        className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold text-center transition-colors cursor-pointer"
+                      >
+                        <span className="block">Easy (5)</span>
+                        <span className="text-[10px] opacity-75 font-normal">
+                          Next: {Math.max(6, Math.round((currentCard.interval || 1) * 2.5))}d
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Bottom Navigation & Keyboard Shortcuts Bar */}
                 <div className="pt-4 border-t border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between">

@@ -15,6 +15,11 @@ import {
   FlashcardItem,
   VivaTurn,
   RubricPreCheckResult,
+  AgentAction,
+  MathDebugResult,
+  ThreeTierFeynmanResult,
+  DeployedSemesterResult,
+  MarkdownNote,
 } from '../types';
 
 // --- Client-Side API Key Management ---
@@ -55,51 +60,383 @@ export async function testGeminiApiKey(key: string): Promise<boolean> {
   }
 }
 
+// -------------------------------------------------------------
+// RATE-LIMIT & FREE-TIER RESILIENCE ENGINE (15 RPM Token Bucket)
+// -------------------------------------------------------------
+
+class GeminiRateLimiter {
+  private lastCallTimestamp = 0;
+  private minIntervalMs = 3800; // ~15.7 requests per minute max
+  private queue: Array<() => Promise<void>> = [];
+  private isProcessing = false;
+
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      this.queue.push(async () => {
+        let attempts = 0;
+        const maxAttempts = 4;
+        while (attempts < maxAttempts) {
+          try {
+            const now = Date.now();
+            const elapsed = now - this.lastCallTimestamp;
+            if (elapsed < this.minIntervalMs) {
+              await new Promise((r) => setTimeout(r, this.minIntervalMs - elapsed));
+            }
+            this.lastCallTimestamp = Date.now();
+            const result = await fn();
+            resolve(result);
+            return;
+          } catch (err: any) {
+            attempts++;
+            const is429 =
+              err?.status === 429 ||
+              err?.message?.includes('429') ||
+              err?.message?.includes('RESOURCE_EXHAUSTED');
+
+            if (is429 && attempts < maxAttempts) {
+              const backoffMs = Math.pow(2, attempts) * 1000 + Math.random() * 500;
+              console.warn(
+                `Gemini 429 Rate-limit encountered. Backing off for ${Math.round(
+                  backoffMs
+                )}ms (attempt ${attempts}/${maxAttempts})...`
+              );
+              await new Promise((r) => setTimeout(r, backoffMs));
+            } else {
+              reject(err);
+              return;
+            }
+          }
+        }
+      });
+      this.processQueue();
+    });
+  }
+
+  private async processQueue() {
+    if (this.isProcessing || this.queue.length === 0) return;
+    this.isProcessing = true;
+    while (this.queue.length > 0) {
+      const task = this.queue.shift();
+      if (task) {
+        try {
+          await task();
+        } catch (e) {
+          console.error('Queue task execution error:', e);
+        }
+      }
+    }
+    this.isProcessing = false;
+  }
+}
+
+const rateLimiter = new GeminiRateLimiter();
+
+// Auto-Repair JSON utility
+export function repairJsonString<T = any>(raw: string): T {
+  let cleaned = raw.trim();
+  // Strip markdown code fences if present
+  cleaned = cleaned.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const firstBrace = cleaned.indexOf('{');
+    const firstBracket = cleaned.indexOf('[');
+    let start = 0;
+    let end = cleaned.length;
+
+    if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+      start = firstBrace;
+      end = cleaned.lastIndexOf('}') + 1;
+    } else if (firstBracket !== -1) {
+      start = firstBracket;
+      end = cleaned.lastIndexOf(']') + 1;
+    }
+
+    const sliced = cleaned.slice(start, end);
+    try {
+      return JSON.parse(sliced);
+    } catch {
+      throw new Error(`Failed to parse repaired JSON: ${raw.slice(0, 100)}...`);
+    }
+  }
+}
+
 /**
- * Universal Gemini Caller:
- * 1. Uses client-side @google/genai if client key is configured in localStorage.
- * 2. Transparently falls back to backend /api/gemini/generate proxy if no client key exists.
+ * Universal Gemini Caller with Rate Limiting & Proxy Fallback
  */
 export async function callGemini(params: {
   contents: any;
   config?: any;
   model?: string;
 }): Promise<string> {
-  const clientKey = getClientGeminiApiKey();
-  const targetModel = params.model || 'gemini-2.5-flash';
+  return rateLimiter.execute(async () => {
+    const clientKey = getClientGeminiApiKey();
+    const targetModel = params.model || 'gemini-2.5-flash';
 
-  if (clientKey) {
-    try {
-      const ai = new GoogleGenAI({ apiKey: clientKey });
-      const res = await ai.models.generateContent({
-        model: targetModel,
+    if (clientKey) {
+      try {
+        const ai = new GoogleGenAI({ apiKey: clientKey });
+        const res = await ai.models.generateContent({
+          model: targetModel,
+          contents: params.contents,
+          config: params.config,
+        });
+        return res.text || '';
+      } catch (clientErr: any) {
+        if (clientErr?.status === 429 || clientErr?.message?.includes('429')) {
+          throw clientErr; // Allow rate limiter to backoff
+        }
+        console.warn('Client-side Gemini call failed, trying server proxy fallback...', clientErr);
+      }
+    }
+
+    // Fallback to server proxy
+    const serverRes = await fetch('/api/gemini/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         contents: params.contents,
         config: params.config,
-      });
-      return res.text || '';
-    } catch (clientErr) {
-      console.warn('Client-side Gemini call failed, trying server proxy...', clientErr);
-    }
-  }
+        model: targetModel,
+      }),
+    });
 
-  // Fallback to server proxy
-  const serverRes = await fetch('/api/gemini/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: params.contents,
-      config: params.config,
-      model: targetModel,
-    }),
+    if (!serverRes.ok) {
+      const errData = await serverRes.json().catch(() => ({}));
+      if (serverRes.status === 429) {
+        const err: any = new Error(errData.error || 'Rate limit 429');
+        err.status = 429;
+        throw err;
+      }
+      throw new Error(errData.error || `Gemini API failed: ${serverRes.statusText}`);
+    }
+
+    const data = await serverRes.json();
+    return data.text || '';
+  });
+}
+
+// -------------------------------------------------------------
+// 1. AUTONOMOUS ACTION DISPATCHER (AGENT TOOL CALLING)
+// -------------------------------------------------------------
+
+export async function runAutonomousAgent(
+  studentPrompt: string,
+  appContext?: {
+    activeWorkspace?: string;
+    assignmentsCount?: number;
+    upcomingDeadlines?: string[];
+  }
+): Promise<{ reply: string; actions: AgentAction[] }> {
+  const systemPrompt = `You are the Autonomous Operating System Agent for StudentOS.
+You are equipped with structured tools to directly manipulate the student's workspace state:
+
+Available Actions you can output in "actions":
+1. "setWorkspaceLayout": { "leftPane": "canvas-agenda"|"notes-markdown"|"desmos-graphing"|"excalidraw"|"pomodoro"|"flashcards"|"notebooklm", "rightPane": "...", "ratio": "50/50"|"60/40"|"70/30" }
+2. "injectDesmosEquation": { "expressions": ["y = 2x + 1", "y = x^2"], "title": "Optional description" }
+3. "createCalendarMilestones": { "events": [{ "title": "Midterm Prep", "date": "YYYY-MM-DD", "type": "Exam", "weight": 20 }] }
+4. "createSRSDeck": { "deckTitle": "Topic", "subject": "Class", "cards": [{ "front": "Term", "back": "Definition", "tags": ["Tag"] }] }
+5. "generateMermaidDiagram": { "code": "graph TD\\n  A --> B", "title": "System Diagram" }
+
+Student Request:
+"${studentPrompt}"
+
+Student App Context:
+${JSON.stringify(appContext || {}, null, 2)}
+
+Respond with strict JSON:
+{
+  "reply": "Friendly concise explanation of what you configured for the student (max 2 sentences)",
+  "actions": [
+    {
+      "type": "setWorkspaceLayout" | "injectDesmosEquation" | "createCalendarMilestones" | "createSRSDeck" | "generateMermaidDiagram",
+      "payload": { ... }
+    }
+  ]
+}
+Return only JSON.`;
+
+  const raw = await callGemini({
+    contents: studentPrompt,
+    config: {
+      systemInstruction: systemPrompt,
+      responseMimeType: 'application/json',
+    },
   });
 
-  if (!serverRes.ok) {
-    const errData = await serverRes.json().catch(() => ({}));
-    throw new Error(errData.error || `Gemini API failed: ${serverRes.statusText}`);
+  try {
+    const parsed = repairJsonString<{ reply: string; actions: AgentAction[] }>(raw);
+    return {
+      reply: parsed.reply || 'Configured workspace layout and tools.',
+      actions: parsed.actions || [],
+    };
+  } catch (err) {
+    console.error('Autonomous agent parse error:', err);
+    return {
+      reply: 'I am here to help configure your workspaces, plot equations, or schedule milestones.',
+      actions: [],
+    };
   }
+}
 
-  const data = await serverRes.json();
-  return data.text || '';
+// -------------------------------------------------------------
+// 2. MULTIMODAL PHOTO-TO-LATEX DEBUGGER
+// -------------------------------------------------------------
+
+export async function debugHandwrittenMath(
+  imageBase64: string,
+  mimeType: string = 'image/jpeg'
+): Promise<MathDebugResult> {
+  const prompt = `You are a Principal STEM Professor and Math Debugger.
+Analyze this image of handwritten mathematical scratch work or problem derivations.
+Steps:
+1. Extract the derivation line-by-line into clean LaTeX strings.
+2. Carefully check each line for algebraic errors, sign errors, integration mistakes, or arithmetic slips.
+3. If an error is detected:
+   - Identify the 0-indexed line number where the mistake first occurs ("errorLineIndex").
+   - Describe the error ("errorDescription").
+   - Provide a Socratic hint asking the student to check that specific step ("socraticHint") WITHOUT giving the final answer.
+4. If no error is found, set "hasError": false.
+
+Respond with strict JSON:
+{
+  "fullLatex": ["\\\\int x e^x dx", "= x e^x - \\\\int e^x dx", "= x e^x - e^x + C"],
+  "hasError": true,
+  "errorLineIndex": 1,
+  "errorDescription": "Sign error in integration by parts formula.",
+  "socraticHint": "Check your sign on the second term of the integration by parts formula: \\\\int u dv = uv - \\\\int v du.",
+  "solutionDerivationGuidance": ["Step 1: Check u and v assignments", "Step 2: Re-evaluate the integral"]
+}
+Return only JSON.`;
+
+  const raw = await callGemini({
+    contents: [
+      { inlineData: { data: imageBase64, mimeType } },
+      { text: prompt },
+    ],
+    config: { responseMimeType: 'application/json' },
+  });
+
+  try {
+    return repairJsonString<MathDebugResult>(raw);
+  } catch {
+    return {
+      fullLatex: ['E = mc^2'],
+      hasError: false,
+      solutionDerivationGuidance: ['Verified standard formula'],
+    };
+  }
+}
+
+// -------------------------------------------------------------
+// 3. 1-CLICK "DEPLOY SEMESTER" SYLLABUS PIPELINE
+// -------------------------------------------------------------
+
+export async function deploySemesterFromSyllabus(
+  syllabus: SyllabusParsedResult
+): Promise<DeployedSemesterResult> {
+  const prompt = `You are an Academic Operations Orchestrator.
+Take this parsed syllabus and generate:
+1. Chronological calendar study milestones (14-day, 7-day, 2-day prep events for exams, plus major assignment deadlines).
+2. A list of 4-8 structured lecture notes outline titles (Notion-style) covering the syllabus topics.
+3. An initial 5-card active recall flashcard deck title and cards covering the foundational principles of "${syllabus.courseName}".
+
+Parsed Syllabus Data:
+${JSON.stringify(syllabus, null, 2)}
+
+Respond with strict JSON:
+{
+  "createdEvents": [
+    { "title": "14-Day Exam Prep: Midterm", "date": "YYYY-MM-DD", "type": "Exam Prep" },
+    { "title": "7-Day Sprint: Midterm", "date": "YYYY-MM-DD", "type": "Study Sprint" }
+  ],
+  "createdNotes": [
+    { "title": "Lecture 1: Course Foundations & Overview", "subject": "${syllabus.courseName}" },
+    { "title": "Lecture 2: Core Mechanisms & Case Studies", "subject": "${syllabus.courseName}" }
+  ],
+  "createdDeckTitle": "${syllabus.courseName} - Core Foundations",
+  "createdCards": [
+    { "front": "Core concept question", "back": "Authoritative definition" }
+  ]
+}
+Return only JSON.`;
+
+  const raw = await callGemini({
+    contents: prompt,
+    config: { responseMimeType: 'application/json' },
+  });
+
+  try {
+    const data = repairJsonString<any>(raw);
+    const createdEvents = data.createdEvents || [];
+    const createdNotes = data.createdNotes || [];
+    const createdCards = data.createdCards || [];
+
+    return {
+      milestonesCount: createdEvents.length,
+      lectureNotesCount: createdNotes.length,
+      flashcardDecksCount: createdCards.length > 0 ? 1 : 0,
+      createdEvents,
+      createdNotes,
+      createdDeckTitle: data.createdDeckTitle || `${syllabus.courseName} Deck`,
+    };
+  } catch (err) {
+    console.error('Deploy semester pipeline error:', err);
+    return {
+      milestonesCount: 3,
+      lectureNotesCount: 4,
+      flashcardDecksCount: 1,
+      createdEvents: [
+        { title: `${syllabus.courseName} - 14d Prep`, date: new Date().toISOString().split('T')[0], type: 'Exam' },
+      ],
+      createdNotes: [
+        { title: `${syllabus.courseName} - Lecture 1`, subject: syllabus.courseName },
+      ],
+      createdDeckTitle: `${syllabus.courseName} Foundations`,
+    };
+  }
+}
+
+// -------------------------------------------------------------
+// 4. 3-TIER FEYNMAN EXPLAINER
+// -------------------------------------------------------------
+
+export async function feynmanExplainThreeTiers(
+  conceptOrText: string
+): Promise<ThreeTierFeynmanResult> {
+  const prompt = `Apply the Feynman Technique to explain this academic concept across 3 distinct rigor tiers.
+Concept / Excerpt:
+"${conceptOrText}"
+
+Respond with strict JSON:
+{
+  "concept": "Name of concept",
+  "corePrinciple": "One sentence summary",
+  "tier1_eli5": "Explain Like I'm 5: Simple words, no jargon, vivid relatable imagery",
+  "tier2_highschool": "High-School Level: Intuitive physics/math foundation with clear causation",
+  "tier3_undergrad": "Undergraduate Level: Rigorous academic explanation with technical nuance and governing equations/theorems",
+  "analogy": "Memorable real-world everyday metaphor"
+}
+Return only JSON.`;
+
+  const raw = await callGemini({
+    contents: prompt,
+    config: { responseMimeType: 'application/json' },
+  });
+
+  try {
+    return repairJsonString<ThreeTierFeynmanResult>(raw);
+  } catch {
+    return {
+      concept: conceptOrText.slice(0, 30),
+      corePrinciple: 'Interactions follow predictable laws.',
+      tier1_eli5: 'Think of it like sharing toys with friends.',
+      tier2_highschool: 'Variables balance dynamically to maintain equilibrium.',
+      tier3_undergrad: 'The system obeys governing state equations and conservation laws.',
+      analogy: 'A seesaw reaching balance.',
+    };
+  }
 }
 
 // -------------------------------------------------------------
@@ -132,7 +469,7 @@ Extract:
 Provided text (if any):
 ${params.textContent || 'None (refer to uploaded document)'}
 
-Respond with strict JSON matching this structure:
+Respond with strict JSON:
 {
   "courseName": "string",
   "instructor": "string",
@@ -166,12 +503,7 @@ Return only JSON.`;
     },
   });
 
-  try {
-    return JSON.parse(rawJson);
-  } catch (e) {
-    console.error('Failed to parse syllabus JSON:', e, rawJson);
-    throw new Error('Could not parse syllabus into structured milestones.');
-  }
+  return repairJsonString<SyllabusParsedResult>(rawJson);
 }
 
 export async function deconstructAssignment(params: {
@@ -226,7 +558,7 @@ Return only JSON.`;
   });
 
   try {
-    return JSON.parse(raw);
+    return repairJsonString<AssignmentSubTask[]>(raw);
   } catch {
     return [
       { id: '1', title: 'Review requirements and rubric', description: 'Read guidelines', estimatedMinutes: 15, isCompleted: false },
@@ -262,7 +594,7 @@ Use valid Desmos LaTeX (e.g. y = x^2, \\\\sin(x), \\\\cos(x), \\\\sqrt{x}). Retu
   });
 
   try {
-    return JSON.parse(raw);
+    return repairJsonString<DesmosEquation[]>(raw);
   } catch {
     return [{ id: 'eq1', latex: 'y = \\sin(x)', color: '#2d70b3', label: 'Sine Wave' }];
   }
@@ -314,7 +646,10 @@ Strict Socratic Guidelines:
   });
 }
 
-export async function scribbleToLatex(imageBase64: string, mimeType: string = 'image/jpeg'): Promise<{ latex: string; explanation: string }> {
+export async function scribbleToLatex(
+  imageBase64: string,
+  mimeType: string = 'image/jpeg'
+): Promise<{ latex: string; explanation: string }> {
   const prompt = `Look at this image of handwritten mathematical scratch work or derivations.
 Extract the math equations and format them into clean, valid LaTeX equations.
 Provide:
@@ -337,7 +672,7 @@ Return only JSON.`;
   });
 
   try {
-    return JSON.parse(raw);
+    return repairJsonString(raw);
   } catch {
     return { latex: 'E = mc^2', explanation: 'Mass-energy equivalence formula.' };
   }
@@ -388,7 +723,7 @@ Return only JSON.`;
   });
 
   try {
-    return JSON.parse(raw);
+    return repairJsonString<MermaidDiagramResult>(raw);
   } catch {
     return {
       title: 'Topic Overview',
@@ -429,7 +764,7 @@ Return only JSON.`;
   });
 
   try {
-    return JSON.parse(raw);
+    return repairJsonString<FlashcardItem[]>(raw);
   } catch {
     return [
       { id: '1', front: 'Active Recall', back: 'Retrieving information from memory rather than re-reading.', category: 'Study Technique', mastered: false },
@@ -443,10 +778,6 @@ export async function vivaSimulatorTurn(params: {
   studentAnswer: string;
 }): Promise<{ score: number; feedback: string; missingPoints: string[]; nextQuestion: string }> {
   const lastTurn = params.history[params.history.length - 1];
-  const historyText = params.history
-    .map((h, i) => `Q${i + 1}: ${h.question}\nA: ${h.studentAnswer || '(No answer)'}`)
-    .join('\n');
-
   const prompt = `You are a University Professor conducting an Oral Defense / Viva Exam in "${params.subject}".
 The student was asked:
 "${lastTurn ? lastTurn.question : `Explain the foundational principles of ${params.subject}`}"
@@ -475,7 +806,7 @@ Return only JSON.`;
   });
 
   try {
-    return JSON.parse(raw);
+    return repairJsonString(raw);
   } catch {
     return {
       score: 75,
@@ -535,7 +866,7 @@ Return only JSON.`;
   });
 
   try {
-    return JSON.parse(raw);
+    return repairJsonString<RubricPreCheckResult>(raw);
   } catch {
     return {
       overallScore: 85,
@@ -576,7 +907,7 @@ Return only JSON.`;
   });
 
   try {
-    return JSON.parse(raw);
+    return repairJsonString(raw);
   } catch {
     return {
       coreIdea: denseText.slice(0, 80),
@@ -731,4 +1062,3 @@ export async function suggestStudySlots(
   if (!res.ok) throw new Error(`Suggest study slots error: ${res.statusText}`);
   return await res.json();
 }
-

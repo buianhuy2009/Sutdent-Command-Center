@@ -9,22 +9,44 @@ import {
   GraduationCap,
   Lightbulb,
   Maximize2,
+  Zap,
+  CheckCircle2,
+  Columns2,
+  Calculator,
+  Calendar,
+  Brain,
+  Network,
 } from 'lucide-react';
-import { sendStudyAssistantMessage } from '../services/gemini';
+import { runAutonomousAgent } from '../services/gemini';
+import { AgentAction } from '../types';
 
 interface FloatingAiCopilotProps {
   onNavigateWorkspace?: (ws: string) => void;
+  onExecuteAgentAction?: (action: AgentAction) => void;
+  appContext?: {
+    activeWorkspace?: string;
+    assignmentsCount?: number;
+    upcomingDeadlines?: string[];
+  };
 }
 
 export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
   onNavigateWorkspace,
+  onExecuteAgentAction,
+  appContext,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
+  const [messages, setMessages] = useState<
+    Array<{
+      role: 'user' | 'assistant';
+      content: string;
+      executedActions?: AgentAction[];
+    }>
+  >([
     {
       role: 'assistant',
       content:
-        'Hi! I am your Gemini Academic Copilot. Ask me anything, or type a slash command in Cmd+K (e.g. /explain, /graph, /breakdown).',
+        'Hello! I am your Autonomous StudentOS Agent. Ask me to split screens, plot curves in Desmos, extract syllabi, or generate flashcards.',
     },
   ]);
   const [inputText, setInputText] = useState('');
@@ -48,15 +70,31 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
     setIsThinking(true);
 
     try {
-      const reply = await sendStudyAssistantMessage(updatedMessages);
-      setMessages([...updatedMessages, { role: 'assistant', content: reply }]);
-    } catch (err) {
-      console.error('Floating copilot error:', err);
+      const res = await runAutonomousAgent(userMsg, appContext);
+
+      // Execute dispatched actions in the app state
+      if (res.actions && res.actions.length > 0 && onExecuteAgentAction) {
+        res.actions.forEach((act) => {
+          onExecuteAgentAction(act);
+        });
+      }
+
       setMessages([
         ...updatedMessages,
         {
           role: 'assistant',
-          content: 'I could not connect to Gemini right now. Please verify your API key in Settings.',
+          content: res.reply,
+          executedActions: res.actions,
+        },
+      ]);
+    } catch (err) {
+      console.error('Floating copilot agent error:', err);
+      setMessages([
+        ...updatedMessages,
+        {
+          role: 'assistant',
+          content:
+            'I encountered an error executing this action. Please ensure your Gemini API key is configured in Settings.',
         },
       ]);
     } finally {
@@ -68,6 +106,46 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
     setInputText(prompt);
   };
 
+  const renderActionBadge = (action: AgentAction, idx: number) => {
+    let icon = Zap;
+    let label = 'Executed Action';
+
+    switch (action.type) {
+      case 'setWorkspaceLayout':
+        icon = Columns2;
+        label = `Layout: ${action.payload.leftPane} + ${action.payload.rightPane}`;
+        break;
+      case 'injectDesmosEquation':
+        icon = Calculator;
+        label = `Plotted ${action.payload.expressions.length} equations into Desmos`;
+        break;
+      case 'createCalendarMilestones':
+        icon = Calendar;
+        label = `Scheduled ${action.payload.events.length} study milestones`;
+        break;
+      case 'createSRSDeck':
+        icon = Brain;
+        label = `Created SRS Deck: "${action.payload.deckTitle}"`;
+        break;
+      case 'generateMermaidDiagram':
+        icon = Network;
+        label = `Rendered diagram: "${action.payload.title}"`;
+        break;
+    }
+
+    const IconComponent = icon;
+
+    return (
+      <div
+        key={idx}
+        className="mt-1.5 p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold flex items-center gap-1.5 animate-in fade-in"
+      >
+        <IconComponent className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+        <span>⚡ {label}</span>
+      </div>
+    );
+  };
+
   return (
     <>
       {/* Floating Trigger Pill */}
@@ -77,7 +155,7 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
           className="fixed bottom-6 right-6 z-40 px-4 py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-[#D97757] to-rose-500 text-white font-bold text-xs flex items-center gap-2 shadow-xl shadow-[#D97757]/30 hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/20"
         >
           <Sparkles className="w-4 h-4 animate-spin" />
-          <span>Gemini Copilot</span>
+          <span>StudentOS Agent</span>
         </button>
       )}
 
@@ -91,10 +169,13 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
                 <Bot className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                  Gemini Academic Copilot
+                <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-1.5">
+                  <span>StudentOS Autonomous Agent</span>
+                  <span className="px-1.5 py-0.5 text-[9px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 rounded font-mono">
+                    Actions ON
+                  </span>
                 </h4>
-                <p className="text-[10px] text-[#8C897F]">Model: gemini-2.5-flash</p>
+                <p className="text-[10px] text-[#8C897F]">Model: gemini-2.5-flash / 3.5-lite</p>
               </div>
             </div>
 
@@ -108,13 +189,13 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
             </div>
           </div>
 
-          {/* Quick Prompt Pills */}
+          {/* Quick Prompt Action Pills */}
           <div className="p-2.5 bg-[#FAF9F5]/70 dark:bg-[#1F1E1B]/70 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60 flex items-center gap-1.5 overflow-x-auto text-[11px]">
             {[
-              'Explain this concept simply',
-              'Check my algebra step',
-              'Draft an email to prof',
-              'Generate 3 study questions',
+              'Split screen with Canvas and Desmos',
+              'Plot damped sine wave in Desmos',
+              'Build 5-card flashcard deck on Cell Respiration',
+              'Create mindmap of World War 2',
             ].map((pill, i) => (
               <button
                 key={i}
@@ -131,40 +212,42 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
             {messages.map((m, i) => (
               <div
                 key={i}
-                className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}
               >
-                {m.role === 'assistant' && (
-                  <div className="w-5 h-5 rounded-lg bg-[#D97757]/10 text-[#D97757] flex items-center justify-center shrink-0 mt-0.5">
-                    <Sparkles className="w-3 h-3" />
-                  </div>
-                )}
                 <div
-                  className={`p-3 rounded-2xl text-xs leading-relaxed max-w-[85%] ${
+                  className={`p-3 rounded-2xl text-xs leading-relaxed max-w-[88%] ${
                     m.role === 'user'
                       ? 'bg-[#D97757] text-white rounded-br-none'
                       : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-[#141413] dark:text-[#FAF9F5] rounded-bl-none'
                   }`}
                 >
-                  {m.content}
+                  <p>{m.content}</p>
+
+                  {/* Dispatched Actions Badges */}
+                  {m.executedActions &&
+                    m.executedActions.map((action, aIdx) => renderActionBadge(action, aIdx))}
                 </div>
               </div>
             ))}
             {isThinking && (
               <div className="flex items-center gap-2 text-xs text-[#8C897F]">
                 <Sparkles className="w-3.5 h-3.5 text-[#D97757] animate-spin" />
-                <span>Gemini is generating response...</span>
+                <span>Agent is evaluating intent and executing actions...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Chat Input */}
-          <form onSubmit={handleSendMessage} className="p-3 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex items-center gap-2">
+          <form
+            onSubmit={handleSendMessage}
+            className="p-3 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex items-center gap-2"
+          >
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Ask Gemini anything..."
+              placeholder="Tell StudentOS what to set up or plot..."
               className="flex-1 px-3.5 py-2 text-xs bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
             />
             <button

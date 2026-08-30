@@ -64,6 +64,26 @@ export const SplitScreenStudio: React.FC = () => {
     saveSplitConfig(updated);
   };
 
+  // Keyboard Shortcut: Cmd + \ or Ctrl + \ to toggle fullscreen
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        e.preventDefault();
+        setConfig((prev) => {
+          let nextPane: 'left' | 'right' | null = null;
+          if (prev.activeFullscreenPane === null) nextPane = 'left';
+          else if (prev.activeFullscreenPane === 'left') nextPane = 'right';
+          else nextPane = null;
+          const updated = { ...prev, activeFullscreenPane: nextPane };
+          saveSplitConfig(updated);
+          return updated;
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const renderToolComponent = (toolId: SplitScreenToolId) => {
     switch (toolId) {
       case 'desmos-graphing':

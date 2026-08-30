@@ -77,7 +77,19 @@ export const RetentionVaultWorkspace: React.FC<RetentionVaultWorkspaceProps> = (
   const [studentAnswerText, setStudentAnswerText] = useState('');
   const [isVivaEvaluating, setIsVivaEvaluating] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [isVoiceMuted, setIsVoiceMuted] = useState(false);
   const recognitionRef = useRef<any>(null);
+
+  const speakQuestion = (text: string) => {
+    if (isVoiceMuted) return;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   // Timer Tick
   useEffect(() => {
@@ -255,9 +267,9 @@ export const RetentionVaultWorkspace: React.FC<RetentionVaultWorkspaceProps> = (
   const handleStartViva = () => {
     setVivaStarted(true);
     setVivaHistory([]);
-    setVivaCurrentQuestion(
-      `Welcome to your oral examination on "${vivaSubject}". To begin, please explain the central thesis and primary mechanism of this topic.`
-    );
+    const firstQ = `Welcome to your oral examination on "${vivaSubject}". To begin, please explain the central thesis and primary mechanism of this topic.`;
+    setVivaCurrentQuestion(firstQ);
+    speakQuestion(firstQ);
   };
 
   // Submit Answer to Viva Exam
@@ -297,6 +309,7 @@ export const RetentionVaultWorkspace: React.FC<RetentionVaultWorkspaceProps> = (
 
       setVivaHistory((prev) => [...prev, evaluatedTurn]);
       setVivaCurrentQuestion(evalResult.nextQuestion);
+      speakQuestion(evalResult.nextQuestion);
     } catch (err) {
       console.error('Failed to evaluate viva turn:', err);
     } finally {
@@ -636,10 +649,22 @@ export const RetentionVaultWorkspace: React.FC<RetentionVaultWorkspaceProps> = (
 
               {/* Current Question */}
               <div className="p-4 bg-amber-50/60 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-800/80 space-y-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Examiner&apos;s Question:</span>
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Examiner&apos;s Question:</span>
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => speakQuestion(vivaCurrentQuestion)}
+                    className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/60 dark:hover:bg-amber-800 text-amber-800 dark:text-amber-200 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Read Question Aloud (SpeechSynthesis)"
+                  >
+                    <Volume2 className="w-3.5 h-3.5" />
+                    <span>Read Aloud</span>
+                  </button>
+                </div>
                 <p className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">
                   {vivaCurrentQuestion}
                 </p>
