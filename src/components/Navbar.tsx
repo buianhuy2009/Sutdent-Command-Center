@@ -8,6 +8,7 @@ import {
   RefreshCw,
   SlidersHorizontal,
   GraduationCap,
+  ChevronUp,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -21,6 +22,7 @@ interface NavbarProps {
   onOpenGeminiSettings?: () => void;
   onRefreshAll?: () => void;
   isRefreshing?: boolean;
+  onToggleCollapseBar?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -34,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenGeminiSettings,
   onRefreshAll,
   isRefreshing = false,
+  onToggleCollapseBar,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [hasDismissedBadge, setHasDismissedBadge] = useState(false);
@@ -170,6 +173,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           )}
         </div>
+
+        {/* Collapse Top Bar Toggle */}
+        {onToggleCollapseBar && (
+          <button
+            onClick={onToggleCollapseBar}
+            className="p-1.5 text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] hover:bg-[#EFECE2] dark:hover:bg-[#1F1E1B] rounded-lg transition-colors cursor-pointer border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27]"
+            title="Collapse top bar to maximize app space"
+          >
+            <ChevronUp className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     </header>
   );

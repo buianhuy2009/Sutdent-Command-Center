@@ -35,6 +35,15 @@ import { GitHubWorkspace } from './components/workspaces/GitHubWorkspace';
 import { OverleafWorkspace } from './components/workspaces/OverleafWorkspace';
 import { GoogleScholarWorkspace } from './components/workspaces/GoogleScholarWorkspace';
 import { DiscordSlackWorkspace } from './components/workspaces/DiscordSlackWorkspace';
+import { DesmosWorkspace } from './components/workspaces/DesmosWorkspace';
+import { GeoGebraWorkspace } from './components/workspaces/GeoGebraWorkspace';
+import { ExcalidrawWorkspace } from './components/workspaces/ExcalidrawWorkspace';
+import { PhETWorkspace } from './components/workspaces/PhETWorkspace';
+import { MermaidWorkspace } from './components/workspaces/MermaidWorkspace';
+import { WolframWorkspace } from './components/workspaces/WolframWorkspace';
+import { RubricCheckerWorkspace } from './components/workspaces/RubricCheckerWorkspace';
+import { FeynmanWorkspace } from './components/workspaces/FeynmanWorkspace';
+import { PhotoMathWorkspace } from './components/workspaces/PhotoMathWorkspace';
 import { SplitScreenStudio } from './components/SplitScreenStudio';
 import { DailyRadarTab } from './components/DailyRadarTab';
 import { GmailRadarTab } from './components/GmailRadarTab';
@@ -240,6 +249,7 @@ export default function App() {
   const [aiSuiteOpen, setAiSuiteOpen] = useState(false);
   const [aiSuiteTab, setAiSuiteTab] = useState<'planner' | 'syllabus' | 'quiz' | 'grades'>('planner');
   const [clearedTabBadges, setClearedTabBadges] = useState<Set<string>>(new Set());
+  const [isNavbarHidden, setIsNavbarHidden] = useState(false);
   const onboardingDialogRef = useRef<HTMLDialogElement | null>(null);
 
   // Smooth View Transitions for workspace switching
@@ -1880,56 +1890,72 @@ export default function App() {
         {/* Right Main Column with Top Header, Scrollable Content, and Bottom Status Bar */}
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#FAF9F5] dark:bg-[#141413]">
           {/* Top Header */}
-          <Navbar
-            activeTabLabel={
-              {
-                canvas: 'Canvas LMS',
-                radar: 'Daily Schedule',
-                tracker: 'Assignment Tracker',
-                gmail: 'Gmail AI Scanner',
-                drive: 'Google Drive',
-                classroom: 'Google Classroom',
-                moodle: 'Moodle LMS',
-                notebooklm: 'Google NotebookLM',
-                flashcards: 'Quizlet & Anki Flashcards',
-                quizlet: 'Quizlet & Anki Flashcards',
-                anki: 'Quizlet & Anki Flashcards',
-                github: 'GitHub Code Hub',
-                overleaf: 'Overleaf LaTeX Studio',
-                'google-scholar': 'Google Scholar Citations',
-                scholar: 'Google Scholar Citations',
-                zotero: 'Google Scholar Citations',
-                discord: 'Discord & Slack Hub',
-                slack: 'Discord & Slack Hub',
-                canva: 'Canva',
-                'desmos-graphing': 'Desmos Graphing',
-                'desmos-scientific': 'Desmos Scientific',
-                geogebra: 'GeoGebra Math Suite',
-                phet: 'PhET Simulations',
-                'scribble-latex': 'Photo Math OCR',
-                'wolfram-symbolab': 'Wolfram Alpha & Symbolab',
-                wolfram: 'Wolfram Alpha & Symbolab',
-                excalidraw: 'Excalidraw Whiteboard',
-                mermaid: 'Mermaid Flowcharts',
-                viva: 'Oral Exam Practice',
-                pomodoro: 'Focus Station',
-                'notes-markdown': 'Markdown Notes',
-                rubric: 'Essay Rubric Checker',
-                feynman: 'Feynman Concept Explainer',
-                splitscreen: 'Dual Split Screen',
-                dashboard: 'Academic Dashboard',
-              }[activeTab] || 'Workspace'
-            }
-            onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-            onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
-            notifications={notifications}
-            isAiChatOpen={aiChatOpen}
-            zenFocusMode={zenFocusMode}
-            onToggleZenFocus={() => setZenFocusMode((prev) => !prev)}
-            onOpenGeminiSettings={() => setAccountSettingsOpen(true)}
-            onRefreshAll={handleRefreshAll}
-            isRefreshing={isRefreshingAll}
-          />
+          {!isNavbarHidden && (
+            <Navbar
+              activeTabLabel={
+                {
+                  canvas: 'Canvas LMS',
+                  radar: 'Daily Schedule',
+                  tracker: 'Assignment Tracker',
+                  gmail: 'Gmail AI Scanner',
+                  drive: 'Google Drive',
+                  classroom: 'Google Classroom',
+                  moodle: 'Moodle LMS',
+                  notebooklm: 'Google NotebookLM',
+                  flashcards: 'Quizlet & Anki Flashcards',
+                  quizlet: 'Quizlet & Anki Flashcards',
+                  anki: 'Quizlet & Anki Flashcards',
+                  github: 'GitHub Code Hub',
+                  overleaf: 'Overleaf LaTeX Studio',
+                  'google-scholar': 'Google Scholar Citations',
+                  scholar: 'Google Scholar Citations',
+                  zotero: 'Google Scholar Citations',
+                  discord: 'Discord & Slack Hub',
+                  slack: 'Discord & Slack Hub',
+                  canva: 'Canva',
+                  'desmos-graphing': 'Desmos Graphing',
+                  'desmos-scientific': 'Desmos Scientific',
+                  geogebra: 'GeoGebra Math Suite',
+                  phet: 'PhET Simulations',
+                  'scribble-latex': 'Photo Math OCR',
+                  'wolfram-symbolab': 'Wolfram Alpha & Symbolab',
+                  wolfram: 'Wolfram Alpha & Symbolab',
+                  excalidraw: 'Excalidraw Whiteboard',
+                  mermaid: 'Mermaid Flowcharts',
+                  viva: 'Oral Exam Practice',
+                  pomodoro: 'Focus Station',
+                  'notes-markdown': 'Markdown Notes',
+                  rubric: 'Essay Rubric Checker',
+                  feynman: 'Feynman Concept Explainer',
+                  splitscreen: 'Dual Split Screen',
+                  dashboard: 'Academic Dashboard',
+                }[activeTab] || 'Workspace'
+              }
+              onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+              onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
+              notifications={notifications}
+              isAiChatOpen={aiChatOpen}
+              zenFocusMode={zenFocusMode}
+              onToggleZenFocus={() => setZenFocusMode((prev) => !prev)}
+              onOpenGeminiSettings={() => setAccountSettingsOpen(true)}
+              onRefreshAll={handleRefreshAll}
+              isRefreshing={isRefreshingAll}
+              onToggleCollapseBar={() => setIsNavbarHidden(true)}
+            />
+          )}
+
+          {/* Floating Minimal Restore Pill (When Top Bar is Collapsed) */}
+          {isNavbarHidden && !zenFocusMode && (
+            <div className="absolute top-3 right-4 z-40">
+              <button
+                onClick={() => setIsNavbarHidden(false)}
+                className="px-2.5 py-1 rounded-xl bg-white/90 dark:bg-[#1A1917]/90 hover:bg-white dark:hover:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs text-xs font-bold text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-all flex items-center gap-1.5 cursor-pointer backdrop-blur-xs"
+                title="Show Top Navigation Bar"
+              >
+                <span>≡ Menu</span>
+              </button>
+            </div>
+          )}
 
           {/* Zen Focus Mode Tranquil Banner */}
           {zenFocusMode && (
@@ -2156,15 +2182,55 @@ export default function App() {
                   <CanvaStudioTab />
                 )}
 
-                {(activeTab === 'desmos-graphing' || activeTab === 'desmos-scientific' || activeTab === 'geogebra' || activeTab === 'phet' || activeTab === 'scribble-latex' || activeTab === 'wolfram' || activeTab === 'wolfram-symbolab' || activeTab === 'stem') && (
+                {activeTab === 'desmos-graphing' && (
+                  <DesmosWorkspace mode="graphing" />
+                )}
+
+                {activeTab === 'desmos-scientific' && (
+                  <DesmosWorkspace mode="scientific" />
+                )}
+
+                {activeTab === 'geogebra' && (
+                  <GeoGebraWorkspace />
+                )}
+
+                {activeTab === 'phet' && (
+                  <PhETWorkspace />
+                )}
+
+                {activeTab === 'excalidraw' && (
+                  <ExcalidrawWorkspace />
+                )}
+
+                {activeTab === 'mermaid' && (
+                  <MermaidWorkspace />
+                )}
+
+                {(activeTab === 'wolfram' || activeTab === 'wolfram-symbolab') && (
+                  <WolframWorkspace />
+                )}
+
+                {activeTab === 'scribble-latex' && (
+                  <PhotoMathWorkspace />
+                )}
+
+                {activeTab === 'rubric' && (
+                  <RubricCheckerWorkspace />
+                )}
+
+                {activeTab === 'feynman' && (
+                  <FeynmanWorkspace />
+                )}
+
+                {activeTab === 'stem' && (
                   <StemLabWorkspace />
                 )}
 
-                {(activeTab === 'excalidraw' || activeTab === 'mermaid' || activeTab === 'creation') && (
+                {activeTab === 'creation' && (
                   <CreationStudioWorkspace />
                 )}
 
-                {(activeTab === 'viva' || activeTab === 'pomodoro' || activeTab === 'retention') && (
+                {(activeTab === 'pomodoro' || activeTab === 'viva' || activeTab === 'retention') && (
                   <RetentionVaultWorkspace
                     googleToken={getStoredGoogleToken() || undefined}
                     isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
@@ -2172,7 +2238,7 @@ export default function App() {
                   />
                 )}
 
-                {(activeTab === 'notes-markdown' || activeTab === 'rubric' || activeTab === 'feynman' || activeTab === 'documents') && (
+                {(activeTab === 'notes-markdown' || activeTab === 'documents') && (
                   <DocumentHubWorkspace
                     recentFiles={recentFiles}
                     isLoadingFiles={isLoadingFiles}
