@@ -53,7 +53,21 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
 
   const filteredAlerts = useMemo(() => {
     return emailAlerts.filter((alert) => {
-      if (activeCategory !== 'ALL' && alert.category !== activeCategory) return false;
+      if (activeCategory !== 'ALL') {
+        if (activeCategory === 'PROMOTIONS') {
+          const isPromo =
+            alert.category === 'PROMOTION' ||
+            alert.category === 'SPAM' ||
+            alert.subject.toLowerCase().includes('newsletter') ||
+            alert.subject.toLowerCase().includes('event') ||
+            alert.subject.toLowerCase().includes('invite') ||
+            alert.subject.toLowerCase().includes('promotion') ||
+            alert.sender.toLowerCase().includes('noreply');
+          if (!isPromo) return false;
+        } else if (alert.category !== activeCategory) {
+          return false;
+        }
+      }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchSubject = alert.subject.toLowerCase().includes(q);
@@ -87,7 +101,7 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
         
         {/* Category Filter Pills */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          {['ALL', 'ASSIGNMENT', 'EXAM', 'ANNOUNCEMENT', 'GENERAL'].map((cat) => (
+          {['ALL', 'ASSIGNMENT', 'EXAM', 'ANNOUNCEMENT', 'PROMOTIONS', 'GENERAL'].map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
@@ -97,7 +111,11 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
                   : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27]'
               }`}
             >
-              {cat === 'ALL' ? 'All Mails' : cat.charAt(0) + cat.slice(1).toLowerCase()}
+              {cat === 'ALL'
+                ? 'All Mails'
+                : cat === 'PROMOTIONS'
+                ? 'Promotions & Spam'
+                : cat.charAt(0) + cat.slice(1).toLowerCase()}
             </button>
           ))}
         </div>

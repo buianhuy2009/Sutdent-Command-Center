@@ -31,6 +31,10 @@ import { StemLabWorkspace } from './components/workspaces/StemLabWorkspace';
 import { CreationStudioWorkspace } from './components/workspaces/CreationStudioWorkspace';
 import { RetentionVaultWorkspace } from './components/workspaces/RetentionVaultWorkspace';
 import { DocumentHubWorkspace } from './components/workspaces/DocumentHubWorkspace';
+import { GitHubWorkspace } from './components/workspaces/GitHubWorkspace';
+import { OverleafWorkspace } from './components/workspaces/OverleafWorkspace';
+import { GoogleScholarWorkspace } from './components/workspaces/GoogleScholarWorkspace';
+import { DiscordSlackWorkspace } from './components/workspaces/DiscordSlackWorkspace';
 import { SplitScreenStudio } from './components/SplitScreenStudio';
 import { DailyRadarTab } from './components/DailyRadarTab';
 import { GmailRadarTab } from './components/GmailRadarTab';
@@ -1864,10 +1868,10 @@ export default function App() {
               pinnedAppIds={pinnedAppIds}
               onUnpinApp={handleUnpinApp}
               badges={{
-                canvas: canvasUnfinishedCount,
-                schedule: calendarEvents.length,
-                tracker: pendingAssignmentCount,
-                gmail: urgentEmailCount,
+                canvas: clearedTabBadges.has('canvas') || activeTab === 'canvas' ? 0 : canvasUnfinishedCount,
+                schedule: clearedTabBadges.has('radar') || activeTab === 'radar' ? 0 : calendarEvents.length,
+                tracker: clearedTabBadges.has('tracker') || activeTab === 'tracker' ? 0 : pendingAssignmentCount,
+                gmail: clearedTabBadges.has('gmail') || activeTab === 'gmail' ? 0 : urgentEmailCount,
               }}
             />
           </div>
@@ -1886,21 +1890,32 @@ export default function App() {
                 drive: 'Google Drive',
                 classroom: 'Google Classroom',
                 moodle: 'Moodle LMS',
-                notebooklm: 'NotebookLM AI Studio',
-                flashcards: 'Flashcard Studio (SM-2)',
-                canva: 'Canva Design Hub',
+                notebooklm: 'Google NotebookLM',
+                flashcards: 'Quizlet & Anki Flashcards',
+                quizlet: 'Quizlet & Anki Flashcards',
+                anki: 'Quizlet & Anki Flashcards',
+                github: 'GitHub Code Hub',
+                overleaf: 'Overleaf LaTeX Studio',
+                'google-scholar': 'Google Scholar Citations',
+                scholar: 'Google Scholar Citations',
+                zotero: 'Google Scholar Citations',
+                discord: 'Discord & Slack Hub',
+                slack: 'Discord & Slack Hub',
+                canva: 'Canva',
                 'desmos-graphing': 'Desmos Graphing',
                 'desmos-scientific': 'Desmos Scientific',
                 geogebra: 'GeoGebra Math Suite',
-                phet: 'PhET Interactive Simulations',
+                phet: 'PhET Simulations',
                 'scribble-latex': 'Photo Math OCR',
+                'wolfram-symbolab': 'Wolfram Alpha & Symbolab',
+                wolfram: 'Wolfram Alpha & Symbolab',
                 excalidraw: 'Excalidraw Whiteboard',
-                mermaid: 'Mermaid Diagrams',
-                viva: 'Oral Exam Simulator',
+                mermaid: 'Mermaid Flowcharts',
+                viva: 'Oral Exam Practice',
                 pomodoro: 'Focus Station',
                 'notes-markdown': 'Markdown Notes',
-                rubric: 'Socratic Rubric Checker',
-                feynman: 'Feynman Technique Explainer',
+                rubric: 'Essay Rubric Checker',
+                feynman: 'Feynman Concept Explainer',
                 splitscreen: 'Dual Split Screen',
                 dashboard: 'Academic Dashboard',
               }[activeTab] || 'Workspace'
@@ -2117,15 +2132,31 @@ export default function App() {
                   />
                 )}
 
-                {activeTab === 'flashcards' && (
+                {(activeTab === 'flashcards' || activeTab === 'quizlet' || activeTab === 'anki') && (
                   <FlashcardStudioTab />
+                )}
+
+                {activeTab === 'github' && (
+                  <GitHubWorkspace />
+                )}
+
+                {activeTab === 'overleaf' && (
+                  <OverleafWorkspace />
+                )}
+
+                {(activeTab === 'google-scholar' || activeTab === 'scholar' || activeTab === 'zotero') && (
+                  <GoogleScholarWorkspace />
+                )}
+
+                {(activeTab === 'discord' || activeTab === 'slack') && (
+                  <DiscordSlackWorkspace />
                 )}
 
                 {activeTab === 'canva' && (
                   <CanvaStudioTab />
                 )}
 
-                {(activeTab === 'desmos-graphing' || activeTab === 'desmos-scientific' || activeTab === 'geogebra' || activeTab === 'phet' || activeTab === 'scribble-latex' || activeTab === 'stem') && (
+                {(activeTab === 'desmos-graphing' || activeTab === 'desmos-scientific' || activeTab === 'geogebra' || activeTab === 'phet' || activeTab === 'scribble-latex' || activeTab === 'wolfram' || activeTab === 'wolfram-symbolab' || activeTab === 'stem') && (
                   <StemLabWorkspace />
                 )}
 
