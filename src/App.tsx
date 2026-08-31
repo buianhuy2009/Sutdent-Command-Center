@@ -64,6 +64,8 @@ import { GoogleClassroomPanel } from './components/GoogleClassroomPanel';
 import { MoodlePanel } from './components/MoodlePanel';
 import { AppStoreModal, loadPinnedAppIds, savePinnedAppIds } from './components/AppStoreModal';
 import { ChangelogModal, CURRENT_VERSION } from './components/ChangelogModal';
+import { StudyPlanGeneratorModal } from './components/StudyPlanGeneratorModal';
+import { InteractiveIntroModal } from './components/InteractiveIntroModal';
 import { LandingPage } from './components/LandingPage';
 import { QuickDraftModal } from './components/QuickDraftModal';
 import { ScheduleStudyModal } from './components/ScheduleStudyModal';
@@ -282,10 +284,17 @@ export default function App() {
   const [isPortfolioExportOpen, setIsPortfolioExportOpen] = useState(false);
   const [isMorningCheckInOpen, setIsMorningCheckInOpen] = useState(false);
   const [isChangelogOpen, setIsChangelogOpen] = useState(false);
+  const [isStudyPlanOpen, setIsStudyPlanOpen] = useState(false);
+  const [isIntroTourOpen, setIsIntroTourOpen] = useState(false);
   const onboardingDialogRef = useRef<HTMLDialogElement | null>(null);
 
   useEffect(() => {
     try {
+      const tourSeen = localStorage.getItem('scc_tour_seen_v2');
+      if (tourSeen !== 'true') {
+        setIsIntroTourOpen(true);
+      }
+
       const todayStr = new Date().toISOString().split('T')[0];
       const lastCheckIn = localStorage.getItem('scc_last_morning_checkin');
       if (lastCheckIn !== todayStr) {
@@ -2348,6 +2357,7 @@ export default function App() {
                     user={user}
                     isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
                     onConnectGoogle={() => handleGoogleSignIn(true)}
+                    onOpenStudyPlan={() => setIsStudyPlanOpen(true)}
                   />
                 )}
               </div>
@@ -2369,9 +2379,7 @@ export default function App() {
         onRefreshAll={handleRefreshAll}
         isRefreshing={isRefreshingAll}
         sheetUrl={masterSheetUrl}
-        onOpenTour={() => {
-          onboardingDialogRef.current?.showModal();
-        }}
+        onOpenTour={() => setIsIntroTourOpen(true)}
         onOpenOAuthGuide={() => setOauthGuideModalOpen(true)}
         onOpenDeploymentGuide={() => setDeploymentModalOpen(true)}
         onOpenChangelog={() => setIsChangelogOpen(true)}
@@ -2614,6 +2622,24 @@ export default function App() {
       <ChangelogModal
         isOpen={isChangelogOpen}
         onClose={() => setIsChangelogOpen(false)}
+      />
+
+      {/* AI Daily Study Plan Generator Modal */}
+      <StudyPlanGeneratorModal
+        isOpen={isStudyPlanOpen}
+        onClose={() => setIsStudyPlanOpen(false)}
+        assignments={assignments}
+        onAddStudyBlock={handleScheduleStudyBlock}
+        onStartFocusSession={(mins) => {
+          setActiveTab('pomodoro');
+          setZenFocusMode(true);
+        }}
+      />
+
+      {/* Interactive Step-by-Step Introduction Tour Modal */}
+      <InteractiveIntroModal
+        isOpen={isIntroTourOpen}
+        onClose={() => setIsIntroTourOpen(false)}
       />
 
       {/* Toast Notification Container */}

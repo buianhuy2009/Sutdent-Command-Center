@@ -1,0 +1,452 @@
+import React, { useState, useMemo } from 'react';
+import {
+  X,
+  Sparkles,
+  Calendar,
+  Clock,
+  CheckSquare,
+  AlertTriangle,
+  Play,
+  ArrowRight,
+  RefreshCw,
+  Copy,
+  Check,
+  Zap,
+  Coffee,
+  Brain,
+  Sliders,
+} from 'lucide-react';
+import { Assignment } from '../types';
+import { generateDailyStudyPlan } from '../services/gemini';
+
+export interface PlannedBlock {
+  timeRange: string;
+  assignmentTitle: string;
+  courseName: string;
+  objective: string;
+  isBreak: boolean;
+  intensity: 'HIGH' | 'MEDIUM' | 'LOW' | 'REST';
+}
+
+interface StudyPlanGeneratorModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  assignments: Assignment[];
+  onAddStudyBlock?: (eventData: { title: string; description: string; startDateTime: string; endDateTime: string; location?: string; }) => void;
+  onStartFocusSession?: (durationMinutes: number) => void;
+}
+
+export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = ({
+  isOpen,
+  onClose,
+  assignments,
+  onStartFocusSession,
+}) => {
+  // Input settings
+  const [selectedAssignmentIds, setSelectedAssignmentIds] = useState<string[]>(() => {
+    return assignments.filter((a) => a.status !== 'Done').slice(0, 5).map((a) => a.id);
+  });
+
+  const [startTime, setStartTime] = useState<string>('16:00');
+  const [targetHours, setTargetHours] = useState<number>(4);
+  const [studyPacing, setStudyPacing] = useState<'pomo' | 'deep' | 'flow'>('deep');
+  const [energyProfile, setEnergyProfile] = useState<'heavy_first' | 'steady' | 'light_warmup'>('heavy_first');
+
+  // Generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [planBlocks, setPlanBlocks] = useState<PlannedBlock[]>([]);
+  const [planSummary, setPlanSummary] = useState<string>('');
+  const [copied, setCopied] = useState(false);
+
+  const pendingAssignments = useMemo(() => {
+    return assignments.filter((a) => a.status !== 'Done');
+  }, [assignments]);
+
+  if (!isOpen) return null;
+
+  const toggleAssignment = (id: string) => {
+    setSelectedAssignmentIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleGeneratePlan = async () => {
+    setIsGenerating(true);
+    setPlanBlocks([]);
+    setPlanSummary('');
+
+    const chosenAssignments = assignments.filter((a) => selectedAssignmentIds.includes(a.id));
+
+    try {
+      const taskDescriptions = chosenAssignments.map(
+        (a) => `${a.assignmentName} (${a.subject || 'Course'}) - Priority: ${a.priority}, Due: ${a.dueDate || 'Soon'}`
+      );
+
+      const energyVal = energyProfile === 'heavy_first' ? 'high' : energyProfile === 'steady' ? 'medium' : 'low';
+      const result = await generateDailyStudyPlan({
+        tasks: taskDescriptions.length > 0 ? taskDescriptions : ['General Review and Coursework'],
+        energy: energyVal,
+        hoursAvailable: targetHours,
+      });
+
+      if (result && result.blocks && Array.isArray(result.blocks)) {
+        const blocks: PlannedBlock[] = result.blocks.map((b) => ({
+          timeRange: b.time || '09:00 - 09:50',
+          assignmentTitle: b.task || 'Focus Block',
+          courseName: b.strategy || 'Study Block',
+          objective: b.strategy || 'Complete key problem sets and review objectives.',
+          isBreak: b.task.toLowerCase().includes('break') || b.task.toLowerCase().includes('rest'),
+          intensity: b.task.toLowerCase().includes('break') ? 'REST' : 'HIGH',
+        }));
+        setPlanBlocks(blocks);
+        setPlanSummary(result.summary || 'Prioritised plan generated based on your deadlines.');
+      } else {
+        throw new Error('Invalid plan format');
+      }
+    } catch (e) {
+      console.warn('AI study plan fallback:', e);
+      // Structured deterministic fallback
+      const fallbackBlocks: PlannedBlock[] = [];
+      const [startHourStr, startMinStr] = startTime.split(':');
+      let currentHour = parseInt(startHourStr, 10) || 16;
+      let currentMin = parseInt(startMinStr, 10) || 0;
+
+      const blockMins = studyPacing === 'pomo' ? 25 : studyPacing === 'deep' ? 50 : 75;
+      const breakMins = studyPacing === 'pomo' ? 5 : studyPacing === 'deep' ? 10 : 15;
+
+      const itemsToSchedule = chosenAssignments.length > 0 ? chosenAssignments : pendingAssignments.slice(0, 3);
+
+      itemsToSchedule.forEach((item) => {
+        const startFormatted = `${String(currentHour).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`;
+        let endTotalMin = currentHour * 60 + currentMin + blockMins;
+        const endHour = Math.floor(endTotalMin / 60) % 24;
+        const endMin = endTotalMin % 60;
+        const endFormatted = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
+
+        fallbackBlocks.push({
+          timeRange: `${startFormatted} - ${endFormatted}`,
+          assignmentTitle: item.assignmentName,
+          courseName: item.subject || 'Coursework',
+          objective: `Deep focus on key problem sets and thesis outline for ${item.assignmentName}.`,
+          isBreak: false,
+          intensity: item.priority === 'High' ? 'HIGH' : 'MEDIUM',
+        });
+
+        // Break
+        const breakStartTotal = endTotalMin;
+        const breakEndTotal = breakStartTotal + breakMins;
+        const bStartHour = Math.floor(breakStartTotal / 60) % 24;
+        const bStartMin = breakStartTotal % 60;
+        const bEndHour = Math.floor(breakEndTotal / 60) % 24;
+        const bEndMin = breakEndTotal % 60;
+
+        fallbackBlocks.push({
+          timeRange: `${String(bStartHour).padStart(2, '0')}:${String(bStartMin).padStart(2, '0')} - ${String(bEndHour).padStart(2, '0')}:${String(bEndMin).padStart(2, '0')}`,
+          assignmentTitle: 'Rest & Mental Reset',
+          courseName: 'Break',
+          objective: 'Hydrate, step away from screens, and rest your eyes.',
+          isBreak: true,
+          intensity: 'REST',
+        });
+
+        currentHour = Math.floor(breakEndTotal / 60) % 24;
+        currentMin = breakEndTotal % 60;
+      });
+
+      setPlanBlocks(fallbackBlocks);
+      setPlanSummary('Prioritised schedule structured around your most urgent deliverables.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleCopyPlan = () => {
+    const text = planBlocks
+      .map((b) => `${b.timeRange} | ${b.isBreak ? 'REST' : b.courseName}: ${b.assignmentTitle} - ${b.objective}`)
+      .join('\n');
+    navigator.clipboard.writeText(`DAILY STUDY PLAN\n${planSummary}\n\n${text}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 select-none animate-in fade-in duration-200">
+      <div className="bg-[#FAF9F5] dark:bg-[#1A1917] w-full max-w-4xl h-[90vh] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] flex flex-col overflow-hidden shadow-2xl">
+        
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between bg-white dark:bg-[#1A1917] shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#D97757] text-white flex items-center justify-center shadow-xs">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-extrabold text-[#141413] dark:text-[#FAF9F5]">
+                AI Daily Study Plan Generator
+              </h2>
+              <p className="text-xs text-[#8C897F]">
+                Input your deadlines and let AI construct a prioritised hour-by-hour plan
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] hover:border-[#D97757] transition-all cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* 2-Column Main Workspace */}
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
+          
+          {/* Left Column: Constraints & Assignment Picker */}
+          <div className="w-full md:w-80 border-r border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#141413] p-5 overflow-y-auto space-y-6 shrink-0">
+            
+            {/* Start Time & Target Duration */}
+            <div className="space-y-3">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F] block">
+                Session Timing
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-3 bg-white dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-1">
+                  <span className="text-[10px] text-[#8C897F] font-bold block">Start Time</span>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full bg-transparent text-xs font-mono font-bold text-[#141413] dark:text-[#FAF9F5] focus:outline-none"
+                  />
+                </div>
+
+                <div className="p-3 bg-white dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-1">
+                  <span className="text-[10px] text-[#8C897F] font-bold block">Total Hours</span>
+                  <select
+                    value={targetHours}
+                    onChange={(e) => setTargetHours(Number(e.target.value))}
+                    className="w-full bg-transparent text-xs font-bold text-[#141413] dark:text-[#FAF9F5] focus:outline-none cursor-pointer"
+                  >
+                    <option value={2}>2 Hours</option>
+                    <option value={3}>3 Hours</option>
+                    <option value={4}>4 Hours</option>
+                    <option value={5}>5 Hours</option>
+                    <option value={6}>6 Hours</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Pacing & Strategy */}
+            <div className="space-y-3">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F] block">
+                Pacing &amp; Rhythm
+              </label>
+              <div className="grid grid-cols-3 gap-1.5 bg-[#EFECE2]/50 dark:bg-[#252422]/50 p-1.5 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
+                {[
+                  { id: 'pomo', label: '25 / 5m', desc: 'Sprint' },
+                  { id: 'deep', label: '50 / 10m', desc: 'Deep' },
+                  { id: 'flow', label: '90 / 15m', desc: 'Flow' },
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setStudyPacing(p.id as any)}
+                    className={`py-1.5 px-2 rounded-lg text-center transition-all cursor-pointer ${
+                      studyPacing === p.id
+                        ? 'bg-[#D97757] text-white shadow-xs'
+                        : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#141413]'
+                    }`}
+                  >
+                    <div className="text-xs font-bold">{p.label}</div>
+                    <div className="text-[9px] opacity-80">{p.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Select Target Deadlines */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F]">
+                  Target Deadlines ({selectedAssignmentIds.length})
+                </label>
+              </div>
+
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {pendingAssignments.length === 0 ? (
+                  <p className="text-xs text-[#8C897F] py-2">No pending assignments loaded.</p>
+                ) : (
+                  pendingAssignments.map((a) => {
+                    const isSelected = selectedAssignmentIds.includes(a.id);
+                    return (
+                      <div
+                        key={a.id}
+                        onClick={() => toggleAssignment(a.id)}
+                        className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 text-xs ${
+                          isSelected
+                            ? 'bg-white dark:bg-[#1F1E1B] border-[#D97757] shadow-xs'
+                            : 'bg-white/60 dark:bg-[#1F1E1B]/60 border-[#DFDACB] dark:border-[#2C2B27] opacity-60'
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-[#141413] dark:text-[#FAF9F5] truncate">
+                            {a.assignmentName}
+                          </p>
+                          <span className="text-[10px] text-[#8C897F]">
+                            {a.subject || 'Course'} • Due {a.dueDate || 'Soon'}
+                          </span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          className="w-3.5 h-3.5 rounded text-[#D97757] focus:ring-[#D97757] pointer-events-none"
+                        />
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Generate Button */}
+            <button
+              onClick={handleGeneratePlan}
+              disabled={isGenerating || selectedAssignmentIds.length === 0}
+              className="w-full py-3 bg-[#D97757] hover:bg-[#C86646] text-white rounded-2xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <Sparkles className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
+              <span>{isGenerating ? 'Synthesizing Plan...' : 'Generate Hour-by-Hour Plan'}</span>
+            </button>
+          </div>
+
+          {/* Right Column: Generated Plan View */}
+          <div className="flex-1 bg-white dark:bg-[#1A1917] p-6 sm:p-8 overflow-y-auto flex flex-col justify-between space-y-6">
+            
+            {planBlocks.length === 0 ? (
+              <div className="my-auto text-center space-y-3 py-16">
+                <div className="w-12 h-12 rounded-3xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-center mx-auto text-[#D97757]">
+                  <Clock className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">
+                  Ready to optimize today's study blocks
+                </h3>
+                <p className="text-xs text-[#8C897F] max-w-sm mx-auto leading-relaxed">
+                  Select your available timing and target deadlines on the left, then click Generate to get an hour-by-hour breakdown.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                
+                {/* Summary Banner */}
+                <div className="p-4 rounded-2xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#D97757] flex items-center gap-1">
+                      <Brain className="w-3.5 h-3.5" />
+                      <span>Optimized Cognitive Flow</span>
+                    </span>
+                    <p className="text-xs text-[#141413] dark:text-[#FAF9F5] font-medium leading-relaxed">
+                      {planSummary}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleCopyPlan}
+                    className="p-2 rounded-xl bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors cursor-pointer shrink-0"
+                    title="Copy Schedule"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* Timeline Blocks */}
+                <div className="space-y-3">
+                  {planBlocks.map((block, idx) => (
+                    <div
+                      key={idx}
+                      className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                        block.isBreak
+                          ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-300'
+                          : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] shrink-0">
+                          {block.timeRange}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                              {block.assignmentTitle}
+                            </h4>
+                            <span className="text-[10px] font-semibold text-[#8C897F]">
+                              ({block.courseName})
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#5C5A54] dark:text-[#B5B2A8] mt-0.5">
+                            {block.objective}
+                          </p>
+                        </div>
+                      </div>
+
+                      {block.isBreak ? (
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 shrink-0">
+                          <Coffee className="w-3.5 h-3.5" />
+                          <span>Rest</span>
+                        </div>
+                      ) : (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                          block.intensity === 'HIGH'
+                            ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
+                            : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
+                        }`}>
+                          {block.intensity} FOCUS
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+            )}
+
+            {/* Bottom Actions Bar */}
+            {planBlocks.length > 0 && (
+              <div className="pt-4 border-t border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between gap-3 shrink-0">
+                <span className="text-xs text-[#8C897F]">
+                  {planBlocks.filter((b) => !b.isBreak).length} Focus Blocks • {planBlocks.filter((b) => b.isBreak).length} Rest Breaks
+                </span>
+
+                <div className="flex items-center gap-2">
+                  {onStartFocusSession && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onStartFocusSession(studyPacing === 'pomo' ? 25 : 50);
+                      }}
+                      className="px-4 py-2 bg-[#141413] dark:bg-[#FAF9F5] text-white dark:text-[#141413] rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>Start 1st Block</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={onClose}
+                    className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1"
+                  >
+                    <span>Done</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  );
+};

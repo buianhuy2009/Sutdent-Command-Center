@@ -177,25 +177,37 @@ export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
 
       {/* Info / Enablement Banner if needed */}
       {error && (
-        <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-start justify-between gap-3 text-xs text-amber-900 dark:text-amber-200">
-          <div className="flex items-start gap-2">
+        <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200">
+          <div className="flex items-start gap-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold">Google Classroom Connection Note</p>
-              <p className="text-[11px] mt-0.5">
-                {error} Ensure &quot;Google Classroom API&quot; is enabled on your Google Cloud project console.
+              <p className="font-bold">Google Classroom Access Required</p>
+              <p className="text-[11px] mt-0.5 text-amber-800 dark:text-amber-300">
+                {error.includes('PERMISSION') || error.includes('403') || error.includes('401')
+                  ? 'Your current Google login needs the new Classroom permissions, or the Classroom API needs to be enabled in your Google Cloud project.'
+                  : error}
               </p>
             </div>
           </div>
-          <a
-            href="https://console.cloud.google.com/apis/library/classroom.googleapis.com"
-            target="_blank"
-            rel="noreferrer"
-            className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold shrink-0 text-xs flex items-center gap-1"
-          >
-            <span>Enable in Cloud</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
+          <div className="flex items-center gap-2 shrink-0">
+            {onConnectGoogle && (
+              <button
+                onClick={onConnectGoogle}
+                className="px-3 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl font-bold text-xs shadow-xs transition-colors cursor-pointer"
+              >
+                Re-connect Google
+              </button>
+            )}
+            <a
+              href="https://console.cloud.google.com/apis/library/classroom.googleapis.com"
+              target="_blank"
+              rel="noreferrer"
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs flex items-center gap-1 transition-colors"
+            >
+              <span>Cloud API</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
         </div>
       )}
 

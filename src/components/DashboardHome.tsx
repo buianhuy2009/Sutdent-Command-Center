@@ -35,6 +35,7 @@ interface DashboardHomeProps {
   user?: User | null;
   isGoogleConnected?: boolean;
   onConnectGoogle?: () => void;
+  onOpenStudyPlan?: () => void;
 }
 
 type VibeType = 'focus' | 'calm' | 'creative' | 'recharge';
@@ -45,6 +46,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   user,
   isGoogleConnected = false,
   onConnectGoogle,
+  onOpenStudyPlan,
 }) => {
   // Live Clock
   const [currentTime, setCurrentTime] = useState<string>(() => {
@@ -438,15 +440,25 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
         </div>
 
-        {/* Travel Button */}
-        <div>
+        {/* Action Buttons Row */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
             onClick={() => onNavigateWorkspace('canvas')}
-            className={`px-10 py-4 bg-[#D97757] hover:bg-[#C86646] text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-[#D97757]/15 hover:shadow-[#D97757]/30 hover:scale-[1.02] flex items-center gap-2.5 mx-auto cursor-pointer group`}
+            className={`px-8 py-3.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-[#D97757]/15 hover:shadow-[#D97757]/30 hover:scale-[1.02] flex items-center gap-2 cursor-pointer group`}
           >
             <span>Enter LMS Workspace</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </button>
+
+          {onOpenStudyPlan && (
+            <button
+              onClick={onOpenStudyPlan}
+              className="px-6 py-3.5 bg-white dark:bg-[#1F1E1B] hover:bg-[#FAF9F5] dark:hover:bg-[#252422] text-[#141413] dark:text-[#FAF9F5] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
+            >
+              <Sparkles className="w-4 h-4 text-[#D97757]" />
+              <span>AI Daily Study Plan</span>
+            </button>
+          )}
         </div>
 
         {/* Serif Quote Block */}
