@@ -322,6 +322,30 @@ export const APP_CATALOG: AppStoreItem[] = [
     developer: 'StudentOS Cognitive Labs',
     rating: 4.9,
   },
+  {
+    id: 'pdf-reader',
+    name: 'PDF Reader & Annotator',
+    category: 'Writing & Research',
+    description: 'Open local PDFs, highlight pages, take study notes, and export markdown summaries.',
+    longOverview: 'View your course slides, syllabus, and textbook PDFs directly inside StudentOS. Add page-referenced study notes and export clean Markdown summaries with zero server uploads.',
+    features: ['In-browser native PDF viewer', 'Page-referenced note bookmarks', '1-click Markdown (.md) note export', 'Pop-out reading window'],
+    badge: 'Reader',
+    developer: 'StudentOS Document Systems',
+    rating: 4.9,
+    highlightCategory: 'Featured',
+  },
+  {
+    id: 'quiz-generator',
+    name: 'AI Practice Quiz Generator',
+    category: 'Study & Retention',
+    description: 'Generate active retrieval practice quizzes with explanations from notes.',
+    longOverview: 'Paste lecture notes, study outlines, or textbook excerpts to instantly generate multiple choice quizzes with detailed conceptual explanations for each answer choice.',
+    features: ['Instant active retrieval question generation', 'Interactive test taking with instant feedback', 'Detailed rationale explanations per question', 'Score tracking and mastery review'],
+    badge: 'Quizzes',
+    developer: 'StudentOS Cognitive Labs',
+    rating: 5.0,
+    highlightCategory: 'Featured',
+  },
 ];
 
 const CATEGORIES = [

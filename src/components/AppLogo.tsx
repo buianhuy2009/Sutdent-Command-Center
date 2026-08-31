@@ -244,6 +244,20 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
         </div>
       );
 
+    case 'pdf-reader':
+      return (
+        <div className={`${sizeClasses} bg-gradient-to-br from-rose-600 to-red-700 text-white flex items-center justify-center font-bold shadow-md shadow-rose-600/20 shrink-0 ${className}`}>
+          <FileText className={iconSizes} />
+        </div>
+      );
+
+    case 'quiz-generator':
+      return (
+        <div className={`${sizeClasses} bg-gradient-to-br from-purple-600 to-indigo-700 text-white flex items-center justify-center font-bold shadow-md shadow-purple-600/20 shrink-0 ${className}`}>
+          <CheckSquare className={iconSizes} />
+        </div>
+      );
+
     case 'splitscreen':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-slate-600 to-zinc-700 text-white flex items-center justify-center font-bold shadow-md shadow-slate-600/20 shrink-0 ${className}`}>

@@ -40,6 +40,9 @@ import { WolframWorkspace } from './components/workspaces/WolframWorkspace';
 import { RubricCheckerWorkspace } from './components/workspaces/RubricCheckerWorkspace';
 import { FeynmanWorkspace } from './components/workspaces/FeynmanWorkspace';
 import { PhotoMathWorkspace } from './components/workspaces/PhotoMathWorkspace';
+import { PdfReaderWorkspace } from './components/workspaces/PdfReaderWorkspace';
+import { QuizGeneratorWorkspace } from './components/workspaces/QuizGeneratorWorkspace';
+import { PomodoroWorkspace } from './components/workspaces/PomodoroWorkspace';
 import { SplitScreenStudio } from './components/SplitScreenStudio';
 import { DailyRadarTab } from './components/DailyRadarTab';
 import { GmailRadarTab } from './components/GmailRadarTab';
@@ -1914,6 +1917,8 @@ export default function App() {
                   viva: 'Oral Exam Practice',
                   pomodoro: 'Focus Station',
                   'notes-markdown': 'Markdown Notes',
+                  'pdf-reader': 'PDF Reader & Annotator',
+                  'quiz-generator': 'AI Practice Quiz Generator',
                   rubric: 'Essay Rubric Checker',
                   feynman: 'Feynman Concept Explainer',
                   splitscreen: 'Dual Split Screen',
@@ -2195,6 +2200,18 @@ export default function App() {
                   <FeynmanWorkspace />
                 )}
 
+                {activeTab === 'pdf-reader' && (
+                  <PdfReaderWorkspace />
+                )}
+
+                {activeTab === 'quiz-generator' && (
+                  <QuizGeneratorWorkspace />
+                )}
+
+                {activeTab === 'pomodoro' && (
+                  <PomodoroWorkspace />
+                )}
+
                 {activeTab === 'stem' && (
                   <StemLabWorkspace />
                 )}
@@ -2203,7 +2220,7 @@ export default function App() {
                   <CreationStudioWorkspace />
                 )}
 
-                {(activeTab === 'pomodoro' || activeTab === 'viva' || activeTab === 'retention') && (
+                {(activeTab === 'viva' || activeTab === 'retention') && (
                   <RetentionVaultWorkspace
                     googleToken={getStoredGoogleToken() || undefined}
                     isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
