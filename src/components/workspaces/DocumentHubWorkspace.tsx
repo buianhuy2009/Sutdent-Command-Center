@@ -544,7 +544,7 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                       </div>
                       <p className="text-[#5C5A54] dark:text-[#B5B2A8]">{c.feedback}</p>
                       <p className="text-amber-700 dark:text-amber-300 pt-1 font-medium">
-                        💡 <strong>Suggestion:</strong> {c.suggestion}
+                        <strong>Suggestion:</strong> {c.suggestion}
                       </p>
                     </div>
                   ))}

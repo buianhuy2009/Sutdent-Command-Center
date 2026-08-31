@@ -160,7 +160,7 @@ export const MoodlePanel: React.FC<MoodlePanelProps> = ({ onSyncToSheet }) => {
                 className="w-full px-3 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
               />
               <p className="text-[11px] text-[#8C897F] mt-1">
-                Found on your school Moodle ➔ Calendar ➔ Export Calendar (select &quot;All events&quot; and &quot;Recent and next 60 days&quot;).
+                Found on your school Moodle -&gt; Calendar -&gt; Export Calendar (select &quot;All events&quot; and &quot;Recent and next 60 days&quot;).
               </p>
             </div>
 

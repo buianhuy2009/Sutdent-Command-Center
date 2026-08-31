@@ -51,7 +51,7 @@ export function getMockTodayEvents(): CalendarEvent[] {
     },
     {
       id: 'mock-cal-4',
-      summary: '🎯 Study Focus: Physics Lab 3 Analysis (AP Physics C)',
+      summary: 'Study Focus: Physics Lab 3 Analysis (AP Physics C)',
       start: {
         dateTime: new Date(year, month, day, 15, 30).toISOString(),
       },
@@ -115,7 +115,7 @@ export const MOCK_RAW_EMAILS: EmailMessage[] = [
     id: 'mock-email-spam-1',
     sender: 'Shopee Rewards & Deals',
     senderEmail: 'promotions@updates.shopee.vn',
-    subject: '🔥 [SIÊU SALE 9.9] Voucher 500K giảm 50% toàn sàn dành riêng cho bạn!',
+    subject: '[SIÊU SALE 9.9] Voucher 500K giảm 50% toàn sàn dành riêng cho bạn!',
     date: 'Hôm nay, 6:00 AM',
     snippet: 'Duy nhất hôm nay! Nhận ngay mã freeship 0Đ và voucher giảm giá đến 500k khi mua sắm đồ dùng học tập, balo công nghệ và laptop sinh viên. Bấm ngay để lưu mã trước khi hết lượt!',
   },
@@ -225,7 +225,7 @@ export const MOCK_EMAIL_ALERTS: EmailAlert[] = [
   {
     id: 'mock-email-spam-1',
     sender: 'Shopee Rewards & Deals',
-    subject: '🔥 [SIÊU SALE 9.9] Voucher 500K giảm 50% toàn sàn dành riêng cho bạn!',
+    subject: '[SIÊU SALE 9.9] Voucher 500K giảm 50% toàn sàn dành riêng cho bạn!',
     oneLineSummary: 'Email quảng cáo mã giảm giá 500K mua sắm thương mại điện tử.',
     urgency: 'INFO',
     category: 'SPAM',

@@ -567,7 +567,7 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
                       : 'bg-white dark:bg-[#1A1917] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#FAF9F5] dark:hover:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27]'
                   }`}
                 >
-                  {cat === 'Highlights' ? '✨ Highlights' : cat}
+                  {cat}
                 </button>
               ))}
             </div>

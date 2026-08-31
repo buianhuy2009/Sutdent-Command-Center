@@ -141,7 +141,7 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
         className="mt-1.5 p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-[11px] font-bold flex items-center gap-1.5 animate-in fade-in"
       >
         <IconComponent className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-        <span>⚡ {label}</span>
+        <span>{label}</span>
       </div>
     );
   };

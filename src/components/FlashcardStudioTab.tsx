@@ -412,7 +412,7 @@ Example format:
                   className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                 >
                   <Sparkles className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
-                  <span>{isGenerating ? 'Generating Cards...' : '⚡ Generate Deck'}</span>
+                  <span>{isGenerating ? 'Generating Cards...' : 'Generate Deck'}</span>
                 </button>
               </div>
             </form>

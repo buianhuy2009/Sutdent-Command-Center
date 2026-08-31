@@ -88,9 +88,9 @@ export const FeynmanWorkspace: React.FC = () => {
           {/* Level Switcher */}
           <div className="flex items-center gap-2 pb-4 border-b border-[#DFDACB] dark:border-[#2C2B27]">
             {[
-              { id: 'eli5', label: '👶 Simple (ELI5)' },
-              { id: 'hs', label: '🎒 High School' },
-              { id: 'uni', label: '🎓 University Rigor' },
+              { id: 'eli5', label: 'Simple (ELI5)' },
+              { id: 'hs', label: 'High School' },
+              { id: 'uni', label: 'University Rigor' },
             ].map((tier) => (
               <button
                 key={tier.id}

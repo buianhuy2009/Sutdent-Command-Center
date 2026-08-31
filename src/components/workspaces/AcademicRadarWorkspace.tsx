@@ -647,7 +647,7 @@ export const AcademicRadarWorkspace: React.FC<AcademicRadarWorkspaceProps> = ({
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
                 >
                   <Sparkles className={`w-3.5 h-3.5 ${isDeployingSemester ? 'animate-spin' : ''}`} />
-                  <span>{isDeployingSemester ? 'Deploying Semester...' : '🚀 Deploy Semester (1-Click)'}</span>
+                  <span>{isDeployingSemester ? 'Deploying Semester...' : 'Deploy Semester (1-Click)'}</span>
                 </button>
               ) : (
                 <div />

@@ -39,7 +39,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
     {
       role: 'assistant',
       content:
-        "👋 Hi! I'm your **Student Command Coach**. I have full context on your schedule, assignments, and scanned teacher emails. How can I help you optimize your study flow today?",
+        "Hi! I'm your **Student Command Coach**. I have full context on your schedule, assignments, and scanned teacher emails. How can I help you optimize your study flow today?",
     },
   ]);
   const [inputText, setInputText] = useState('');
@@ -84,7 +84,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
         {
           role: 'assistant',
           content:
-            "⚠️ Sorry, I encountered an issue connecting to Gemini. Please verify your GEMINI_API_KEY and try again.",
+            "Sorry, I encountered an issue connecting to Gemini. Please verify your GEMINI_API_KEY and try again.",
         },
       ]);
     } finally {

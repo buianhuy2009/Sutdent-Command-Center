@@ -531,7 +531,7 @@ export const StemLabWorkspace: React.FC = () => {
               className="px-5 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
             >
               <Sparkles className={`w-3.5 h-3.5 ${isConvertingScribble ? 'animate-spin' : ''}`} />
-              <span>{isConvertingScribble ? 'Analyzing Work...' : '🔍 Debug Derivation (Find Errors)'}</span>
+              <span>{isConvertingScribble ? 'Analyzing Work...' : 'Debug Derivation (Find Errors)'}</span>
             </button>
           </div>
 
@@ -544,11 +544,11 @@ export const StemLabWorkspace: React.FC = () => {
                 </span>
                 {mathDebugResult.hasError ? (
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-                    ⚠️ Algebra / Sign Discrepancy Found
+                    Algebra / Sign Discrepancy Found
                   </span>
                 ) : (
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                    ✓ All Steps Algebraically Sound
+                    All Steps Algebraically Sound
                   </span>
                 )}
               </div>
@@ -590,11 +590,11 @@ export const StemLabWorkspace: React.FC = () => {
               {mathDebugResult.hasError && (
                 <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-xs space-y-2">
                   <div className="font-bold text-amber-900 dark:text-amber-200">
-                    ⚠️ {mathDebugResult.errorDescription}
+                    {mathDebugResult.errorDescription}
                   </div>
                   {mathDebugResult.socraticHint && (
                     <div className="text-amber-800 dark:text-amber-300 leading-relaxed font-medium">
-                      💡 <strong>Socratic Hint:</strong> {mathDebugResult.socraticHint}
+                      <strong>Socratic Hint:</strong> {mathDebugResult.socraticHint}
                     </div>
                   )}
                 </div>

@@ -1950,7 +1950,7 @@ export default function App() {
           {zenFocusMode && (
             <div className="bg-[#FAF9F5] dark:bg-[#1A1917] border-b border-[#DFDACB] dark:border-[#2C2B27] px-4 sm:px-6 py-2.5 flex items-center justify-between shrink-0 animate-in fade-in duration-200">
               <div className="flex items-center gap-2.5">
-                <span className="text-base sm:text-lg">🧘</span>
+                <Sparkles className="w-4 h-4 text-[#D97757]" />
                 <div>
                   <h3 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] uppercase tracking-wider">
                     Zen Focus Mode
@@ -2006,7 +2006,7 @@ export default function App() {
                   className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs font-bold bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27] transition-colors cursor-pointer whitespace-nowrap"
                   title="Exit Focus Mode (Esc)"
                 >
-                  ✕ Exit
+                  Exit
                 </button>
               </div>
             </div>

@@ -278,7 +278,7 @@ export const AiAcademicSuiteModal: React.FC<AiAcademicSuiteModalProps> = ({
                               : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] border-[#DFDACB] dark:border-[#2C2B27]'
                           }`}
                         >
-                          {lvl === 'low' ? '😴 Low' : lvl === 'medium' ? '⚡ Medium' : '🔥 Peak'}
+                          {lvl === 'low' ? 'Low' : lvl === 'medium' ? 'Medium' : 'Peak'}
                         </button>
                       ))}
                     </div>

@@ -9,6 +9,7 @@ import {
   SlidersHorizontal,
   GraduationCap,
   ChevronUp,
+  Timer,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -104,7 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
             title="Toggle Zen Focus Mode"
           >
-            <span>🧘</span>
+            <Timer className="w-3.5 h-3.5" />
             <span className="hidden md:inline text-[11px]">{zenFocusMode ? 'Focusing' : 'Focus'}</span>
           </button>
         )}

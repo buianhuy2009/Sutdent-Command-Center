@@ -84,7 +84,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
       const startDateTime = `${todayStr}T${slot.startTime}:00`;
       const endDateTime = `${todayStr}T${slot.endTime}:00`;
       await onAddStudyBlock({
-        title: `📚 Focus: ${slot.taskName} (${slot.taskSubject})`,
+        title: `Focus: ${slot.taskName} (${slot.taskSubject})`,
         description: `Scheduled via AI Chronotype Blocker.\nReason: ${slot.reason}`,
         startDateTime,
         endDateTime,
@@ -108,7 +108,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
     .filter((a) => a.dueAt === todayStr && !a.isCompleted)
     .map((a) => ({
       id: a.id,
-      summary: `🎓 Canvas: ${a.name} (${a.pointsPossible !== undefined ? `${a.pointsPossible} pts` : 'Ungraded'})`,
+      summary: `Canvas: ${a.name} (${a.pointsPossible !== undefined ? `${a.pointsPossible} pts` : 'Ungraded'})`,
       description: a.description,
       location: a.courseName,
       start: { dateTime: a.dueAt ? `${a.dueAt}T23:59:00` : undefined },
@@ -179,7 +179,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
             title="AI automatically finds calendar gaps and schedules study blocks based on your energy rhythm"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>⚡ AI Chronotype Blocker</span>
+            <span>AI Chronotype Blocker</span>
           </button>
 
           <button
@@ -193,30 +193,26 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
           <button
             id="btn-refresh-schedule-radar"
             onClick={onRefreshEvents}
-            disabled={isLoadingEvents}
-            className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
-            title="Refresh Google Calendar"
+            className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+            title="Sync Schedule with Google Calendar"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoadingEvents ? 'animate-spin text-indigo-500' : ''}`} />
+            <RefreshCw className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* AI Chronotype Focus Blocker Panel */}
       {showChronotypePanel && (
-        <div className="bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/50 dark:from-indigo-950/30 dark:via-slate-900 dark:to-purple-950/20 rounded-2xl p-5 border border-indigo-100 dark:border-indigo-900/40 shadow-xs space-y-4 animate-in fade-in slide-in-from-top-2">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-indigo-100/80 dark:border-indigo-900/40">
+        <div className="p-4 bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/60 rounded-2xl space-y-4 animate-in slide-in-from-top-3 duration-250">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <span>AI Peak-Focus Chronotype Blocker</span>
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                AI analyzes your calendar gaps and pending tasks to schedule optimal focus windows during your peak alertness hours.
+              <h4 className="text-xs font-bold text-purple-950 dark:text-purple-300 uppercase tracking-wider">
+                Select your peak cognitive hours
+              </h4>
+              <p className="text-[10px] text-purple-700/80 dark:text-purple-400/80 mt-0.5">
+                AI schedules study blocks when your brain has the most energy.
               </p>
             </div>
 
-            {/* Chronotype selection chips */}
             <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
               <button
                 type="button"
@@ -227,7 +223,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
                 }`}
               >
-                🌅 Morning (7am-12pm)
+                Morning (7am-12pm)
               </button>
               <button
                 type="button"
@@ -238,7 +234,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
                 }`}
               >
-                ⚖️ Balanced
+                Balanced
               </button>
               <button
                 type="button"
@@ -249,10 +245,9 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
                 }`}
               >
-                🌙 Night Owl (4pm-10pm)
+                Night Owl (4pm-10pm)
               </button>
-            </div>
-          </div>
+            </div>      </div>
 
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-500 dark:text-slate-400">

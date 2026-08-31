@@ -48,7 +48,7 @@ export const ScheduleStudyModal: React.FC<ScheduleStudyModalProps> = ({
     setSessionDate(defaultDate);
 
     if (assignment) {
-      setSessionTitle(`🎯 Focus Session: ${assignment.assignmentName} (${assignment.subject})`);
+      setSessionTitle(`Focus Session: ${assignment.assignmentName} (${assignment.subject})`);
       setSessionNotes(
         `Focus block dedicated to completing ${assignment.assignmentName}.\nPriority: ${assignment.priority}\nDue Date: ${assignment.dueDate}\n${assignment.notes || ''}`
       );
@@ -61,7 +61,7 @@ export const ScheduleStudyModal: React.FC<ScheduleStudyModalProps> = ({
         }
       }
     } else if (initialEvent) {
-      setSessionTitle(initialEvent.summary || '🎯 Focus Study Block');
+      setSessionTitle(initialEvent.summary || 'Focus Study Block');
       setSessionNotes(initialEvent.description || '');
       if (initialEvent.start?.dateTime) {
         const d = new Date(initialEvent.start.dateTime);
@@ -69,7 +69,7 @@ export const ScheduleStudyModal: React.FC<ScheduleStudyModalProps> = ({
         setSessionTime(d.toTimeString().slice(0, 5));
       }
     } else {
-      setSessionTitle('🎯 45-Minute Focus Study Session');
+      setSessionTitle('45-Minute Focus Study Session');
       setSessionNotes('Deep work session: no phone, pomodoro focus interval.');
     }
   }, [assignment, initialEvent, isOpen]);
