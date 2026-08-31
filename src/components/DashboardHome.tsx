@@ -32,6 +32,8 @@ interface DashboardHomeProps {
   onOpenAiSuite?: any;
   onOpenAppStore?: () => void;
   user?: User | null;
+  isGoogleConnected?: boolean;
+  onConnectGoogle?: () => void;
 }
 
 type VibeType = 'focus' | 'calm' | 'creative' | 'recharge';
@@ -40,6 +42,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   assignments,
   onNavigateWorkspace,
   user,
+  isGoogleConnected = false,
+  onConnectGoogle,
 }) => {
   // Live Clock
   const [currentTime, setCurrentTime] = useState<string>(() => {
@@ -379,17 +383,35 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             </div>
 
             {/* Column 3: Email alerts */}
-            <div className="space-y-2 p-3 bg-[#FAF9F5]/80 dark:bg-[#1A1917]/80 rounded-2xl border border-[#DFDACB]/40">
-              <div className="flex items-center gap-1.5 font-bold text-[#8C897F]">
-                <Mail className="w-3.5 h-3.5 text-amber-500" />
-                <span>Inbox Scanner</span>
+            <div className="space-y-2 p-3 bg-[#FAF9F5]/80 dark:bg-[#1A1917]/80 rounded-2xl border border-[#DFDACB]/40 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 font-bold text-[#8C897F]">
+                  <Mail className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Inbox Scanner</span>
+                </div>
+                {isGoogleConnected ? (
+                  <>
+                    <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                      {academicAlertsCount} academic notices
+                    </p>
+                    <p className="text-[11px] text-[#8C897F]">
+                      All analyzed by local AI
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-bold text-rose-600 dark:text-rose-400">
+                      Google disconnected
+                    </p>
+                    <button
+                      onClick={onConnectGoogle}
+                      className="w-full mt-1.5 py-1.5 bg-[#D97757]/10 hover:bg-[#D97757]/20 text-[#D97757] hover:text-[#C86646] rounded-xl text-[11px] font-bold transition-all cursor-pointer text-center"
+                    >
+                      Re-sync Gmail/Drive
+                    </button>
+                  </>
+                )}
               </div>
-              <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                {academicAlertsCount} academic notices
-              </p>
-              <p className="text-[11px] text-[#8C897F]">
-                All analyzed by local AI
-              </p>
             </div>
           </div>
         </div>

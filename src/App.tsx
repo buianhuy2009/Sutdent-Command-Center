@@ -2262,6 +2262,8 @@ export default function App() {
                     }}
                     onOpenAppStore={() => setAppStoreOpen(true)}
                     user={user}
+                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    onConnectGoogle={() => handleGoogleSignIn(true)}
                   />
                 )}
               </div>
