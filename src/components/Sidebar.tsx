@@ -313,13 +313,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         )}
 
-        {/* User Avatar Card (Hover / Click Trigger) */}
+        {/* User Avatar Card (Opens Settings Dialog) */}
         <div
-          onClick={() => setUserMenuOpen(!userMenuOpen)}
-          className={`flex items-center rounded-2xl p-2 cursor-pointer hover:bg-[#FAF9F5] dark:hover:bg-[#252422] transition-colors border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27] ${
+          onClick={onOpenSettings}
+          className={`flex items-center rounded-2xl p-2 cursor-pointer hover:bg-[#FAF9F5] dark:hover:bg-[#252422] transition-colors border border-transparent hover:border-[#DFDACB] dark:border-[#2C2B27] ${
             isExpanded ? 'gap-3 justify-start' : 'justify-center'
           }`}
-          title="Account & Settings"
+          title="Account & Settings (Click to open)"
         >
           {user ? (
             <div className="w-9 h-9 rounded-2xl bg-[#D97757]/20 border-2 border-[#D97757] flex items-center justify-center text-xs font-bold text-[#D97757] overflow-hidden shrink-0 shadow-xs">

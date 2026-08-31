@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   CheckSquare,
   Plus,
@@ -14,6 +14,9 @@ import {
   Filter,
   Check,
   Zap,
+  X,
+  ChevronRight,
+  SlidersHorizontal,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Assignment, PriorityLevel, AssignmentStatus, ApiEnablementInfo } from '../types';
@@ -65,6 +68,9 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
   const [showAiAdd, setShowAiAdd] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
+  // Selected row for Slide-Over Inspector Sheet
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+
   // AI Dynamic Priority & Effort state
   const [effortEstimates, setEffortEstimates] = useState<Record<string, EffortEstimate>>({});
   const [isEstimating, setIsEstimating] = useState(false);
@@ -98,8 +104,9 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
   const [newNotes, setNewNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Extract unique subjects
-  const subjects = Array.from(new Set(assignments.map((a) => a.subject).filter(Boolean)));
+  const subjects = useMemo(() => {
+    return Array.from(new Set(assignments.map((a) => a.subject).filter(Boolean)));
+  }, [assignments]);
 
   const handleQuickSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,12 +127,12 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
         dueDate: newDueDate,
         priority: newPriority,
         status: 'Not Started',
-        notes: newNotes.trim(),
-        source: 'Manual',
+        notes: newNotes.trim() || undefined,
       });
+
+      setShowAddModal(false);
       setNewTitle('');
       setNewNotes('');
-      setShowAddModal(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -133,15 +140,14 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
 
   const handleStatusClick = async (assignment: Assignment) => {
     let nextStatus: AssignmentStatus = 'In Progress';
-    if (assignment.status === 'Not Started') nextStatus = 'In Progress';
-    else if (assignment.status === 'In Progress') {
+    if (assignment.status === 'Not Started') {
+      nextStatus = 'In Progress';
+    } else if (assignment.status === 'In Progress') {
       nextStatus = 'Done';
-      // Fire confetti celebration!
       confetti({
-        particleCount: 80,
+        particleCount: 50,
         spread: 60,
-        origin: { y: 0.7 },
-        colors: ['#6366f1', '#10b981', '#f59e0b', '#3b82f6'],
+        origin: { y: 0.8 },
       });
     } else {
       nextStatus = 'Not Started';
@@ -160,57 +166,42 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
     }
   };
 
-  // Filtered and sorted assignments (Active at top, Done at bottom, Old done archived)
-  const { filteredAssignments, oldCompletedCount } = React.useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const { filteredAssignments, oldCompletedCount } = useMemo(() => {
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     let oldDone = 0;
 
     const filtered = assignments.filter((a) => {
-      const matchesSearch =
-        a.assignmentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (a.notes || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const isDone = a.status === 'Done';
+      const dueDateMs = a.dueDate ? new Date(a.dueDate).getTime() : 0;
 
-      const matchesSubject = filterSubject === 'ALL' || a.subject === filterSubject;
-      const matchesStatus = filterStatus === 'ALL' || a.status === filterStatus;
-      const matchesPriority = filterPriority === 'ALL' || a.priority === filterPriority;
-
-      if (!matchesSearch || !matchesSubject || !matchesStatus || !matchesPriority) {
+      if (isDone && dueDateMs && dueDateMs < oneWeekAgo && !showArchived && filterStatus !== 'Done') {
+        oldDone++;
         return false;
       }
 
-      // Check if this task was completed and due > 7 days ago
-      if (a.status === 'Done' && a.dueDate) {
-        const due = new Date(a.dueDate + 'T00:00:00');
-        const diffDays = Math.round((today.getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
-        if (diffDays > 7) {
-          oldDone++;
-          if (!showArchived && filterStatus !== 'Done') {
-            return false;
-          }
-        }
+      if (filterSubject !== 'ALL' && a.subject !== filterSubject) return false;
+      if (filterStatus !== 'ALL' && a.status !== filterStatus) return false;
+      if (filterPriority !== 'ALL' && a.priority !== filterPriority) return false;
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchName = a.assignmentName.toLowerCase().includes(q);
+        const matchSub = a.subject.toLowerCase().includes(q);
+        const matchNotes = (a.notes || '').toLowerCase().includes(q);
+        if (!matchName && !matchSub && !matchNotes) return false;
       }
 
       return true;
     });
 
-    // Smart Sort:
-    // 1. Incomplete / Active tasks (Not Started, In Progress) ALWAYS on top, sorted by due date ascending
-    // 2. Completed tasks (Done) ALWAYS on bottom
     filtered.sort((a, b) => {
       const aDone = a.status === 'Done';
       const bDone = b.status === 'Done';
-
       if (aDone && !bDone) return 1;
       if (!aDone && bDone) return -1;
 
       const aDate = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
       const bDate = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-
-      if (aDone && bDone) {
-        return bDate - aDate;
-      }
 
       if (sortByAIFocus) {
         const aOrder = effortEstimates[a.id]?.focusOrder ?? 999;
@@ -224,187 +215,73 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
     return { filteredAssignments: filtered, oldCompletedCount: oldDone };
   }, [assignments, searchQuery, filterSubject, filterStatus, filterPriority, showArchived, sortByAIFocus, effortEstimates]);
 
-  // Calculate relative due date
-  const getDueBadge = (dueDateStr: string) => {
-    if (!dueDateStr) return null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const due = new Date(dueDateStr + 'T00:00:00');
-    const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) {
-      return (
-        <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300">
-          Overdue ({Math.abs(diffDays)}d)
-        </span>
-      );
-    } else if (diffDays === 0) {
-      return (
-        <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300">
-          Due Today
-        </span>
-      );
-    } else if (diffDays === 1) {
-      return (
-        <span className="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-amber-50 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-          Due Tomorrow
-        </span>
-      );
-    } else {
-      return (
-        <span className="px-2 py-0.5 text-[11px] font-medium rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-          In {diffDays} days
-        </span>
-      );
-    }
-  };
-
-  const getPriorityBadge = (priority: PriorityLevel) => {
-    switch (priority) {
-      case 'High':
-        return (
-          <span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300">
-            High
-          </span>
-        );
-      case 'Med':
-        return (
-          <span className="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300">
-            Medium
-          </span>
-        );
-      case 'Low':
-        return (
-          <span className="px-2 py-0.5 text-[11px] font-medium rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-            Low
-          </span>
-        );
-    }
-  };
-
-  const getSubjectColorClass = (subject: string) => {
-    const s = subject.toLowerCase();
-    if (s.includes('math') || s.includes('calc')) {
-      return 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800';
-    }
-    if (s.includes('physics') || s.includes('chem') || s.includes('bio') || s.includes('science')) {
-      return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
-    }
-    if (s.includes('history') || s.includes('apush') || s.includes('gov')) {
-      return 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800';
-    }
-    if (s.includes('english') || s.includes('lit') || s.includes('writing')) {
-      return 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800';
-    }
-    if (s.includes('cs') || s.includes('computer') || s.includes('code')) {
-      return 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800';
-    }
-    return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700';
-  };
-
-  const highCount = assignments.filter((a) => a.priority === 'High' && a.status !== 'Done').length;
   const doneCount = assignments.filter((a) => a.status === 'Done').length;
+  const highCount = assignments.filter((a) => a.priority === 'High' && a.status !== 'Done').length;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Master Spreadsheet Header & Live Sync Banner */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-            <CheckSquare className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-              Assignment Tracker
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {assignments.length} total • {doneCount} completed • {highCount} high priority
-            </p>
-          </div>
+    <div className="space-y-4">
+      {/* Top Header & Filter Ribbon */}
+      <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+        
+        {/* Left: Summary Stats & Status Pills */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <span className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] px-1">
+            Master Tracker
+          </span>
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+            {highCount} High Priority
+          </span>
+          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+            {doneCount} Done
+          </span>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          {sheetUrl && (
-            <a
-              href={sheetUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-xl border border-emerald-200 dark:border-emerald-800 transition-colors"
-            >
-              <span>Google Sheet</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          )}
+        {/* Right: Actions Cluster */}
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          {/* Search Box */}
+          <div className="relative w-full sm:w-44">
+            <Search className="w-3.5 h-3.5 text-[#8C897F] absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search tracker..."
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
+            />
+          </div>
 
+          {/* AI Ranker */}
           <button
             onClick={handleRunAIEstimates}
             disabled={isEstimating || assignments.length === 0}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
               sortByAIFocus
-                ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
-                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-200 dark:border-amber-800'
+                ? 'bg-[#D97757] text-white border-[#D97757] shadow-xs'
+                : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border-[#DFDACB] dark:border-[#2C2B27]'
             }`}
-            title="AI predicts dynamic risk scores (1-10), estimated time, and prioritizes urgent tasks"
+            title="AI Dynamic Priority & Effort Matrix"
           >
-            <Sparkles className={`w-3.5 h-3.5 ${isEstimating ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{isEstimating ? 'Analyzing...' : sortByAIFocus ? 'AI Ranked' : '⚡ AI Ranker'}</span>
+            <Zap className={`w-3.5 h-3.5 text-[#D97757] ${sortByAIFocus ? 'text-white' : ''} ${isEstimating ? 'animate-bounce' : ''}`} />
+            <span className="hidden sm:inline">{isEstimating ? 'Analyzing...' : sortByAIFocus ? 'AI Ranked' : 'AI Rank'}</span>
           </button>
 
+          {/* Smart Add Toggle */}
           <button
             onClick={() => setShowAiAdd(!showAiAdd)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors flex items-center gap-1.5 cursor-pointer ${
               showAiAdd
                 ? 'bg-[#D97757] text-white border-[#D97757] shadow-xs'
                 : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border-[#DFDACB] dark:border-[#2C2B27]'
             }`}
-            title="Toggle Quick AI task parser"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#D97757] shrink-0" />
+            <Sparkles className={`w-3.5 h-3.5 ${showAiAdd ? 'text-white' : 'text-[#D97757]'}`} />
             <span className="hidden sm:inline">Smart Add</span>
           </button>
 
+          {/* New Task Button */}
           <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors cursor-pointer ${
-              showFilters || searchQuery.trim() || filterSubject !== 'ALL' || filterStatus !== 'ALL' || filterPriority !== 'ALL'
-                ? 'bg-[#D97757]/10 text-[#D97757] border-[#D97757]/40'
-                : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border-[#DFDACB] dark:border-[#2C2B27]'
-            }`}
-            title="Toggle search and filters"
-          >
-            <Filter className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Filters</span>
-            {(searchQuery.trim() || filterSubject !== 'ALL' || filterStatus !== 'ALL' || filterPriority !== 'ALL') && (
-              <span className="w-2 h-2 rounded-full bg-[#D97757]" />
-            )}
-          </button>
-
-          <button
-            onClick={onRefresh}
-            disabled={isLoading}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#5C5A54] dark:text-[#B5B2A8] bg-[#FAF9F5] dark:bg-[#252422] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl transition-colors cursor-pointer"
-            title="Reload from Google Sheet"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-[#D97757]' : ''}`} />
-            <span className="hidden sm:inline">Sync</span>
-          </button>
-
-          {doneCount > 0 && onClearCompleted && (
-            <button
-              onClick={handleClearDone}
-              disabled={isClearingDone}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 rounded-xl border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer"
-              title="Clear finished tasks"
-            >
-              <CheckCircle className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Clear Done</span>
-            </button>
-          )}
-
-          <button
-            id="btn-add-assignment-top"
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-[#D97757] hover:bg-[#C86646] rounded-xl transition-colors shadow-xs cursor-pointer"
+            className="px-3 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Task</span>
@@ -412,347 +289,131 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
         </div>
       </div>
 
-      {/* API Disabled or Error Banner */}
-      {sheetApiInfo ? (
-        <ApiActivationBanner
-          info={sheetApiInfo}
-          onRetry={onRefresh}
-          isRetrying={isLoading}
-        />
-      ) : sheetError ? (
-        <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-            <span>{sheetError}</span>
-          </div>
-          {onConnectGoogle && (
-            <button
-              onClick={onConnectGoogle}
-              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold shrink-0 cursor-pointer text-xs"
-            >
-              Reconnect Sheets
-            </button>
-          )}
-        </div>
-      ) : null}
-
-      {/* Collapsible AI Quick Task Input Bar */}
+      {/* Smart Add Bar */}
       {showAiAdd && (
         <form
           onSubmit={handleQuickSubmit}
-          className="bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-in fade-in duration-150"
+          className="bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl p-3 shadow-xs flex items-center gap-2 animate-in fade-in"
         >
-          <div className="flex items-center gap-2 text-[#D97757] pl-1 shrink-0">
-            <Sparkles className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-wider hidden md:inline">
-              Smart AI Parse:
-            </span>
-          </div>
-
+          <Sparkles className="w-4 h-4 text-[#D97757] shrink-0 ml-1" />
           <input
-            id="input-quick-assignment"
             type="text"
             value={quickInput}
             onChange={(e) => setQuickInput(e.target.value)}
-            placeholder="Type naturally: 'AP Physics Lab 3 report due this Friday high priority'..."
-            disabled={isParsingAI}
-            className="flex-1 px-3.5 py-2 text-xs sm:text-sm bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] placeholder:text-[#8C897F]"
+            placeholder="Type anything e.g. 'Read AP Bio Ch 14 due Friday high priority'..."
+            className="flex-1 px-3 py-1.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
           />
-
           <button
             type="submit"
-            id="btn-quick-parse-submit"
             disabled={isParsingAI || !quickInput.trim()}
-            className="px-4 py-2 text-xs font-bold bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl flex items-center justify-center gap-1.5 shrink-0 transition-colors cursor-pointer shadow-xs"
+            className="px-3 py-1.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
           >
-            {isParsingAI ? (
-              <>
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Parsing...</span>
-              </>
-            ) : (
-              <>
-                <Zap className="w-3.5 h-3.5" />
-                <span>Add Task</span>
-              </>
-            )}
+            {isParsingAI ? 'Parsing...' : 'Add'}
           </button>
         </form>
       )}
 
-      {/* Collapsible Filter and Search Bar */}
-      {showFilters && (
-        <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-3.5 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 animate-in fade-in duration-150">
-          {/* Search */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-3.5 h-3.5 text-[#8C897F] absolute left-3 top-2.5" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tasks, subjects, notes..."
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] placeholder:text-[#8C897F]"
-            />
-          </div>
-
-          {/* Dropdown Filters */}
-          <div className="flex items-center gap-2 flex-wrap text-xs">
-            <div className="flex items-center gap-1">
-              <Filter className="w-3 h-3 text-[#8C897F]" />
-              <select
-                value={filterSubject}
-                onChange={(e) => setFilterSubject(e.target.value)}
-                className="px-2.5 py-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[#141413] dark:text-[#FAF9F5] font-semibold cursor-pointer outline-none"
-              >
-                <option value="ALL">All Subjects</option>
-                {subjects.map((sub) => (
-                  <option key={sub} value={sub}>
-                    {sub}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-2.5 py-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[#141413] dark:text-[#FAF9F5] font-semibold cursor-pointer outline-none"
-            >
-              <option value="ALL">All Status</option>
-              <option value="Not Started">Not Started</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Done">Done</option>
-            </select>
-
-            <select
-              value={filterPriority}
-              onChange={(e) => setFilterPriority(e.target.value)}
-              className="px-2.5 py-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[#141413] dark:text-[#FAF9F5] font-semibold cursor-pointer outline-none"
-            >
-              <option value="ALL">All Priorities</option>
-              <option value="High">High</option>
-              <option value="Med">Medium</option>
-              <option value="Low">Low</option>
-            </select>
-          </div>
-        </div>
-      )}
-
-      {/* Auto-Archived Tasks Notice */}
-      {oldCompletedCount > 0 && filterStatus !== 'Done' && (
-        <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">
-              📁 {oldCompletedCount} finished {oldCompletedCount === 1 ? 'task' : 'tasks'} auto-archived (&gt; 7 days ago)
-            </span>
-          </div>
-          <button
-            onClick={() => setShowArchived(!showArchived)}
-            className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
-          >
-            {showArchived ? 'Hide Archived' : `Show Archived (${oldCompletedCount})`}
-          </button>
-        </div>
-      )}
-
-      {/* Main Assignment Table with Professional Polish Container */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-        {/* Table Top Ribbon */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <h2 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm uppercase tracking-wider">
-              Master Assignment Tracker
-            </h2>
-            <span className="bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 px-2 py-0.5 rounded text-[10px] font-bold">
-              {highCount} High
-            </span>
-            <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold">
-              {doneCount} Done
-            </span>
-          </div>
-          <span className="text-[10px] font-medium text-slate-400">
-            Total Items: {filteredAssignments.length}
-          </span>
-        </div>
-
+      {/* Main High-Density macOS Table (40px Rows) */}
+      <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] overflow-hidden shadow-xs">
         {isLoading ? (
-          <div className="py-16 flex flex-col items-center justify-center text-slate-400">
-            <RefreshCw className="w-8 h-8 animate-spin text-emerald-500 mb-3" />
-            <p className="text-sm font-medium">Syncing Master Spreadsheet from Google Sheets...</p>
+          <div className="p-16 text-center text-[#8C897F] flex flex-col items-center justify-center gap-2">
+            <RefreshCw className="w-6 h-6 animate-spin text-[#D97757]" />
+            <span className="text-xs font-semibold">Syncing master sheet...</span>
           </div>
         ) : filteredAssignments.length === 0 ? (
-          <div className="py-16 text-center text-slate-500 dark:text-slate-400">
-            <CheckSquare className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-            <p className="text-base font-semibold">No assignments match your filters</p>
-            <p className="text-xs text-slate-400 mt-1">
-              Add a new task using the Quick Parse bar or New Assignment button!
+          <div className="p-16 text-center text-[#8C897F] space-y-2">
+            <CheckSquare className="w-8 h-8 mx-auto opacity-40" />
+            <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+              No tasks found in this view
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
-                  <th className="py-3 px-4 w-12 text-center">Status</th>
-                  <th className="py-3 px-4">Subject</th>
-                  <th className="py-3 px-4">Assignment Name</th>
-                  <th className="py-3 px-4">Due Date</th>
-                  <th className="py-3 px-4">Priority</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                <tr className="border-b border-[#DFDACB]/80 dark:border-[#2C2B27]/80 bg-[#FAF9F5] dark:bg-[#1F1E1B] text-[10px] font-bold uppercase tracking-wider text-[#8C897F]">
+                  <th className="py-2.5 px-3 w-10 text-center">Done</th>
+                  <th className="py-2.5 px-3 w-32">Subject</th>
+                  <th className="py-2.5 px-3">Assignment Name</th>
+                  <th className="py-2.5 px-3 w-36">Due Date</th>
+                  <th className="py-2.5 px-3 w-24 text-center">Priority</th>
+                  <th className="py-2.5 px-3 w-20 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-sm">
+              <tbody className="divide-y divide-[#DFDACB]/40 dark:divide-[#2C2B27]/40 text-xs font-medium">
                 {filteredAssignments.map((assignment) => {
                   const isDone = assignment.status === 'Done';
+                  const isSelected = selectedAssignment?.id === assignment.id;
                   const isHigh = assignment.priority === 'High';
-                  const isMed = assignment.priority === 'Med';
 
                   return (
                     <tr
                       key={assignment.id}
-                      id={`assignment-row-${assignment.id}`}
-                      className={`group hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors ${
-                        isDone ? 'bg-slate-50/40 dark:bg-slate-900/40 opacity-70' : ''
-                      }`}
+                      onClick={() => setSelectedAssignment(assignment)}
+                      className={`h-10 hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer ${
+                        isSelected ? 'bg-[#FAF9F5] dark:bg-[#1F1E1B] font-semibold' : ''
+                      } ${isDone ? 'opacity-60' : ''}`}
                     >
-                      {/* Status Toggle Checkbox */}
-                      <td className="py-3.5 px-4 text-center">
+                      {/* Checkbox */}
+                      <td className="py-1.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => handleStatusClick(assignment)}
-                          className="text-slate-400 hover:text-indigo-600 transition-colors p-1"
-                          title={`Current: ${assignment.status}. Click to advance status.`}
+                          className="text-[#8C897F] hover:text-[#D97757] transition-colors"
                         >
-                          {assignment.status === 'Done' ? (
-                            <CheckCircle className="w-5 h-5 text-emerald-500 fill-emerald-100 dark:fill-emerald-950" />
-                          ) : assignment.status === 'In Progress' ? (
-                            <div className="w-5 h-5 rounded-full border-2 border-indigo-500 flex items-center justify-center">
-                              <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full" />
-                            </div>
+                          {isDone ? (
+                            <CheckCircle className="w-4 h-4 text-emerald-600 fill-emerald-100 dark:fill-emerald-950" />
                           ) : (
-                            <Circle className="w-5 h-5 text-slate-300 dark:text-slate-600" />
+                            <Circle className="w-4 h-4" />
                           )}
                         </button>
                       </td>
 
                       {/* Subject Badge */}
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${getSubjectColorClass(
-                            assignment.subject
-                          )}`}
-                        >
+                      <td className="py-1.5 px-3">
+                        <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 truncate max-w-[120px] border border-amber-200 dark:border-amber-800/60">
                           {assignment.subject}
                         </span>
                       </td>
 
-                      {/* Assignment Name & Notes */}
-                      <td className="py-3.5 px-4">
-                        <div>
-                          <p
-                            className={`font-semibold text-slate-900 dark:text-white ${
-                              isDone ? 'line-through text-slate-400 dark:text-slate-500' : ''
-                            }`}
-                          >
-                            <span className="align-middle">{assignment.assignmentName}</span>
-                            {assignment.source === 'Canvas' && (
-                              <span className="inline-flex items-center gap-0.5 ml-1.5 px-1.5 py-0.2 rounded-md text-[8px] font-bold bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-400 uppercase tracking-wide align-middle select-none">
-                                Canvas
-                              </span>
-                            )}
-                            {assignment.docUrl && (
-                              <a
-                                href={assignment.docUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-0.5 ml-1.5 px-1.5 py-0.2 rounded-md text-[8px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400 uppercase tracking-wide hover:underline align-middle select-none"
-                              >
-                                Doc
-                              </a>
-                            )}
-                            {effortEstimates[assignment.id] && (
-                              <span
-                                className={`inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                                  effortEstimates[assignment.id].riskScore >= 8
-                                    ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
-                                    : effortEstimates[assignment.id].riskScore >= 5
-                                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
-                                    : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                                }`}
-                                title={effortEstimates[assignment.id].aiTip}
-                              >
-                                <Sparkles className="w-2.5 h-2.5" />
-                                <span>Risk {effortEstimates[assignment.id].riskScore}/10</span>
-                                <span className="font-normal opacity-80">• ~{effortEstimates[assignment.id].estimatedMinutes}m</span>
-                              </span>
-                            )}
-                          </p>
-                          {effortEstimates[assignment.id]?.aiTip && (
-                            <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-1 flex items-center gap-1">
-                              <Sparkles className="w-3 h-3 shrink-0 text-amber-500" />
-                              <span>AI Tip: {effortEstimates[assignment.id].aiTip}</span>
-                            </p>
-                          )}
-                          {assignment.notes && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
-                              {assignment.notes}
-                            </p>
+                      {/* Name */}
+                      <td className="py-1.5 px-3">
+                        <div className="flex items-center gap-2 truncate">
+                          <span className={`text-[#141413] dark:text-[#FAF9F5] truncate ${isDone ? 'line-through text-[#8C897F]' : ''}`}>
+                            {assignment.assignmentName}
+                          </span>
+                          {effortEstimates[assignment.id] && (
+                            <span className="text-[10px] text-[#D97757] font-mono shrink-0">
+                              (~{effortEstimates[assignment.id].estimatedMinutes}m)
+                            </span>
                           )}
                         </div>
                       </td>
 
                       {/* Due Date */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-slate-700 dark:text-slate-300">
-                            {assignment.dueDate || 'No Date'}
-                          </span>
-                          {getDueBadge(assignment.dueDate)}
-                        </div>
+                      <td className="py-1.5 px-3 whitespace-nowrap text-[11px] text-[#8C897F]">
+                        {assignment.dueDate || 'No Due Date'}
                       </td>
 
-                      {/* Priority Dot & Label */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span
-                          className={`w-2 h-2 rounded-full inline-block mr-2 ${
-                            isHigh
-                              ? 'bg-rose-500'
-                              : isMed
-                              ? 'bg-amber-500'
-                              : 'bg-slate-400'
-                          }`}
-                        />
-                        <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                      {/* Priority */}
+                      <td className="py-1.5 px-3 text-center">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                          isHigh
+                            ? 'bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                        }`}>
                           {assignment.priority}
                         </span>
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Schedule 45-min Study Block button */}
-                          <button
-                            id={`btn-schedule-study-${assignment.id}`}
-                            onClick={() => onScheduleStudyBlock(assignment)}
-                            className="text-[10px] bg-slate-100 dark:bg-slate-800 group-hover:bg-indigo-600 group-hover:text-white text-slate-700 dark:text-slate-200 px-2.5 py-1 rounded transition-colors font-semibold inline-flex items-center gap-1 cursor-pointer"
-                            title="Schedule 45-minute focus session in open slot on Google Calendar"
-                          >
-                            <Clock className="w-3 h-3" />
-                            <span>Study Block</span>
-                          </button>
-
-                          {/* Doc Link if present */}
-                          {assignment.docUrl && (
-                            <a
-                              href={assignment.docUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded"
-                              title="Open Associated Google Doc"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                        </div>
+                      <td className="py-1.5 px-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => setSelectedAssignment(assignment)}
+                          className="p-1 text-[#8C897F] hover:text-[#D97757] rounded-lg hover:bg-[#EFECE2] dark:hover:bg-[#252422]"
+                          title="Inspect Details"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -763,126 +424,186 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
         )}
       </div>
 
-      {/* Add New Assignment Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-in zoom-in-95">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              Add New Assignment to Google Sheet
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Synchronizes directly to your Master Spreadsheet.
-            </p>
+      {/* SLIDE-OVER INSPECTOR DRAWER */}
+      {selectedAssignment && (
+        <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white dark:bg-[#1A1917] border-l border-[#DFDACB] dark:border-[#2C2B27] shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-200">
+          <div className="p-4 border-b border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 rounded-md">
+                {selectedAssignment.subject}
+              </span>
+              <span className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">Inspector</span>
+            </div>
 
-            <form onSubmit={handleCreateAssignment} className="mt-4 space-y-4">
+            <button
+              onClick={() => setSelectedAssignment(null)}
+              className="p-1.5 text-[#8C897F] hover:bg-[#EFECE2] dark:hover:bg-[#252422] rounded-lg cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-5 space-y-5 text-xs">
+            <div>
+              <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] mb-2">
+                {selectedAssignment.assignmentName}
+              </h3>
+              <div className="space-y-1 text-[#8C897F] text-[11px]">
+                <div className="flex items-center justify-between">
+                  <span>Status:</span>
+                  <span className="font-semibold text-[#141413] dark:text-[#FAF9F5]">{selectedAssignment.status}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Due Date:</span>
+                  <span className="font-semibold text-[#141413] dark:text-[#FAF9F5]">{selectedAssignment.dueDate || 'None'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Priority:</span>
+                  <span className="font-semibold text-[#141413] dark:text-[#FAF9F5]">{selectedAssignment.priority}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* AI Estimation Card if present */}
+            {effortEstimates[selectedAssignment.id] && (
+              <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-2">
+                <div className="flex items-center gap-1.5 font-bold text-[#D97757]">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>AI Effort Matrix</span>
+                </div>
+                <div className="text-[11px] text-[#5C5A54] dark:text-[#B5B2A8]">
+                  {effortEstimates[selectedAssignment.id].aiTip}
+                </div>
+                <div className="flex items-center gap-2 pt-1 text-[10px] text-[#8C897F]">
+                  <span>Est. Time: {effortEstimates[selectedAssignment.id].estimatedMinutes} mins</span>
+                  <span>•</span>
+                  <span>Risk Score: {effortEstimates[selectedAssignment.id].riskScore}/10</span>
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            {selectedAssignment.notes && (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Assignment Title *
+                <span className="font-bold text-[#141413] dark:text-[#FAF9F5] block mb-1">Notes</span>
+                <div className="p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-[11px] text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed">
+                  {selectedAssignment.notes}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex items-center justify-between gap-2">
+            <button
+              onClick={() => {
+                onScheduleStudyBlock(selectedAssignment);
+                setSelectedAssignment(null);
+              }}
+              className="px-3 py-1.5 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <Calendar className="w-3.5 h-3.5 text-[#D97757]" />
+              <span>Schedule Block</span>
+            </button>
+
+            <button
+              onClick={() => handleStatusClick(selectedAssignment)}
+              className="px-3 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            >
+              {selectedAssignment.status === 'Done' ? 'Mark Incomplete' : 'Mark Done'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Add Assignment Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-[#141413]/70 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#1A1917] rounded-3xl max-w-md w-full border border-[#DFDACB] dark:border-[#2C2B27] shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60">
+              <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">New Assignment</h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateAssignment} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
+                  Assignment Title
                 </label>
                 <input
                   type="text"
-                  required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. AP Calculus Problem Set 5"
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                  placeholder="e.g. Chapter 4 Problem Set"
+                  className="w-full px-3 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#D97757]"
+                  required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Subject / Course *
-                  </label>
+                  <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">Subject</label>
                   <input
                     type="text"
-                    required
                     value={newSubject}
                     onChange={(e) => setNewSubject(e.target.value)}
-                    placeholder="e.g. AP Physics C"
-                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                    className="w-full px-3 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#D97757]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Due Date *
-                  </label>
+                  <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">Due Date</label>
                   <input
                     type="date"
-                    required
                     value={newDueDate}
                     onChange={(e) => setNewDueDate(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                    className="w-full px-3 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#D97757]"
                   />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Priority Level
-                  </label>
-                  <select
-                    value={newPriority}
-                    onChange={(e) => setNewPriority(e.target.value as PriorityLevel)}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white"
-                  >
-                    <option value="High">High</option>
-                    <option value="Med">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Estimated Duration
-                  </label>
-                  <select className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white">
-                    <option value="45">45 Minutes (1 Study Block)</option>
-                    <option value="90">90 Minutes (2 Study Blocks)</option>
-                    <option value="30">30 Minutes Quick Task</option>
-                  </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Notes / Requirements (Optional)
-                </label>
+                <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">Priority</label>
+                <select
+                  value={newPriority}
+                  onChange={(e) => setNewPriority(e.target.value as PriorityLevel)}
+                  className="w-full px-3 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#D97757]"
+                >
+                  <option value="High">High</option>
+                  <option value="Med">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">Notes (Optional)</label>
                 <textarea
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
-                  placeholder="Key problems to solve, rubric requirements, page count..."
+                  placeholder="Rubric notes or instructions..."
                   rows={2}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                  className="w-full px-3 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#D97757]"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
+                  className="px-4 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl text-xs font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl flex items-center gap-1.5"
+                  className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Appending to Sheet...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Save to Google Sheet</span>
-                    </>
-                  )}
+                  {isSubmitting ? 'Saving...' : 'Add to Tracker'}
                 </button>
               </div>
             </form>

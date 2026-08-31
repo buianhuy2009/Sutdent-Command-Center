@@ -1846,7 +1846,7 @@ export default function App() {
               user={user}
               onSignIn={() => handleGoogleSignIn()}
               onSignOut={handleLogout}
-              onOpenSettings={() => setGeminiSettingsOpen(true)}
+              onOpenSettings={() => setAccountSettingsOpen(true)}
               onOpenAppStore={() => setAppStoreOpen(true)}
               onOpenShortcuts={() => setShortcutsModalOpen(true)}
               onToggleDarkMode={() => setDarkMode(!darkMode)}
@@ -1867,13 +1867,43 @@ export default function App() {
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#FAF9F5] dark:bg-[#141413]">
           {/* Top Header */}
           <Navbar
+            activeTabLabel={
+              {
+                canvas: 'Canvas LMS',
+                radar: 'Daily Schedule',
+                tracker: 'Assignment Tracker',
+                gmail: 'Gmail AI Scanner',
+                drive: 'Google Drive',
+                classroom: 'Google Classroom',
+                moodle: 'Moodle LMS',
+                notebooklm: 'NotebookLM AI Studio',
+                flashcards: 'Flashcard Studio (SM-2)',
+                canva: 'Canva Design Hub',
+                'desmos-graphing': 'Desmos Graphing',
+                'desmos-scientific': 'Desmos Scientific',
+                geogebra: 'GeoGebra Math Suite',
+                phet: 'PhET Interactive Simulations',
+                'scribble-latex': 'Photo Math OCR',
+                excalidraw: 'Excalidraw Whiteboard',
+                mermaid: 'Mermaid Diagrams',
+                viva: 'Oral Exam Simulator',
+                pomodoro: 'Focus Station',
+                'notes-markdown': 'Markdown Notes',
+                rubric: 'Socratic Rubric Checker',
+                feynman: 'Feynman Technique Explainer',
+                splitscreen: 'Dual Split Screen',
+                dashboard: 'Academic Dashboard',
+              }[activeTab] || 'Workspace'
+            }
             onOpenCommandPalette={() => setCommandPaletteOpen(true)}
             onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
             notifications={notifications}
             isAiChatOpen={aiChatOpen}
             zenFocusMode={zenFocusMode}
             onToggleZenFocus={() => setZenFocusMode((prev) => !prev)}
-            onOpenGeminiSettings={() => setGeminiSettingsOpen(true)}
+            onOpenGeminiSettings={() => setAccountSettingsOpen(true)}
+            onRefreshAll={handleRefreshAll}
+            isRefreshing={isRefreshingAll}
           />
 
           {/* Zen Focus Mode Tranquil Banner */}
