@@ -273,6 +273,20 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
         </div>
       );
 
+    case 'arxiv':
+      return (
+        <div className={`${sizeClasses} bg-gradient-to-br from-rose-500 to-red-600 text-white flex items-center justify-center font-bold shadow-md shadow-rose-500/20 shrink-0 ${className}`}>
+          <BookOpen className={iconSizes} />
+        </div>
+      );
+
+    case 'open-library':
+      return (
+        <div className={`${sizeClasses} bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold shadow-md shadow-blue-600/20 shrink-0 ${className}`}>
+          <Bookmark className={iconSizes} />
+        </div>
+      );
+
     case 'splitscreen':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-slate-600 to-zinc-700 text-white flex items-center justify-center font-bold shadow-md shadow-slate-600/20 shrink-0 ${className}`}>

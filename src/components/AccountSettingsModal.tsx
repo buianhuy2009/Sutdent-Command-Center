@@ -33,6 +33,7 @@ import {
   SlidersHorizontal,
   AppWindow,
   Zap,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   getClientGeminiApiKey,
@@ -142,6 +143,39 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   const [autoSystemTheme, setAutoSystemTheme] = useState<boolean>(() => {
     return localStorage.getItem('scc_auto_system_theme_v1') === 'true';
   });
+
+  // Avatar & Personalisation
+  const [avatarUrl, setAvatarUrl] = useState<string>(() => {
+    return localStorage.getItem('scc_user_avatar_v1') || '';
+  });
+  const [customAvatarInput, setCustomAvatarInput] = useState('');
+  const [enableNasaApod, setEnableNasaApod] = useState<boolean>(() => {
+    return localStorage.getItem('scc_enable_nasa_apod') === 'true';
+  });
+  const [showSemesterResetModal, setShowSemesterResetModal] = useState(false);
+
+  const handleSelectAvatar = (url: string) => {
+    setAvatarUrl(url);
+    localStorage.setItem('scc_user_avatar_v1', url);
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleToggleNasaApod = (val: boolean) => {
+    setEnableNasaApod(val);
+    localStorage.setItem('scc_enable_nasa_apod', String(val));
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleExecuteSemesterReset = () => {
+    localStorage.removeItem('scc_assignments_v1');
+    localStorage.removeItem('scc_markdown_notes_v1');
+    localStorage.removeItem('scc_study_streak_v1');
+    localStorage.removeItem('scc_total_focus_minutes_v1');
+    localStorage.removeItem('scc_emails_cache_v3');
+    setShowSemesterResetModal(false);
+    alert('Semester reset complete. Local records have been cleared for the new term.');
+    window.location.reload();
+  };
 
   const handleDensityChange = (newDensity: 'compact' | 'comfortable' | 'spacious') => {
     setDensity(newDensity);
@@ -381,6 +415,59 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                       </button>
                     </div>
                   )}
+
+                  {/* Setting Card: User Avatar Selection */}
+                  <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3">
+                    <div>
+                      <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                        Profile Avatar &amp; Badge
+                      </div>
+                      <div className="text-[11px] text-[#8C897F]">
+                        Customize the avatar shown in the Navbar and academic reports.
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {[
+                        { id: 'grad', label: 'Scholar', bg: 'bg-[#D97757]', icon: 'GraduationCap' },
+                        { id: 'book', label: 'Researcher', bg: 'bg-blue-600', icon: 'BookOpen' },
+                        { id: 'bot', label: 'Cybernetic', bg: 'bg-emerald-600', icon: 'Bot' },
+                        { id: 'zap', label: 'Polymath', bg: 'bg-purple-600', icon: 'Zap' },
+                      ].map((av) => (
+                        <button
+                          key={av.id}
+                          type="button"
+                          onClick={() => handleSelectAvatar(av.id)}
+                          className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                            avatarUrl === av.id
+                              ? 'bg-[#D97757] text-white border-[#D97757] shadow-xs'
+                              : 'bg-white dark:bg-[#252422] border-[#DFDACB] dark:border-[#2C2B27] text-[#141413] dark:text-[#FAF9F5]'
+                          }`}
+                        >
+                          <div className={`w-2.5 h-2.5 rounded-full ${av.bg}`} />
+                          <span>{av.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Setting Card: Start Fresh / Semester Reset */}
+                  <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                        Start Fresh (Semester Reset)
+                      </div>
+                      <div className="text-[11px] text-[#8C897F]">
+                        Clear completed assignments, streak records, and notes for a new academic term.
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowSemesterResetModal(true)}
+                      className="px-3.5 py-1.5 bg-white dark:bg-[#252422] border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                    >
+                      Semester Reset
+                    </button>
+                  </div>
 
                   {/* Setting Card: Local Storage Reset */}
                   <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between">
@@ -773,6 +860,24 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                     className="w-4 h-4 rounded text-[#D97757] focus:ring-[#D97757] cursor-pointer"
                   />
                 </div>
+
+                {/* NASA APOD Atmospheric Wallpaper */}
+                <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                      NASA Astronomy Picture of the Day
+                    </div>
+                    <div className="text-[11px] text-[#8C897F]">
+                      Display the daily deep-space astrophotography wallpaper on your Home Dashboard.
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={enableNasaApod}
+                    onChange={(e) => handleToggleNasaApod(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#D97757] focus:ring-[#D97757] cursor-pointer"
+                  />
+                </div>
               </div>
             )}
 
@@ -870,6 +975,37 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Semester Reset Confirmation Modal */}
+      {showSemesterResetModal && (
+        <div className="fixed inset-0 z-60 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#1A1917] max-w-sm w-full rounded-3xl border border-rose-300 dark:border-rose-800 p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-2.5 text-rose-600 dark:text-rose-400 font-bold text-sm">
+              <AlertTriangle className="w-5 h-5" />
+              <span>Confirm Semester Reset</span>
+            </div>
+            <p className="text-xs text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed">
+              This action will reset your active coursework lists, notes, study streaks, and focus stats for the new semester. This cannot be undone.
+            </p>
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowSemesterResetModal(false)}
+                className="px-4 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteSemesterReset}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
+              >
+                Confirm Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -45,6 +45,12 @@ import { QuizGeneratorWorkspace } from './components/workspaces/QuizGeneratorWor
 import { PomodoroWorkspace } from './components/workspaces/PomodoroWorkspace';
 import { PeriodicTableWorkspace } from './components/workspaces/PeriodicTableWorkspace';
 import { UnitConverterWorkspace } from './components/workspaces/UnitConverterWorkspace';
+import { ArxivWorkspace } from './components/workspaces/ArxivWorkspace';
+import { OpenLibraryWorkspace } from './components/workspaces/OpenLibraryWorkspace';
+import { WikipediaLookupModal } from './components/WikipediaLookupModal';
+import { StudyCardModal } from './components/StudyCardModal';
+import { PortfolioExportModal } from './components/PortfolioExportModal';
+import { MorningCheckInModal } from './components/MorningCheckInModal';
 import { SplitScreenStudio } from './components/SplitScreenStudio';
 import { DailyRadarTab } from './components/DailyRadarTab';
 import { GmailRadarTab } from './components/GmailRadarTab';
@@ -269,7 +275,36 @@ export default function App() {
   const [aiSuiteTab, setAiSuiteTab] = useState<'planner' | 'syllabus' | 'quiz' | 'grades'>('planner');
   const [clearedTabBadges, setClearedTabBadges] = useState<Set<string>>(new Set());
   const [isNavbarHidden, setIsNavbarHidden] = useState(false);
+  const [isWikipediaModalOpen, setIsWikipediaModalOpen] = useState(false);
+  const [wikipediaInitialQuery, setWikipediaInitialQuery] = useState('');
+  const [isStudyCardOpen, setIsStudyCardOpen] = useState(false);
+  const [isPortfolioExportOpen, setIsPortfolioExportOpen] = useState(false);
+  const [isMorningCheckInOpen, setIsMorningCheckInOpen] = useState(false);
   const onboardingDialogRef = useRef<HTMLDialogElement | null>(null);
+
+  useEffect(() => {
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const lastCheckIn = localStorage.getItem('scc_last_morning_checkin');
+      if (lastCheckIn !== todayStr) {
+        setIsMorningCheckInOpen(true);
+      }
+    } catch (e) {
+      console.error('Error checking morning checkin:', e);
+    }
+  }, []);
+
+  const handleSaveMorningIntention = (intention: string, targetHours: number) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    localStorage.setItem('scc_last_morning_checkin', todayStr);
+    localStorage.setItem('scc_daily_intention', intention);
+    localStorage.setItem('scc_target_focus_hours', String(targetHours));
+    addToast({
+      type: 'success',
+      title: 'Daily Intention Set',
+      message: `Locked in ${targetHours}h deep work target for today.`,
+    });
+  };
 
   // Smooth View Transitions for workspace switching
   const handleTabTransition = useCallback((newTab: string) => {
@@ -1941,6 +1976,8 @@ export default function App() {
                   'quiz-generator': 'AI Practice Quiz Generator',
                   'periodic-table': 'Interactive Periodic Table',
                   'unit-converter': 'Scientific Unit Converter',
+                  arxiv: 'arXiv Research Papers',
+                  'open-library': 'Open Library & Textbooks',
                   rubric: 'Essay Rubric Checker',
                   feynman: 'Feynman Concept Explainer',
                   splitscreen: 'Dual Split Screen',
@@ -2242,6 +2279,14 @@ export default function App() {
                   <UnitConverterWorkspace />
                 )}
 
+                {activeTab === 'arxiv' && (
+                  <ArxivWorkspace />
+                )}
+
+                {activeTab === 'open-library' && (
+                  <OpenLibraryWorkspace />
+                )}
+
                 {activeTab === 'stem' && (
                   <StemLabWorkspace />
                 )}
@@ -2524,6 +2569,37 @@ export default function App() {
           </div>
         </div>
       </dialog>
+
+      {/* Wikipedia Quick Look Modal */}
+      <WikipediaLookupModal
+        isOpen={isWikipediaModalOpen}
+        onClose={() => setIsWikipediaModalOpen(false)}
+        initialQuery={wikipediaInitialQuery}
+      />
+
+      {/* Study Card Modal */}
+      <StudyCardModal
+        isOpen={isStudyCardOpen}
+        onClose={() => setIsStudyCardOpen(false)}
+        userName={user?.displayName || 'Student'}
+        completedTasksCount={assignments.filter((a) => a.status === 'Done').length}
+      />
+
+      {/* 1-Page Academic Portfolio Export Modal */}
+      <PortfolioExportModal
+        isOpen={isPortfolioExportOpen}
+        onClose={() => setIsPortfolioExportOpen(false)}
+        userName={user?.displayName || 'Student'}
+        completedAssignments={assignments.filter((a) => a.status === 'Done')}
+      />
+
+      {/* Daily Morning Check-in Modal */}
+      <MorningCheckInModal
+        isOpen={isMorningCheckInOpen}
+        onClose={() => setIsMorningCheckInOpen(false)}
+        userName={user?.displayName || 'Student'}
+        onSaveIntention={handleSaveMorningIntention}
+      />
 
       {/* Toast Notification Container */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />

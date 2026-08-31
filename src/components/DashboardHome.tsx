@@ -18,6 +18,7 @@ import { User } from 'firebase/auth';
 import { Assignment } from '../types';
 import { getTodayQuote, QUOTE_BANK, DailyQuote } from '../data/quotes';
 import { MOCK_EMAIL_ALERTS, getMockTodayEvents } from '../data/mockData';
+import { fetchNasaApod, NasaApod } from '../services/publicApis';
 
 const LOCAL_STORAGE_NAME_KEY = 'scc_user_preferred_name';
 const LOCAL_STORAGE_INTENTION_KEY = 'scc_user_daily_intention';
@@ -185,9 +186,30 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     recharge: 'text-emerald-600 dark:text-emerald-400',
   }[selectedVibe];
 
+  const [nasaApod, setNasaApod] = useState<NasaApod | null>(null);
+
+  useEffect(() => {
+    const isApodEnabled = localStorage.getItem('scc_enable_nasa_apod') === 'true';
+    if (isApodEnabled) {
+      fetchNasaApod().then((data) => {
+        if (data && data.mediaType === 'image') {
+          setNasaApod(data);
+        }
+      });
+    }
+  }, []);
+
   return (
     <div className="min-h-screen w-full flex flex-col justify-between items-center bg-[#FAF9F5] dark:bg-[#141413] px-6 py-12 text-center animate-in fade-in duration-300 select-none relative overflow-y-auto">
       
+      {/* Optional NASA APOD Wallpaper Background */}
+      {nasaApod && (
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-10 pointer-events-none transition-opacity duration-1000"
+          style={{ backgroundImage: `url(${nasaApod.url})` }}
+        />
+      )}
+
       {/* Dynamic Ambient Background Glow */}
       <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-br ${vibeGlowClass} via-transparent to-transparent rounded-full blur-3xl pointer-events-none transition-all duration-700`} />
 

@@ -1,0 +1,157 @@
+import React, { useRef, useState } from 'react';
+import {
+  X,
+  Download,
+  Share2,
+  Check,
+  Sparkles,
+  Trophy,
+  Flame,
+  Clock,
+  BookOpen,
+  Calendar,
+} from 'lucide-react';
+
+interface StudyCardModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  userName: string;
+  focusMinutes?: number;
+  completedTasksCount?: number;
+  streakDays?: number;
+  topSubject?: string;
+}
+
+export const StudyCardModal: React.FC<StudyCardModalProps> = ({
+  isOpen,
+  onClose,
+  userName = 'Student',
+  focusMinutes = 320,
+  completedTasksCount = 12,
+  streakDays = 5,
+  topSubject = 'Computer Science',
+}) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [copied, setCopied] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleShareLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownloadSvg = () => {
+    const svgElement = cardRef.current?.querySelector('svg');
+    if (!svgElement) return;
+    const svgData = new XMLSerializer().serializeToString(svgElement);
+    const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `StudentOS-StudyCard-${userName.replace(/\s+/g, '_')}.svg`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in select-none">
+      <div className="bg-white dark:bg-[#1A1917] w-full max-w-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-2xl p-6 space-y-5 flex flex-col">
+        
+        {/* Modal Header */}
+        <div className="flex items-center justify-between pb-3 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-[#D97757]/15 border border-[#D97757]/30 text-[#D97757] flex items-center justify-center">
+              <Trophy className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">Study Card Generator</h3>
+              <p className="text-[10px] text-[#8C897F]">Shareable academic summary</p>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-1.5 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] rounded-lg cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Visual Card Canvas / SVG Container */}
+        <div ref={cardRef} className="flex justify-center">
+          <svg
+            width="360"
+            height="220"
+            viewBox="0 0 360 220"
+            className="rounded-2xl shadow-lg border border-[#DFDACB] dark:border-[#2C2B27]"
+          >
+            <defs>
+              <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#1E1D1A" />
+                <stop offset="100%" stopColor="#121110" />
+              </linearGradient>
+              <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#D97757" />
+                <stop offset="100%" stopColor="#E28B6E" />
+              </linearGradient>
+            </defs>
+
+            {/* Card Background */}
+            <rect width="360" height="220" rx="16" fill="url(#cardGrad)" />
+            
+            {/* Header / Brand */}
+            <rect x="20" y="20" width="8" height="8" rx="2" fill="url(#accentGrad)" />
+            <text x="36" y="28" fill="#FAF9F5" fontSize="11" fontWeight="bold" fontFamily="sans-serif">STUDENTOS • STUDY REPORT</text>
+            <text x="340" y="28" fill="#8C897F" fontSize="10" fontFamily="sans-serif" textAnchor="end">{new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</text>
+
+            {/* User Name */}
+            <text x="20" y="65" fill="#FAF9F5" fontSize="18" fontWeight="bold" fontFamily="sans-serif">{userName}</text>
+            <text x="20" y="82" fill="#8C897F" fontSize="10" fontFamily="sans-serif">Focus Domain: {topSubject}</text>
+
+            {/* Metrics Grid Boxes */}
+            {/* Box 1: Focus Minutes */}
+            <rect x="20" y="105" width="96" height="60" rx="10" fill="#252422" stroke="#33322E" strokeWidth="1" />
+            <text x="28" y="123" fill="#8C897F" fontSize="9" fontWeight="bold" fontFamily="sans-serif">DEEP WORK</text>
+            <text x="28" y="148" fill="#FAF9F5" fontSize="16" fontWeight="bold" fontFamily="sans-serif">{focusMinutes}m</text>
+
+            {/* Box 2: Tasks Done */}
+            <rect x="132" y="105" width="96" height="60" rx="10" fill="#252422" stroke="#33322E" strokeWidth="1" />
+            <text x="140" y="123" fill="#8C897F" fontSize="9" fontWeight="bold" fontFamily="sans-serif">TASKS DONE</text>
+            <text x="140" y="148" fill="#FAF9F5" fontSize="16" fontWeight="bold" fontFamily="sans-serif">{completedTasksCount}</text>
+
+            {/* Box 3: Streak */}
+            <rect x="244" y="105" width="96" height="60" rx="10" fill="#252422" stroke="#33322E" strokeWidth="1" />
+            <text x="252" y="123" fill="#8C897F" fontSize="9" fontWeight="bold" fontFamily="sans-serif">DAY STREAK</text>
+            <text x="252" y="148" fill="#D97757" fontSize="16" fontWeight="bold" fontFamily="sans-serif">{streakDays} Days</text>
+
+            {/* Card Footer */}
+            <text x="20" y="195" fill="#5C5A54" fontSize="9" fontFamily="sans-serif">Verified In-Browser Student Workspace</text>
+            <text x="340" y="195" fill="#D97757" fontSize="9" fontWeight="bold" fontFamily="sans-serif" textAnchor="end">student-os.app</text>
+          </svg>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <button
+            onClick={handleDownloadSvg}
+            className="px-4 py-2.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Download Card</span>
+          </button>
+
+          <button
+            onClick={handleShareLink}
+            className="px-4 py-2.5 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
+            <span>{copied ? 'Link Copied' : 'Share Workspace'}</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+};
