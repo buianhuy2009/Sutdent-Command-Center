@@ -63,6 +63,7 @@ import { CanvaStudioTab } from './components/CanvaStudioTab';
 import { GoogleClassroomPanel } from './components/GoogleClassroomPanel';
 import { MoodlePanel } from './components/MoodlePanel';
 import { AppStoreModal, loadPinnedAppIds, savePinnedAppIds } from './components/AppStoreModal';
+import { ChangelogModal, CURRENT_VERSION } from './components/ChangelogModal';
 import { LandingPage } from './components/LandingPage';
 import { QuickDraftModal } from './components/QuickDraftModal';
 import { ScheduleStudyModal } from './components/ScheduleStudyModal';
@@ -280,6 +281,7 @@ export default function App() {
   const [isStudyCardOpen, setIsStudyCardOpen] = useState(false);
   const [isPortfolioExportOpen, setIsPortfolioExportOpen] = useState(false);
   const [isMorningCheckInOpen, setIsMorningCheckInOpen] = useState(false);
+  const [isChangelogOpen, setIsChangelogOpen] = useState(false);
   const onboardingDialogRef = useRef<HTMLDialogElement | null>(null);
 
   useEffect(() => {
@@ -289,8 +291,14 @@ export default function App() {
       if (lastCheckIn !== todayStr) {
         setIsMorningCheckInOpen(true);
       }
+      
+      const lastSeenVersion = localStorage.getItem('scc_last_seen_version');
+      if (lastSeenVersion !== CURRENT_VERSION) {
+        setIsChangelogOpen(true);
+        localStorage.setItem('scc_last_seen_version', CURRENT_VERSION);
+      }
     } catch (e) {
-      console.error('Error checking morning checkin:', e);
+      console.error('Error checking morning checkin and version seen:', e);
     }
   }, []);
 
@@ -2366,6 +2374,7 @@ export default function App() {
         }}
         onOpenOAuthGuide={() => setOauthGuideModalOpen(true)}
         onOpenDeploymentGuide={() => setDeploymentModalOpen(true)}
+        onOpenChangelog={() => setIsChangelogOpen(true)}
         shortcutSettings={shortcutSettings}
         setShortcutSettings={setShortcutSettings}
         reducedMotion={reducedMotion}
@@ -2599,6 +2608,12 @@ export default function App() {
         onClose={() => setIsMorningCheckInOpen(false)}
         userName={user?.displayName || 'Student'}
         onSaveIntention={handleSaveMorningIntention}
+      />
+
+      {/* Changelog Releases Modal */}
+      <ChangelogModal
+        isOpen={isChangelogOpen}
+        onClose={() => setIsChangelogOpen(false)}
       />
 
       {/* Toast Notification Container */}

@@ -19,6 +19,45 @@ interface GoogleClassroomPanelProps {
   onSyncToSheet: (assignment: CanvasAssignment) => Promise<void>;
 }
 
+const MOCK_CLASSROOM_ASSIGNMENTS: CanvasAssignment[] = [
+  {
+    id: 'gclass-mock-1',
+    name: 'Literature Essay: Symbolism in Gatsby',
+    courseName: 'English Lit 101',
+    courseId: 'ENG-101',
+    dueAt: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+    pointsPossible: 100,
+    htmlUrl: 'https://classroom.google.com/c/mock-course-1/a/mock-assignment-1',
+    description: 'Analyze how F. Scott Fitzgerald uses colors and the green light to represent Gatsby\'s hopes and dreams. Minimum 1200 words.',
+    isSynced: false,
+    submissionTypes: ['online_upload'],
+  },
+  {
+    id: 'gclass-mock-2',
+    name: 'Lab 4: Projectile Motion Simulations',
+    courseName: 'General Physics C',
+    courseId: 'PHYS-201',
+    dueAt: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
+    pointsPossible: 50,
+    htmlUrl: 'https://classroom.google.com/c/mock-course-2/a/mock-assignment-2',
+    description: 'Complete the PhET projectile simulation exercises and submit your graphs showing range vs launching angle.',
+    isSynced: false,
+    submissionTypes: ['online_upload'],
+  },
+  {
+    id: 'gclass-mock-3',
+    name: 'Syllabus Agreement & Study Goals Survey',
+    courseName: 'Intro to Computer Science',
+    courseId: 'CS-101',
+    dueAt: new Date(Date.now() + 86400000 * 1).toISOString().split('T')[0],
+    pointsPossible: 10,
+    htmlUrl: 'https://classroom.google.com/c/mock-course-3/a/mock-assignment-3',
+    description: 'Read the syllabus and fill out the Google Form indicating your target grades and weekly study availability.',
+    isSynced: true,
+    submissionTypes: ['online_upload'],
+  }
+];
+
 export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
   googleToken,
   isGoogleConnected,
@@ -38,14 +77,20 @@ export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
   const [syncedIds, setSyncedIds] = useState<Set<string>>(new Set());
 
   const loadAssignments = async () => {
-    if (!googleToken) {
+    if (!googleToken && !isGoogleConnected) {
       return;
     }
 
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetchAllClassroomAssignments(googleToken);
+      let data: CanvasAssignment[] = [];
+      if (googleToken) {
+        data = await fetchAllClassroomAssignments(googleToken);
+      } else {
+        // Fallback to mock data in demo mode
+        data = MOCK_CLASSROOM_ASSIGNMENTS;
+      }
       setAssignments(data);
       try {
         localStorage.setItem('scc_cached_classroom_assignments', JSON.stringify(data));
@@ -63,10 +108,10 @@ export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
   };
 
   useEffect(() => {
-    if (googleToken && assignments.length === 0) {
+    if ((googleToken || isGoogleConnected) && assignments.length === 0) {
       loadAssignments();
     }
-  }, [googleToken]);
+  }, [googleToken, isGoogleConnected]);
 
   const handleSyncItem = async (assignment: CanvasAssignment) => {
     await onSyncToSheet(assignment);
@@ -110,7 +155,7 @@ export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
 
           <button
             onClick={loadAssignments}
-            disabled={isLoading || !googleToken}
+            disabled={isLoading || (!googleToken && !isGoogleConnected)}
             className="px-3 py-1.5 text-xs font-semibold bg-[#FAF9F5] dark:bg-[#252422] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
             title="Refresh Classroom Coursework"
           >

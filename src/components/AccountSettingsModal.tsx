@@ -88,6 +88,7 @@ interface AccountSettingsModalProps {
   onOpenTour?: () => void;
   onOpenOAuthGuide?: () => void;
   onOpenDeploymentGuide?: () => void;
+  onOpenChangelog?: () => void;
   shortcutSettings: ShortcutSettings;
   setShortcutSettings: React.Dispatch<React.SetStateAction<ShortcutSettings>>;
   reducedMotion: boolean;
@@ -115,6 +116,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   onOpenTour,
   onOpenOAuthGuide,
   onOpenDeploymentGuide,
+  onOpenChangelog,
   shortcutSettings,
   setShortcutSettings,
   reducedMotion,
@@ -412,6 +414,29 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                         className="px-3.5 py-1.5 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer"
                       >
                         Launch Tour
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Setting Card: Changelog */}
+                  {onOpenChangelog && (
+                    <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                          Release Notes &amp; Changelog
+                        </div>
+                        <div className="text-[11px] text-[#8C897F]">
+                          View the full update history from Version 1.0 to the current release.
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          onClose();
+                          onOpenChangelog();
+                        }}
+                        className="px-3.5 py-1.5 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                      >
+                        View Changelog
                       </button>
                     </div>
                   )}
