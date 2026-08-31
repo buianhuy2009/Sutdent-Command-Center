@@ -76,8 +76,37 @@ export const FlashcardStudioTab: React.FC = () => {
   const [copiedQuizlet, setCopiedQuizlet] = useState(false);
   const [copiedAnki, setCopiedAnki] = useState(false);
 
+  const sortedCards = React.useMemo(() => {
+    if (!decks.find(d => d.id === activeDeckId)) return [];
+    const deck = decks.find(d => d.id === activeDeckId);
+    if (!deck) return [];
+    const today = new Date().toISOString().split('T')[0];
+    return [...deck.cards].sort((a, b) => {
+      const aOverdue = a.dueDate && a.dueDate < today ? 0 : 1;
+      const bOverdue = b.dueDate && b.dueDate < today ? 0 : 1;
+      if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+      const aDue = a.dueDate || '9999-12-31';
+      const bDue = b.dueDate || '9999-12-31';
+      if (aDue !== bDue) return aDue.localeCompare(bDue);
+      return (a.repetitions || 0) - (b.repetitions || 0);
+    });
+  }, [decks, activeDeckId]);
+
   const activeDeck = decks.find((d) => d.id === activeDeckId) || null;
-  const currentCard = activeDeck && activeDeck.cards.length > 0 ? activeDeck.cards[currentCardIndex] : null;
+  const displayDeck = activeDeck ? { ...activeDeck, cards: sortedCards } as CardDeck : null;
+  const currentCard = displayDeck && displayDeck.cards.length > 0 ? displayDeck.cards[currentCardIndex] : null;
+
+  const queueSummary = React.useMemo(() => {
+    if (!displayDeck) return { due: 0, new: 0, learning: 0 };
+    const today = new Date().toISOString().split('T')[0];
+    let due = 0, isNew = 0, learning = 0;
+    displayDeck.cards.forEach(c => {
+      if (!c.dueDate || c.dueDate <= today) due++;
+      if ((c.repetitions || 0) === 0) isNew++;
+      else if (!c.mastered) learning++;
+    });
+    return { due, new: isNew, learning };
+  }, [displayDeck]);
 
   // Keyboard navigation for flashcard review
   useEffect(() => {
@@ -85,7 +114,7 @@ export const FlashcardStudioTab: React.FC = () => {
       if (['input', 'textarea', 'select'].includes((e.target as HTMLElement).tagName.toLowerCase())) {
         return;
       }
-      if (!activeDeck || activeDeck.cards.length === 0) return;
+      if (!displayDeck || displayDeck.cards.length === 0) return;
 
       if (e.code === 'Space') {
         e.preventDefault();
@@ -101,18 +130,18 @@ export const FlashcardStudioTab: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeDeck, currentCardIndex]);
+  }, [displayDeck, currentCardIndex]);
 
   const handleNextCard = () => {
-    if (!activeDeck) return;
+    if (!displayDeck) return;
     setIsFlipped(false);
-    setCurrentCardIndex((prev) => (prev + 1 < activeDeck.cards.length ? prev + 1 : 0));
+    setCurrentCardIndex((prev) => (prev + 1 < displayDeck.cards.length ? prev + 1 : 0));
   };
 
   const handlePrevCard = () => {
-    if (!activeDeck) return;
+    if (!displayDeck) return;
     setIsFlipped(false);
-    setCurrentCardIndex((prev) => (prev - 1 >= 0 ? prev - 1 : activeDeck.cards.length - 1));
+    setCurrentCardIndex((prev) => (prev - 1 >= 0 ? prev - 1 : displayDeck.cards.length - 1));
   };
 
   const handleToggleMastered = () => {
@@ -302,7 +331,7 @@ Example format:
           </div>
         </div>
 
-        {activeDeck && activeDeck.cards.length > 0 && (
+        {displayDeck && displayDeck.cards.length > 0 && (
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <button
               onClick={handleExportQuizlet}
@@ -479,16 +508,23 @@ Example format:
         {/* Right: Interactive 3D Study Viewer (7 cols) */}
         <div className="lg:col-span-7">
           <section className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs flex flex-col justify-between h-full min-h-[460px]">
-            {activeDeck && currentCard ? (
+            {displayDeck && currentCard ? (
               <>
+                {/* Queue Summary */}
+                <div className="flex items-center gap-2 text-[11px] font-bold mb-3">
+                  <span className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800">{queueSummary.due} Due Today</span>
+                  <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">{queueSummary.new} New</span>
+                  <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">{queueSummary.learning} Learning</span>
+                  <span className="ml-auto text-[10px] text-[#8C897F] font-mono">Overdue → New → Due order</span>
+                </div>
                 {/* Top Deck Info & Card Index */}
                 <div className="flex items-center justify-between pb-3 border-b border-[#DFDACB] dark:border-[#2C2B27]">
                   <div>
                     <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] truncate">
-                      {activeDeck.title}
+                      {displayDeck!.title}
                     </h3>
                     <span className="text-[11px] text-[#8C897F]">
-                      Card {currentCardIndex + 1} of {activeDeck.cards.length}
+                      Card {currentCardIndex + 1} of {displayDeck!.cards.length}
                     </span>
                   </div>
 

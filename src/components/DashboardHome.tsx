@@ -160,13 +160,20 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     return emailAlerts.filter((e) => !e.isSpam).length;
   }, [emailAlerts, isGoogleConnected]);
 
-  const completedFocusSessions = useMemo(() => {
-    try {
-      const saved = localStorage.getItem('scc_pomo_completed_v1');
-      return saved ? parseInt(saved, 10) : 0;
-    } catch {
-      return 0;
-    }
+  const [completedFocusSessions, setCompletedFocusSessions] = useState<number>(() => {
+    try { const saved = localStorage.getItem('scc_pomo_completed_v1'); return saved ? parseInt(saved, 10) : 0; } catch { return 0; }
+  });
+  useEffect(() => {
+    const poll = () => {
+      try { const v = localStorage.getItem('scc_pomo_completed_v1'); setCompletedFocusSessions(v ? parseInt(v, 10) : 0); } catch {}
+    };
+    const id = setInterval(poll, 1000);
+    const onStorage = (e: StorageEvent) => { if (e.key === 'scc_pomo_completed_v1') poll(); };
+    const onFocus = () => poll();
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => { clearInterval(id); window.removeEventListener('storage', onStorage); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus); };
   }, []);
 
   const todayFormattedDate = useMemo(() => {
@@ -320,19 +327,19 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             <div className="flex items-center gap-1.5 flex-wrap">
               {(
                 [
-                  { id: 'focus', label: 'Study Focus' },
-                  { id: 'calm', label: 'Mindful Calm' },
-                  { id: 'creative', label: 'Creative flow' },
-                  { id: 'recharge', label: 'Recharge rest' },
+                  { id: 'focus', label: 'Study Focus', color: 'bg-[#D97757] text-white border-[#D97757]' },
+                  { id: 'calm', label: 'Mindful Calm', color: 'bg-blue-500 text-white border-blue-500' },
+                  { id: 'creative', label: 'Creative flow', color: 'bg-violet-500 text-white border-violet-500' },
+                  { id: 'recharge', label: 'Recharge rest', color: 'bg-emerald-500 text-white border-emerald-500' },
                 ] as const
               ).map((vibe) => (
                 <button
                   key={vibe.id}
                   onClick={() => handleSelectVibe(vibe.id)}
-                  className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer border ${
                     selectedVibe === vibe.id
-                      ? 'bg-[#141413] dark:bg-[#FAF9F5] text-white dark:text-[#141413] shadow-2xs'
-                      : 'bg-white/70 dark:bg-[#1E1D1B]/50 border border-[#DFDACB] dark:border-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] hover:border-[#D97757]'
+                      ? `${vibe.color} shadow-2xs`
+                      : 'bg-white/70 dark:bg-[#1E1D1B]/50 border-[#DFDACB] dark:border-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] hover:border-[#D97757]'
                   }`}
                 >
                   {vibe.label}

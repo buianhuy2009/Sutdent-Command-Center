@@ -24,6 +24,10 @@ export const QuizGeneratorWorkspace: React.FC = () => {
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [scoreHistory, setScoreHistory] = useState<Array<{ date: string; score: number; total: number }>>(() => {
+    try { const s = localStorage.getItem('scc_quiz_history_v1'); return s ? JSON.parse(s) : []; } catch { return []; }
+  });
+  const [retryMode, setRetryMode] = useState(false);
 
   const handleGenerateQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,18 +59,25 @@ export const QuizGeneratorWorkspace: React.FC = () => {
 
   const handleSubmitQuiz = () => {
     setIsSubmitted(true);
-    
-    // Calculate Score
+    setRetryMode(false);
     let correct = 0;
-    quizQuestions.forEach((q, idx) => {
-      if (userAnswers[idx] === q.correctIndex) {
-        correct++;
-      }
-    });
-
-    if (correct / quizQuestions.length >= 0.7) {
+    quizQuestions.forEach((q, idx) => { if (userAnswers[idx] === q.correctIndex) correct++; });
+    const entry = { date: new Date().toLocaleString(), score: correct, total: quizQuestions.length };
+    const updated = [entry, ...scoreHistory].slice(0, 20);
+    setScoreHistory(updated);
+    try { localStorage.setItem('scc_quiz_history_v1', JSON.stringify(updated)); } catch {}
+    if (correct / quizQuestions.length >= 0.7 && document.visibilityState === 'visible') {
       confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
     }
+  };
+
+  const handleRetryIncorrect = () => {
+    const incorrect = quizQuestions.filter((q, idx) => userAnswers[idx] !== q.correctIndex);
+    if (incorrect.length === 0) return;
+    setQuizQuestions(incorrect);
+    setUserAnswers({});
+    setIsSubmitted(false);
+    setRetryMode(true);
   };
 
   const handleResetQuiz = () => {
@@ -102,6 +113,15 @@ export const QuizGeneratorWorkspace: React.FC = () => {
 
         {quizQuestions.length > 0 && isSubmitted && (
           <div className="flex items-center gap-2">
+            {quizQuestions.filter((q, idx) => userAnswers[idx] !== q.correctIndex).length > 0 && (
+              <button
+                onClick={handleRetryIncorrect}
+                className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Retry Incorrect Only ({quizQuestions.filter((q, idx) => userAnswers[idx] !== q.correctIndex).length})</span>
+              </button>
+            )}
             <button
               onClick={handleResetQuiz}
               className="px-3.5 py-2 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-2xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
@@ -171,6 +191,23 @@ export const QuizGeneratorWorkspace: React.FC = () => {
         /* 3. Interactive Quiz Taking View */
         <div className="space-y-6">
           
+          {/* Score History */}
+          {scoreHistory.length > 0 && (
+            <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#8C897F] mb-2 flex items-center gap-1.5"><Award className="w-3.5 h-3.5 text-amber-500" /> Score History (last {scoreHistory.length})</h4>
+              <div className="flex gap-2 overflow-x-auto">
+                {scoreHistory.slice(0, 8).map((h, i) => (
+                  <div key={i} className="px-3 py-1.5 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-xs font-mono shrink-0">
+                    <span className={h.score / h.total >= 0.7 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'}>{h.score}/{h.total}</span>
+                    <span className="text-[10px] text-[#8C897F] ml-1">{h.date}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {retryMode && (
+            <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-300">Retry Mode: Showing {quizQuestions.length} incorrect question(s) only</div>
+          )}
           {/* Score Header (When Submitted) */}
           {isSubmitted && (
             <div className="p-6 bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">

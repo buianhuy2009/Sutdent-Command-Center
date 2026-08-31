@@ -116,12 +116,12 @@ export const MermaidWorkspace: React.FC = () => {
         </button>
       </form>
 
-      {/* Split Code & Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[500px]">
-        {/* Editor */}
-        <div className="lg:col-span-5 bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs flex flex-col space-y-2">
+      {/* Side-by-Side Split Editor / Preview */}
+      <div className="flex flex-col md:flex-row gap-6 min-h-[520px]">
+        {/* Editor - 50% */}
+        <div className="flex-1 md:w-1/2 bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs flex flex-col space-y-2">
           <span className="text-xs font-bold uppercase tracking-wider text-[#8C897F]">
-            Mermaid Code
+            Mermaid Code (Editor)
           </span>
           <textarea
             rows={16}
@@ -131,20 +131,18 @@ export const MermaidWorkspace: React.FC = () => {
           />
         </div>
 
-        {/* Live Diagram Render */}
-        <div className="lg:col-span-7 bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs flex flex-col justify-between overflow-auto">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-[#8C897F] block mb-4">
-              Live Diagram Preview
-            </span>
-            {renderError ? (
-              <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs">
-                {renderError}
-              </div>
-            ) : (
-              <div ref={renderContainerRef} className="flex justify-center items-center py-6 overflow-auto" />
-            )}
-          </div>
+        {/* Live Diagram Render - 50% */}
+        <div className="flex-1 md:w-1/2 bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs flex flex-col overflow-auto">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#8C897F] block mb-4">
+            Live Diagram Preview
+          </span>
+          {renderError ? (
+            <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs">
+              {renderError}
+            </div>
+          ) : (
+            <div ref={renderContainerRef} className="flex-1 flex justify-center items-center py-6 overflow-auto bg-[#FAF9F5]/50 dark:bg-[#1F1E1B]/50 rounded-xl border border-[#DFDACB]/40 dark:border-[#2C2B27]/40" />
+          )}
         </div>
       </div>
     </div>

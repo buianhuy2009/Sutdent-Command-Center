@@ -474,6 +474,48 @@ export default function App() {
     () => assignments.filter((a) => a.status !== 'Done').length,
     [assignments]
   );
+  const [flashcardDueCount, setFlashcardDueCount] = useState<number>(() => {
+    try {
+      const raw = localStorage.getItem('scc_flashcard_decks_v1');
+      if (raw) {
+        const decks = JSON.parse(raw);
+        const today = new Date().toISOString().split('T')[0];
+        return decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
+      }
+      const srsRaw = localStorage.getItem('scc_srs_decks_v2');
+      if (srsRaw) {
+        const decks = JSON.parse(srsRaw);
+        const today = new Date().toISOString().split('T')[0];
+        return decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
+      }
+    } catch {}
+    return 0;
+  });
+  useEffect(() => {
+    const poll = () => {
+      try {
+        const raw = localStorage.getItem('scc_flashcard_decks_v1');
+        if (raw) {
+          const decks = JSON.parse(raw);
+          const today = new Date().toISOString().split('T')[0];
+          const count = decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
+          setFlashcardDueCount(count); return;
+        }
+        const srsRaw = localStorage.getItem('scc_srs_decks_v2');
+        if (srsRaw) {
+          const decks = JSON.parse(srsRaw);
+          const today = new Date().toISOString().split('T')[0];
+          const count = decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
+          setFlashcardDueCount(count); return;
+        }
+        setFlashcardDueCount(0);
+      } catch { setFlashcardDueCount(0); }
+    };
+    const id = setInterval(poll, 2000);
+    window.addEventListener('storage', poll);
+    window.addEventListener('focus', poll);
+    return () => { clearInterval(id); window.removeEventListener('storage', poll); window.removeEventListener('focus', poll); };
+  }, []);
 
   // Error States
   const [canvasError, setCanvasError] = useState<string | null>(null);
@@ -1953,6 +1995,8 @@ export default function App() {
                 schedule: clearedTabBadges.has('radar') || activeTab === 'radar' ? 0 : calendarEvents.length,
                 tracker: clearedTabBadges.has('tracker') || activeTab === 'tracker' ? 0 : pendingAssignmentCount,
                 gmail: clearedTabBadges.has('gmail') || activeTab === 'gmail' ? 0 : urgentEmailCount,
+                flashcards: clearedTabBadges.has('flashcards') || ['flashcards','quizlet','anki'].includes(activeTab) ? 0 : flashcardDueCount,
+                pomodoro: 0,
               }}
             />
           </div>
@@ -2171,6 +2215,10 @@ export default function App() {
                     onClearCompleted={handleClearCompletedAssignments}
                     sheetError={sheetError}
                     sheetApiInfo={sheetApiInfo}
+                    onOpenLibrarySearch={(q) => {
+                      try { localStorage.setItem('scc_openlib_prefill_v1', q); } catch {}
+                      handleTabTransition('open-library');
+                    }}
                   />
                 )}
 

@@ -73,7 +73,9 @@ export const PomodoroWorkspace: React.FC = () => {
         try {
           localStorage.setItem('scc_pomo_completed_v1', nextCount.toString());
         } catch {}
-        confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+        if (document.visibilityState === 'visible' && !document.hidden) {
+          confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+        }
       }
     }
     return () => clearInterval(interval);
@@ -262,6 +264,20 @@ export const PomodoroWorkspace: React.FC = () => {
       gainNodeRef.current.gain.value = soundVolume;
     }
   }, [soundVolume]);
+
+  // Keyboard shortcut: Space or P to start/pause when workspace active
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+      if (e.code === 'Space' || e.key.toLowerCase() === 'p' || e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        handleToggleTimer();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isRunning, activeSound, soundVolume, timeLeftSeconds, mode, completedSessions]);
 
   // Clean up audio on unmount
   useEffect(() => {

@@ -46,6 +46,8 @@ interface SidebarProps {
     schedule?: number;
     tracker?: number;
     gmail?: number;
+    flashcards?: number;
+    [key: string]: number | undefined;
   };
 }
 
@@ -241,15 +243,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 Pinned Apps
               </div>
             )}
-            <div className="space-y-1">
+          <div className="space-y-1">
               {pinnedApps.map((app) => {
                 const isActive = activeTab === app.id;
+                const badgeCount = badges[app.id] || badges[app.id.replace('-', '_')] || 0;
 
                 return (
                   <div key={app.id} className="relative group/item flex items-center">
                     <button
                       onClick={() => onSelectTab(app.id)}
-                      className={`w-full rounded-xl flex items-center transition-all cursor-pointer ${
+                      className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative ${
                         isExpanded ? 'px-3 py-2 justify-between gap-3' : 'w-9 h-9 mx-auto justify-center'
                       } ${
                         isActive
@@ -269,6 +272,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           </div>
                         )}
                       </div>
+                      {badgeCount > 0 && isExpanded && (
+                        <span className="ml-auto px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-rose-500 text-white">{badgeCount > 99 ? '99+' : badgeCount}</span>
+                      )}
+                      {badgeCount > 0 && !isExpanded && (
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-[#EFECE2] dark:ring-[#1A1917]" />
+                      )}
+                      {!isExpanded && (
+                        <span className="absolute left-12 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">
+                          {app.name}{badgeCount > 0 ? ` (${badgeCount})` : ''}
+                        </span>
+                      )}
                     </button>
 
                     {isExpanded && (
@@ -288,7 +302,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {/* Add More Apps Button */}
-        <div className="pt-2">
+        <div className="pt-2 relative group/add">
           <button
             onClick={onOpenAppStore}
             className={`w-full rounded-xl flex items-center transition-all cursor-pointer border border-dashed border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] ${
@@ -299,6 +313,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Plus className="w-4 h-4 shrink-0" />
             {isExpanded && <span>Add Tools &amp; Apps</span>}
           </button>
+          {!isExpanded && (
+            <span className="absolute left-12 top-1/2 -translate-y-1/2 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover/add:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">
+              App Store
+            </span>
+          )}
         </div>
       </div>
 

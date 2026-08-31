@@ -44,6 +44,7 @@ interface AssignmentTrackerTabProps {
   onClearCompleted?: () => Promise<void>;
   sheetError?: string | null;
   sheetApiInfo?: ApiEnablementInfo | null;
+  onOpenLibrarySearch?: (query: string) => void;
 }
 
 export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
@@ -62,6 +63,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
   onClearCompleted,
   sheetError,
   sheetApiInfo,
+  onOpenLibrarySearch,
 }) => {
   const [quickInput, setQuickInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -225,8 +227,55 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
   const doneCount = assignments.filter((a) => a.status === 'Done').length;
   const highCount = assignments.filter((a) => a.priority === 'High' && a.status !== 'Done').length;
 
+  const handleSyncClick = () => {
+    if (!isGoogleConnected) {
+      // Show guidance instead of silent fail
+      return;
+    }
+    onRefresh();
+  };
+
   return (
     <div className="space-y-4">
+      {/* Google Sheets Disconnected Guidance Banner */}
+      {!isGoogleConnected && (
+        <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+              <FileText className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">Google Sheets Not Connected</h4>
+              <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5 leading-relaxed">
+                Sync to your Master Tracker Sheet requires Google sign-in. Your tasks are saved locally for now.
+                <br />
+                <span className="font-semibold">Setup:</span> 1) Click Connect Google → 2) Approve Sheets + Drive scopes → 3) Return and click Sync Sheet. Enables 2-way sheet row sync.
+              </p>
+              {sheetError && <p className="text-[11px] text-rose-600 mt-1 font-mono">{sheetError}</p>}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {onConnectGoogle && (
+              <button
+                onClick={onConnectGoogle}
+                className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Connect Google</span>
+              </button>
+            )}
+            <button
+              onClick={onRefresh}
+              className="px-3 py-2 bg-white dark:bg-[#1A1917] border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 rounded-xl text-xs font-bold cursor-pointer"
+            >
+              Try Sync Anyway
+            </button>
+          </div>
+        </div>
+      )}
+      {sheetApiInfo && (
+        <ApiActivationBanner info={sheetApiInfo} onRetry={onRefresh} compact />
+      )}
       {/* Top Header & Filter Ribbon */}
       <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
         
@@ -655,6 +704,21 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                   {selectedAssignment.notes}
                 </div>
               </div>
+            )}
+
+            {/* Open Library Shortcut */}
+            {onOpenLibrarySearch && (
+              <button
+                onClick={() => {
+                  const q = selectedAssignment.subject && selectedAssignment.subject !== 'General' ? selectedAssignment.subject : selectedAssignment.assignmentName;
+                  onOpenLibrarySearch(q);
+                  setSelectedAssignment(null);
+                }}
+                className="w-full py-2 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>Find Textbook for "{selectedAssignment.subject}" in Open Library</span>
+              </button>
             )}
           </div>
 

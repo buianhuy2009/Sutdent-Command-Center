@@ -151,6 +151,19 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
   const [socraticHistory, setSocraticHistory] = useState<SocraticTurn[]>([]);
   const [isSocraticThinking, setIsSocraticThinking] = useState(false);
 
+  const [notesSubjectFilter, setNotesSubjectFilter] = useState<string>('ALL');
+  const groupedNotes = useMemo(() => {
+    const groups: Record<string, typeof notes> = {};
+    notes.forEach(n => {
+      const subj = n.subject || 'General';
+      if (notesSubjectFilter !== 'ALL' && subj !== notesSubjectFilter) return;
+      if (!groups[subj]) groups[subj] = [];
+      groups[subj].push(n);
+    });
+    return groups;
+  }, [notes, notesSubjectFilter]);
+  const uniqueSubjects = useMemo(() => ['ALL', ...Array.from(new Set(notes.map(n => n.subject || 'General')))], [notes]);
+
   const activeNote = notes.find((n) => n.id === activeNoteId) || notes[0];
 
   const noteWordCount = useMemo(() => {
@@ -476,34 +489,54 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
               </button>
             </div>
 
-            <div className="space-y-1.5 max-h-[550px] overflow-y-auto">
-              {notes.map((note) => (
-                <div
-                  key={note.id}
-                  onClick={() => setActiveNoteId(note.id)}
-                  className={`p-3 rounded-xl border text-xs cursor-pointer transition-colors flex items-center justify-between ${
-                    activeNoteId === note.id
-                      ? 'bg-[#D97757]/10 border-[#D97757]/40 text-[#D97757] font-bold'
-                      : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] hover:border-[#D97757]'
-                  }`}
-                >
-                  <div className="min-w-0 flex-1 mr-2">
-                    <p className="truncate font-semibold">{note.title || 'Untitled Note'}</p>
-                    <span className="text-[10px] text-[#8C897F] font-mono">{note.updatedAt}</span>
-                  </div>
-                  {notes.length > 1 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteNote(note.id);
-                      }}
-                      className="p-1 text-[#8C897F] hover:text-rose-600 rounded cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
+            <div className="flex items-center gap-1.5 mb-2 overflow-x-auto">
+              <span className="text-[10px] text-[#8C897F] font-bold shrink-0">Folder:</span>
+              {uniqueSubjects.map(subj => (
+                <button key={subj} onClick={() => setNotesSubjectFilter(subj)} className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap border ${notesSubjectFilter === subj ? 'bg-[#D97757] text-white border-[#D97757]' : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] text-[#5C5A54] dark:text-[#B5B2A8] border-[#DFDACB] dark:border-[#2C2B27]'}`}>{subj}</button>
               ))}
+            </div>
+
+            <div className="space-y-3 max-h-[550px] overflow-y-auto pr-1">
+              {Object.entries(groupedNotes).length === 0 ? (
+                <p className="text-xs text-[#8C897F] text-center py-6">No notes in this folder</p>
+              ) : (
+                Object.entries(groupedNotes).map(([subj, subjNotes]) => (
+                  <div key={subj} className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 px-1">
+                      <FolderOpen className="w-3 h-3 text-amber-600" />
+                      <span className="text-[11px] font-bold text-[#5C5A54] dark:text-[#B5B2A8] uppercase tracking-wider">{subj}</span>
+                      <span className="text-[10px] text-[#8C897F]">({subjNotes.length})</span>
+                    </div>
+                    {subjNotes.map((note) => (
+                      <div
+                        key={note.id}
+                        onClick={() => setActiveNoteId(note.id)}
+                        className={`p-3 rounded-xl border text-xs cursor-pointer transition-colors flex items-center justify-between ${
+                          activeNoteId === note.id
+                            ? 'bg-[#D97757]/10 border-[#D97757]/40 text-[#D97757] font-bold'
+                            : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] hover:border-[#D97757]'
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1 mr-2">
+                          <p className="truncate font-semibold">{note.title || 'Untitled Note'}</p>
+                          <span className="text-[10px] text-[#8C897F] font-mono">{note.updatedAt}</span>
+                        </div>
+                        {notes.length > 1 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteNote(note.id);
+                            }}
+                            className="p-1 text-[#8C897F] hover:text-rose-600 rounded cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -512,13 +545,22 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
             {activeNote && (
               <>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#DFDACB] dark:border-[#2C2B27]">
-                  <input
-                    type="text"
-                    value={activeNote.title}
-                    onChange={(e) => handleUpdateActiveNote({ title: e.target.value })}
-                    placeholder="Note Title..."
-                    className="text-base font-bold bg-transparent border-b border-transparent hover:border-[#DFDACB] focus:border-[#D97757] focus:outline-none text-[#141413] dark:text-[#FAF9F5] px-1 py-0.5"
-                  />
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <input
+                      type="text"
+                      value={activeNote.title}
+                      onChange={(e) => handleUpdateActiveNote({ title: e.target.value })}
+                      placeholder="Note Title..."
+                      className="flex-1 text-base font-bold bg-transparent border-b border-transparent hover:border-[#DFDACB] focus:border-[#D97757] focus:outline-none text-[#141413] dark:text-[#FAF9F5] px-1 py-0.5 min-w-0"
+                    />
+                    <input
+                      type="text"
+                      value={activeNote.subject || ''}
+                      onChange={(e) => handleUpdateActiveNote({ subject: e.target.value })}
+                      placeholder="Subject / Folder"
+                      className="w-32 px-2 py-1 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
+                    />
+                  </div>
 
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="flex items-center gap-2 text-[11px] font-mono text-[#8C897F] px-2.5 py-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">

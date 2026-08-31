@@ -12,10 +12,24 @@ import {
 import { searchOpenLibrary, OpenLibraryBook } from '../../services/publicApis';
 
 export const OpenLibraryWorkspace: React.FC = () => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(() => {
+    try { const p = localStorage.getItem('scc_openlib_prefill_v1'); if (p) { localStorage.removeItem('scc_openlib_prefill_v1'); return p; } } catch {}
+    return '';
+  });
   const [books, setBooks] = useState<OpenLibraryBook[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Auto-search if prefilled from Assignment Tracker
+  React.useEffect(() => {
+    if (query.trim()) {
+      (async () => {
+        setIsLoading(true);
+        try { const results = await searchOpenLibrary(query); setBooks(results); } catch {} finally { setIsLoading(false); }
+      })();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();

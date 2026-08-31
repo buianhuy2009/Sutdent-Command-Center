@@ -10,6 +10,7 @@ import {
   Copy,
   Check,
   Sparkles,
+  Save,
 } from 'lucide-react';
 import { searchArxiv, ArxivPaper } from '../../services/publicApis';
 
@@ -56,6 +57,19 @@ export const ArxivWorkspace: React.FC = () => {
     navigator.clipboard.writeText(citation);
     setCopiedId(paper.id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const [savedToNotesId, setSavedToNotesId] = useState<string | null>(null);
+  const handleSaveToNotes = (paper: ArxivPaper) => {
+    try {
+      const raw = localStorage.getItem('scc_markdown_notes_v1');
+      const notes = raw ? JSON.parse(raw) : [];
+      const content = `# ${paper.title}\n\n**Authors:** ${paper.authors.join(', ')}\n**Category:** ${paper.primaryCategory} • **Published:** ${paper.published}\n**arXiv:** ${paper.arxivUrl}\n**PDF:** ${paper.pdfUrl}\n\n## Abstract\n${paper.summary}\n`;
+      const newNote = { id: `note-${Date.now()}`, title: `arXiv: ${paper.title.slice(0, 60)}`, subject: paper.primaryCategory || 'Research', content, updatedAt: new Date().toLocaleDateString() };
+      localStorage.setItem('scc_markdown_notes_v1', JSON.stringify([newNote, ...notes]));
+      setSavedToNotesId(paper.id);
+      setTimeout(() => setSavedToNotesId(null), 2000);
+    } catch (e) { console.error(e); }
   };
 
   return (
@@ -203,6 +217,14 @@ export const ArxivWorkspace: React.FC = () => {
                 >
                   {copiedId === selectedPaper.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedId === selectedPaper.id ? 'Citation Copied' : 'Copy APA Citation'}</span>
+                </button>
+
+                <button
+                  onClick={() => handleSaveToNotes(selectedPaper)}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer border transition-colors ${savedToNotesId === selectedPaper.id ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-white dark:bg-[#252422] border-[#DFDACB] dark:border-[#2C2B27] hover:border-violet-500 text-[#141413] dark:text-[#FAF9F5]'}`}
+                >
+                  {savedToNotesId === selectedPaper.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Save className="w-3.5 h-3.5 text-violet-600" />}
+                  <span>{savedToNotesId === selectedPaper.id ? 'Saved to Notes!' : 'Save to Notes'}</span>
                 </button>
 
                 <a

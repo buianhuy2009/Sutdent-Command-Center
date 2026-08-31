@@ -201,9 +201,9 @@ Format cleanly with markdown headings.`,
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-3.5 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            className="px-3.5 py-1.5 bg-[#FAF9F5] dark:bg-[#252422] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl text-xs font-semibold border border-[#DFDACB] dark:border-[#2C2B27] flex items-center gap-1.5 transition-colors cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 text-[#D97757]" />
             <span>Link Project</span>
           </button>
 
@@ -211,9 +211,9 @@ Format cleanly with markdown headings.`,
             href="https://www.canva.com"
             target="_blank"
             rel="noreferrer"
-            className="px-3 py-1.5 bg-[#FAF9F5] dark:bg-[#252422] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl text-xs font-semibold border border-[#DFDACB] dark:border-[#2C2B27] flex items-center gap-1 transition-colors"
+            className="px-3 py-1.5 bg-white dark:bg-[#1A1917] text-[#8C897F] hover:text-[#5C5A54] rounded-xl text-xs font-semibold border border-[#DFDACB] dark:border-[#2C2B27] flex items-center gap-1 transition-colors"
           >
-            <span>Open Canva</span>
+            <span>Open in Canva</span>
             <ExternalLink className="w-3 h-3" />
           </a>
         </div>
@@ -310,18 +310,19 @@ Format cleanly with markdown headings.`,
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         onClick={() => setPreviewProject(proj)}
-                        className="p-1.5 text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] rounded-lg transition-colors cursor-pointer"
-                        title="Preview Project"
+                        className="px-2.5 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
+                        title="Preview Project (primary)"
                       >
                         <Eye className="w-3.5 h-3.5" />
+                        <span>Preview</span>
                       </button>
 
                       <a
                         href={proj.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="p-1.5 text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] rounded-lg transition-colors"
-                        title="Open in Canva"
+                        className="p-1.5 text-[#8C897F] hover:text-[#5C5A54] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] rounded-lg transition-colors border border-transparent hover:border-[#DFDACB]"
+                        title="Open in Canva (secondary)"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
@@ -340,8 +341,20 @@ Format cleanly with markdown headings.`,
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]/60 text-[11px] text-[#8C897F] flex items-center justify-between">
-            <span>Tip: Paste Canva project share links with &quot;view?embed&quot; for instant in-app previews.</span>
+          {/* Primary inline preview for most recent project */}
+          {projects.length > 0 && (
+            <div className="mt-4 rounded-xl overflow-hidden border-2 border-[#D97757]/30 shadow-sm">
+              <div className="px-3 py-1.5 bg-[#D97757]/10 flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[#D97757] flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" /> Primary Preview — {projects[0].title}</span>
+                <button onClick={() => setPreviewProject(projects[0])} className="text-[11px] font-bold text-[#D97757] hover:underline">Expand →</button>
+              </div>
+              <div className="h-64 bg-white dark:bg-[#1F1E1B]">
+                <iframe src={projects[0].url} className="w-full h-full border-0" title={projects[0].title} allow="fullscreen" />
+              </div>
+            </div>
+          )}
+          <div className="mt-3 pt-3 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]/60 text-[11px] text-[#8C897F] flex items-center justify-between">
+            <span>Tip: Preview is now primary — paste Canva share links with &quot;view?embed&quot; for instant in-app embed.</span>
           </div>
         </section>
 
