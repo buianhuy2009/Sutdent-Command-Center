@@ -162,8 +162,50 @@ export function repairJsonString<T = any>(raw: string): T {
   }
 }
 
+export function getClientGroqApiKey(): string {
+  try {
+    return localStorage.getItem('scc_groq_api_key') || '';
+  } catch {
+    return '';
+  }
+}
+
+export function setClientGroqApiKey(key: string): void {
+  try {
+    localStorage.setItem('scc_groq_api_key', key.trim());
+  } catch {}
+}
+
+export async function callGroqDirect(promptText: string, jsonMode: boolean = false): Promise<string> {
+  const groqKey = getClientGroqApiKey();
+  if (!groqKey) {
+    throw new Error('No Groq API key available for direct client call.');
+  }
+
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${groqKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: promptText }],
+      temperature: 0.3,
+      response_format: jsonMode ? { type: 'json_object' } : undefined,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Groq Direct API error: ${res.statusText}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
 /**
- * Universal Gemini Caller with Rate Limiting & Proxy Fallback
+ * Universal Multi-Provider AI Caller (User Key -> Server Gemini -> Groq LLaMA 3.3 70B)
  */
 export async function callGemini(params: {
   contents: any;
@@ -174,6 +216,7 @@ export async function callGemini(params: {
     const clientKey = getClientGeminiApiKey();
     const targetModel = params.model || 'gemini-2.5-flash';
 
+    // 1. Client-side user key priority
     if (clientKey) {
       try {
         const ai = new GoogleGenAI({ apiKey: clientKey });
@@ -191,29 +234,43 @@ export async function callGemini(params: {
       }
     }
 
-    // Fallback to server proxy
-    const serverRes = await fetch('/api/gemini/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: params.contents,
-        config: params.config,
-        model: targetModel,
-      }),
-    });
+    // 2. Server proxy fallback (handles server Gemini + server Groq)
+    try {
+      const serverRes = await fetch('/api/gemini/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: params.contents,
+          config: params.config,
+          model: targetModel,
+        }),
+      });
 
-    if (!serverRes.ok) {
-      const errData = await serverRes.json().catch(() => ({}));
-      if (serverRes.status === 429) {
-        const err: any = new Error(errData.error || 'Rate limit 429');
-        err.status = 429;
-        throw err;
+      if (serverRes.ok) {
+        const data = await serverRes.json();
+        return data.text || '';
       }
-      throw new Error(errData.error || `Gemini API failed: ${serverRes.statusText}`);
+    } catch (serverErr) {
+      console.warn('Server AI proxy failed, attempting direct Groq fallback...', serverErr);
     }
 
-    const data = await serverRes.json();
-    return data.text || '';
+    // 3. Direct Groq fallback from browser if server is unreachable
+    try {
+      let promptText = '';
+      if (typeof params.contents === 'string') promptText = params.contents;
+      else if (Array.isArray(params.contents)) {
+        promptText = params.contents
+          .map((c: any) => (typeof c === 'string' ? c : c.text || ''))
+          .join('\n');
+      } else if (params.contents?.text) {
+        promptText = params.contents.text;
+      }
+      const isJson = params.config?.responseMimeType === 'application/json';
+      return await callGroqDirect(promptText || 'Summarize academic task', isJson);
+    } catch (groqErr) {
+      console.error('All AI providers (Gemini Client, Gemini Server, Groq) failed:', groqErr);
+      throw new Error('AI service temporarily unavailable across all providers. Please check your API key.');
+    }
   });
 }
 

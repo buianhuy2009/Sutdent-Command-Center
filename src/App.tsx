@@ -37,6 +37,12 @@ import { GmailRadarTab } from './components/GmailRadarTab';
 import { AssignmentTrackerTab } from './components/AssignmentTrackerTab';
 import { CanvasSyncTab } from './components/CanvasSyncTab';
 import { GoogleDriveTab } from './components/GoogleDriveTab';
+import { NotebookLMStudioTab } from './components/NotebookLMStudioTab';
+import { FlashcardStudioTab } from './components/FlashcardStudioTab';
+import { CanvaStudioTab } from './components/CanvaStudioTab';
+import { GoogleClassroomPanel } from './components/GoogleClassroomPanel';
+import { MoodlePanel } from './components/MoodlePanel';
+import { AppStoreModal, loadPinnedAppIds, savePinnedAppIds } from './components/AppStoreModal';
 import { LandingPage } from './components/LandingPage';
 import { QuickDraftModal } from './components/QuickDraftModal';
 import { ScheduleStudyModal } from './components/ScheduleStudyModal';
@@ -273,6 +279,26 @@ export default function App() {
       } catch {
         // ignore
       }
+      return next;
+    });
+  }, []);
+
+  // App Store & Pinned Tools State
+  const [appStoreOpen, setAppStoreOpen] = useState(false);
+  const [pinnedAppIds, setPinnedAppIds] = useState<string[]>(loadPinnedAppIds);
+
+  const handleTogglePinApp = useCallback((appId: string) => {
+    setPinnedAppIds((prev) => {
+      const next = prev.includes(appId) ? prev.filter((id) => id !== appId) : [...prev, appId];
+      savePinnedAppIds(next);
+      return next;
+    });
+  }, []);
+
+  const handleUnpinApp = useCallback((appId: string) => {
+    setPinnedAppIds((prev) => {
+      const next = prev.filter((id) => id !== appId);
+      savePinnedAppIds(next);
       return next;
     });
   }, []);
@@ -1740,19 +1766,19 @@ export default function App() {
           setCommandPaletteOpen((prev) => !prev);
         }
       } else if (e.key === '0') {
-        handleWorkspaceTransition('dashboard');
+        handleTabTransition('dashboard');
       } else if (e.key === '1') {
-        handleWorkspaceTransition('academic');
+        handleTabTransition('canvas');
       } else if (e.key === '2') {
-        handleWorkspaceTransition('stem');
+        handleTabTransition('radar');
       } else if (e.key === '3') {
-        handleWorkspaceTransition('creation');
+        handleTabTransition('tracker');
       } else if (e.key === '4') {
-        handleWorkspaceTransition('retention');
+        handleTabTransition('gmail');
       } else if (e.key === '5') {
-        handleWorkspaceTransition('documents');
+        handleTabTransition('drive');
       } else if (e.key === '6') {
-        handleWorkspaceTransition('splitscreen');
+        handleTabTransition('splitscreen');
       } else if ((e.key === 'r' || e.key === 'R') && shortcutSettings.keys.sync) {
         handleRefreshAll();
       } else if (e.key === '?' && shortcutSettings.keys.help) {
@@ -1809,23 +1835,30 @@ export default function App() {
       )}
       {/* Left Navigation Rail (Desktop) + Main Area Container */}
       <div className="flex-1 flex overflow-hidden h-full">
-        {/* Sleek Modular macOS/Linear Sidebar */}
+        {/* Sleek Distinct Theme-Reactive Sidebar */}
         {!zenFocusMode && (
           <div className="hidden md:flex shrink-0">
             <Sidebar
-              activeWorkspace={activeWorkspace}
-              onSelectWorkspace={handleWorkspaceTransition}
-              isCollapsed={!isSidebarExpanded}
-              onToggleCollapse={toggleSidebar}
-              onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-              onOpenAiCoach={() => setAiChatOpen(true)}
-              onOpenSettings={() => setAccountSettingsOpen(true)}
-              isDarkMode={darkMode}
-              onToggleDarkMode={() => setDarkMode(!darkMode)}
+              activeTab={activeTab}
+              onSelectTab={handleTabTransition}
+              isExpanded={isSidebarExpanded}
+              onToggleExpand={toggleSidebar}
               user={user}
-              onGoogleSignIn={() => handleGoogleSignIn()}
+              onSignIn={() => handleGoogleSignIn()}
               onSignOut={handleLogout}
-              urgentDeadlinesCount={urgentEmailCount + canvasUnfinishedCount}
+              onOpenSettings={() => setGeminiSettingsOpen(true)}
+              onOpenAppStore={() => setAppStoreOpen(true)}
+              onOpenShortcuts={() => setShortcutsModalOpen(true)}
+              onToggleDarkMode={() => setDarkMode(!darkMode)}
+              darkMode={darkMode}
+              pinnedAppIds={pinnedAppIds}
+              onUnpinApp={handleUnpinApp}
+              badges={{
+                canvas: canvasUnfinishedCount,
+                schedule: calendarEvents.length,
+                tracker: pendingAssignmentCount,
+                gmail: urgentEmailCount,
+              }}
             />
           </div>
         )}
@@ -1894,37 +1927,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Mobile Tab Navigation Bar (shown only on small screens) */}
-          <div className="md:hidden bg-[#FAF9F5]/90 dark:bg-[#1A1917]/90 backdrop-blur-md border-b border-[#DFDACB] dark:border-[#2C2B27] px-3 py-2 flex space-x-1.5 overflow-x-auto scrollbar-none">
-            {[
-              { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
-              { id: 'academic', label: 'Academic Radar', icon: Layers },
-              { id: 'stem', label: 'STEM Lab', icon: Atom },
-              { id: 'creation', label: 'Creation Studio', icon: Palette },
-              { id: 'retention', label: 'Retention Vault', icon: Brain },
-              { id: 'documents', label: 'Documents & Drive', icon: FolderOpen },
-              { id: 'splitscreen', label: 'Split-Screen', icon: Columns2 },
-            ].map((tab) => {
-              const isActive = activeWorkspace === tab.id;
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleWorkspaceTransition(tab.id as WorkspaceId)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
-                    isActive
-                      ? 'bg-[#D97757] text-white shadow-xs'
-                      : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B]'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Main Area: Full-Screen AI Coach View OR 5 OS Workspaces */}
+          {/* Main Area: Full-Screen AI Coach View OR Tab Workspaces */}
           {aiChatOpen ? (
             <StudyAssistantChat
               isOpen={true}
@@ -1937,38 +1940,76 @@ export default function App() {
           ) : (
             <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 min-h-0">
               <div className="max-w-7xl mx-auto space-y-6">
-                {activeWorkspace === 'dashboard' && (
-                  <DashboardHome
-                    assignments={assignments}
-                    onToggleAssignment={handleToggleAssignmentById}
-                    onNavigateWorkspace={handleWorkspaceTransition}
-                    onOpenQuickDraft={() => {
-                      setDraftInitialEmail(null);
-                      setDraftInitialAlert(null);
-                      setQuickDraftModalOpen(true);
-                    }}
-                  />
-                )}
-
-                {activeWorkspace === 'academic' && (
-                  <AcademicRadarWorkspace
-                    assignments={assignments}
-                    canvasAssignments={canvasAssignments}
-                    canvasSettings={canvasSettings}
-                    onSaveCanvasSettings={(newSettings) => {
+                {activeTab === 'canvas' && (
+                  <CanvasSyncTab
+                    settings={canvasSettings}
+                    onSaveSettings={(newSettings) => {
                       setCanvasSettings(newSettings);
                       saveCanvasSettings(newSettings);
                     }}
-                    isLoadingCanvas={isLoadingCanvas}
-                    canvasError={canvasError}
+                    canvasAssignments={canvasAssignments}
+                    isLoading={isLoadingCanvas}
+                    errorMessage={canvasError}
                     lastSyncedAt={lastSyncedAt}
                     onFetchCanvas={() => loadCanvasData(false)}
-                    onSyncCanvasToSheet={handleSyncCanvasToSheet}
-                    onSyncAllPendingCanvas={handleSyncAllPendingCanvas}
-                    onToggleStatus={handleToggleAssignmentById}
+                    onSyncToSheet={handleSyncCanvasToSheet}
+                    onSyncAllPending={handleSyncAllPendingCanvas}
+                    recentFiles={recentFiles}
                     isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    onSubmitAssignment={handleSubmitAssignment}
                     googleToken={getStoredGoogleToken() || undefined}
                     onConnectGoogle={() => handleGoogleSignIn(true)}
+                  />
+                )}
+
+                {activeTab === 'radar' && (
+                  <DailyRadarTab
+                    events={calendarEvents}
+                    isLoadingEvents={isLoadingEvents}
+                    onRefreshEvents={loadCalendarEvents}
+                    onOpenScheduleModal={(evt) => {
+                      setSelectedEventForSchedule(evt || null);
+                      setSelectedAssignmentForSchedule(null);
+                      setScheduleModalOpen(true);
+                    }}
+                    onNavigateToTab={handleTabTransition}
+                    urgentCanvasItems={canvasAssignments.filter((c) => !c.isSynced).slice(0, 3)}
+                    allCanvasAssignments={canvasAssignments}
+                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    onConnectGoogle={() => handleGoogleSignIn(true)}
+                    calendarError={calendarError}
+                    calendarApiInfo={calendarApiInfo}
+                    pendingAssignments={assignments.filter((a) => a.status !== 'Done')}
+                    onAddStudyBlock={handleScheduleStudyBlock}
+                  />
+                )}
+
+                {activeTab === 'tracker' && (
+                  <AssignmentTrackerTab
+                    assignments={assignments}
+                    sheetUrl={masterSheetUrl}
+                    sheetId={masterSheetId}
+                    isLoading={isLoadingAssignments}
+                    onRefresh={loadSheetAssignments}
+                    onAddAssignment={handleAddAssignment}
+                    onUpdateStatus={handleUpdateStatus}
+                    onScheduleStudyBlock={(assignment) => {
+                      setSelectedAssignmentForSchedule(assignment);
+                      setSelectedEventForSchedule(null);
+                      setScheduleModalOpen(true);
+                    }}
+                    onParseNaturalText={handleParseNaturalText}
+                    isParsingAI={isParsingAI}
+                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    onConnectGoogle={() => handleGoogleSignIn(true)}
+                    onClearCompleted={handleClearCompletedAssignments}
+                    sheetError={sheetError}
+                    sheetApiInfo={sheetApiInfo}
+                  />
+                )}
+
+                {activeTab === 'gmail' && (
+                  <GmailRadarTab
                     emailAlerts={emailAlerts}
                     rawEmails={rawEmails}
                     isLoadingEmails={isLoadingEmails}
@@ -1979,22 +2020,72 @@ export default function App() {
                       setQuickDraftModalOpen(true);
                     }}
                     onExtractAssignment={handleExtractAssignment}
+                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    onConnectGoogle={() => handleGoogleSignIn(true)}
                     emailError={emailError}
+                    gmailApiInfo={gmailApiInfo}
                   />
                 )}
 
-                {activeWorkspace === 'stem' && <StemLabWorkspace />}
+                {activeTab === 'drive' && (
+                  <GoogleDriveTab
+                    recentFiles={recentFiles}
+                    isLoadingFiles={isLoadingFiles}
+                    onRefreshFiles={() => loadRecentFiles(false)}
+                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    onConnectGoogle={() => handleGoogleSignIn(true)}
+                    driveError={driveError}
+                    driveApiInfo={driveApiInfo}
+                    googleToken={getStoredGoogleToken() || undefined}
+                  />
+                )}
 
-                {activeWorkspace === 'creation' && <CreationStudioWorkspace />}
+                {activeTab === 'classroom' && (
+                  <GoogleClassroomPanel
+                    googleToken={getStoredGoogleToken() || undefined}
+                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    onConnectGoogle={() => handleGoogleSignIn(true)}
+                    onSyncToSheet={handleSyncCanvasToSheet}
+                  />
+                )}
 
-                {activeWorkspace === 'retention' && (
+                {activeTab === 'moodle' && (
+                  <MoodlePanel
+                    onSyncToSheet={handleSyncCanvasToSheet}
+                  />
+                )}
+
+                {activeTab === 'notebooklm' && (
+                  <NotebookLMStudioTab
+                    googleToken={getStoredGoogleToken() || undefined}
+                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                  />
+                )}
+
+                {activeTab === 'flashcards' && (
+                  <FlashcardStudioTab />
+                )}
+
+                {activeTab === 'canva' && (
+                  <CanvaStudioTab />
+                )}
+
+                {(activeTab === 'desmos-graphing' || activeTab === 'desmos-scientific' || activeTab === 'geogebra' || activeTab === 'phet' || activeTab === 'scribble-latex' || activeTab === 'stem') && (
+                  <StemLabWorkspace />
+                )}
+
+                {(activeTab === 'excalidraw' || activeTab === 'mermaid' || activeTab === 'creation') && (
+                  <CreationStudioWorkspace />
+                )}
+
+                {(activeTab === 'viva' || activeTab === 'pomodoro' || activeTab === 'retention') && (
                   <RetentionVaultWorkspace
                     googleToken={getStoredGoogleToken() || undefined}
                     isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
                   />
                 )}
 
-                {activeWorkspace === 'documents' && (
+                {(activeTab === 'notes-markdown' || activeTab === 'rubric' || activeTab === 'feynman' || activeTab === 'documents') && (
                   <DocumentHubWorkspace
                     recentFiles={recentFiles}
                     isLoadingFiles={isLoadingFiles}
@@ -2004,7 +2095,22 @@ export default function App() {
                   />
                 )}
 
-                {activeWorkspace === 'splitscreen' && <SplitScreenStudio />}
+                {activeTab === 'splitscreen' && (
+                  <SplitScreenStudio />
+                )}
+
+                {activeTab === 'dashboard' && (
+                  <DashboardHome
+                    assignments={assignments}
+                    onToggleAssignment={handleToggleAssignmentById}
+                    onNavigateWorkspace={(ws) => handleTabTransition(ws)}
+                    onOpenQuickDraft={() => {
+                      setDraftInitialEmail(null);
+                      setDraftInitialAlert(null);
+                      setQuickDraftModalOpen(true);
+                    }}
+                  />
+                )}
               </div>
             </main>
           )}
@@ -2128,7 +2234,16 @@ export default function App() {
         }}
       />
 
-      {/* Persistent Gemini AI Settings Modal */}
+      {/* App Store & Tool Catalog Modal */}
+      <AppStoreModal
+        isOpen={appStoreOpen}
+        onClose={() => setAppStoreOpen(false)}
+        onLaunchApp={(appId) => handleTabTransition(appId)}
+        pinnedAppIds={pinnedAppIds}
+        onTogglePinApp={handleTogglePinApp}
+      />
+
+      {/* Persistent Gemini & Groq AI Settings Modal */}
       <GeminiSettingsModal
         isOpen={geminiSettingsOpen}
         onClose={() => setGeminiSettingsOpen(false)}

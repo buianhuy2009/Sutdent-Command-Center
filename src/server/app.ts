@@ -414,14 +414,15 @@ ${JSON.stringify(context || {}, null, 2)}`;
     }
   });
 
-  // Generic Gemini Generate endpoint with multimodal and schema support
+  // Generic Gemini Generate endpoint with Groq automatic fallback
   app.post("/api/gemini/generate", async (req, res) => {
-    try {
-      const { contents, config, model } = req.body;
-      if (!contents) {
-        return res.status(400).json({ error: "contents is required" });
-      }
+    const { contents, config, model } = req.body;
+    if (!contents) {
+      return res.status(400).json({ error: "contents is required" });
+    }
 
+    // 1. Try Gemini first
+    try {
       const ai = getGenAI();
       const targetModel = model || process.env.GEMINI_MODEL || "gemini-2.5-flash";
       const response = await ai.models.generateContent({
@@ -430,12 +431,72 @@ ${JSON.stringify(context || {}, null, 2)}`;
         config,
       });
 
-      res.json({
+      return res.json({
         text: response.text || "",
+        provider: "gemini",
       });
-    } catch (err: any) {
-      console.error("Gemini generic generate error:", err);
-      res.status(500).json({ error: err.message || "Failed to generate content" });
+    } catch (geminiErr: any) {
+      console.warn("Gemini server call failed, attempting Groq fallback...", geminiErr?.message || geminiErr);
+
+      // 2. Automatic Groq fallback
+      try {
+        const groqApiKey = process.env.GROQ_API_KEY || '';
+        let promptString = "";
+
+        if (typeof contents === "string") {
+          promptString = contents;
+        } else if (Array.isArray(contents)) {
+          promptString = contents
+            .map((c: any) => (typeof c === "string" ? c : c.text || ""))
+            .join("\n");
+        } else if (contents?.text) {
+          promptString = contents.text;
+        }
+
+        const isJsonMode = config?.responseMimeType === "application/json";
+        const systemMessage = config?.systemInstruction
+          ? typeof config.systemInstruction === "string"
+            ? config.systemInstruction
+            : config.systemInstruction.text || ""
+          : "";
+
+        const messages: any[] = [];
+        if (systemMessage) {
+          messages.push({ role: "system", content: systemMessage });
+        }
+        messages.push({ role: "user", content: promptString || "Help the student with academic tasks." });
+
+        const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${groqApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages,
+            temperature: 0.3,
+            response_format: isJsonMode ? { type: "json_object" } : undefined,
+          }),
+        });
+
+        if (!groqRes.ok) {
+          throw new Error(`Groq API returned ${groqRes.status}: ${groqRes.statusText}`);
+        }
+
+        const groqData = await groqRes.json();
+        const outputText = groqData.choices?.[0]?.message?.content || "";
+
+        return res.json({
+          text: outputText,
+          provider: "groq-llama-3.3-70b",
+        });
+      } catch (groqErr: any) {
+        console.error("Both Gemini and Groq fallbacks failed:", groqErr);
+        return res.status(500).json({
+          error: `AI generation failed on both Gemini and Groq: ${geminiErr?.message || "Unknown error"}`,
+        });
+      }
     }
   });
 

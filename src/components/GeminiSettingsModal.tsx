@@ -93,10 +93,10 @@ export const GeminiSettingsModal: React.FC<GeminiSettingsModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">
-                Gemini AI Engine Settings
+                AI Engine &amp; API Key Settings
               </h3>
               <p className="text-xs text-[#8C897F]">
-                Powered by Google Gen AI SDK (@google/genai)
+                Dual-Provider Engine: Google Gemini + Groq LLaMA 3.3 70B Fallback
               </p>
             </div>
           </div>
