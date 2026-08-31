@@ -7,14 +7,22 @@ import {
   Shuffle,
   Clock,
   Sparkles,
+  Calendar,
+  BookOpen,
+  Mail,
+  Timer,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { Assignment } from '../types';
 import { getTodayQuote, QUOTE_BANK, DailyQuote } from '../data/quotes';
-import { MOCK_EMAIL_ALERTS } from '../data/mockData';
+import { MOCK_EMAIL_ALERTS, getMockTodayEvents } from '../data/mockData';
 
 const LOCAL_STORAGE_NAME_KEY = 'scc_user_preferred_name';
 const LOCAL_STORAGE_INTENTION_KEY = 'scc_user_daily_intention';
+const LOCAL_STORAGE_VIBE_KEY = 'scc_user_selected_vibe';
+const LOCAL_STORAGE_SPRINT_GOAL_KEY = 'scc_user_sprint_goal';
 
 interface DashboardHomeProps {
   assignments: Assignment[];
@@ -25,6 +33,8 @@ interface DashboardHomeProps {
   onOpenAppStore?: () => void;
   user?: User | null;
 }
+
+type VibeType = 'focus' | 'calm' | 'creative' | 'recharge';
 
 export const DashboardHome: React.FC<DashboardHomeProps> = ({
   assignments,
@@ -43,8 +53,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  // Time-aware greeting
-  const greetingTime = useMemo(() => {
+  // Time-aware greeting prefix
+  const greetingPrefix = useMemo(() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
     if (hour < 17) return 'Good afternoon';
@@ -83,7 +93,31 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     setIsEditingIntention(false);
   };
 
-  // Daily Quote with Shuffle
+  // Personalized Daily Vibe/Theme selector
+  const [selectedVibe, setSelectedVibe] = useState<VibeType>(() => {
+    return (localStorage.getItem(LOCAL_STORAGE_VIBE_KEY) as VibeType) || 'focus';
+  });
+
+  const handleSelectVibe = (vibe: VibeType) => {
+    setSelectedVibe(vibe);
+    localStorage.setItem(LOCAL_STORAGE_VIBE_KEY, vibe);
+  };
+
+  // Personalized Focus Sprint Goal
+  const [sprintGoal, setSprintGoal] = useState<number>(() => {
+    const saved = localStorage.getItem(LOCAL_STORAGE_SPRINT_GOAL_KEY);
+    return saved ? parseInt(saved, 10) : 4;
+  });
+
+  const handleAdjustSprintGoal = (amount: number) => {
+    setSprintGoal((prev) => {
+      const next = Math.max(1, Math.min(10, prev + amount));
+      localStorage.setItem(LOCAL_STORAGE_SPRINT_GOAL_KEY, next.toString());
+      return next;
+    });
+  };
+
+  // Today's quote
   const [quote, setQuote] = useState<DailyQuote>(() => getTodayQuote());
 
   const handleShuffleQuote = () => {
@@ -91,7 +125,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     setQuote(QUOTE_BANK[randomIndex]);
   };
 
-  // Real Counts (Zero Spoof)
+  // Real Counts & Overviews (No Spoofing)
   const pendingAssignments = useMemo(() => {
     return assignments.filter((a) => a.status !== 'Done');
   }, [assignments]);
@@ -105,7 +139,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     })[0];
   }, [pendingAssignments]);
 
-  const academicAlertsCount = MOCK_EMAIL_ALERTS.filter((e) => !e.isSpam).length;
+  const todayEvents = useMemo(() => getMockTodayEvents(), []);
+  const academicAlertsCount = useMemo(() => MOCK_EMAIL_ALERTS.filter((e) => !e.isSpam).length, []);
 
   const completedFocusSessions = useMemo(() => {
     try {
@@ -124,144 +159,277 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     }).format(new Date());
   }, []);
 
+  // Vibe background glow settings
+  const vibeGlowClass = {
+    focus: 'from-[#D97757]/10',
+    calm: 'from-blue-500/8 dark:from-blue-900/10',
+    creative: 'from-violet-500/8 dark:from-violet-900/10',
+    recharge: 'from-emerald-500/8 dark:from-emerald-900/10',
+  }[selectedVibe];
+
+  const vibeBorderHoverClass = {
+    focus: 'hover:border-[#D97757]',
+    calm: 'hover:border-blue-500',
+    creative: 'hover:border-violet-500',
+    recharge: 'hover:border-emerald-500',
+  }[selectedVibe];
+
+  const vibeTextAccentClass = {
+    focus: 'text-[#D97757]',
+    calm: 'text-blue-500 dark:text-blue-400',
+    creative: 'text-violet-500 dark:text-violet-400',
+    recharge: 'text-emerald-600 dark:text-emerald-400',
+  }[selectedVibe];
+
   return (
-    <div className="min-h-screen w-full flex flex-col justify-between items-center bg-[#FAF9F5] dark:bg-[#141413] px-6 py-10 text-center animate-in fade-in duration-300 select-none relative overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col justify-between items-center bg-[#FAF9F5] dark:bg-[#141413] px-6 py-12 text-center animate-in fade-in duration-300 select-none relative overflow-y-auto">
       
-      {/* Subtle Ambient Radial Glow */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-[#D97757]/8 via-transparent to-transparent rounded-full blur-3xl pointer-events-none" />
+      {/* Dynamic Ambient Background Glow */}
+      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-br ${vibeGlowClass} via-transparent to-transparent rounded-full blur-3xl pointer-events-none transition-all duration-700`} />
 
-      {/* 1. Top Section: Live Time, Date & Personalized Greeting */}
-      <div className="space-y-3 pt-4 z-10">
-        <div className="text-3xl sm:text-4xl font-mono font-bold tracking-tight text-[#141413] dark:text-[#FAF9F5]">
-          {currentTime}
-        </div>
-
-        <div className="flex items-center justify-center gap-2">
-          {isEditingName ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
-                className="px-3 py-0.5 text-sm font-bold bg-white dark:bg-[#1F1E1B] border border-[#D97757] rounded-xl focus:outline-none text-[#141413] dark:text-[#FAF9F5] text-center"
-                autoFocus
-              />
-              <button
-                onClick={handleSaveName}
-                className="p-1.5 bg-[#D97757] text-white rounded-lg cursor-pointer"
-                title="Save name"
-              >
-                <Check className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 group cursor-pointer" onClick={() => { setNameInput(studentName); setIsEditingName(true); }}>
-              <span className="text-sm sm:text-base font-bold text-[#141413] dark:text-[#FAF9F5]">
-                {greetingTime}, {studentName}
-              </span>
-              <Edit2 className="w-3 h-3 text-[#8C897F] opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-          )}
-        </div>
-
-        {/* Personalized Daily Intention */}
-        <div className="max-w-md mx-auto">
-          {isEditingIntention ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={intentionInput}
-                onChange={(e) => setIntentionInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSaveIntention()}
-                placeholder="What is your main focus today?"
-                className="w-full px-3 py-1 text-xs bg-white dark:bg-[#1F1E1B] border border-[#D97757] rounded-xl focus:outline-none text-[#141413] dark:text-[#FAF9F5] text-center"
-                autoFocus
-              />
-              <button
-                onClick={handleSaveIntention}
-                className="p-1.5 bg-[#D97757] text-white rounded-lg cursor-pointer shrink-0"
-              >
-                <Check className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <p
-              onClick={() => { setIntentionInput(dailyIntention); setIsEditingIntention(true); }}
-              className="text-xs text-[#8C897F] hover:text-[#D97757] transition-colors cursor-pointer italic line-clamp-1"
-              title="Click to edit your daily focus intention"
-            >
-              {dailyIntention ? `"${dailyIntention}"` : 'Set today\'s personal focus intention...'}
-            </p>
-          )}
+      {/* Top Bar metadata */}
+      <div className="w-full max-w-4xl flex items-center justify-between text-[11px] text-[#8C897F] font-mono z-10 shrink-0">
+        <span>{todayFormattedDate}</span>
+        <div className="flex items-center gap-1.5 font-bold tracking-wider uppercase">
+          <Clock className="w-3.5 h-3.5" />
+          <span>{currentTime}</span>
         </div>
       </div>
 
-      {/* 2. Middle Section: Philosophical Quote & Travel Button */}
-      <div className="max-w-2xl w-full space-y-8 my-auto z-10">
+      {/* Main Centered Personalization Hub */}
+      <div className="max-w-3xl w-full space-y-12 my-auto py-8 z-10">
         
-        {/* Daily Quote Card with Hover Shuffle */}
-        <div className="space-y-4 relative group">
+        {/* Large Typographic Piece: The Personalized Greeting */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-center gap-4">
+            {isEditingName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                  className="px-4 py-1.5 text-4xl sm:text-5xl font-extrabold bg-white dark:bg-[#1F1E1B] border-2 border-[#D97757] rounded-2xl focus:outline-none text-[#141413] dark:text-[#FAF9F5] text-center max-w-md shadow-xs"
+                  autoFocus
+                />
+                <button
+                  onClick={handleSaveName}
+                  className="p-3 bg-[#D97757] text-white rounded-xl shadow-sm cursor-pointer"
+                >
+                  <Check className="w-5 h-5" />
+                </button>
+              </div>
+            ) : (
+              <div
+                className="flex items-center justify-center gap-3.5 group cursor-pointer"
+                onClick={() => {
+                  setNameInput(studentName);
+                  setIsEditingName(true);
+                }}
+                title="Click to change preferred name"
+              >
+                <h1 className="text-4xl sm:text-6xl font-extrabold text-[#141413] dark:text-[#FAF9F5] tracking-tight leading-tight">
+                  {greetingPrefix}, {studentName}
+                </h1>
+                <Edit2 className="w-5 h-5 text-[#8C897F] opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            )}
+          </div>
+
+          {/* Inline Daily Intention under Greeting */}
+          <div className="max-w-lg mx-auto">
+            {isEditingIntention ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={intentionInput}
+                  onChange={(e) => setIntentionInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveIntention()}
+                  placeholder="What is your focus priority today?"
+                  className="w-full px-4 py-1.5 text-sm bg-white dark:bg-[#1F1E1B] border border-[#D97757] rounded-xl focus:outline-none text-[#141413] dark:text-[#FAF9F5] text-center"
+                  autoFocus
+                />
+                <button
+                  onClick={handleSaveIntention}
+                  className="p-2 bg-[#D97757] text-white rounded-lg cursor-pointer shrink-0"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <p
+                onClick={() => {
+                  setIntentionInput(dailyIntention);
+                  setIsEditingIntention(true);
+                }}
+                className="text-xs sm:text-sm text-[#8C897F] hover:text-[#D97757] transition-colors cursor-pointer italic leading-relaxed"
+                title="Click to update focus intention"
+              >
+                {dailyIntention ? `"${dailyIntention}"` : 'Set today\'s focus intention...'}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Customization Rails: Vibe Switcher & Focus Goal */}
+        <div className="bg-white/40 dark:bg-[#1C1B19]/30 backdrop-blur-md rounded-3xl border border-[#DFDACB]/60 dark:border-[#2C2B27]/60 p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-left">
+          {/* Left: Vibe / Ambient Light Selection */}
+          <div className="space-y-2">
+            <span className="font-bold text-[#8C897F] uppercase tracking-wider block">
+              Personalized Vibe &amp; Glow
+            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {(
+                [
+                  { id: 'focus', label: 'Study Focus' },
+                  { id: 'calm', label: 'Mindful Calm' },
+                  { id: 'creative', label: 'Creative flow' },
+                  { id: 'recharge', label: 'Recharge rest' },
+                ] as const
+              ).map((vibe) => (
+                <button
+                  key={vibe.id}
+                  onClick={() => handleSelectVibe(vibe.id)}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                    selectedVibe === vibe.id
+                      ? 'bg-[#141413] dark:bg-[#FAF9F5] text-white dark:text-[#141413] shadow-2xs'
+                      : 'bg-white/70 dark:bg-[#1E1D1B]/50 border border-[#DFDACB] dark:border-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] hover:border-[#D97757]'
+                  }`}
+                >
+                  {vibe.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Daily Sprint Target Goal */}
+          <div className="space-y-2 flex flex-col justify-center">
+            <span className="font-bold text-[#8C897F] uppercase tracking-wider block">
+              Daily Pomodoro Target
+            </span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center bg-white/70 dark:bg-[#1E1D1B]/50 border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl px-3 py-1 font-bold">
+                <span className="font-mono text-sm text-[#141413] dark:text-[#FAF9F5]">
+                  {completedFocusSessions} / {sprintGoal} Sprints
+                </span>
+              </div>
+              <div className="flex items-center gap-1 bg-white/70 dark:bg-[#1E1D1B]/50 border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl p-0.5">
+                <button
+                  onClick={() => handleAdjustSprintGoal(-1)}
+                  className="p-1 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors"
+                  title="Decrease target"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleAdjustSprintGoal(1)}
+                  className="p-1 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors"
+                  title="Increase target"
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Real-time Academic Overview Block */}
+        <div className="bg-white/60 dark:bg-[#1C1B19]/50 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 sm:p-6 text-left space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#8C897F] flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-[#D97757]" />
+              <span>Real-Time Academic Overview</span>
+            </h3>
+            <span className="text-[10px] text-[#8C897F] font-mono">
+              Live State Metrics
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-medium">
+            {/* Column 1: Deadlines */}
+            <div className="space-y-2 p-3 bg-[#FAF9F5]/80 dark:bg-[#1A1917]/80 rounded-2xl border border-[#DFDACB]/40">
+              <div className="flex items-center gap-1.5 font-bold text-[#8C897F]">
+                <BookOpen className="w-3.5 h-3.5 text-rose-500" />
+                <span>Coursework</span>
+              </div>
+              <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                {pendingAssignments.length} deadlines pending
+              </p>
+              {nextUrgentAssignment && (
+                <p className="text-[11px] text-[#8C897F] truncate">
+                  Next: {nextUrgentAssignment.assignmentName}
+                </p>
+              )}
+            </div>
+
+            {/* Column 2: Scheduled Events */}
+            <div className="space-y-2 p-3 bg-[#FAF9F5]/80 dark:bg-[#1A1917]/80 rounded-2xl border border-[#DFDACB]/40">
+              <div className="flex items-center gap-1.5 font-bold text-[#8C897F]">
+                <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                <span>Today&apos;s Schedule</span>
+              </div>
+              <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                {todayEvents.length} events scheduled
+              </p>
+              {todayEvents[0] && (
+                <p className="text-[11px] text-[#8C897F] truncate">
+                  Next: {todayEvents[0].summary}
+                </p>
+              )}
+            </div>
+
+            {/* Column 3: Email alerts */}
+            <div className="space-y-2 p-3 bg-[#FAF9F5]/80 dark:bg-[#1A1917]/80 rounded-2xl border border-[#DFDACB]/40">
+              <div className="flex items-center gap-1.5 font-bold text-[#8C897F]">
+                <Mail className="w-3.5 h-3.5 text-amber-500" />
+                <span>Inbox Scanner</span>
+              </div>
+              <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                {academicAlertsCount} academic notices
+              </p>
+              <p className="text-[11px] text-[#8C897F]">
+                All analyzed by local AI
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Travel Button */}
+        <div>
+          <button
+            onClick={() => onNavigateWorkspace('canvas')}
+            className={`px-10 py-4 bg-[#D97757] hover:bg-[#C86646] text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-[#D97757]/15 hover:shadow-[#D97757]/30 hover:scale-[1.02] flex items-center gap-2.5 mx-auto cursor-pointer group`}
+          >
+            <span>Enter LMS Workspace</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          </button>
+        </div>
+
+        {/* Serif Quote Block */}
+        <div className="space-y-3.5 pt-4 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]/60 relative group">
           <div className="flex items-center justify-center gap-2">
-            <Quote className="w-5 h-5 text-[#D97757]/40" />
+            <Quote className="w-4 h-4 text-[#D97757]/30 mx-auto" />
             <button
               onClick={handleShuffleQuote}
-              className="p-1 text-[#8C897F] hover:text-[#D97757] rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              className="p-1 text-[#8C897F] hover:text-[#D97757] rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer absolute right-2"
               title="Get another quote"
             >
               <Shuffle className="w-3.5 h-3.5" />
             </button>
           </div>
-
-          <blockquote className="text-xl sm:text-2xl font-serif italic text-[#141413] dark:text-[#FAF9F5] leading-relaxed max-w-xl mx-auto px-4">
+          <blockquote className="text-base sm:text-lg font-serif italic text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed max-w-xl mx-auto">
             &ldquo;{quote.quote}&rdquo;
           </blockquote>
-
           <cite className="text-xs font-bold text-[#8C897F] not-italic block">
-            — {quote.author} <span className="text-[10px] font-mono text-[#8C897F]/70">({quote.field})</span>
+            — {quote.author} <span className="text-[10px] font-mono text-[#8C897F]/75">({quote.field})</span>
           </cite>
-        </div>
-
-        {/* Short Status Summary */}
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-[#8C897F] font-semibold">
-          <span>{pendingAssignments.length} tasks pending</span>
-          <span className="text-[#DFDACB] dark:text-[#2C2B27]">•</span>
-          <span>{academicAlertsCount} academic notices</span>
-          <span className="text-[#DFDACB] dark:text-[#2C2B27]">•</span>
-          <span>{completedFocusSessions} focus sprints done</span>
-        </div>
-
-        {/* Next Urgent Assignment Chip (If any) */}
-        {nextUrgentAssignment && (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] text-xs shadow-2xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#D97757]">
-              Next up:
-            </span>
-            <span className="font-bold text-[#141413] dark:text-[#FAF9F5] truncate max-w-xs">
-              {nextUrgentAssignment.assignmentName}
-            </span>
-            <span className="text-[10px] font-mono text-[#8C897F]">
-              ({nextUrgentAssignment.dueDate || 'Soon'})
-            </span>
-          </div>
-        )}
-
-        {/* Enter LMS Workspace Travel Button */}
-        <div>
-          <button
-            onClick={() => onNavigateWorkspace('canvas')}
-            className="px-8 py-3.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-[#D97757]/15 hover:shadow-[#D97757]/30 hover:scale-[1.02] flex items-center gap-2 mx-auto cursor-pointer group"
-          >
-            <span>Enter LMS Workspace</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </button>
         </div>
 
       </div>
 
-      {/* 3. Bottom Section: Date Metadata */}
-      <div className="text-[11px] text-[#8C897F] font-mono select-none z-10">
-        {todayFormattedDate}
+      {/* Bottom Section: Command Center Label */}
+      <div className="text-[10px] text-[#8C897F] font-mono select-none uppercase tracking-wider shrink-0">
+        Student Command Center • Version 2.0
       </div>
 
     </div>
