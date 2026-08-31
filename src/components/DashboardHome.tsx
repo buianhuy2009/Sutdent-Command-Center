@@ -114,8 +114,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           <h1 className="text-xl sm:text-2xl font-bold text-[#141413] dark:text-[#FAF9F5] tracking-tight mt-2">
             Academic Command Center
           </h1>
-          <p className="text-xs sm:text-sm text-[#8C897F] mt-1 max-w-2xl leading-relaxed">
-            <strong>Core Mission:</strong> Consolidating all essential student tools into one unified Operating System — solving scattered tabs and single-purpose website clutter.
+          <p className="text-xs sm:text-sm text-[#8C897F] mt-1 max-w-xl">
+            Unified workspace for course deadlines, STEM calculators, whiteboards, focus sprints, and research.
           </p>
         </div>
 
