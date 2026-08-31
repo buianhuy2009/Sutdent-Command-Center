@@ -26,6 +26,7 @@ import {
   FileCode,
   ShieldCheck,
   TrendingUp,
+  ArrowRightLeft,
 } from 'lucide-react';
 
 interface AppLogoProps {
@@ -255,6 +256,20 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-purple-600 to-indigo-700 text-white flex items-center justify-center font-bold shadow-md shadow-purple-600/20 shrink-0 ${className}`}>
           <CheckSquare className={iconSizes} />
+        </div>
+      );
+
+    case 'periodic-table':
+      return (
+        <div className={`${sizeClasses} bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center font-bold shadow-md shadow-cyan-500/20 shrink-0 ${className}`}>
+          <Atom className={iconSizes} />
+        </div>
+      );
+
+    case 'unit-converter':
+      return (
+        <div className={`${sizeClasses} bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-bold shadow-md shadow-emerald-500/20 shrink-0 ${className}`}>
+          <ArrowRightLeft className={iconSizes} />
         </div>
       );
 

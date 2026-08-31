@@ -346,6 +346,30 @@ export const APP_CATALOG: AppStoreItem[] = [
     rating: 5.0,
     highlightCategory: 'Featured',
   },
+  {
+    id: 'periodic-table',
+    name: 'Interactive Periodic Table',
+    category: 'STEM & Math',
+    description: '118-element periodic table with atomic masses, electron configs & classifications.',
+    longOverview: 'Explore all 118 chemical elements with accurate atomic masses, electron configurations, Pauling electronegativities, and chemical classifications.',
+    features: ['118-element IUPAC standard periodic table', 'Element family filters (Alkali, Halogens, Noble Gases)', 'Search by name, symbol, or atomic number', 'Detailed element inspector drawer'],
+    badge: 'Chemistry',
+    developer: 'StudentOS STEM Lab',
+    rating: 5.0,
+    highlightCategory: 'Featured',
+  },
+  {
+    id: 'unit-converter',
+    name: 'Scientific Unit Converter',
+    category: 'STEM & Math',
+    description: 'Two-way scientific unit converter & instant math expression evaluator.',
+    longOverview: 'Convert length, mass, temperature, speed, energy, pressure, and digital storage units with high precision. Includes built-in expression calculator.',
+    features: ['7 major scientific unit categories', 'Two-way live conversion with instant swap', 'Built-in trigonometric & algebraic expression evaluator', '1-click copy equation to clipboard'],
+    badge: 'Physics & STEM',
+    developer: 'StudentOS STEM Lab',
+    rating: 4.9,
+    highlightCategory: 'Featured',
+  },
 ];
 
 const CATEGORIES = [

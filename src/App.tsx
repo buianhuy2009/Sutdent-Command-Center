@@ -43,6 +43,8 @@ import { PhotoMathWorkspace } from './components/workspaces/PhotoMathWorkspace';
 import { PdfReaderWorkspace } from './components/workspaces/PdfReaderWorkspace';
 import { QuizGeneratorWorkspace } from './components/workspaces/QuizGeneratorWorkspace';
 import { PomodoroWorkspace } from './components/workspaces/PomodoroWorkspace';
+import { PeriodicTableWorkspace } from './components/workspaces/PeriodicTableWorkspace';
+import { UnitConverterWorkspace } from './components/workspaces/UnitConverterWorkspace';
 import { SplitScreenStudio } from './components/SplitScreenStudio';
 import { DailyRadarTab } from './components/DailyRadarTab';
 import { GmailRadarTab } from './components/GmailRadarTab';
@@ -1918,6 +1920,8 @@ export default function App() {
                   'notes-markdown': 'Markdown Notes',
                   'pdf-reader': 'PDF Reader & Annotator',
                   'quiz-generator': 'AI Practice Quiz Generator',
+                  'periodic-table': 'Interactive Periodic Table',
+                  'unit-converter': 'Scientific Unit Converter',
                   rubric: 'Essay Rubric Checker',
                   feynman: 'Feynman Concept Explainer',
                   splitscreen: 'Dual Split Screen',
@@ -2209,6 +2213,14 @@ export default function App() {
 
                 {activeTab === 'pomodoro' && (
                   <PomodoroWorkspace />
+                )}
+
+                {activeTab === 'periodic-table' && (
+                  <PeriodicTableWorkspace />
+                )}
+
+                {activeTab === 'unit-converter' && (
+                  <UnitConverterWorkspace />
                 )}
 
                 {activeTab === 'stem' && (

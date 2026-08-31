@@ -19,6 +19,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   ArrowRight,
+  Printer,
+  BookOpen,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { GoogleDriveTab } from '../GoogleDriveTab';
@@ -198,6 +200,44 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
     a.download = `${activeNote.title.replace(/\s+/g, '_')}.md`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleInsertCornellTemplate = () => {
+    if (!activeNote) return;
+    const cornellMarkdown = `# ${activeNote.title || 'Cornell Lecture Notes'}
+
+## Cornell Notes Framework
+**Date:** ${new Date().toLocaleDateString()} | **Course:** ${activeNote.subject || 'General'}
+
+---
+
+### Cues & Key Concepts (Left Column)
+- **Key Term 1:** [Definition or core question]
+- **Key Formula:** [Equation / Law / Theorem]
+- **Exam Notice:** [Crucial concept likely on tests]
+
+---
+
+### Detailed Lecture Notes (Main Column)
+1. **Primary Concept Explanation**:
+   - Detailed derivation and mechanisms
+   - Sub-points and proof steps
+2. **Worked Examples**:
+   - Step 1: Given variables
+   - Step 2: Applied theorem
+   - Step 3: Final evaluated output
+
+---
+
+### Summary & Synthesis (Bottom Box)
+> [!NOTE]
+> *Briefly summarize the entire lecture in 2-3 sentences. Focus on big-picture takeaways and practical applications.*
+`;
+    handleUpdateActiveNote({ content: cornellMarkdown });
+  };
+
+  const handlePrintNote = () => {
+    window.print();
   };
 
   // Run Rubric Evaluation
@@ -400,6 +440,24 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                       <span>•</span>
                       <span>~{noteReadingTime} min read</span>
                     </div>
+
+                    <button
+                      onClick={handleInsertCornellTemplate}
+                      className="px-3 py-1.5 text-xs font-semibold bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+                      title="Insert structured Cornell Note format"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Cornell Template</span>
+                    </button>
+
+                    <button
+                      onClick={handlePrintNote}
+                      className="px-3 py-1.5 text-xs font-semibold bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+                      title="Print or Export to PDF"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Print / PDF</span>
+                    </button>
 
                     <button
                       onClick={handleCopyMarkdown}
