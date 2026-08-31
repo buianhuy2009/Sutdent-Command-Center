@@ -15,7 +15,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
-import { Assignment } from '../types';
+import { Assignment, CalendarEvent, EmailAlert } from '../types';
 import { getTodayQuote, QUOTE_BANK, DailyQuote } from '../data/quotes';
 import { MOCK_EMAIL_ALERTS, getMockTodayEvents } from '../data/mockData';
 import { fetchNasaApod, NasaApod } from '../services/publicApis';
@@ -36,6 +36,8 @@ interface DashboardHomeProps {
   isGoogleConnected?: boolean;
   onConnectGoogle?: () => void;
   onOpenStudyPlan?: () => void;
+  calendarEvents?: CalendarEvent[];
+  emailAlerts?: EmailAlert[];
 }
 
 type VibeType = 'focus' | 'calm' | 'creative' | 'recharge';
@@ -47,6 +49,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   isGoogleConnected = false,
   onConnectGoogle,
   onOpenStudyPlan,
+  calendarEvents = [],
+  emailAlerts = [],
 }) => {
   // Live Clock
   const [currentTime, setCurrentTime] = useState<string>(() => {
@@ -146,8 +150,15 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     })[0];
   }, [pendingAssignments]);
 
-  const todayEvents = useMemo(() => getMockTodayEvents(), []);
-  const academicAlertsCount = useMemo(() => MOCK_EMAIL_ALERTS.filter((e) => !e.isSpam).length, []);
+  const todayEvents = useMemo(() => {
+    if (!isGoogleConnected) return [];
+    return calendarEvents;
+  }, [calendarEvents, isGoogleConnected]);
+
+  const academicAlertsCount = useMemo(() => {
+    if (!isGoogleConnected) return 0;
+    return emailAlerts.filter((e) => !e.isSpam).length;
+  }, [emailAlerts, isGoogleConnected]);
 
   const completedFocusSessions = useMemo(() => {
     try {
@@ -391,19 +402,41 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             </div>
 
             {/* Column 2: Scheduled Events */}
-            <div className="space-y-2 p-3 bg-[#FAF9F5]/80 dark:bg-[#1A1917]/80 rounded-2xl border border-[#DFDACB]/40">
-              <div className="flex items-center gap-1.5 font-bold text-[#8C897F]">
-                <Calendar className="w-3.5 h-3.5 text-blue-500" />
-                <span>Today&apos;s Schedule</span>
+            <div className="space-y-2 p-3 bg-[#FAF9F5]/80 dark:bg-[#1A1917]/80 rounded-2xl border border-[#DFDACB]/40 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 font-bold text-[#8C897F]">
+                  <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Today&apos;s Schedule</span>
+                </div>
+                {isGoogleConnected ? (
+                  <>
+                    <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                      {todayEvents.length} events scheduled
+                    </p>
+                    {todayEvents[0] ? (
+                      <p className="text-[11px] text-[#8C897F] truncate">
+                        Next: {todayEvents[0].summary}
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-[#8C897F] italic">
+                        No remaining events
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-bold text-rose-600 dark:text-rose-400">
+                      Google disconnected
+                    </p>
+                    <button
+                      onClick={onConnectGoogle}
+                      className="w-full mt-1.5 py-1.5 bg-[#D97757]/10 hover:bg-[#D97757]/20 text-[#D97757] hover:text-[#C86646] rounded-xl text-[11px] font-bold transition-all cursor-pointer text-center"
+                    >
+                      Connect Calendar
+                    </button>
+                  </>
+                )}
               </div>
-              <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                {todayEvents.length} events scheduled
-              </p>
-              {todayEvents[0] && (
-                <p className="text-[11px] text-[#8C897F] truncate">
-                  Next: {todayEvents[0].summary}
-                </p>
-              )}
             </div>
 
             {/* Column 3: Email alerts */}

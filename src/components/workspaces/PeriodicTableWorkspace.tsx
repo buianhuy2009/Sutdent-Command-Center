@@ -32,16 +32,41 @@ export const PeriodicTableWorkspace: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeElement, setActiveElement] = useState<ChemicalElement | null>(ELEMENTS_DATA[0]);
 
-  const filteredElements = useMemo(() => {
-    return ELEMENTS_DATA.filter((el) => {
-      const matchesSearch =
-        el.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        el.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        el.number.toString().includes(searchQuery);
-      const matchesCategory = selectedCategory === 'all' || el.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [searchQuery, selectedCategory]);
+  const mainElements = useMemo(() => {
+    return ELEMENTS_DATA.filter(
+      (el) => el.number <= 118 &&
+        !(el.number >= 57 && el.number <= 71) &&
+        !(el.number >= 89 && el.number <= 103)
+    );
+  }, []);
+
+  const lanthanides = useMemo(() => {
+    return ELEMENTS_DATA.filter((el) => el.number >= 57 && el.number <= 71);
+  }, []);
+
+  const actinides = useMemo(() => {
+    return ELEMENTS_DATA.filter((el) => el.number >= 89 && el.number <= 103);
+  }, []);
+
+  const checkElementMatch = (el: ChemicalElement) => {
+    const query = searchQuery.trim().toLowerCase();
+    const matchesQuery = !query ||
+      el.name.toLowerCase().includes(query) ||
+      el.symbol.toLowerCase().includes(query) ||
+      el.number.toString().includes(query);
+    const matchesCategory = selectedCategory === 'all' || el.category === selectedCategory;
+    return matchesQuery && matchesCategory;
+  };
+
+  const isSearchActive = searchQuery.trim().length > 0 || selectedCategory !== 'all';
+
+  const hasMatchingLanthanide = useMemo(() => {
+    return lanthanides.some(checkElementMatch);
+  }, [lanthanides, searchQuery, selectedCategory]);
+
+  const hasMatchingActinide = useMemo(() => {
+    return actinides.some(checkElementMatch);
+  }, [actinides, searchQuery, selectedCategory]);
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#FAF9F5] dark:bg-[#141413] p-4 sm:p-6 space-y-5 animate-in fade-in select-none">
@@ -98,37 +123,197 @@ export const PeriodicTableWorkspace: React.FC = () => {
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden">
         
         {/* Left: Element Cards Grid */}
-        <div className="lg:col-span-8 overflow-y-auto pr-1 space-y-3">
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
-            {filteredElements.map((el) => {
+        <div className="lg:col-span-8 overflow-x-auto overflow-y-auto pr-1">
+          <div className="min-w-[950px] grid gap-1.5 pb-4 pr-1" style={{ gridTemplateColumns: 'repeat(18, minmax(0, 1fr))' }}>
+            {mainElements.map((el) => {
               const cat = CATEGORY_COLORS[el.category] || {
                 bg: 'bg-stone-50 border-stone-200',
                 text: 'text-stone-700',
                 label: 'Element',
               };
               const isSelected = activeElement?.number === el.number;
+              const matches = !isSearchActive || checkElementMatch(el);
 
               return (
                 <button
                   key={el.number}
                   onClick={() => setActiveElement(el)}
-                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between h-24 ${
+                  style={{
+                    gridColumnStart: el.group,
+                    gridRowStart: el.period,
+                  }}
+                  className={`p-1.5 sm:p-2 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between h-16 sm:h-20 ${
                     cat.bg
                   } ${
                     isSelected
-                      ? 'ring-2 ring-[#D97757] scale-[1.03] shadow-md'
+                      ? 'ring-2 ring-[#D97757] scale-[1.03] shadow-md z-10'
                       : 'hover:scale-[1.02] hover:shadow-xs'
-                  }`}
+                  } ${!matches ? 'opacity-20 grayscale' : ''}`}
                 >
-                  <div className="flex items-center justify-between text-[10px] font-mono text-[#8C897F]">
+                  <div className="flex items-center justify-between text-[9px] font-mono text-[#8C897F]">
                     <span>{el.number}</span>
-                    <span>{el.mass}</span>
+                    <span className="hidden sm:inline">{el.mass}</span>
                   </div>
                   <div>
-                    <div className={`text-xl font-extrabold ${cat.text}`}>
+                    <div className={`text-sm sm:text-base font-extrabold ${cat.text}`}>
                       {el.symbol}
                     </div>
-                    <div className="text-[10px] font-bold text-[#141413] dark:text-[#FAF9F5] truncate">
+                    <div className="text-[8px] sm:text-[9px] font-bold text-[#141413] dark:text-[#FAF9F5] truncate">
+                      {el.name}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+
+            {/* Lanthanides Placeholder in main grid */}
+            <button
+              onClick={() => {
+                const la = ELEMENTS_DATA.find((e) => e.number === 57);
+                if (la) setActiveElement(la);
+              }}
+              style={{
+                gridColumnStart: 3,
+                gridRowStart: 6,
+              }}
+              className={`p-1.5 sm:p-2 rounded-xl border border-dashed text-left transition-all cursor-pointer flex flex-col justify-between h-16 sm:h-20 bg-orange-50/30 dark:bg-orange-950/20 border-orange-300 dark:border-orange-800 ${
+                activeElement && activeElement.number >= 57 && activeElement.number <= 71
+                  ? 'ring-2 ring-[#D97757] scale-[1.03] shadow-md z-10'
+                  : 'hover:scale-[1.02]'
+              } ${isSearchActive && !hasMatchingLanthanide ? 'opacity-20 grayscale' : ''}`}
+            >
+              <div className="text-[9px] font-mono text-[#8C897F]">57-71</div>
+              <div>
+                <div className="text-sm sm:text-base font-extrabold text-orange-700 dark:text-orange-300">La-Lu</div>
+                <div className="text-[8px] sm:text-[9px] font-bold text-[#141413] dark:text-[#FAF9F5] truncate">Lanthanides</div>
+              </div>
+            </button>
+
+            {/* Actinides Placeholder in main grid */}
+            <button
+              onClick={() => {
+                const ac = ELEMENTS_DATA.find((e) => e.number === 89);
+                if (ac) setActiveElement(ac);
+              }}
+              style={{
+                gridColumnStart: 3,
+                gridRowStart: 7,
+              }}
+              className={`p-1.5 sm:p-2 rounded-xl border border-dashed text-left transition-all cursor-pointer flex flex-col justify-between h-16 sm:h-20 bg-rose-50/30 dark:bg-rose-950/20 border-rose-300 dark:border-rose-800 ${
+                activeElement && activeElement.number >= 89 && activeElement.number <= 103
+                  ? 'ring-2 ring-[#D97757] scale-[1.03] shadow-md z-10'
+                  : 'hover:scale-[1.02]'
+              } ${isSearchActive && !hasMatchingActinide ? 'opacity-20 grayscale' : ''}`}
+            >
+              <div className="text-[9px] font-mono text-[#8C897F]">89-103</div>
+              <div>
+                <div className="text-sm sm:text-base font-extrabold text-rose-700 dark:text-rose-300">Ac-Lr</div>
+                <div className="text-[8px] sm:text-[9px] font-bold text-[#141413] dark:text-[#FAF9F5] truncate">Actinides</div>
+              </div>
+            </button>
+
+            {/* Spacers for row 8 (divider row) */}
+            <div style={{ gridColumnStart: 1, gridRowStart: 8, height: '16px' }} />
+
+            {/* Row Labels for Lanthanides/Actinides */}
+            <div
+              style={{
+                gridColumnStart: 1,
+                gridColumnEnd: 4,
+                gridRowStart: 9,
+              }}
+              className="flex items-center justify-end pr-2 text-[9px] font-bold uppercase tracking-wider text-[#8C897F] select-none font-mono"
+            >
+              Lanthanides
+            </div>
+            <div
+              style={{
+                gridColumnStart: 1,
+                gridColumnEnd: 4,
+                gridRowStart: 10,
+              }}
+              className="flex items-center justify-end pr-2 text-[9px] font-bold uppercase tracking-wider text-[#8C897F] select-none font-mono"
+            >
+              Actinides
+            </div>
+
+            {/* Lanthanides Row (Period 9) */}
+            {lanthanides.map((el, idx) => {
+              const cat = CATEGORY_COLORS[el.category] || {
+                bg: 'bg-stone-50 border-stone-200',
+                text: 'text-stone-700',
+                label: 'Element',
+              };
+              const isSelected = activeElement?.number === el.number;
+              const matches = !isSearchActive || checkElementMatch(el);
+
+              return (
+                <button
+                  key={el.number}
+                  onClick={() => setActiveElement(el)}
+                  style={{
+                    gridColumnStart: 4 + idx,
+                    gridRowStart: 9,
+                  }}
+                  className={`p-1.5 sm:p-2 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between h-16 sm:h-20 ${
+                    cat.bg
+                  } ${
+                    isSelected
+                      ? 'ring-2 ring-[#D97757] scale-[1.03] shadow-md z-10'
+                      : 'hover:scale-[1.02] hover:shadow-xs'
+                  } ${!matches ? 'opacity-20 grayscale' : ''}`}
+                >
+                  <div className="flex items-center justify-between text-[9px] font-mono text-[#8C897F]">
+                    <span>{el.number}</span>
+                    <span className="hidden sm:inline">{el.mass}</span>
+                  </div>
+                  <div>
+                    <div className={`text-sm sm:text-base font-extrabold ${cat.text}`}>
+                      {el.symbol}
+                    </div>
+                    <div className="text-[8px] sm:text-[9px] font-bold text-[#141413] dark:text-[#FAF9F5] truncate">
+                      {el.name}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+
+            {/* Actinides Row (Period 10) */}
+            {actinides.map((el, idx) => {
+              const cat = CATEGORY_COLORS[el.category] || {
+                bg: 'bg-stone-50 border-stone-200',
+                text: 'text-stone-700',
+                label: 'Element',
+              };
+              const isSelected = activeElement?.number === el.number;
+              const matches = !isSearchActive || checkElementMatch(el);
+
+              return (
+                <button
+                  key={el.number}
+                  onClick={() => setActiveElement(el)}
+                  style={{
+                    gridColumnStart: 4 + idx,
+                    gridRowStart: 10,
+                  }}
+                  className={`p-1.5 sm:p-2 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between h-16 sm:h-20 ${
+                    cat.bg
+                  } ${
+                    isSelected
+                      ? 'ring-2 ring-[#D97757] scale-[1.03] shadow-md z-10'
+                      : 'hover:scale-[1.02] hover:shadow-xs'
+                  } ${!matches ? 'opacity-20 grayscale' : ''}`}
+                >
+                  <div className="flex items-center justify-between text-[9px] font-mono text-[#8C897F]">
+                    <span>{el.number}</span>
+                    <span className="hidden sm:inline">{el.mass}</span>
+                  </div>
+                  <div>
+                    <div className={`text-sm sm:text-base font-extrabold ${cat.text}`}>
+                      {el.symbol}
+                    </div>
+                    <div className="text-[8px] sm:text-[9px] font-bold text-[#141413] dark:text-[#FAF9F5] truncate">
                       {el.name}
                     </div>
                   </div>
@@ -220,6 +405,18 @@ export const PeriodicTableWorkspace: React.FC = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* Category Legend */}
+      <div className="pt-2.5 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]/60 shrink-0">
+        <div className="flex flex-wrap gap-2 text-[10px] font-bold text-[#8C897F] uppercase tracking-wider justify-center">
+          {Object.entries(CATEGORY_COLORS).map(([key, value]) => (
+            <div key={key} className="flex items-center gap-1.5 px-2.5 py-1 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-full shadow-2xs">
+              <span className={`w-2 h-2 rounded-full ${value.bg.split(' ')[0]} border border-current`} />
+              <span>{value.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
     </div>

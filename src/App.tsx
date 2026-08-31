@@ -2358,6 +2358,8 @@ export default function App() {
                     isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
                     onConnectGoogle={() => handleGoogleSignIn(true)}
                     onOpenStudyPlan={() => setIsStudyPlanOpen(true)}
+                    calendarEvents={calendarEvents}
+                    emailAlerts={emailAlerts}
                   />
                 )}
               </div>
