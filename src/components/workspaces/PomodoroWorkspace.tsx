@@ -112,51 +112,104 @@ export const PomodoroWorkspace: React.FC = () => {
       gainNode.connect(ctx.destination);
       gainNodeRef.current = gainNode;
 
-      if (type === 'white' || type === 'pink' || type === 'brown' || type === 'rain') {
-        const bufferSize = 2 * ctx.sampleRate;
+      if (type === 'brown') {
+        // True Brownian / Red noise with warm bass resonance
+        const bufferSize = 3 * ctx.sampleRate;
         const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
         const output = noiseBuffer.getChannelData(0);
-
         let lastOut = 0.0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          lastOut = (lastOut + 0.02 * white) / 1.02;
+          output[i] = lastOut * 3.2;
+        }
+
+        const brownSource = ctx.createBufferSource();
+        brownSource.buffer = noiseBuffer;
+        brownSource.loop = true;
+
+        const lowpass = ctx.createBiquadFilter();
+        lowpass.type = 'lowpass';
+        lowpass.frequency.value = 320;
+        lowpass.Q.value = 1.0;
+
+        brownSource.connect(lowpass);
+        lowpass.connect(gainNode);
+        brownSource.start();
+        sourceNodesRef.current.push(brownSource);
+      } else if (type === 'rain') {
+        // Multi-layered realistic rain: ambient wash + randomized raindrop patter
+        const bufferSize = 4 * ctx.sampleRate;
+        const rainBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = rainBuffer.getChannelData(0);
+        let b0 = 0, b1 = 0, b2 = 0;
+
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          // Pink noise generator core
+          b0 = 0.99765 * b0 + white * 0.0990460;
+          b1 = 0.96300 * b1 + white * 0.2965164;
+          b2 = 0.57000 * b2 + white * 1.0526913;
+          let sample = (b0 + b1 + b2 + white * 0.1848) * 0.18;
+
+          // Randomized raindrop texture
+          if (Math.random() < 0.012) {
+            sample += (Math.random() * 2 - 1) * 0.5;
+          }
+          output[i] = sample;
+        }
+
+        const rainSource = ctx.createBufferSource();
+        rainSource.buffer = rainBuffer;
+        rainSource.loop = true;
+
+        const bandpass = ctx.createBiquadFilter();
+        bandpass.type = 'bandpass';
+        bandpass.frequency.value = 1400;
+        bandpass.Q.value = 0.6;
+
+        rainSource.connect(bandpass);
+        bandpass.connect(gainNode);
+        rainSource.start();
+        sourceNodesRef.current.push(rainSource);
+      } else if (type === 'pink') {
+        // True Paul Kellet 3dB/octave pink noise
+        const bufferSize = 3 * ctx.sampleRate;
+        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
         let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
 
         for (let i = 0; i < bufferSize; i++) {
           const white = Math.random() * 2 - 1;
-
-          if (type === 'white') {
-            output[i] = white * 0.2;
-          } else if (type === 'brown' || type === 'rain') {
-            lastOut = (lastOut + 0.02 * white) / 1.02;
-            output[i] = lastOut * 1.5;
-          } else if (type === 'pink') {
-            b0 = 0.99886 * b0 + white * 0.0555179;
-            b1 = 0.99332 * b1 + white * 0.0750759;
-            b2 = 0.96900 * b2 + white * 0.1538520;
-            b3 = 0.86650 * b3 + white * 0.3104856;
-            b4 = 0.55000 * b4 + white * 0.5329522;
-            b5 = -0.7616 * b5 - white * 0.0168980;
-            output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.08;
-            b6 = white * 0.115926;
-          }
+          b0 = 0.99886 * b0 + white * 0.0555179;
+          b1 = 0.99332 * b1 + white * 0.0750759;
+          b2 = 0.96900 * b2 + white * 0.1538520;
+          b3 = 0.86650 * b3 + white * 0.3104856;
+          b4 = 0.55000 * b4 + white * 0.5329522;
+          b5 = -0.7616 * b5 - white * 0.0168980;
+          output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+          b6 = white * 0.115926;
         }
 
-        const whiteNoise = ctx.createBufferSource();
-        whiteNoise.buffer = noiseBuffer;
-        whiteNoise.loop = true;
-
-        if (type === 'rain') {
-          // Add lowpass filter for realistic rain sound
-          const filter = ctx.createBiquadFilter();
-          filter.type = 'lowpass';
-          filter.frequency.value = 800;
-          whiteNoise.connect(filter);
-          filter.connect(gainNode);
-        } else {
-          whiteNoise.connect(gainNode);
+        const pinkSource = ctx.createBufferSource();
+        pinkSource.buffer = noiseBuffer;
+        pinkSource.loop = true;
+        pinkSource.connect(gainNode);
+        pinkSource.start();
+        sourceNodesRef.current.push(pinkSource);
+      } else if (type === 'white') {
+        const bufferSize = 2 * ctx.sampleRate;
+        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = (Math.random() * 2 - 1) * 0.12;
         }
-
-        whiteNoise.start();
-        sourceNodesRef.current.push(whiteNoise);
+        const whiteSource = ctx.createBufferSource();
+        whiteSource.buffer = noiseBuffer;
+        whiteSource.loop = true;
+        whiteSource.connect(gainNode);
+        whiteSource.start();
+        sourceNodesRef.current.push(whiteSource);
       } else if (type === 'binaural') {
         // 40Hz Gamma Focus frequency (200Hz Left, 240Hz Right)
         const merger = ctx.createChannelMerger(2);
@@ -180,6 +233,26 @@ export const PomodoroWorkspace: React.FC = () => {
       setActiveSound(type);
     } catch (err) {
       console.error('Audio synthesizer error:', err);
+    }
+  };
+
+  const handleToggleTimer = () => {
+    if (!isRunning) {
+      // 1. Auto-fullscreen if permitted
+      try {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.().catch(() => {});
+        }
+      } catch (e) {}
+
+      // 2. Auto-turn on Brown Noise by default if silent
+      if (activeSound === 'none') {
+        startSynthesizer('brown');
+      }
+
+      setIsRunning(true);
+    } else {
+      setIsRunning(false);
     }
   };
 
@@ -312,7 +385,7 @@ export const PomodoroWorkspace: React.FC = () => {
           {/* Action Controls */}
           <div className="flex items-center gap-3 pt-2">
             <button
-              onClick={() => setIsRunning(!isRunning)}
+              onClick={handleToggleTimer}
               className={`px-8 py-3.5 rounded-2xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-2 ${
                 isRunning
                   ? 'bg-[#141413] dark:bg-[#FAF9F5] text-white dark:text-[#141413]'
