@@ -127,21 +127,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       className={`h-screen shrink-0 bg-[#EFECE2] dark:bg-[#1A1917] border-r border-[#DFDACB] dark:border-[#2C2B27] flex flex-col transition-all duration-300 z-30 select-none ${
-        isExpanded ? 'w-64 p-4' : 'w-20 p-3'
+        isExpanded ? 'w-64 p-4' : 'w-12 p-1.5'
       }`}
     >
       {/* 1. Header Section (Shrink 0) */}
-      <div className="flex items-center justify-between pb-4 border-b border-[#DFDACB] dark:border-[#2C2B27] mb-3 shrink-0">
+      <div className="flex items-center justify-between pb-3 border-b border-[#DFDACB] dark:border-[#2C2B27] mb-2 shrink-0">
         <button
           onClick={() => onSelectTab('dashboard')}
-          className={`flex items-center gap-3 min-w-0 p-1 rounded-2xl transition-all cursor-pointer text-left ${
+          className={`flex items-center gap-3 min-w-0 p-0.5 rounded-2xl transition-all cursor-pointer text-left ${
             activeTab === 'dashboard'
               ? 'ring-2 ring-[#D97757]/60 bg-white/40 dark:bg-[#252422]/40'
               : 'hover:opacity-90'
           }`}
           title="Go to Dashboard Home"
         >
-          <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-[#D97757] rounded-2xl flex items-center justify-center text-white font-extrabold text-base shadow-sm shadow-[#D97757]/30 shrink-0">
+          <div className="w-9 h-9 bg-gradient-to-br from-amber-500 to-[#D97757] rounded-xl flex items-center justify-center text-white font-extrabold text-sm shadow-sm shadow-[#D97757]/30 shrink-0">
             S
           </div>
           {isExpanded && (
@@ -158,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={onToggleExpand}
             className="p-1.5 rounded-xl hover:bg-[#DFDACB]/60 dark:hover:bg-[#252422] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors cursor-pointer"
-            title="Collapse Sidebar"
+            title="Collapse to 48px Icon Rail"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -166,7 +166,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* 2. Scrollable Navigation Area (Takes full flex-1 height) */}
-      <div className="flex-1 overflow-y-auto min-h-0 space-y-1.5 pr-0.5">
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-1 pr-0.5">
         {isExpanded && (
           <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#8C897F]">
             Academic Core
@@ -181,8 +181,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               key={tab.id}
               onClick={() => onSelectTab(tab.id)}
-              className={`w-full rounded-2xl flex items-center transition-all cursor-pointer relative group ${
-                isExpanded ? 'px-3 py-2 justify-between gap-3' : 'w-11 h-11 mx-auto justify-center'
+              className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative group ${
+                isExpanded ? 'px-3 py-2 justify-between gap-3' : 'w-9 h-9 mx-auto justify-center'
               } ${
                 isActive
                   ? 'bg-[#D97757] text-white shadow-sm shadow-[#D97757]/20 font-bold'
@@ -249,8 +249,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div key={app.id} className="relative group/item flex items-center">
                     <button
                       onClick={() => onSelectTab(app.id)}
-                      className={`w-full rounded-2xl flex items-center transition-all cursor-pointer ${
-                        isExpanded ? 'px-3 py-2 justify-between gap-3' : 'w-11 h-11 mx-auto justify-center'
+                      className={`w-full rounded-xl flex items-center transition-all cursor-pointer ${
+                        isExpanded ? 'px-3 py-2 justify-between gap-3' : 'w-9 h-9 mx-auto justify-center'
                       } ${
                         isActive
                           ? 'bg-[#D97757] text-white shadow-sm font-bold'
@@ -291,8 +291,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="pt-2">
           <button
             onClick={onOpenAppStore}
-            className={`w-full rounded-2xl flex items-center transition-all cursor-pointer border border-dashed border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] ${
-              isExpanded ? 'px-3 py-2 gap-2.5 text-xs font-semibold' : 'w-11 h-11 mx-auto justify-center'
+            className={`w-full rounded-xl flex items-center transition-all cursor-pointer border border-dashed border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] ${
+              isExpanded ? 'px-3 py-2 gap-2.5 text-xs font-semibold' : 'w-9 h-9 mx-auto justify-center'
             }`}
             title="Open App Store"
           >
@@ -303,11 +303,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* 3. Bottom Section: Expand Toggle & User Profile (Shrink 0) */}
-      <div className="pt-3 border-t border-[#DFDACB] dark:border-[#2C2B27] shrink-0" ref={userMenuRef}>
+      <div className="pt-2.5 border-t border-[#DFDACB] dark:border-[#2C2B27] shrink-0" ref={userMenuRef}>
         {!isExpanded && (
           <button
             onClick={onToggleExpand}
-            className="w-11 h-11 mx-auto mb-2 rounded-2xl bg-[#FAF9F5]/70 hover:bg-[#FAF9F5] dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] flex items-center justify-center transition-colors cursor-pointer border border-[#DFDACB] dark:border-[#2C2B27]"
+            className="w-9 h-9 mx-auto mb-1.5 rounded-xl bg-[#FAF9F5]/70 hover:bg-[#FAF9F5] dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] flex items-center justify-center transition-colors cursor-pointer border border-[#DFDACB] dark:border-[#2C2B27]"
             title="Expand Sidebar"
           >
             <ChevronRight className="w-4 h-4" />
@@ -317,8 +317,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* User Avatar Card (Opens macOS 2-Pane Settings Dialog) */}
         <div
           onClick={onOpenSettings}
-          className={`flex items-center rounded-2xl p-2 cursor-pointer hover:bg-[#FAF9F5] dark:hover:bg-[#252422] transition-colors border border-transparent hover:border-[#DFDACB] dark:border-[#2C2B27] ${
-            isExpanded ? 'gap-3 justify-start' : 'justify-center'
+          className={`flex items-center rounded-xl p-1 cursor-pointer hover:bg-[#FAF9F5] dark:hover:bg-[#252422] transition-colors border border-transparent hover:border-[#DFDACB] dark:border-[#2C2B27] ${
+            isExpanded ? 'gap-3 justify-start p-2' : 'w-9 h-9 mx-auto justify-center p-0'
           }`}
           title="Account & Settings (Click to open)"
         >

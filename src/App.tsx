@@ -214,6 +214,25 @@ export default function App() {
     }
   }, [darkMode]);
 
+  // Initialize Density & Palette Theme attributes
+  useEffect(() => {
+    try {
+      const savedDensity = localStorage.getItem('scc_ui_density_v1') || 'comfortable';
+      document.documentElement.setAttribute('data-density', savedDensity);
+
+      const savedTheme = localStorage.getItem('scc_color_theme_v1') || 'parchment';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+
+      const autoSystem = localStorage.getItem('scc_auto_system_theme_v1') === 'true';
+      if (autoSystem) {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setDarkMode(isDark);
+      }
+    } catch (e) {
+      console.error('Theme init error:', e);
+    }
+  }, []);
+
   // Auth & User
   const [user, setUser] = useState<User | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);

@@ -132,6 +132,38 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   const [geminiTestStatus, setGeminiTestStatus] = useState<'idle' | 'success' | 'failed'>('idle');
   const [geminiStatusMsg, setGeminiStatusMsg] = useState('');
 
+  // UI Density & Themes
+  const [density, setDensity] = useState<'compact' | 'comfortable' | 'spacious'>(() => {
+    return (localStorage.getItem('scc_ui_density_v1') as any) || 'comfortable';
+  });
+  const [colorTheme, setColorTheme] = useState<'parchment' | 'midnight' | 'ocean' | 'forest'>(() => {
+    return (localStorage.getItem('scc_color_theme_v1') as any) || 'parchment';
+  });
+  const [autoSystemTheme, setAutoSystemTheme] = useState<boolean>(() => {
+    return localStorage.getItem('scc_auto_system_theme_v1') === 'true';
+  });
+
+  const handleDensityChange = (newDensity: 'compact' | 'comfortable' | 'spacious') => {
+    setDensity(newDensity);
+    localStorage.setItem('scc_ui_density_v1', newDensity);
+    document.documentElement.setAttribute('data-density', newDensity);
+  };
+
+  const handleThemeChange = (newTheme: 'parchment' | 'midnight' | 'ocean' | 'forest') => {
+    setColorTheme(newTheme);
+    localStorage.setItem('scc_color_theme_v1', newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+  };
+
+  const handleAutoSystemThemeChange = (val: boolean) => {
+    setAutoSystemTheme(val);
+    localStorage.setItem('scc_auto_system_theme_v1', String(val));
+    if (val) {
+      const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setDarkMode(isSystemDark);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       const savedGemini = getClientGeminiApiKey();
@@ -588,14 +620,82 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
             {/* SECTION 4: APPEARANCE */}
             {activeSection === 'appearance' && (
               <div className="space-y-4">
-                {/* Theme Selector */}
+                {/* Interface Density Toggle */}
+                <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                      Display &amp; Layout Density
+                    </div>
+                    <div className="text-[11px] text-[#8C897F]">
+                      Compact mode fits 35% more content onto 13-inch laptop displays.
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 p-1 bg-white dark:bg-[#141413] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] shrink-0">
+                    {(['compact', 'comfortable', 'spacious'] as const).map((d) => (
+                      <button
+                        key={d}
+                        onClick={() => handleDensityChange(d)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${
+                          density === d
+                            ? 'bg-[#D97757] text-white shadow-xs'
+                            : 'text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5]'
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Color Theme Palette Selector */}
+                <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                        Atmospheric Color Palette
+                      </div>
+                      <div className="text-[11px] text-[#8C897F]">
+                        Curated low-strain palettes for extended study sessions.
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-[#D97757] uppercase">
+                      {colorTheme}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: 'parchment', name: 'Warm Parchment', color: 'bg-[#FAF9F5] text-[#141413] border-[#DFDACB]' },
+                      { id: 'midnight', name: 'Midnight Slate', color: 'bg-[#0A0A0C] text-white border-zinc-700' },
+                      { id: 'ocean', name: 'Ocean Navy', color: 'bg-[#0B132B] text-white border-blue-800' },
+                      { id: 'forest', name: 'Forest Calm', color: 'bg-[#061A14] text-white border-emerald-800' },
+                    ].map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => handleThemeChange(t.id as any)}
+                        className={`p-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer flex flex-col justify-between h-16 ${
+                          t.color
+                        } ${
+                          colorTheme === t.id
+                            ? 'ring-2 ring-[#D97757] scale-[1.02] shadow-xs'
+                            : 'opacity-80 hover:opacity-100'
+                        }`}
+                      >
+                        <div className="w-3 h-3 rounded-full bg-[#D97757]" />
+                        <span className="text-[11px] truncate">{t.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Dark / Light Toggle */}
                 <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between">
                   <div>
                     <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                      Visual Theme
+                      Dark &amp; Light Mode
                     </div>
                     <div className="text-[11px] text-[#8C897F]">
-                      Anti-eyestrain #FAF9F6 Warm Cream or Dark Charcoal.
+                      Anti-eyestrain warm cream or low-light dark.
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-[#141413] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
@@ -618,6 +718,24 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                       <span>Dark</span>
                     </button>
                   </div>
+                </div>
+
+                {/* Auto-Follow System Theme */}
+                <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                      Sync with Operating System
+                    </div>
+                    <div className="text-[11px] text-[#8C897F]">
+                      Automatically switch between Light and Dark mode based on OS preferences.
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={autoSystemTheme}
+                    onChange={(e) => handleAutoSystemThemeChange(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#D97757] focus:ring-[#D97757] cursor-pointer"
+                  />
                 </div>
 
                 {/* Reduced Motion */}
