@@ -114,9 +114,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </span>
             </h1>
 
-            {/* Subtitle */}
-            <p className="mt-6 text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-              Connect your <strong>Canvas LMS</strong> courses, Google Calendar schedule, intelligent Gmail AI scanner, and formatted Google Docs in one powerful dashboard with Gemini Flash AI study coaching.
+            {/* Subtitle & Core Mission */}
+            <p className="mt-6 text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
+              Built with one primary goal: <strong>Gathering all essential student tools into a single, cohesive Operating System</strong> — eliminating tab clutter and solving the frustration of scattered, single-purpose websites.
             </p>
 
             {/* Large Prominent CTA Buttons */}
