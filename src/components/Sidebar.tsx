@@ -132,7 +132,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     >
       {/* 1. Header Section (Shrink 0) */}
       <div className="flex items-center justify-between pb-4 border-b border-[#DFDACB] dark:border-[#2C2B27] mb-3 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
+        <button
+          onClick={() => onSelectTab('dashboard')}
+          className={`flex items-center gap-3 min-w-0 p-1 rounded-2xl transition-all cursor-pointer text-left ${
+            activeTab === 'dashboard'
+              ? 'ring-2 ring-[#D97757]/60 bg-white/40 dark:bg-[#252422]/40'
+              : 'hover:opacity-90'
+          }`}
+          title="Go to Dashboard Home"
+        >
           <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-[#D97757] rounded-2xl flex items-center justify-center text-white font-extrabold text-base shadow-sm shadow-[#D97757]/30 shrink-0">
             S
           </div>
@@ -144,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <p className="text-[10px] text-[#8C897F] font-mono truncate">Academic AI Hub</p>
             </div>
           )}
-        </div>
+        </button>
 
         {isExpanded && (
           <button

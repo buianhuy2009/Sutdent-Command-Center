@@ -242,8 +242,8 @@ export default function App() {
     } catch {}
   }, []);
 
-  // Active Tab - Canvas is prioritized #1
-  const [activeTab, setActiveTab] = useState('canvas');
+  // Active Tab - Dashboard Home is default entry point
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
   const [aiSuiteOpen, setAiSuiteOpen] = useState(false);
   const [aiSuiteTab, setAiSuiteTab] = useState<'planner' | 'syllabus' | 'quiz' | 'grades'>('planner');
@@ -2247,15 +2247,22 @@ export default function App() {
                     assignments={assignments}
                     onToggleAssignment={handleToggleAssignmentById}
                     onNavigateWorkspace={(ws) => handleTabTransition(ws)}
-                    onOpenQuickDraft={() => {
-                      setDraftInitialEmail(null);
-                      setDraftInitialAlert(null);
+                    onOpenQuickDraft={(emailAlert) => {
+                      if (emailAlert) {
+                        setDraftInitialEmail(emailAlert.rawEmail || null);
+                        setDraftInitialAlert(emailAlert);
+                      } else {
+                        setDraftInitialEmail(null);
+                        setDraftInitialAlert(null);
+                      }
                       setQuickDraftModalOpen(true);
                     }}
                     onOpenAiSuite={(tab) => {
                       setAiSuiteTab(tab || 'planner');
                       setAiSuiteOpen(true);
                     }}
+                    onOpenAppStore={() => setAppStoreOpen(true)}
+                    user={user}
                   />
                 )}
               </div>

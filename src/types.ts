@@ -198,6 +198,20 @@ export interface SplitScreenConfig {
   activeFullscreenPane?: 'left' | 'right' | null;
 }
 
+export type DashboardWidgetId =
+  | 'today-glance'
+  | 'upcoming-deadlines'
+  | 'important-emails'
+  | 'pinned-tools'
+  | 'quote-of-day'
+  | 'course-updates'
+  | 'scratchpad';
+
+export interface DashboardLayout {
+  order: DashboardWidgetId[];
+  hidden: DashboardWidgetId[];
+}
+
 export interface DashboardWidgetConfig {
   showDeadlines: boolean;
   showPomodoroStreak: boolean;
