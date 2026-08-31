@@ -21,10 +21,12 @@ import {
   Share2,
   Sliders,
   Check,
+  Brain,
 } from 'lucide-react';
 import { CanvasAssignment, CanvasSettings } from '../types';
 import { loadCompletedCanvasIds, saveCompletedCanvasIds, resolveCanvasUrl, toMobileDeepLink } from '../services/canvas';
 import { extractSubtasksFromCanvas, SubtaskResult } from '../services/gemini';
+import { WhyIsThisHardModal } from './WhyIsThisHardModal';
 
 interface CanvasSyncTabProps {
   settings: CanvasSettings;
@@ -77,6 +79,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
   // Selected row for Slide-Over Inspector Drawer
   const [selectedAssignment, setSelectedAssignment] = useState<CanvasAssignment | null>(null);
+  const [whyIsThisHardCanvasAssignment, setWhyIsThisHardCanvasAssignment] = useState<CanvasAssignment | null>(null);
 
   // AI Sub-task Extractor state
   const [subtaskData, setSubtaskData] = useState<Record<string, SubtaskResult>>({});
@@ -619,13 +622,24 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
           </div>
 
           {/* Drawer Footer */}
-          <div className="p-4 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex items-center justify-between gap-2">
-            <button
-              onClick={() => onSyncToSheet(selectedAssignment)}
-              className="px-3 py-1.5 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer"
-            >
-              Sync to Sheet
-            </button>
+          <div className="p-4 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setWhyIsThisHardCanvasAssignment(selectedAssignment)}
+                className="px-3 py-1.5 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                title="AI Cognitive Deconstruction"
+              >
+                <Brain className="w-3.5 h-3.5 text-[#D97757]" />
+                <span>Why Is This Hard?</span>
+              </button>
+
+              <button
+                onClick={() => onSyncToSheet(selectedAssignment)}
+                className="px-3 py-1.5 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                Sync to Sheet
+              </button>
+            </div>
 
             <a
               href={resolveCanvasUrl(
@@ -644,6 +658,17 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             </a>
           </div>
         </div>
+      )}
+
+      {/* Why Is This Hard Modal */}
+      {whyIsThisHardCanvasAssignment && (
+        <WhyIsThisHardModal
+          isOpen={Boolean(whyIsThisHardCanvasAssignment)}
+          onClose={() => setWhyIsThisHardCanvasAssignment(null)}
+          assignmentTitle={whyIsThisHardCanvasAssignment.name}
+          courseName={whyIsThisHardCanvasAssignment.courseName}
+          description={whyIsThisHardCanvasAssignment.description}
+        />
       )}
     </div>
   );

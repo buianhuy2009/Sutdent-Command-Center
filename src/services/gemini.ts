@@ -1374,3 +1374,172 @@ Return ONLY valid JSON matching this exact structure:
   }
 }
 
+// -------------------------------------------------------------
+// 6. AI "Why Is This Hard?" Cognitive Deconstruction
+// -------------------------------------------------------------
+export interface WhyIsThisHardResult {
+  cognitiveBottlenecks: string[];
+  coreDifficultyReason: string;
+  recommendedStepByStepPlan: string[];
+  prerequisiteConcepts: string[];
+  estimatedPomodoros: number;
+}
+
+export async function explainWhyIsThisHard(params: {
+  title: string;
+  courseName?: string;
+  description?: string;
+}): Promise<WhyIsThisHardResult> {
+  const prompt = `You are an elite cognitive learning specialist and academic tutor.
+Analyze this academic assignment:
+- Title: "${params.title}"
+- Course: "${params.courseName || 'General Academic'}"
+- Description / Prompt: "${params.description ? params.description.slice(0, 3000) : 'Standard coursework'}"
+
+Deconstruct why students find this specific type of assignment difficult, what conceptual traps exist, and provide a clear step-by-step approach.
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "coreDifficultyReason": "2-3 concise sentences explaining the exact cognitive challenge (e.g., synthesis of disparate theorems, ambiguous requirements, or high working memory load).",
+  "cognitiveBottlenecks": [
+    "Common student pitfall 1",
+    "Common student pitfall 2",
+    "Common student pitfall 3"
+  ],
+  "recommendedStepByStepPlan": [
+    "Phase 1: Scope & gather definitions",
+    "Phase 2: Outline or draft initial derivation",
+    "Phase 3: Verify edge cases & polish"
+  ],
+  "prerequisiteConcepts": [
+    "Fundamental Concept 1",
+    "Fundamental Concept 2"
+  ],
+  "estimatedPomodoros": 3
+}`;
+
+  try {
+    const raw = await callGemini({ contents: prompt });
+    const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch {
+    const groqRaw = await callGroqDirect(prompt, true);
+    const cleaned = groqRaw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  }
+}
+
+// -------------------------------------------------------------
+// 7. AI Essay Proofreader & Thesis Strength Analyzer
+// -------------------------------------------------------------
+export interface EssayAnalysisResult {
+  thesisEvaluation: {
+    thesisText: string;
+    strengthRating: 'Strong' | 'Moderate' | 'Weak' | 'Missing';
+    critique: string;
+    suggestedRefinement: string;
+  };
+  structuralFlow: {
+    overallCoherence: string;
+    transitionWeaknesses: string[];
+  };
+  evidenceAndLogic: {
+    unsupportedClaims: string[];
+    logicalPraise: string[];
+  };
+  actionableNextSteps: string[];
+}
+
+export async function analyzeEssayDraft(params: {
+  essayDraft: string;
+  rubricOrPrompt?: string;
+}): Promise<EssayAnalysisResult> {
+  const prompt = `You are an expert university writing fellow.
+Analyze the following essay draft:
+"${params.essayDraft.slice(0, 8000)}"
+
+Assignment Prompt / Context: "${params.rubricOrPrompt ? params.rubricOrPrompt.slice(0, 2000) : 'General academic essay'}"
+
+Evaluate thesis clarity, evidence-to-claim support, and structural coherence.
+
+Return ONLY valid JSON:
+{
+  "thesisEvaluation": {
+    "thesisText": "Identified thesis sentence or main claim",
+    "strengthRating": "Strong",
+    "critique": "Specific evaluation of why the claim is arguable/weak",
+    "suggestedRefinement": "An improved, more precise thesis statement"
+  },
+  "structuralFlow": {
+    "overallCoherence": "Brief evaluation of argument progression",
+    "transitionWeaknesses": [
+      "Paragraph 2 to 3 abrupt leap without topic transition"
+    ]
+  },
+  "evidenceAndLogic": {
+    "unsupportedClaims": [
+      "Claim about X lacks citation or concrete data"
+    ],
+    "logicalPraise": [
+      "Well-constructed rebuttal in paragraph 4"
+    ]
+  },
+  "actionableNextSteps": [
+    "Step 1 to revise",
+    "Step 2 to revise",
+    "Step 3 to revise"
+  ]
+}`;
+
+  try {
+    const raw = await callGemini({ contents: prompt });
+    const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch {
+    const groqRaw = await callGroqDirect(prompt, true);
+    const cleaned = groqRaw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  }
+}
+
+// -------------------------------------------------------------
+// 8. Socratic Tutor Dialogue Engine
+// -------------------------------------------------------------
+export interface SocraticTurn {
+  role: 'user' | 'model';
+  content: string;
+}
+
+export async function socraticTutorStep(params: {
+  topic: string;
+  history: SocraticTurn[];
+  userMessage: string;
+}): Promise<string> {
+  const historyText = params.history
+    .map((turn) => `${turn.role === 'user' ? 'Student' : 'Socratic Tutor'}: ${turn.content}`)
+    .join('\n');
+
+  const prompt = `You are a world-class Socratic Tutor.
+Topic: "${params.topic}"
+
+Rules:
+1. NEVER just dump the final answer or full derivation.
+2. Ask one clear, probing, diagnostic question that leads the student to discover the principle themselves.
+3. If the student answers correctly, validate with enthusiasm and ask the next step or edge case question.
+4. If the student is confused or wrong, gently identify where their mental model broke down and offer a simpler analogy or intermediate question.
+5. Keep your response under 100 words. Be encouraging and rigorous.
+
+Conversation History:
+${historyText}
+Student: ${params.userMessage}
+Socratic Tutor:`;
+
+  try {
+    const raw = await callGemini({ contents: prompt });
+    return raw.trim();
+  } catch {
+    const groqRaw = await callGroqDirect(prompt, false);
+    return groqRaw.trim();
+  }
+}
+

@@ -21,6 +21,11 @@ import {
   ArrowRight,
   Printer,
   BookOpen,
+  Brain,
+  MessageSquare,
+  Send,
+  HelpCircle,
+  FileCheck,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { GoogleDriveTab } from '../GoogleDriveTab';
@@ -29,10 +34,14 @@ import {
   socraticRubricPreCheck,
   feynmanSimplify,
   feynmanExplainThreeTiers,
+  analyzeEssayDraft,
+  EssayAnalysisResult,
+  socraticTutorStep,
+  SocraticTurn,
 } from '../../services/gemini';
 import { MarkdownNote, SchoolFile, RubricPreCheckResult, ThreeTierFeynmanResult } from '../../types';
 
-type DocHubTab = 'notes' | 'rubric' | 'feynman' | 'drive' | 'generator';
+type DocHubTab = 'notes' | 'essay-proof' | 'socratic' | 'rubric' | 'feynman' | 'drive' | 'generator';
 
 const LOCAL_NOTES_KEY = 'scc_markdown_notes_v1';
 
@@ -129,6 +138,18 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
   const [generatedDocUrl, setGeneratedDocUrl] = useState<string | null>(null);
   const [docMessage, setDocMessage] = useState<string | null>(null);
+
+  // --- Essay Proofreader State ---
+  const [essayToProof, setEssayToProof] = useState('');
+  const [essayPromptContext, setEssayPromptContext] = useState('');
+  const [isAnalyzingEssay, setIsAnalyzingEssay] = useState(false);
+  const [essayAnalysisResult, setEssayAnalysisResult] = useState<EssayAnalysisResult | null>(null);
+
+  // --- Socratic Tutor State ---
+  const [socraticTopic, setSocraticTopic] = useState('');
+  const [socraticInput, setSocraticInput] = useState('');
+  const [socraticHistory, setSocraticHistory] = useState<SocraticTurn[]>([]);
+  const [isSocraticThinking, setIsSocraticThinking] = useState(false);
 
   const activeNote = notes.find((n) => n.id === activeNoteId) || notes[0];
 
@@ -323,6 +344,71 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
     }
   };
 
+  // Run Essay Proofreading & Thesis Analysis
+  const handleAnalyzeEssay = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!essayToProof.trim() || isAnalyzingEssay) return;
+
+    setIsAnalyzingEssay(true);
+    setEssayAnalysisResult(null);
+    try {
+      const res = await analyzeEssayDraft({
+        essayDraft: essayToProof.trim(),
+        rubricOrPrompt: essayPromptContext.trim() || undefined,
+      });
+      setEssayAnalysisResult(res);
+    } catch (err) {
+      console.error('Essay analysis failed:', err);
+    } finally {
+      setIsAnalyzingEssay(false);
+    }
+  };
+
+  // Run Socratic Tutor Dialogue
+  const handleStartSocraticSession = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!socraticTopic.trim() || isSocraticThinking) return;
+
+    setIsSocraticThinking(true);
+    setSocraticHistory([]);
+    try {
+      const initialQuestion = await socraticTutorStep({
+        topic: socraticTopic.trim(),
+        history: [],
+        userMessage: 'Hello! I want to understand and master this concept thoroughly. Please start our Socratic dialogue by asking a diagnostic question.',
+      });
+      setSocraticHistory([{ role: 'model', content: initialQuestion }]);
+    } catch (err) {
+      console.error('Socratic initialization error:', err);
+    } finally {
+      setIsSocraticThinking(false);
+    }
+  };
+
+  const handleSendSocraticAnswer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!socraticInput.trim() || isSocraticThinking) return;
+
+    const userMsg = socraticInput.trim();
+    const updatedHistory: SocraticTurn[] = [...socraticHistory, { role: 'user', content: userMsg }];
+    setSocraticHistory(updatedHistory);
+    setSocraticInput('');
+    setIsSocraticThinking(true);
+
+    try {
+      const nextQuestion = await socraticTutorStep({
+        topic: socraticTopic.trim(),
+        history: updatedHistory,
+        userMessage: userMsg,
+      });
+      setSocraticHistory([...updatedHistory, { role: 'model', content: nextQuestion }]);
+    } catch (err) {
+      console.error('Socratic reply error:', err);
+    } finally {
+      setIsSocraticThinking(false);
+    }
+  };
+
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* Header & Sub-Tab Bar */}
@@ -345,6 +431,8 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
         <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
           {[
             { id: 'notes', label: 'Markdown & LaTeX Notes', icon: FileText },
+            { id: 'essay-proof', label: 'Essay & Thesis Proofreader', icon: FileCheck },
+            { id: 'socratic', label: 'Socratic Dialogue Tutor', icon: MessageSquare },
             { id: 'rubric', label: 'Socratic Rubric Checker', icon: Scale },
             { id: 'feynman', label: 'Feynman Simplifier', icon: Lightbulb },
             { id: 'drive', label: 'Google Drive Files', icon: FolderOpen },
@@ -507,7 +595,258 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
         </div>
       )}
 
-      {/* 2. Socratic Rubric Pre-Checker */}
+      {/* 2. Essay & Thesis Proofreader */}
+      {activeTab === 'essay-proof' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Input column */}
+          <div className="lg:col-span-6 bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs space-y-4">
+            <div className="pb-3 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60">
+              <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-2">
+                <FileCheck className="w-4 h-4 text-[#D97757]" />
+                <span>AI Essay Proofreader &amp; Thesis Strength Analyzer</span>
+              </h3>
+              <p className="text-xs text-[#8C897F] mt-1">
+                Deconstruct thesis arguability, structural paragraph transitions, and evidence-to-claim alignment.
+              </p>
+            </div>
+
+            <form onSubmit={handleAnalyzeEssay} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
+                  Assignment Prompt / Rubric (Optional Context)
+                </label>
+                <input
+                  type="text"
+                  value={essayPromptContext}
+                  onChange={(e) => setEssayPromptContext(e.target.value)}
+                  placeholder="e.g. Prompt: Evaluate the economic impact of the industrial revolution on urban labor."
+                  className="w-full px-3.5 py-2.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs text-[#141413] dark:text-[#FAF9F5] focus:outline-none focus:border-[#D97757]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
+                  Essay Draft Text *
+                </label>
+                <textarea
+                  rows={14}
+                  required
+                  value={essayToProof}
+                  onChange={(e) => setEssayToProof(e.target.value)}
+                  placeholder="Paste your essay draft, introductory paragraph, or full argument here..."
+                  className="w-full p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl text-xs font-mono text-[#141413] dark:text-[#FAF9F5] focus:outline-none focus:border-[#D97757] leading-relaxed resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-[11px] font-mono text-[#8C897F]">
+                  {essayToProof.trim().split(/\s+/).filter(Boolean).length} words
+                </span>
+                <button
+                  type="submit"
+                  disabled={isAnalyzingEssay || !essayToProof.trim()}
+                  className="px-5 py-2.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${isAnalyzingEssay ? 'animate-spin' : ''}`} />
+                  <span>{isAnalyzingEssay ? 'Analyzing Draft...' : 'Analyze Thesis & Structure'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Analysis Feedback Column */}
+          <div className="lg:col-span-6 bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs flex flex-col justify-between overflow-y-auto max-h-[700px]">
+            {essayAnalysisResult ? (
+              <div className="space-y-5 animate-in fade-in">
+                {/* Thesis Card */}
+                <div className="p-4 rounded-2xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C897F]">
+                      Thesis Statement Evaluation
+                    </span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      essayAnalysisResult.thesisEvaluation.strengthRating === 'Strong'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+                        : essayAnalysisResult.thesisEvaluation.strengthRating === 'Moderate'
+                        ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
+                        : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
+                    }`}>
+                      {essayAnalysisResult.thesisEvaluation.strengthRating} Thesis
+                    </span>
+                  </div>
+
+                  <blockquote className="text-xs font-serif italic text-[#141413] dark:text-[#FAF9F5] border-l-2 border-[#D97757] pl-3 py-1">
+                    "{essayAnalysisResult.thesisEvaluation.thesisText}"
+                  </blockquote>
+
+                  <p className="text-xs text-[#5C5A54] dark:text-[#B5B2A8]">
+                    {essayAnalysisResult.thesisEvaluation.critique}
+                  </p>
+
+                  <div className="pt-2 border-t border-[#DFDACB]/40 dark:border-[#2C2B27]/40 text-xs">
+                    <span className="text-[10px] font-bold text-[#D97757] uppercase tracking-wider block">
+                      Suggested Refinement
+                    </span>
+                    <p className="font-semibold text-[#141413] dark:text-[#FAF9F5] mt-0.5">
+                      {essayAnalysisResult.thesisEvaluation.suggestedRefinement}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Structural Flow */}
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C897F] block">
+                    Structural Flow &amp; Transitions
+                  </span>
+                  <p className="text-xs text-[#5C5A54] dark:text-[#B5B2A8] bg-[#FAF9F5] dark:bg-[#1F1E1B] p-3.5 rounded-xl border border-[#DFDACB]/40 dark:border-[#2C2B27]/40">
+                    {essayAnalysisResult.structuralFlow.overallCoherence}
+                  </p>
+                  {essayAnalysisResult.structuralFlow.transitionWeaknesses.map((w, idx) => (
+                    <div key={idx} className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-2">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                      <span>{w}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Evidence Alignment & Action Items */}
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C897F] block">
+                    Actionable Next Steps
+                  </span>
+                  <div className="space-y-1.5">
+                    {essayAnalysisResult.actionableNextSteps.map((step, idx) => (
+                      <div key={idx} className="p-2.5 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] flex items-center gap-2 text-xs text-[#141413] dark:text-[#FAF9F5]">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#D97757] shrink-0" />
+                        <span>{step}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="my-auto text-center text-[#8C897F] py-16 space-y-2">
+                <FileCheck className="w-10 h-10 mx-auto opacity-30" />
+                <p className="text-xs">Paste your essay draft to generate thesis &amp; structural feedback</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 3. Socratic Dialogue Tutor */}
+      {activeTab === 'socratic' && (
+        <div className="max-w-3xl mx-auto bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs flex flex-col h-[650px]">
+          <div className="pb-3 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60 flex items-center justify-between shrink-0">
+            <div>
+              <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-[#D97757]" />
+                <span>Socratic Concept Dialogue Engine</span>
+              </h3>
+              <p className="text-xs text-[#8C897F] mt-0.5">
+                The AI will not give you answers directly — it asks probing diagnostic questions to build first-principles mastery.
+              </p>
+            </div>
+            {socraticHistory.length > 0 && (
+              <button
+                onClick={() => {
+                  setSocraticHistory([]);
+                  setSocraticTopic('');
+                }}
+                className="text-xs text-[#8C897F] hover:text-[#D97757] underline cursor-pointer"
+              >
+                Reset Topic
+              </button>
+            )}
+          </div>
+
+          {/* Socratic Chat Body */}
+          <div className="flex-1 overflow-y-auto py-4 space-y-3.5 pr-1 min-h-0">
+            {socraticHistory.length === 0 ? (
+              <div className="my-auto text-center py-12 space-y-4">
+                <Brain className="w-10 h-10 mx-auto text-[#D97757] opacity-80" />
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">
+                    What concept would you like to master today?
+                  </h4>
+                  <p className="text-xs text-[#8C897F] max-w-md mx-auto">
+                    e.g. Fourier Transform, Bayes Theorem, Mitosis vs Meiosis, Supply &amp; Demand Elasticity
+                  </p>
+                </div>
+                <form onSubmit={handleStartSocraticSession} className="flex gap-2 max-w-md mx-auto">
+                  <input
+                    type="text"
+                    required
+                    value={socraticTopic}
+                    onChange={(e) => setSocraticTopic(e.target.value)}
+                    placeholder="Enter topic or theory..."
+                    className="flex-1 px-4 py-2.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs text-[#141413] dark:text-[#FAF9F5] focus:outline-none focus:border-[#D97757]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSocraticThinking || !socraticTopic.trim()}
+                    className="px-4 py-2.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    {isSocraticThinking ? 'Starting...' : 'Begin Dialogue'}
+                  </button>
+                </form>
+              </div>
+            ) : (
+              socraticHistory.map((turn, idx) => (
+                <div
+                  key={idx}
+                  className={`flex ${turn.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[85%] p-3.5 rounded-2xl text-xs leading-relaxed ${
+                      turn.role === 'user'
+                        ? 'bg-[#D97757] text-white rounded-tr-xs'
+                        : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-[#141413] dark:text-[#FAF9F5] rounded-tl-xs'
+                    }`}
+                  >
+                    <div className="text-[10px] font-bold opacity-60 mb-1">
+                      {turn.role === 'user' ? 'You' : 'Socratic Tutor'}
+                    </div>
+                    <div>{turn.content}</div>
+                  </div>
+                </div>
+              ))
+            )}
+
+            {isSocraticThinking && socraticHistory.length > 0 && (
+              <div className="flex justify-start">
+                <div className="p-3.5 rounded-2xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-xs text-[#8C897F] flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 animate-spin text-[#D97757]" />
+                  <span>Formulating Socratic question...</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Socratic Reply Bar */}
+          {socraticHistory.length > 0 && (
+            <form onSubmit={handleSendSocraticAnswer} className="pt-3 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]/60 flex gap-2 shrink-0">
+              <input
+                type="text"
+                value={socraticInput}
+                onChange={(e) => setSocraticInput(e.target.value)}
+                placeholder="Explain your reasoning or ask for clarification..."
+                className="flex-1 px-4 py-2.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs text-[#141413] dark:text-[#FAF9F5] focus:outline-none focus:border-[#D97757]"
+              />
+              <button
+                type="submit"
+                disabled={isSocraticThinking || !socraticInput.trim()}
+                className="px-4 py-2.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Send</span>
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+
+      {/* 4. Socratic Rubric Pre-Checker */}
       {activeTab === 'rubric' && (
         <div className="space-y-4">
           <div className="bg-white dark:bg-[#1A1917] rounded-2xl p-6 border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs space-y-4">

@@ -20,11 +20,13 @@ import {
   LayoutGrid,
   List,
   ArrowRight,
+  Brain,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Assignment, PriorityLevel, AssignmentStatus, ApiEnablementInfo } from '../types';
 import { ApiActivationBanner } from './ApiActivationBanner';
 import { estimateAssignmentEffort, EffortEstimate } from '../services/gemini';
+import { WhyIsThisHardModal } from './WhyIsThisHardModal';
 
 interface AssignmentTrackerTabProps {
   assignments: Assignment[];
@@ -74,6 +76,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
 
   // Selected row for Slide-Over Inspector Sheet
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [whyIsThisHardTask, setWhyIsThisHardTask] = useState<Assignment | null>(null);
 
   // AI Dynamic Priority & Effort state
   const [effortEstimates, setEffortEstimates] = useState<Record<string, EffortEstimate>>({});
@@ -655,17 +658,28 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             )}
           </div>
 
-          <div className="p-4 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex items-center justify-between gap-2">
-            <button
-              onClick={() => {
-                onScheduleStudyBlock(selectedAssignment);
-                setSelectedAssignment(null);
-              }}
-              className="px-3 py-1.5 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
-            >
-              <Calendar className="w-3.5 h-3.5 text-[#D97757]" />
-              <span>Schedule Block</span>
-            </button>
+          <div className="p-4 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setWhyIsThisHardTask(selectedAssignment)}
+                className="px-3 py-1.5 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                title="AI Cognitive Deconstruction"
+              >
+                <Brain className="w-3.5 h-3.5 text-[#D97757]" />
+                <span>Why Is This Hard?</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  onScheduleStudyBlock(selectedAssignment);
+                  setSelectedAssignment(null);
+                }}
+                className="px-3 py-1.5 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <Calendar className="w-3.5 h-3.5 text-[#D97757]" />
+                <span>Schedule Block</span>
+              </button>
+            </div>
 
             <button
               onClick={() => handleStatusClick(selectedAssignment)}
@@ -675,6 +689,20 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Why Is This Hard Modal */}
+      {whyIsThisHardTask && (
+        <WhyIsThisHardModal
+          isOpen={Boolean(whyIsThisHardTask)}
+          onClose={() => setWhyIsThisHardTask(null)}
+          assignmentTitle={whyIsThisHardTask.assignmentName}
+          courseName={whyIsThisHardTask.subject}
+          description={whyIsThisHardTask.notes}
+          onStartFocusSession={(title) => {
+            onScheduleStudyBlock(whyIsThisHardTask);
+          }}
+        />
       )}
 
       {/* Manual Add Assignment Modal */}
