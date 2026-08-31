@@ -1119,3 +1119,258 @@ export async function suggestStudySlots(
   if (!res.ok) throw new Error(`Suggest study slots error: ${res.statusText}`);
   return await res.json();
 }
+
+// -------------------------------------------------------------
+// 1. AI Interactive Quiz Generator
+// -------------------------------------------------------------
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+  topic: string;
+}
+
+export async function generateInteractiveQuiz(topicOrNotes: string): Promise<QuizQuestion[]> {
+  const prompt = `You are an expert university examiner and professor.
+Based on the following lecture notes or study topic:
+"${topicOrNotes.slice(0, 5000)}"
+
+Generate exactly 5 high-yield multiple-choice practice quiz questions to test deep understanding.
+Return a JSON array of questions with this exact format:
+[
+  {
+    "id": "q1",
+    "question": "What is ...?",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "correctIndex": 0,
+    "explanation": "Option A is correct because...",
+    "topic": "Key Sub-topic"
+  }
+]
+Output ONLY valid raw JSON.`;
+
+  try {
+    const raw = await callGemini({
+      contents: prompt,
+      config: { responseMimeType: 'application/json' },
+    });
+    const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch (err) {
+    console.warn('Gemini quiz generation failed, falling back to Groq:', err);
+    try {
+      const groqRaw = await callGroqDirect(prompt, true);
+      const cleaned = groqRaw.replace(/```json/gi, '').replace(/```/g, '').trim();
+      return JSON.parse(cleaned);
+    } catch {
+      return [
+        {
+          id: 'q1',
+          question: `Which fundamental principle is central to ${topicOrNotes.slice(0, 40) || 'this topic'}?`,
+          options: [
+            'Conservation and systematic equilibrium',
+            'Arbitrary spontaneous generation',
+            'Static non-interactive states',
+            'Independent variable decoupling',
+          ],
+          correctIndex: 0,
+          explanation: 'Core academic models rely on systematic equilibrium and conservation laws.',
+          topic: 'Foundations',
+        },
+      ];
+    }
+  }
+}
+
+// -------------------------------------------------------------
+// 2. AI Daily Study Planner
+// -------------------------------------------------------------
+export interface DailyStudyPlanResult {
+  blocks: {
+    time: string;
+    task: string;
+    strategy: string;
+    durationMinutes: number;
+  }[];
+  summary: string;
+  motivationTip: string;
+}
+
+export async function generateDailyStudyPlan(params: {
+  tasks: string[];
+  energy: 'low' | 'medium' | 'high';
+  hoursAvailable: number;
+}): Promise<DailyStudyPlanResult> {
+  const prompt = `You are a master academic cognitive coach.
+A student has ${params.hoursAvailable} available study hours today.
+Their current energy level is: ${params.energy.toUpperCase()}.
+Their pending assignment tasks are:
+${params.tasks.map((t) => `- ${t}`).join('\n')}
+
+Design an optimal time-blocked Pomodoro daily study plan for today.
+Factor in cognitive load: if energy is high, tackle hard analytical tasks first. If energy is low, start with active recall or low-friction review.
+Return ONLY raw JSON in this structure:
+{
+  "blocks": [
+    {
+      "time": "09:00 - 09:50",
+      "task": "Task Name & Focus Goal",
+      "strategy": "Active Recall / Deep Work / Problem Set",
+      "durationMinutes": 50
+    }
+  ],
+  "summary": "1-sentence strategic summary of today's study blueprint",
+  "motivationTip": "Brief high-impact psychological tip"
+}`;
+
+  try {
+    const raw = await callGemini({ contents: prompt });
+    const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch {
+    const groqRaw = await callGroqDirect(prompt, true);
+    const cleaned = groqRaw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  }
+}
+
+// -------------------------------------------------------------
+// 3. Google Scholar & Zotero Academic Citation Generator
+// -------------------------------------------------------------
+export interface AcademicCitationResult {
+  title: string;
+  authors: string;
+  year: string;
+  apa: string;
+  mla: string;
+  chicago: string;
+  bibtex: string;
+  inText: string;
+}
+
+export async function generateCitations(queryOrTitle: string): Promise<AcademicCitationResult> {
+  const prompt = `You are an expert academic librarian and reference formatting engine.
+Generate accurate academic bibliographic citations for this source, research topic, or book:
+"${queryOrTitle}"
+
+Return ONLY a raw JSON object with:
+{
+  "title": "Exact Title of Book / Article",
+  "authors": "Author Name(s)",
+  "year": "Publication Year",
+  "apa": "Complete APA 7th Edition citation string",
+  "mla": "Complete MLA 9th Edition citation string",
+  "chicago": "Complete Chicago 17th Edition citation string",
+  "bibtex": "@article{key,\\n  author = {...},\\n  title = {...}\\n}",
+  "inText": "(Author, Year)"
+}`;
+
+  try {
+    const raw = await callGemini({ contents: prompt });
+    const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch {
+    const groqRaw = await callGroqDirect(prompt, true);
+    const cleaned = groqRaw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  }
+}
+
+// -------------------------------------------------------------
+// 4. AI Grade & Final Exam Goal Predictor
+// -------------------------------------------------------------
+export interface GradePredictionResult {
+  requiredFinalScore: number;
+  isPossible: boolean;
+  status: 'Guaranteed' | 'Achievable' | 'Challenging' | 'High Risk';
+  feedback: string;
+}
+
+export function calculateGradePrediction(params: {
+  currentGrade: number; // e.g. 84 (out of 100)
+  desiredGrade: number; // e.g. 90 (out of 100)
+  finalExamWeight: number; // e.g. 30 (percent)
+}): GradePredictionResult {
+  const { currentGrade, desiredGrade, finalExamWeight } = params;
+  const currentWeight = 100 - finalExamWeight;
+
+  // Formula: Desired = (Current * (100 - FinalWeight) + FinalScore * FinalWeight) / 100
+  // FinalScore = (Desired * 100 - Current * CurrentWeight) / FinalWeight
+  const requiredFinalScore = Math.round(((desiredGrade * 100 - currentGrade * currentWeight) / finalExamWeight) * 10) / 10;
+
+  let status: 'Guaranteed' | 'Achievable' | 'Challenging' | 'High Risk' = 'Achievable';
+  let feedback = '';
+
+  if (requiredFinalScore <= 0) {
+    status = 'Guaranteed';
+    feedback = `You have mathematically already locked in your desired grade! Even with 0% on the final, your score is secured.`;
+  } else if (requiredFinalScore <= 75) {
+    status = 'Achievable';
+    feedback = `Very reachable target. A standard revision schedule will easily achieve this.`;
+  } else if (requiredFinalScore <= 90) {
+    status = 'Challenging';
+    feedback = `Achievable with focused effort. Plan at least 3 deep Pomodoro review sessions.`;
+  } else if (requiredFinalScore <= 100) {
+    status = 'High Risk';
+    feedback = `High score needed on the final exam. Prioritize high-weight topics and active recall.`;
+  } else {
+    status = 'High Risk';
+    feedback = `Mathematically requires extra credit or curving as ${requiredFinalScore}% exceeds 100%.`;
+  }
+
+  return {
+    requiredFinalScore,
+    isPossible: requiredFinalScore <= 100,
+    status,
+    feedback,
+  };
+}
+
+// -------------------------------------------------------------
+// 5. Syllabus PDF & Course Parser
+// -------------------------------------------------------------
+export interface ParsedSyllabusData {
+  courseTitle: string;
+  instructor: string;
+  email: string;
+  officeHours: string;
+  gradingBreakdown: { item: string; weightPercent: number }[];
+  deadlines: { title: string; dueDate: string; type: string; points?: number }[];
+}
+
+export async function parseSyllabusContent(syllabusText: string): Promise<ParsedSyllabusData> {
+  const prompt = `You are an academic course coordinator.
+Extract the key course structure from this syllabus text:
+"${syllabusText.slice(0, 7000)}"
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "courseTitle": "Course Name / Code",
+  "instructor": "Instructor Name",
+  "email": "instructor@university.edu",
+  "officeHours": "Mon/Wed 2-4pm",
+  "gradingBreakdown": [
+    { "item": "Midterm Exam", "weightPercent": 25 },
+    { "item": "Final Exam", "weightPercent": 35 },
+    { "item": "Homework Problem Sets", "weightPercent": 20 },
+    { "item": "Laboratory Reports", "weightPercent": 20 }
+  ],
+  "deadlines": [
+    { "title": "Homework 1", "dueDate": "2026-09-15", "type": "Homework", "points": 100 },
+    { "title": "Midterm Exam", "dueDate": "2026-10-20", "type": "Exam", "points": 100 }
+  ]
+}`;
+
+  try {
+    const raw = await callGemini({ contents: prompt });
+    const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch {
+    const groqRaw = await callGroqDirect(prompt, true);
+    const cleaned = groqRaw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    return JSON.parse(cleaned);
+  }
+}
+

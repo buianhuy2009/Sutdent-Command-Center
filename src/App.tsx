@@ -56,6 +56,7 @@ import { OAuthGuideModal } from './components/OAuthGuideModal';
 import { ApiActivationModal } from './components/ApiActivationModal';
 import { GeminiSettingsModal } from './components/GeminiSettingsModal';
 import { FloatingAiCopilot } from './components/FloatingAiCopilot';
+import { AiAcademicSuiteModal } from './components/AiAcademicSuiteModal';
 import { ToastContainer } from './components/Toast';
 import confetti from 'canvas-confetti';
 import { WorkspaceId, AgentAction } from './types';
@@ -109,6 +110,7 @@ import {
   ConfirmationModalState,
   QuickDraftRequest,
   AssignmentStatus,
+  PriorityLevel,
   ApiEnablementInfo,
 } from './types';
 
@@ -231,11 +233,19 @@ export default function App() {
   // Active Tab - Canvas is prioritized #1
   const [activeTab, setActiveTab] = useState('canvas');
   const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
+  const [aiSuiteOpen, setAiSuiteOpen] = useState(false);
+  const [aiSuiteTab, setAiSuiteTab] = useState<'planner' | 'syllabus' | 'quiz' | 'grades'>('planner');
   const [clearedTabBadges, setClearedTabBadges] = useState<Set<string>>(new Set());
   const onboardingDialogRef = useRef<HTMLDialogElement | null>(null);
 
   // Smooth View Transitions for workspace switching
   const handleTabTransition = useCallback((newTab: string) => {
+    if (newTab === 'ai-suite') {
+      setAiSuiteTab('planner');
+      setAiSuiteOpen(true);
+      return;
+    }
+
     setClearedTabBadges((prev) => new Set(prev).add(newTab));
     setAiChatOpen(false); // return to normal workspace if coach was open
 
@@ -2155,6 +2165,10 @@ export default function App() {
                       setDraftInitialAlert(null);
                       setQuickDraftModalOpen(true);
                     }}
+                    onOpenAiSuite={(tab) => {
+                      setAiSuiteTab(tab || 'planner');
+                      setAiSuiteOpen(true);
+                    }}
                   />
                 )}
               </div>
@@ -2287,6 +2301,26 @@ export default function App() {
         onLaunchApp={(appId) => handleTabTransition(appId)}
         pinnedAppIds={pinnedAppIds}
         onTogglePinApp={handleTogglePinApp}
+      />
+
+      {/* AI Academic Suite Modal (Planner, Quiz, Syllabus, Grades) */}
+      <AiAcademicSuiteModal
+        isOpen={aiSuiteOpen}
+        onClose={() => setAiSuiteOpen(false)}
+        assignments={assignments}
+        onAddAssignments={(newItems) => {
+          newItems.forEach((item) => {
+            handleAddAssignment({
+              assignmentName: item.assignmentName || 'Assignment',
+              subject: item.subject || 'General',
+              dueDate: item.dueDate || 'Upcoming',
+              priority: (item.priority as PriorityLevel) || 'Med',
+              status: (item.status as AssignmentStatus) || 'Not Started',
+              notes: item.notes || '',
+            });
+          });
+        }}
+        defaultTab={aiSuiteTab}
       />
 
       {/* Persistent Gemini & Groq AI Settings Modal */}

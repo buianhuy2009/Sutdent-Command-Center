@@ -20,6 +20,12 @@ import {
   Mic,
   Search,
   Zap,
+  Bookmark,
+  MessageSquare,
+  GitBranch,
+  FileCode,
+  ShieldCheck,
+  TrendingUp,
 } from 'lucide-react';
 
 interface AppLogoProps {
@@ -104,9 +110,55 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
       );
 
     case 'flashcards':
+    case 'quizlet':
       return (
-        <div className={`${sizeClasses} bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20 shrink-0 ${className}`}>
+        <div className={`${sizeClasses} bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20 shrink-0 ${className}`}>
+          <span className="font-extrabold tracking-tight">Q</span>
+        </div>
+      );
+
+    case 'anki':
+      return (
+        <div className={`${sizeClasses} bg-gradient-to-br from-sky-500 to-blue-700 text-white flex items-center justify-center font-bold shadow-md shadow-sky-500/20 shrink-0 ${className}`}>
           <Layers className={iconSizes} />
+        </div>
+      );
+
+    case 'wolfram':
+    case 'wolfram-symbolab':
+      return (
+        <div className={`${sizeClasses} bg-gradient-to-br from-red-600 via-orange-600 to-amber-500 text-white flex items-center justify-center font-bold shadow-md shadow-red-600/20 shrink-0 ${className}`}>
+          <span className="font-mono font-extrabold">∫dx</span>
+        </div>
+      );
+
+    case 'scholar':
+    case 'google-scholar':
+    case 'zotero':
+      return (
+        <div className={`${sizeClasses} bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold shadow-md shadow-blue-600/20 shrink-0 ${className}`}>
+          <Bookmark className={iconSizes} />
+        </div>
+      );
+
+    case 'overleaf':
+      return (
+        <div className={`${sizeClasses} bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-bold shadow-md shadow-emerald-600/20 shrink-0 ${className}`}>
+          <FileCode className={iconSizes} />
+        </div>
+      );
+
+    case 'github':
+      return (
+        <div className={`${sizeClasses} bg-gradient-to-br from-zinc-800 to-neutral-900 text-white flex items-center justify-center font-bold shadow-md shadow-black/20 shrink-0 ${className}`}>
+          <GitBranch className={iconSizes} />
+        </div>
+      );
+
+    case 'discord':
+      return (
+        <div className={`${sizeClasses} bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/20 shrink-0 ${className}`}>
+          <MessageSquare className={iconSizes} />
         </div>
       );
 
@@ -197,13 +249,16 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
       );
 
     case 'rubric':
+    case 'turnitin':
+    case 'gradescope':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-amber-500 to-yellow-600 text-white flex items-center justify-center font-bold shadow-md shadow-amber-500/20 shrink-0 ${className}`}>
-          <Search className={iconSizes} />
+          <ShieldCheck className={iconSizes} />
         </div>
       );
 
     case 'feynman':
+    case 'ai-suite':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-rose-600 to-red-700 text-white flex items-center justify-center font-bold shadow-md shadow-rose-600/20 shrink-0 ${className}`}>
           <Sparkles className={iconSizes} />
