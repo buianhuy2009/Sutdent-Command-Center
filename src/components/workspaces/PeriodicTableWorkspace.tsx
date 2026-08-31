@@ -11,57 +11,8 @@ import {
   BookOpen,
 } from 'lucide-react';
 
-export interface ChemicalElement {
-  number: number;
-  symbol: string;
-  name: string;
-  mass: string;
-  category: string;
-  group: number;
-  period: number;
-  electronConfig: string;
-  electronegativity?: number;
-  summary: string;
-}
+import { ELEMENTS_DATA, ChemicalElement } from '../../data/elementsData';
 
-export const ELEMENTS_DATA: ChemicalElement[] = [
-  { number: 1, symbol: 'H', name: 'Hydrogen', mass: '1.008', category: 'diatomic-nonmetal', group: 1, period: 1, electronConfig: '1s1', electronegativity: 2.20, summary: 'Colorless, odorless, highly flammable gas; most abundant chemical substance in the universe.' },
-  { number: 2, symbol: 'He', name: 'Helium', mass: '4.0026', category: 'noble-gas', group: 18, period: 1, electronConfig: '1s2', summary: 'Colorless, odorless, tasteless, non-toxic, inert noble gas; second lightest and second most abundant element.' },
-  { number: 3, symbol: 'Li', name: 'Lithium', mass: '6.94', category: 'alkali-metal', group: 1, period: 2, electronConfig: '[He] 2s1', electronegativity: 0.98, summary: 'Soft, silvery-white alkali metal; least dense of all solid elements.' },
-  { number: 4, symbol: 'Be', name: 'Beryllium', mass: '9.0122', category: 'alkaline-earth', group: 2, period: 2, electronConfig: '[He] 2s2', electronegativity: 1.57, summary: 'Relatively rare metal in the universe; forms minerals such as beryl and emerald.' },
-  { number: 5, symbol: 'B', name: 'Boron', mass: '10.81', category: 'metalloid', group: 13, period: 2, electronConfig: '[He] 2s2 2p1', electronegativity: 2.04, summary: 'Low-abundance metalloid used in fiberglass and semiconductors.' },
-  { number: 6, symbol: 'C', name: 'Carbon', mass: '12.011', category: 'polyatomic-nonmetal', group: 14, period: 2, electronConfig: '[He] 2s2 2p2', electronegativity: 2.55, summary: 'Basis of all organic chemistry and life; forms allotropes including graphite and diamond.' },
-  { number: 7, symbol: 'N', name: 'Nitrogen', mass: '14.007', category: 'diatomic-nonmetal', group: 15, period: 2, electronConfig: '[He] 2s2 2p3', electronegativity: 3.04, summary: 'Makes up about 78% of Earth\'s atmosphere; vital constituent of amino acids and proteins.' },
-  { number: 8, symbol: 'O', name: 'Oxygen', mass: '15.999', category: 'diatomic-nonmetal', group: 16, period: 2, electronConfig: '[He] 2s2 2p4', electronegativity: 3.44, summary: 'Highly reactive nonmetal and oxidizing agent; essential for cellular respiration in aerobic organisms.' },
-  { number: 9, symbol: 'F', name: 'Fluorine', mass: '18.998', category: 'halogen', group: 17, period: 2, electronConfig: '[He] 2s2 2p5', electronegativity: 3.98, summary: 'Extremely reactive and electronegative halogen gas; forms compounds with almost all elements.' },
-  { number: 10, symbol: 'Ne', name: 'Neon', mass: '20.180', category: 'noble-gas', group: 18, period: 2, electronConfig: '[He] 2s2 2p6', summary: 'Colorless, odorless noble gas that gives a reddish-orange glow in vacuum discharge tubes.' },
-  { number: 11, symbol: 'Na', name: 'Sodium', mass: '22.990', category: 'alkali-metal', group: 1, period: 3, electronConfig: '[Ne] 3s1', electronegativity: 0.93, summary: 'Soft, silvery-white, highly reactive alkali metal; essential for cellular osmotic balance.' },
-  { number: 12, symbol: 'Mg', name: 'Magnesium', mass: '24.305', category: 'alkaline-earth', group: 2, period: 3, electronConfig: '[Ne] 3s2', electronegativity: 1.31, summary: 'Shiny gray solid; central element in the chlorophyll molecule enabling photosynthesis.' },
-  { number: 13, symbol: 'Al', name: 'Aluminium', mass: '26.982', category: 'post-transition-metal', group: 13, period: 3, electronConfig: '[Ne] 3s2 3p1', electronegativity: 1.61, summary: 'Low density, high corrosion resistance metal widely used in aerospace and packaging.' },
-  { number: 14, symbol: 'Si', name: 'Silicon', mass: '28.085', category: 'metalloid', group: 14, period: 3, electronConfig: '[Ne] 3s2 3p2', electronegativity: 1.90, summary: 'Hard, brittle crystalline metalloid; cornerstone of the modern semiconductor computer industry.' },
-  { number: 15, symbol: 'P', name: 'Phosphorus', mass: '30.974', category: 'polyatomic-nonmetal', group: 15, period: 3, electronConfig: '[Ne] 3s2 3p3', electronegativity: 2.19, summary: 'Essential for DNA, RNA, ATP, and cell membranes; exists in white and red allotropes.' },
-  { number: 16, symbol: 'S', name: 'Sulfur', mass: '32.06', category: 'polyatomic-nonmetal', group: 16, period: 3, electronConfig: '[Ne] 3s2 3p4', electronegativity: 2.58, summary: 'Bright yellow crystalline solid at room temperature; essential component of cysteine and methionine.' },
-  { number: 17, symbol: 'Cl', name: 'Chlorine', mass: '35.45', category: 'halogen', group: 17, period: 3, electronConfig: '[Ne] 3s2 3p5', electronegativity: 3.16, summary: 'Yellow-green halogen gas; strong disinfectant and component of table salt (NaCl).' },
-  { number: 18, symbol: 'Ar', name: 'Argon', mass: '39.948', category: 'noble-gas', group: 18, period: 3, electronConfig: '[Ne] 3s2 3p6', summary: 'Third-most abundant gas in the Earth\'s atmosphere; used as an inert shielding gas in welding.' },
-  { number: 19, symbol: 'K', name: 'Potassium', mass: '39.098', category: 'alkali-metal', group: 1, period: 4, electronConfig: '[Ar] 4s1', electronegativity: 0.82, summary: 'Soft silvery alkali metal; vital electrolyte required for neural transmission and muscle contraction.' },
-  { number: 20, symbol: 'Ca', name: 'Calcium', mass: '40.078', category: 'alkaline-earth', group: 2, period: 4, electronConfig: '[Ar] 4s2', electronegativity: 1.00, summary: 'Essential structural component of bone, teeth, and cellular signaling pathways.' },
-  { number: 21, symbol: 'Sc', name: 'Scandium', mass: '44.956', category: 'transition-metal', group: 3, period: 4, electronConfig: '[Ar] 3d1 4s2', electronegativity: 1.36, summary: 'Light transition metal alloyed with aluminum for high-performance sporting goods and aerospace.' },
-  { number: 22, symbol: 'Ti', name: 'Titanium', mass: '47.867', category: 'transition-metal', group: 4, period: 4, electronConfig: '[Ar] 3d2 4s2', electronegativity: 1.54, summary: 'High strength-to-weight ratio and corrosion resistance; used in aircraft and medical implants.' },
-  { number: 23, symbol: 'V', name: 'Vanadium', mass: '50.942', category: 'transition-metal', group: 5, period: 4, electronConfig: '[Ar] 3d3 4s2', electronegativity: 1.63, summary: 'Hard, silvery-grey metal used to produce high-strength steel alloys for tools and axles.' },
-  { number: 24, symbol: 'Cr', name: 'Chromium', mass: '51.996', category: 'transition-metal', group: 6, period: 4, electronConfig: '[Ar] 3d5 4s1', electronegativity: 1.66, summary: 'Steely-grey, lustrous metal with high polish; principal additive in stainless steel.' },
-  { number: 25, symbol: 'Mn', name: 'Manganese', mass: '54.938', category: 'transition-metal', group: 7, period: 4, electronConfig: '[Ar] 3d5 4s2', electronegativity: 1.55, summary: 'Essential industrial metal used in iron and steel production, batteries, and enzyme cofactors.' },
-  { number: 26, symbol: 'Fe', name: 'Iron', mass: '55.845', category: 'transition-metal', group: 8, period: 4, electronConfig: '[Ar] 3d6 4s2', electronegativity: 1.83, summary: 'Most common element on Earth by mass; forms the active oxygen-transport center of hemoglobin.' },
-  { number: 27, symbol: 'Co', name: 'Cobalt', mass: '58.933', category: 'transition-metal', group: 9, period: 4, electronConfig: '[Ar] 3d7 4s2', electronegativity: 1.88, summary: 'Ferromagnetic transition metal used in rechargeable lithium-ion batteries and magnetic alloys.' },
-  { number: 28, symbol: 'Ni', name: 'Nickel', mass: '58.693', category: 'transition-metal', group: 10, period: 4, electronConfig: '[Ar] 3d8 4s2', electronegativity: 1.91, summary: 'Corrosion-resistant metal used in plating, stainless steel, and coinage.' },
-  { number: 29, symbol: 'Cu', name: 'Copper', mass: '63.546', category: 'transition-metal', group: 11, period: 4, electronConfig: '[Ar] 3d10 4s1', electronegativity: 1.90, summary: 'High electrical and thermal conductivity; foundational for global electrical wiring and electronics.' },
-  { number: 30, symbol: 'Zn', name: 'Zinc', mass: '65.38', category: 'transition-metal', group: 12, period: 4, electronConfig: '[Ar] 3d10 4s2', electronegativity: 1.65, summary: 'Used in galvanization to prevent rusting of steel, and as an essential biological trace element.' },
-  { number: 35, symbol: 'Br', name: 'Bromine', mass: '79.904', category: 'halogen', group: 17, period: 4, electronConfig: '[Ar] 3d10 4s2 4p5', electronegativity: 2.96, summary: 'Fuming red-brown liquid at room temperature; one of only two liquid elements at STP.' },
-  { number: 47, symbol: 'Ag', name: 'Silver', mass: '107.87', category: 'transition-metal', group: 11, period: 5, electronConfig: '[Kr] 4d10 5s1', electronegativity: 1.93, summary: 'Highest electrical and thermal conductivity and highest reflectivity of any known metal.' },
-  { number: 53, symbol: 'I', name: 'Iodine', mass: '126.90', category: 'halogen', group: 17, period: 5, electronConfig: '[Kr] 4d10 5s2 5p5', electronegativity: 2.66, summary: 'Lustrous purple-black solid that sublimes into violet gas; essential for thyroid hormone synthesis.' },
-  { number: 79, symbol: 'Au', name: 'Gold', mass: '196.97', category: 'transition-metal', group: 11, period: 6, electronConfig: '[Xe] 4f14 5d10 6s1', electronegativity: 2.54, summary: 'Highly unreactive precious noble metal; resistant to corrosion and prized for jewelry and electronics.' },
-  { number: 80, symbol: 'Hg', name: 'Mercury', mass: '200.59', category: 'transition-metal', group: 12, period: 6, electronConfig: '[Xe] 4f14 5d10 6s2', electronegativity: 2.00, summary: 'Heavy silvery d-block element; the only metallic element that is liquid at standard conditions.' },
-  { number: 92, symbol: 'U', name: 'Uranium', mass: '238.03', category: 'actinide', group: 3, period: 7, electronConfig: '[Rn] 5f3 6d1 7s2', electronegativity: 1.38, summary: 'Radioactive actinide metal used as primary fuel in commercial nuclear power plants.' },
-];
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; label: string }> = {
   'diatomic-nonmetal': { bg: 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800', text: 'text-emerald-700 dark:text-emerald-300', label: 'Reactive Nonmetal' },
