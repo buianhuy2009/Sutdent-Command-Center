@@ -31,10 +31,6 @@ import { StemLabWorkspace } from './components/workspaces/StemLabWorkspace';
 import { CreationStudioWorkspace } from './components/workspaces/CreationStudioWorkspace';
 import { RetentionVaultWorkspace } from './components/workspaces/RetentionVaultWorkspace';
 import { DocumentHubWorkspace } from './components/workspaces/DocumentHubWorkspace';
-import { GitHubWorkspace } from './components/workspaces/GitHubWorkspace';
-import { OverleafWorkspace } from './components/workspaces/OverleafWorkspace';
-import { GoogleScholarWorkspace } from './components/workspaces/GoogleScholarWorkspace';
-import { DiscordSlackWorkspace } from './components/workspaces/DiscordSlackWorkspace';
 import { DesmosWorkspace } from './components/workspaces/DesmosWorkspace';
 import { GeoGebraWorkspace } from './components/workspaces/GeoGebraWorkspace';
 import { ExcalidrawWorkspace } from './components/workspaces/ExcalidrawWorkspace';
@@ -1905,13 +1901,6 @@ export default function App() {
                   flashcards: 'Quizlet & Anki Flashcards',
                   quizlet: 'Quizlet & Anki Flashcards',
                   anki: 'Quizlet & Anki Flashcards',
-                  github: 'GitHub Code Hub',
-                  overleaf: 'Overleaf LaTeX Studio',
-                  'google-scholar': 'Google Scholar Citations',
-                  scholar: 'Google Scholar Citations',
-                  zotero: 'Google Scholar Citations',
-                  discord: 'Discord & Slack Hub',
-                  slack: 'Discord & Slack Hub',
                   canva: 'Canva',
                   'desmos-graphing': 'Desmos Graphing',
                   'desmos-scientific': 'Desmos Scientific',
@@ -2160,22 +2149,6 @@ export default function App() {
 
                 {(activeTab === 'flashcards' || activeTab === 'quizlet' || activeTab === 'anki') && (
                   <FlashcardStudioTab />
-                )}
-
-                {activeTab === 'github' && (
-                  <GitHubWorkspace />
-                )}
-
-                {activeTab === 'overleaf' && (
-                  <OverleafWorkspace />
-                )}
-
-                {(activeTab === 'google-scholar' || activeTab === 'scholar' || activeTab === 'zotero') && (
-                  <GoogleScholarWorkspace />
-                )}
-
-                {(activeTab === 'discord' || activeTab === 'slack') && (
-                  <DiscordSlackWorkspace />
                 )}
 
                 {activeTab === 'canva' && (

@@ -109,35 +109,11 @@ export const APP_CATALOG: AppStoreItem[] = [
     rating: 4.6,
   },
   {
-    id: 'github',
-    name: 'GitHub',
-    category: 'LMS & Schedule',
-    description: 'Code repositories, commits, pull requests, and project tracker.',
-    longOverview: 'Track your software projects, homework repositories, issue trackers, and pull requests directly from your workspace.',
-    features: ['Direct repository quick-launch', 'Project milestone tracker', 'Code snippet repository', 'Commit streak accountability'],
-    badge: 'Developer',
-    developer: 'GitHub / Microsoft',
-    rating: 4.9,
-    highlightCategory: 'Dev',
-  },
-  {
-    id: 'discord',
-    name: 'Discord & Slack',
-    category: 'LMS & Schedule',
-    description: 'Study group servers, class channels, and office hour voice rooms.',
-    longOverview: 'Organize all your Discord study servers, course Slack workspaces, and peer group chat channels in one focused launcher.',
-    features: ['Direct study server bookmarks', 'Class workspace switchboard', 'Voice channel office hours launcher', 'Zero-tab distraction hub'],
-    badge: 'Community',
-    developer: 'Discord & Slack',
-    rating: 4.8,
-    highlightCategory: 'Dev',
-  },
-  {
     id: 'splitscreen',
     name: 'Dual Split Screen',
     category: 'LMS & Schedule',
     description: 'Side-by-side dual workspace for multi-tasking.',
-    longOverview: 'Run any two tools side-by-side with an adjustable split ratio. Take notes while graphing on Desmos, or browse Google Drive while writing LaTeX.',
+    longOverview: 'Run any two tools side-by-side with an adjustable split ratio. Take notes while graphing on Desmos, or browse Google Drive while writing equations.',
     features: ['Left & right independent pane selection', 'Adjustable 50/50, 60/40, and 70/30 split ratios', 'Swap panes with 1-click', 'Persistent multi-task state'],
     badge: 'Productivity',
     developer: 'StudentOS Systems',
@@ -314,30 +290,6 @@ export const APP_CATALOG: AppStoreItem[] = [
     highlightCategory: 'Featured',
   },
   {
-    id: 'google-scholar',
-    name: 'Google Scholar & Citations',
-    category: 'Writing & Research',
-    description: 'Search papers & generate citations in APA 7th, MLA 9th, Chicago, and BibTeX.',
-    longOverview: 'Search any academic source or paste paper titles to instantly generate verified bibliographic citations in APA, MLA, Chicago, Harvard, and BibTeX formats.',
-    features: ['Instant citation formatter (APA 7, MLA 9, Chicago 17)', '1-click in-text citation copy (Author, Year)', 'Export to BibTeX and Zotero', 'Scholarly source metadata lookup'],
-    badge: 'Citations',
-    developer: 'Google Scholar & Zotero',
-    rating: 4.9,
-    highlightCategory: 'Research',
-  },
-  {
-    id: 'overleaf',
-    name: 'Overleaf LaTeX',
-    category: 'Writing & Research',
-    description: 'Cloud LaTeX document templates and PDF editor bridge.',
-    longOverview: 'Quick access to your Overleaf LaTeX projects, research lab reports, IEEE paper templates, and math problem sets.',
-    features: ['Direct Overleaf project launcher', 'LaTeX document template generator', 'Mathematical formula copy & paste', 'Cloud synchronization'],
-    badge: 'LaTeX',
-    developer: 'Overleaf / Digital Science',
-    rating: 4.8,
-    highlightCategory: 'Research',
-  },
-  {
     id: 'notes-markdown',
     name: 'Markdown Notes & LaTeX',
     category: 'Writing & Research',
@@ -435,8 +387,7 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
 
   const featuredApps = useMemo(() => APP_CATALOG.filter((a) => a.highlightCategory === 'Featured'), []);
   const stemApps = useMemo(() => APP_CATALOG.filter((a) => a.highlightCategory === 'STEM'), []);
-  const researchApps = useMemo(() => APP_CATALOG.filter((a) => a.highlightCategory === 'Research'), []);
-  const devApps = useMemo(() => APP_CATALOG.filter((a) => a.highlightCategory === 'Dev'), []);
+  const researchApps = useMemo(() => APP_CATALOG.filter((a) => a.category === 'Writing & Research'), []);
 
   if (!isOpen) return null;
 
@@ -480,7 +431,7 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search tools, GitHub, LaTeX, Wolfram, Scholar, Canvas..."
+                placeholder="Search tools, Canvas, Desmos, Wolfram, Quizlet, Excalidraw, Notes..."
                 className="w-full pl-10 pr-4 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
               />
             </div>
@@ -666,34 +617,16 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">
-                        Research, Writing &amp; Citations
+                        Writing, Notes &amp; AI Explanations
                       </h2>
                       <p className="text-xs text-[#8C897F]">
-                        Google Scholar, Overleaf LaTeX, and source binders
+                        Google Drive, Markdown Notes, Essay Rubric Checker &amp; Feynman Explainer
                       </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {researchApps.map((app) => renderAppCard(app))}
-                  </div>
-                </div>
-
-                {/* 4. Coding & Collaboration */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">
-                        Code, Repositories &amp; Study Servers
-                      </h2>
-                      <p className="text-xs text-[#8C897F]">
-                        GitHub project tracking, Discord servers, and Slack channels
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {devApps.map((app) => renderAppCard(app))}
                   </div>
                 </div>
 

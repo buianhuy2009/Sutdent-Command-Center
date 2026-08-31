@@ -141,27 +141,6 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
         </div>
       );
 
-    case 'overleaf':
-      return (
-        <div className={`${sizeClasses} bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-bold shadow-md shadow-emerald-600/20 shrink-0 ${className}`}>
-          <FileCode className={iconSizes} />
-        </div>
-      );
-
-    case 'github':
-      return (
-        <div className={`${sizeClasses} bg-gradient-to-br from-zinc-800 to-neutral-900 text-white flex items-center justify-center font-bold shadow-md shadow-black/20 shrink-0 ${className}`}>
-          <GitBranch className={iconSizes} />
-        </div>
-      );
-
-    case 'discord':
-      return (
-        <div className={`${sizeClasses} bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/20 shrink-0 ${className}`}>
-          <MessageSquare className={iconSizes} />
-        </div>
-      );
-
     case 'canva':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-cyan-400 via-teal-500 to-purple-600 text-white flex items-center justify-center font-bold shadow-md shadow-cyan-500/20 shrink-0 ${className}`}>
