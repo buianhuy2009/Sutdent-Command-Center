@@ -67,7 +67,6 @@ import { DeploymentModal } from './components/DeploymentModal';
 import { OAuthGuideModal } from './components/OAuthGuideModal';
 import { ApiActivationModal } from './components/ApiActivationModal';
 import { GeminiSettingsModal } from './components/GeminiSettingsModal';
-import { FloatingAiCopilot } from './components/FloatingAiCopilot';
 import { AiAcademicSuiteModal } from './components/AiAcademicSuiteModal';
 import { ToastContainer } from './components/Toast';
 import confetti from 'canvas-confetti';
@@ -1859,7 +1858,7 @@ export default function App() {
       {/* Left Navigation Rail (Desktop) + Main Area Container */}
       <div className="flex-1 flex overflow-hidden h-full">
         {/* Sleek Distinct Theme-Reactive Sidebar */}
-        {!zenFocusMode && (
+        {!zenFocusMode && activeTab !== 'dashboard' && (
           <div className="hidden md:flex shrink-0">
             <Sidebar
               activeTab={activeTab}
@@ -1889,7 +1888,7 @@ export default function App() {
         {/* Right Main Column with Top Header, Scrollable Content, and Bottom Status Bar */}
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#FAF9F5] dark:bg-[#141413]">
           {/* Top Header */}
-          {!isNavbarHidden && (
+          {!isNavbarHidden && activeTab !== 'dashboard' && (
             <Navbar
               activeTabLabel={
                 {
@@ -1939,7 +1938,7 @@ export default function App() {
           )}
 
           {/* Floating Minimal Restore Pill (When Top Bar is Collapsed) */}
-          {isNavbarHidden && !zenFocusMode && (
+          {isNavbarHidden && !zenFocusMode && activeTab !== 'dashboard' && (
             <div className="absolute top-3 right-4 z-40">
               <button
                 onClick={() => setIsNavbarHidden(false)}
@@ -2421,17 +2420,6 @@ export default function App() {
       <GeminiSettingsModal
         isOpen={geminiSettingsOpen}
         onClose={() => setGeminiSettingsOpen(false)}
-      />
-
-      {/* Global Floating AI Copilot */}
-      <FloatingAiCopilot
-        onNavigateWorkspace={(ws) => handleWorkspaceTransition(ws as WorkspaceId)}
-        onExecuteAgentAction={handleExecuteAgentAction}
-        appContext={{
-          activeWorkspace,
-          assignmentsCount: assignments.length,
-          upcomingDeadlines: assignments.slice(0, 3).map((a) => `${a.assignmentName} (${a.dueDate})`),
-        }}
       />
 
       {/* Declarative Native <dialog> Onboarding Tour */}
