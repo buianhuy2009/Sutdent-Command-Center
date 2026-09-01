@@ -8,7 +8,6 @@ import {
   ChevronUp,
   Timer,
   Music,
-  Cloud,
   Loader2,
   AlertTriangle,
 } from 'lucide-react';
@@ -34,13 +33,14 @@ function SyncIndicator({ isRefreshing }: { isRefreshing?: boolean }) {
     const id = setInterval(poll, 3000);
     return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); clearInterval(id); };
   }, []);
+  // Only show when disconnected/offline or actively syncing; otherwise hide (per UX request)
   if (isRefreshing) {
     return <span className="flex items-center gap-1.5 text-[11px] font-bold text-blue-600" title="Syncing to Google"><Loader2 className="w-3 h-3 animate-spin" /><span className="hidden sm:inline">Syncing…</span></span>;
   }
   if (!isOnline) {
     return <span className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600" title={`Working offline. ${pending} tasks saved locally.`}><AlertTriangle className="w-3 h-3" /><span className="hidden sm:inline">Offline • {pending} local</span><span className="w-2 h-2 rounded-full bg-amber-500 ring-2 ring-amber-500/30" /></span>;
   }
-  return <span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600" title={pending>0 ? `Writing ${pending} local edits to Sheets…` : 'All channels live & synced'}><Cloud className="w-3 h-3" /><span className="hidden sm:inline">{pending>0 ? `${pending} pending` : 'Live Synced'}</span><span className={`w-2 h-2 rounded-full ${pending>0 ? 'bg-blue-500 animate-pulse ring-4 ring-blue-500/20' : 'bg-emerald-500 ring-4 ring-emerald-500/20'}`} /></span>;
+  return null;
 }
 
 interface NavbarProps {

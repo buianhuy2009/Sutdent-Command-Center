@@ -460,6 +460,23 @@ export default function App() {
     return () => clearInterval(interval);
   }, [isFocusTimerRunning, focusTimerSeconds]);
 
+  // Auto fullscreen when entering Zen Focus Mode
+  useEffect(() => {
+    if (zenFocusMode) {
+      try {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.().catch(() => {});
+        }
+      } catch {}
+    } else {
+      try {
+        if (document.fullscreenElement) {
+          document.exitFullscreen?.().catch(() => {});
+        }
+      } catch {}
+    }
+  }, [zenFocusMode]);
+
   // Calculate live badge counts for sidebar
   const completedCanvasIds = useMemo(() => new Set(loadCompletedCanvasIds()), [canvasAssignments]);
   const canvasUnfinishedCount = useMemo(
