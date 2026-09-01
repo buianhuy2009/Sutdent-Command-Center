@@ -16,6 +16,7 @@ import {
   setClientGeminiApiKey,
   testGeminiApiKey,
 } from '../services/gemini';
+import { vaultSet, vaultGet, vaultExists, vaultClear } from '../services/vault';
 
 interface GeminiSettingsModalProps {
   isOpen: boolean;
@@ -31,6 +32,8 @@ export const GeminiSettingsModal: React.FC<GeminiSettingsModalProps> = ({
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'failed'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
+  const [vaultPin, setVaultPin] = useState('');
+  const [vaultLocked, setVaultLocked] = useState(vaultExists());
 
   useEffect(() => {
     if (isOpen) {
@@ -113,11 +116,33 @@ export const GeminiSettingsModal: React.FC<GeminiSettingsModalProps> = ({
         <div className="p-6 space-y-4">
           <div className="p-3.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex items-start gap-2.5 text-xs text-[#5C5A54] dark:text-[#B5B2A8]">
             <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-            <div>
+            <div className="flex-1">
               <span className="font-bold text-[#141413] dark:text-[#FAF9F5] block mb-0.5">
-                Local-First &amp; Zero External Tracking
+                Encrypted Vault • PBKDF2 + AES-GCM
               </span>
-              Your Gemini API key is stored securely in your browser&apos;s localStorage and used directly for client-side structured calls and vision processing.
+              {vaultLocked ? 'Vault locked: keys encrypted with your PIN. Enter PIN to decrypt.' : 'Set a PIN to encrypt your Gemini/Groq keys locally. Protects against XSS & extension reads.'}
+              <div className="flex items-center gap-2 mt-2">
+                <input type="password" value={vaultPin} onChange={e=>setVaultPin(e.target.value)} placeholder="Vault PIN (min 4 chars)" className="px-2 py-1 text-xs bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg w-40" />
+                {!vaultLocked ? (
+                  <button onClick={async()=>{
+                    if(vaultPin.length<4){ setStatusMessage('PIN too short'); setTestStatus('failed'); return; }
+                    await vaultSet(vaultPin, { gemini: apiKey, groq: localStorage.getItem('scc_groq_api_key')||'' });
+                    setVaultLocked(true); setStatusMessage('Vault encrypted & locked. Raw keys removed from localStorage.'); setTestStatus('success');
+                    localStorage.removeItem('scc_gemini_api_key'); localStorage.removeItem('scc_groq_api_key');
+                  }} className="px-2 py-1 text-xs font-bold bg-emerald-600 text-white rounded-lg">Encrypt & Lock</button>
+                ) : (
+                  <>
+                    <button onClick={async()=>{
+                      const data = await vaultGet(vaultPin);
+                      if(!data){ setStatusMessage('Wrong PIN or vault corrupt'); setTestStatus('failed'); return; }
+                      if(data.gemini) { setApiKey(data.gemini); setClientGeminiApiKey(data.gemini); }
+                      if(data.groq) try{ localStorage.setItem('scc_groq_api_key', data.groq); }catch{}
+                      setVaultLocked(false); setStatusMessage('Vault unlocked & keys restored to session.'); setTestStatus('success');
+                    }} className="px-2 py-1 text-xs font-bold bg-[#D97757] text-white rounded-lg">Unlock</button>
+                    <button onClick={()=>{ vaultClear(); setVaultLocked(false); setStatusMessage('Vault cleared.'); setTestStatus('idle'); }} className="px-2 py-1 text-xs text-rose-600 border border-rose-200 rounded-lg">Clear Vault</button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 

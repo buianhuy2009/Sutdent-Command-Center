@@ -2,25 +2,70 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* === Tokenized Theme Engine === */
+:root {
+  --color-background: 250 249 245; /* #FAF9F5 linen */
+  --color-panel: 255 255 255;
+  --color-border: 223 218 203; /* #DFDACB */
+  --color-accent: 217 119 87; /* #D97757 */
+  --color-text: 20 20 19;
+  --color-muted: 140 137 127;
+}
+:root[data-theme="linen"] {
+  --color-background: 250 249 245;
+  --color-panel: 255 255 255;
+  --color-border: 223 218 203;
+  --color-accent: 217 119 87;
+  --color-text: 20 20 19;
+}
+:root[data-theme="nord"] {
+  --color-background: 46 52 64; /* #2E3440 */
+  --color-panel: 59 66 82; /* #3B4252 */
+  --color-border: 76 86 102;
+  --color-accent: 136 192 208; /* #88C0D0 */
+  --color-text: 236 239 244;
+}
+:root[data-theme="dracula"] {
+  --color-background: 40 42 54; /* #282A36 */
+  --color-panel: 68 71 90; /* #44475A */
+  --color-border: 98 114 164;
+  --color-accent: 255 121 198; /* #FF79C6 */
+  --color-text: 248 248 242;
+}
+:root[data-theme="catppuccin"] {
+  --color-background: 30 30 46; /* #1E1E2E */
+  --color-panel: 49 50 68; /* #313244 */
+  --color-border: 69 71 90;
+  --color-accent: 203 166 247; /* #CBA6F7 */
+  --color-text: 205 214 244;
+}
+:root[data-theme="cyberpunk"] {
+  --color-background: 10 10 18;
+  --color-panel: 20 20 35;
+  --color-border: 88 28 102;
+  --color-accent: 0 255 255; /* cyan */
+  --color-text: 255 255 200;
+}
+
 @layer base {
   html {
     color-scheme: light;
-    background-color: #FAF9F5;
-    color: #141413;
+    background-color: rgb(var(--color-background));
+    color: rgb(var(--color-text));
   }
   html.dark {
     color-scheme: dark;
-    background-color: #141413;
-    color: #FAF9F5;
+    background-color: rgb(var(--color-background));
+    color: rgb(var(--color-text));
   }
   body {
     @apply antialiased;
-    background-color: #FAF9F5;
-    color: #141413;
+    background-color: rgb(var(--color-background));
+    color: rgb(var(--color-text));
   }
   .dark body {
-    background-color: #141413;
-    color: #FAF9F5;
+    background-color: rgb(var(--color-background));
+    color: rgb(var(--color-text));
   }
 
   ::selection {
@@ -139,6 +184,22 @@
   background-color: rgba(15, 23, 42, 0.7);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+}
+
+/* Micro-borders & layered shadows system */
+.card-micro {
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+}
+.dark .card-micro {
+  border-color: rgba(255,255,255,0.06);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.35);
+}
+.focus-ring {
+  outline: none;
+}
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 4px rgb(var(--color-accent));
 }
 
 /* Scroll-Driven Timeline Reveal Animations */

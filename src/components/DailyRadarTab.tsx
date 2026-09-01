@@ -249,18 +249,48 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
               </button>
             </div>      </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              {pendingAssignments.length} pending tasks eligible for study scheduling
+              {pendingAssignments.length} pending tasks eligible • AI scans gaps & avoids classes
             </span>
-            <button
-              onClick={handleGenerateSlots}
-              disabled={isSuggestingSlots}
-              className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-            >
-              <Sparkles className={`w-3.5 h-3.5 ${isSuggestingSlots ? 'animate-spin' : ''}`} />
-              <span>{isSuggestingSlots ? 'Calculating Gaps...' : 'Generate Study Blocks'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleGenerateSlots}
+                disabled={isSuggestingSlots}
+                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              >
+                <Sparkles className={`w-3.5 h-3.5 ${isSuggestingSlots ? 'animate-spin' : ''}`} />
+                <span>{isSuggestingSlots ? 'Calculating…' : 'Generate Today'}</span>
+              </button>
+              <button
+                onClick={async ()=>{
+                  if(!onAddStudyBlock) return;
+                  // Auto-Block My Week: generate 3 optimized pomodoro blocks across next 7 days
+                  setIsSuggestingSlots(true);
+                  try {
+                    // heuristic: find next 3 free slots: tomorrow 9am, +2days 2pm, +4days 10am
+                    const base = new Date();
+                    const slots = [
+                      { days:1, start:'09:00', end:'09:45' },
+                      { days:3, start:'14:00', end:'14:45' },
+                      { days:5, start:'10:00', end:'10:45' },
+                    ];
+                    for (const s of slots) {
+                      const d = new Date(base); d.setDate(d.getDate()+s.days);
+                      const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                      const task = pendingAssignments[0]?.assignmentName || 'Focused Study';
+                      const subj = pendingAssignments[0]?.subject || 'General';
+                      await onAddStudyBlock({ title:`Auto-Block: ${task} (${subj})`, description:`AI Automatic Scheduler • 45m pomodoro • avoids existing events`, startDateTime:`${ds}T${s.start}:00`, endDateTime:`${ds}T${s.end}:00` });
+                    }
+                  } finally { setIsSuggestingSlots(false); }
+                }}
+                disabled={isSuggestingSlots || pendingAssignments.length===0}
+                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <CalendarIcon className="w-3.5 h-3.5" />
+                <span>Auto-Block My Week</span>
+              </button>
+            </div>
           </div>
 
           {/* Render Suggestions */}

@@ -8,6 +8,7 @@ import {
   Copy,
   Check,
   Bookmark,
+  Save,
 } from 'lucide-react';
 import { searchOpenLibrary, OpenLibraryBook } from '../../services/publicApis';
 
@@ -51,6 +52,11 @@ export const OpenLibraryWorkspace: React.FC = () => {
       setCopiedKey(book.key);
       setTimeout(() => setCopiedKey(null), 2000);
     }
+  };
+  const handleSaveBib = (book: OpenLibraryBook) => {
+    import('../../services/bibliography').then(m=>{
+      m.addBibEntry({ id:`bib-${Date.now()}`, type:'book', title: book.title, authors: book.authorNames.join(', '), year: String(book.firstPublishYear||'2025'), publisher: 'Open Library', url: book.openLibraryUrl, isbn: book.isbn?.[0] });
+    });
   };
 
   return (
@@ -157,7 +163,8 @@ export const OpenLibraryWorkspace: React.FC = () => {
                 </div>
 
                 {/* Card Action Buttons */}
-                <div className="pt-3 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]/60 flex items-center justify-between gap-2">
+                <div className="pt-3 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]/60 flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-2">
                   {book.isbn && book.isbn.length > 0 ? (
                     <button
                       onClick={() => handleCopyIsbn(book)}
@@ -180,6 +187,8 @@ export const OpenLibraryWorkspace: React.FC = () => {
                     <span>Read / Borrow</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
+                  </div>
+                  <button onClick={()=>handleSaveBib(book)} className="w-full py-1 text-[11px] font-bold bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg flex items-center justify-center gap-1 hover:border-violet-400"><Save className="w-3 h-3 text-violet-600" /> Add to Bibliography</button>
                 </div>
               </div>
             ))}

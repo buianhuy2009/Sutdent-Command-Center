@@ -165,10 +165,28 @@ class AmbientAudioEngine {
           bandpass.type = 'bandpass';
           bandpass.frequency.value = 1400;
           bandpass.Q.value = 0.6;
+          // LFO-Modulated Rain Filter: wind sweeps 0.06-0.09Hz
+          const lfo = ctx.createOscillator();
+          lfo.type = 'sine';
+          lfo.frequency.value = 0.07;
+          const lfoGain = ctx.createGain();
+          lfoGain.gain.value = 600;
+          lfo.connect(lfoGain);
+          lfoGain.connect(bandpass.frequency);
+          lfo.start();
+          // Secondary slow amplitude LFO for storm intensity variation
+          const ampLfo = ctx.createOscillator();
+          ampLfo.type = 'sine';
+          ampLfo.frequency.value = 0.04;
+          const ampGain = ctx.createGain();
+          ampGain.gain.value = 0.15;
+          ampLfo.connect(ampGain);
+          ampGain.connect(gain.gain);
+          ampLfo.start();
           src.connect(bandpass);
           bandpass.connect(gain);
           src.start();
-          this.activeSources.push(src);
+          this.activeSources.push(src, lfo, ampLfo);
           break;
         }
 
@@ -225,10 +243,23 @@ class AmbientAudioEngine {
           oscR.frequency.value = 240;
           oscR.connect(merger, 0, 1);
 
-          merger.connect(gain);
+          // Isochronic Tone Modulator: amplitude pulsation synced to breathing (0.125Hz = 8s cycle: 4s inhale/4s exhale)
+          const isoGain = ctx.createGain();
+          isoGain.gain.value = 1.0;
+          merger.connect(isoGain);
+          isoGain.connect(gain);
+          const isoLfo = ctx.createOscillator();
+          isoLfo.type = 'sine';
+          isoLfo.frequency.value = 0.125;
+          const isoDepth = ctx.createGain();
+          isoDepth.gain.value = 0.45;
+          isoLfo.connect(isoDepth);
+          isoDepth.connect(isoGain.gain);
+          isoLfo.start();
+
           oscL.start();
           oscR.start();
-          this.activeSources.push(oscL, oscR);
+          this.activeSources.push(oscL, oscR, isoLfo);
           break;
         }
 

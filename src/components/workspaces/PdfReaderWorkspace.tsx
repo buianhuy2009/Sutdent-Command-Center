@@ -97,6 +97,23 @@ export const PdfReaderWorkspace: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleExtractHighlights = () => {
+    if (annotations.length === 0) return;
+    const sorted = [...annotations].sort((a, b) => a.pageNumber - b.pageNumber);
+    // Highlight Extractor: auto-append with page citations to Document Hub notes
+    const markdown = sorted.map(a=>`> "${a.note}" — *p. ${a.pageNumber}*, ${pdfFileName || 'Document'} (${a.timestamp})`).join('\n\n');
+    try {
+      const raw = localStorage.getItem('scc_markdown_notes_v1');
+      const notes = raw ? JSON.parse(raw) : [];
+      const hubNote = { id: `note-${Date.now()}`, title: `Highlights: ${pdfFileName || 'PDF'}`, subject: 'Highlights', content: `# Highlights from ${pdfFileName || 'Document'}\n\n${markdown}\n`, updatedAt: new Date().toLocaleDateString() };
+      localStorage.setItem('scc_markdown_notes_v1', JSON.stringify([hubNote, ...notes]));
+      // also try Dexie
+      import('../../services/db').then(m=>{ m.db.notes.put(hubNote as any).catch(()=>{}); });
+    } catch {}
+    // feedback
+    navigator.clipboard.writeText(markdown);
+  };
+
   return (
     <div className="space-y-6 select-none animate-in fade-in duration-150">
       
@@ -234,6 +251,13 @@ export const PdfReaderWorkspace: React.FC = () => {
                       title="Export to Markdown (.md)"
                     >
                       <Download className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={handleExtractHighlights}
+                      className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 text-[11px] font-bold border border-amber-200 dark:border-amber-800 hover:bg-amber-200"
+                      title="Extract highlights with page citations to Document Hub"
+                    >
+                      Extract Highlights →
                     </button>
                   </div>
                 )}

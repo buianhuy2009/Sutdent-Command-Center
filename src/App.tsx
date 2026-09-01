@@ -2062,6 +2062,15 @@ export default function App() {
               onRefreshAll={handleRefreshAll}
               isRefreshing={isRefreshingAll}
               onToggleCollapseBar={() => setIsNavbarHidden(true)}
+              onNotificationClick={(n)=>{
+                if (n.source==='Canvas' || n.title?.includes('Canvas') || n.title?.includes('Deadline')) handleTabTransition('canvas');
+                else if (n.source==='Google Drive') handleTabTransition('drive');
+                else if (n.source==='Gmail' || n.title?.includes('Email')) handleTabTransition('gmail');
+                else if (n.tier==='urgent') handleTabTransition('tracker');
+                else handleTabTransition('radar');
+                // pulse highlight after nav
+                setTimeout(()=>{ window.dispatchEvent(new CustomEvent('scc-highlight-tracker')); }, 300);
+              }}
             />
           )}
 

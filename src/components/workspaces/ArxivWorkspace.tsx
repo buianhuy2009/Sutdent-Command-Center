@@ -67,6 +67,8 @@ export const ArxivWorkspace: React.FC = () => {
       const content = `# ${paper.title}\n\n**Authors:** ${paper.authors.join(', ')}\n**Category:** ${paper.primaryCategory} • **Published:** ${paper.published}\n**arXiv:** ${paper.arxivUrl}\n**PDF:** ${paper.pdfUrl}\n\n## Abstract\n${paper.summary}\n`;
       const newNote = { id: `note-${Date.now()}`, title: `arXiv: ${paper.title.slice(0, 60)}`, subject: paper.primaryCategory || 'Research', content, updatedAt: new Date().toLocaleDateString() };
       localStorage.setItem('scc_markdown_notes_v1', JSON.stringify([newNote, ...notes]));
+      // bibliography
+      import('../../services/bibliography').then(m=> m.addBibEntry({ id:`bib-${Date.now()}`, type:'article', title: paper.title, authors: paper.authors.join(', '), year: paper.published.slice(-4)||'2025', journal:'arXiv:'+paper.primaryCategory, url: paper.pdfUrl }));
       setSavedToNotesId(paper.id);
       setTimeout(() => setSavedToNotesId(null), 2000);
     } catch (e) { console.error(e); }

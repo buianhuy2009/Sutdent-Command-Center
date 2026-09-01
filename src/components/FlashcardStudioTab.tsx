@@ -502,6 +502,54 @@ Example format:
                 })
               )}
             </div>
+            {/* Retention Heatmap */}
+            <div className="mt-4 p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-[#5C5A54] dark:text-[#B5B2A8] mb-2 flex items-center gap-1.5">📊 Retention Heatmap (last 13 weeks)</h4>
+              <div className="grid grid-cols-13 gap-1">
+                {(() => {
+                  const map: Record<string, number> = {};
+                  decks.forEach(d=> d.cards.forEach(c=> (c as any).history?.forEach((h:any)=>{ map[h.date]=(map[h.date]||0)+1; })));
+                  const today = new Date();
+                  const cells = [];
+                  for (let w=0; w<13; w++) {
+                    for (let d=0; d<7; d++) {
+                      // Not full calendar alignment but simple
+                    }
+                  }
+                  const days: string[] = [];
+                  for (let i=90; i>=0; i--) { const dd=new Date(today); dd.setDate(today.getDate()-i); days.push(dd.toISOString().split('T')[0]); }
+                  return days.map((day,i)=>{
+                    const cnt = map[day]||0;
+                    let bg='bg-[#EFECE2] dark:bg-[#2C2B27]';
+                    if (cnt===1) bg='bg-emerald-200 dark:bg-emerald-900';
+                    else if (cnt===2) bg='bg-emerald-300 dark:bg-emerald-800';
+                    else if (cnt>=3) bg='bg-emerald-500 dark:bg-emerald-700';
+                    return <div key={i} title={`${day}: ${cnt} reviews`} className={`w-3 h-3 rounded-sm ${bg} border border-[#DFDACB]/40`} />;
+                  });
+                })()}
+              </div>
+              <p className="text-[10px] text-[#8C897F] mt-1">Darker = more reviews • hover for counts</p>
+              <div className="mt-3">
+                <h5 className="text-[10px] font-bold text-[#8C897F] uppercase tracking-wider">Forgetting Curve (interval distribution)</h5>
+                <div className="flex items-end gap-1 h-16 mt-1">
+                  {(() => {
+                    const buckets = [0,0,0,0,0]; // 0:new, 1:1d, 2:3-6d, 3:7-21d, 4:30d+
+                    decks.forEach(d=> d.cards.forEach(c=>{
+                      const iv = c.interval||0;
+                      if ((c.repetitions||0)===0) buckets[0]++; else if (iv<=1) buckets[1]++; else if (iv<=6) buckets[2]++; else if (iv<=21) buckets[3]++; else buckets[4]++;
+                    }));
+                    const max = Math.max(1, ...buckets);
+                    const labels=['New','1d','≤6d','≤21d','30d+'];
+                    return buckets.map((v,i)=>(
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        <div className="w-full bg-violet-500 rounded-t" style={{height: `${(v/max)*48+4}px`, opacity: 0.6 + i*0.08}} title={`${labels[i]}: ${v} cards`} />
+                        <span className="text-[9px] font-bold text-[#8C897F]">{labels[i]}</span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+            </div>
           </section>
         </div>
 

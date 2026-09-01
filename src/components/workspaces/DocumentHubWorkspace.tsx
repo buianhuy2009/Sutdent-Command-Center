@@ -40,8 +40,9 @@ import {
   SocraticTurn,
 } from '../../services/gemini';
 import { MarkdownNote, SchoolFile, RubricPreCheckResult, ThreeTierFeynmanResult } from '../../types';
+import { loadBibliography, saveBibliography, toBibTeX, toAPA, toMLA, BibEntry } from '../../services/bibliography';
 
-type DocHubTab = 'notes' | 'essay-proof' | 'socratic' | 'rubric' | 'feynman' | 'drive' | 'generator';
+type DocHubTab = 'notes' | 'essay-proof' | 'socratic' | 'rubric' | 'feynman' | 'drive' | 'generator' | 'bibliography';
 
 const LOCAL_NOTES_KEY = 'scc_markdown_notes_v1';
 
@@ -150,6 +151,10 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
   const [socraticInput, setSocraticInput] = useState('');
   const [socraticHistory, setSocraticHistory] = useState<SocraticTurn[]>([]);
   const [isSocraticThinking, setIsSocraticThinking] = useState(false);
+
+  // --- Bibliography State ---
+  const [bibEntries, setBibEntries] = useState<BibEntry[]>(loadBibliography);
+  const [bibCopied, setBibCopied] = useState<string|null>(null);
 
   const [notesSubjectFilter, setNotesSubjectFilter] = useState<string>('ALL');
   const groupedNotes = useMemo(() => {
@@ -444,6 +449,7 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
         <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
           {[
             { id: 'notes', label: 'Markdown & LaTeX Notes', icon: FileText },
+            { id: 'bibliography', label: 'Bibliography & BibTeX', icon: BookOpen },
             { id: 'essay-proof', label: 'Essay & Thesis Proofreader', icon: FileCheck },
             { id: 'socratic', label: 'Socratic Dialogue Tutor', icon: MessageSquare },
             { id: 'rubric', label: 'Socratic Rubric Checker', icon: Scale },
@@ -1147,6 +1153,45 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
           isGoogleConnected={isGoogleConnected}
           googleToken={googleToken}
         />
+      )}
+
+      {/* Bibliography Hub */}
+      {activeTab === 'bibliography' && (
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-[#1A1917] rounded-2xl p-5 border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs">
+            <div className="flex items-center justify-between pb-3 border-b border-[#DFDACB] dark:border-[#2C2B27]">
+              <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-2"><BookOpen className="w-4 h-4 text-violet-600" /> Bibliography & Citations ({bibEntries.length})</h3>
+              <div className="flex items-center gap-2">
+                <button onClick={()=>{ const bib=toBibTeX(bibEntries); navigator.clipboard.writeText(bib); setBibCopied('bib'); setTimeout(()=>setBibCopied(null),2000); }} className="px-3 py-1.5 text-xs font-bold bg-violet-600 hover:bg-violet-700 text-white rounded-xl flex items-center gap-1"><Copy className="w-3.5 h-3.5" /><span>{bibCopied==='bib'?'Copied BibTeX':'Copy BibTeX'}</span></button>
+                <button onClick={()=>{
+                  const blob=new Blob([toBibTeX(bibEntries)], {type:'text/plain'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='bibliography.bib'; a.click(); URL.revokeObjectURL(url);
+                }} className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl flex items-center gap-1"><Download className="w-3.5 h-3.5" /><span>Export .bib</span></button>
+                <button onClick={()=>{ if(confirm('Clear bibliography?')){ setBibEntries([]); saveBibliography([]); } }} className="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+              </div>
+            </div>
+            <div className="mt-4 space-y-3 max-h-[520px] overflow-y-auto">
+              {bibEntries.length===0 ? <p className="text-xs text-[#8C897F] text-center py-12">No citations yet. Save arXiv papers or Open Library books — they auto-appear here.</p> : bibEntries.map((e,i)=>(
+                <div key={e.id} className="p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] leading-snug">{e.title}</h4>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300">{e.type}</span>
+                  </div>
+                  <p className="text-[11px] text-[#5C5A54] dark:text-[#B5B2A8]">{e.authors} • {e.year} • {e.journal||e.publisher}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button onClick={()=>{ navigator.clipboard.writeText(toAPA(e)); setBibCopied(e.id+'-apa'); setTimeout(()=>setBibCopied(null),1500); }} className="px-2 py-1 text-[11px] font-bold bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg">{bibCopied===e.id+'-apa'?<Check className="w-3 h-3 text-emerald-600 inline mr-1"/>:null}APA</button>
+                    <button onClick={()=>{ navigator.clipboard.writeText(toMLA(e)); setBibCopied(e.id+'-mla'); setTimeout(()=>setBibCopied(null),1500); }} className="px-2 py-1 text-[11px] font-bold bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg">{bibCopied===e.id+'-mla'?<Check className="w-3 h-3 text-emerald-600 inline mr-1"/>:null}MLA</button>
+                    <button onClick={()=>{ navigator.clipboard.writeText((() => {
+                      const key = e.authors.split(' ')[0]?.toLowerCase() + e.year + e.title.split(' ')[0]?.toLowerCase();
+                      return e.type==='article' ? `@article{${key},\n  title={${e.title}},\n  author={${e.authors}},\n  year={${e.year}}\n}` : `@book{${key},\n  title={${e.title}},\n  author={${e.authors}},\n  year={${e.year}}\n}`;
+                    })()); setBibCopied(e.id+'-bib'); setTimeout(()=>setBibCopied(null),1500); }} className="px-2 py-1 text-[11px] font-bold bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg">{bibCopied===e.id+'-bib'?<Check className="w-3 h-3 text-emerald-600 inline mr-1"/>:null}BibTeX</button>
+                    <a href={e.url} target="_blank" rel="noreferrer" className="px-2 py-1 text-[11px] font-bold text-violet-600 hover:underline flex items-center gap-1"><ExternalLink className="w-3 h-3" />Source</a>
+                  </div>
+                  <p className="text-[11px] font-mono bg-white dark:bg-[#1A1917] p-2 rounded-lg border border-[#DFDACB]/40 text-[#5C5A54] dark:text-[#B5B2A8]">{toAPA(e)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* 5. 1-Click Assignment Doc Generator */}

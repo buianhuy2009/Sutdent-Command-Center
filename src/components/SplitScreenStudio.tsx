@@ -57,6 +57,15 @@ function saveSplitConfig(config: SplitScreenConfig) {
 
 export const SplitScreenStudio: React.FC = () => {
   const [config, setConfig] = useState<SplitScreenConfig>(loadSavedSplitConfig);
+  const [quadMode, setQuadMode] = useState<'split' | 'quad'>(() => {
+    try { return (localStorage.getItem('scc_split_quad_mode') as any) || 'split'; } catch { return 'split'; }
+  });
+  const [quadTools, setQuadTools] = useState<SplitScreenToolId[]>(() => {
+    try { const s = localStorage.getItem('scc_quad_tools'); return s ? JSON.parse(s) : ['excalidraw','desmos-graphing','notes-markdown','pomodoro']; } catch { return ['excalidraw','desmos-graphing','notes-markdown','pomodoro']; }
+  });
+  const [savedLayouts, setSavedLayouts] = useState<Record<string, any>>(() => {
+    try { const s = localStorage.getItem('scc_saved_layouts'); return s ? JSON.parse(s) : {}; } catch { return {}; }
+  });
 
   const updateConfig = (newConfig: Partial<SplitScreenConfig>) => {
     const updated = { ...config, ...newConfig };
@@ -152,6 +161,23 @@ export const SplitScreenStudio: React.FC = () => {
     }
   };
 
+  const persistQuad = (next: SplitScreenToolId[]) => {
+    setQuadTools(next);
+    try { localStorage.setItem('scc_quad_tools', JSON.stringify(next)); localStorage.setItem('scc_split_quad_mode', quadMode); } catch {}
+  };
+  const saveNamedLayout = (name: string) => {
+    const next = { ...savedLayouts, [name]: { quadMode, left: config.leftTool, right: config.rightTool, quadTools, ratio: config.ratio } };
+    setSavedLayouts(next);
+    try { localStorage.setItem('scc_saved_layouts', JSON.stringify(next)); } catch {}
+  };
+  const loadNamedLayout = (name: string) => {
+    const l = savedLayouts[name];
+    if (!l) return;
+    if (l.quadMode) setQuadMode(l.quadMode);
+    if (l.left) updateConfig({ leftTool: l.left, rightTool: l.right, ratio: l.ratio });
+    if (l.quadTools) setQuadTools(l.quadTools);
+  };
+
   // Determine grid template based on ratio
   let gridStyle = 'grid-cols-1 md:grid-cols-2';
   if (config.ratio === '60/40') gridStyle = 'grid-cols-1 md:grid-cols-12 md:[&>*:first-child]:col-span-7 md:[&>*:last-child]:col-span-5';
@@ -177,8 +203,12 @@ export const SplitScreenStudio: React.FC = () => {
           </div>
         </div>
 
-        {/* Ratio & Layout Switchers */}
+        {/* Ratio & Layout Switchers + Golden Layout */}
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <div className="flex items-center gap-1 p-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
+            <button onClick={() => { setQuadMode('split'); try{localStorage.setItem('scc_split_quad_mode','split')}catch{} }} className={`px-3 py-1 rounded-lg text-xs font-bold ${quadMode==='split'?'bg-[#D97757] text-white':'text-[#5C5A54] dark:text-[#B5B2A8]'}`}>Split (2)</button>
+            <button onClick={() => { setQuadMode('quad'); try{localStorage.setItem('scc_split_quad_mode','quad')}catch{} }} className={`px-3 py-1 rounded-lg text-xs font-bold ${quadMode==='quad'?'bg-[#D97757] text-white':'text-[#5C5A54] dark:text-[#B5B2A8]'}`}>Quad (4)</button>
+          </div>
           <span className="text-xs font-bold text-[#8C897F] uppercase tracking-wider">Ratio:</span>
           {(['50/50', '60/40', '70/30'] as const).map((r) => (
             <button
@@ -193,11 +223,40 @@ export const SplitScreenStudio: React.FC = () => {
               {r}
             </button>
           ))}
+          <div className="flex items-center gap-1 ml-2">
+            <button onClick={() => saveNamedLayout('Math Lab')} className="px-2 py-1 text-[11px] font-bold bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg">Save Math Lab</button>
+            <button onClick={() => saveNamedLayout('Research Mode')} className="px-2 py-1 text-[11px] font-bold bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg">Save Research</button>
+            {Object.keys(savedLayouts).length>0 && (
+              <select onChange={e=>loadNamedLayout(e.target.value)} defaultValue="" className="px-2 py-1 text-xs bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg">
+                <option value="" disabled>Load layout…</option>
+                {Object.keys(savedLayouts).map(k=><option key={k} value={k}>{k}</option>)}
+              </select>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Dual Pane Container */}
-      <div className={`grid gap-4 h-[calc(85vh-160px)] min-h-[580px] ${gridStyle}`}>
+      {/* Dual/Quad Pane Container - Golden Layout Tiling */}
+      {quadMode === 'quad' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[calc(85vh-160px)] min-h-[580px]">
+          {[0,1,2,3].map(idx => (
+            <div key={idx} className="flex flex-col h-full bg-white dark:bg-[#1A1917] rounded-2xl border border-black/[0.06] dark:border-white/[0.06] overflow-hidden shadow-xs">
+              <div className="p-2 border-b border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between bg-[#FAF9F5] dark:bg-[#1F1E1B]">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#8C897F]">Pane {idx+1}</span>
+                <select value={quadTools[idx]} onChange={e=>{
+                  const next=[...quadTools] as SplitScreenToolId[];
+                  next[idx]=e.target.value as SplitScreenToolId;
+                  persistQuad(next);
+                }} className="px-2 py-1 text-xs font-bold bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg text-[#141413] dark:text-[#FAF9F5]">
+                  {AVAILABLE_TOOLS.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
+                </select>
+              </div>
+              <div className="flex-1 min-h-0">{renderToolComponent(quadTools[idx])}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className={`grid gap-4 h-[calc(85vh-160px)] min-h-[580px] ${gridStyle}`}>
         {/* Left Pane */}
         {(!config.activeFullscreenPane || config.activeFullscreenPane === 'left') && (
           <div className="flex flex-col h-full bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] overflow-hidden shadow-xs">
@@ -238,7 +297,7 @@ export const SplitScreenStudio: React.FC = () => {
 
         {/* Right Pane */}
         {(!config.activeFullscreenPane || config.activeFullscreenPane === 'right') && (
-          <div className="flex flex-col h-full bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] overflow-hidden shadow-xs">
+          <div className="flex flex-col h-full bg-white dark:bg-[#1A1917] rounded-2xl border border-black/[0.06] dark:border-white/[0.06] overflow-hidden shadow-xs">
             <div className="p-3 border-b border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between bg-[#FAF9F5] dark:bg-[#1F1E1B] shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#8C897F]">Right Pane:</span>
@@ -274,6 +333,7 @@ export const SplitScreenStudio: React.FC = () => {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };

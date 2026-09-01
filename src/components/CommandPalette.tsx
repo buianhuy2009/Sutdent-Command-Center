@@ -274,6 +274,69 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     },
   ];
 
+  // --- Action Launcher: t / note / pomo commands ---
+  const commandAction = (() => {
+    const q = query.trim();
+    if (q.toLowerCase().startsWith('t ')) {
+      const title = q.slice(2).trim();
+      if (!title) return null;
+      return {
+        id: 'cmd-create-task',
+        title: `Create Task: "${title}" → Master Tracker`,
+        category: 'Create',
+        icon: Plus,
+        run: () => {
+          try {
+            const raw = localStorage.getItem('scc_user_assignments_v2');
+            const arr = raw ? JSON.parse(raw) : [];
+            const newTask = { id: `assign-${Date.now()}`, assignmentName: title, subject: 'General', dueDate: new Date(Date.now()+86400000*3).toISOString().split('T')[0], priority: 'Med', status: 'Not Started', source: 'Manual' as const };
+            localStorage.setItem('scc_user_assignments_v2', JSON.stringify([...arr, newTask]));
+          } catch {}
+          onSelectWorkspace('dashboard');
+          window.dispatchEvent(new CustomEvent('scc-toast', { detail: { title: 'Task Created', message: title }}));
+          onClose();
+        }
+      };
+    }
+    if (q.toLowerCase().startsWith('note ')) {
+      const title = q.slice(5).trim();
+      if (!title) return null;
+      return {
+        id: 'cmd-create-note',
+        title: `Create Note: "${title}" → Markdown Hub`,
+        category: 'Create',
+        icon: FileText,
+        run: () => {
+          try {
+            const raw = localStorage.getItem('scc_markdown_notes_v1');
+            const arr = raw ? JSON.parse(raw) : [];
+            const note = { id: `note-${Date.now()}`, title, subject: 'General', content: `# ${title}\n\n`, updatedAt: new Date().toLocaleDateString() };
+            localStorage.setItem('scc_markdown_notes_v1', JSON.stringify([note, ...arr]));
+          } catch {}
+          onSelectWorkspace('documents');
+          onClose();
+        }
+      };
+    }
+    if (q.toLowerCase().startsWith('pomo ')) {
+      const minsStr = q.slice(5).trim();
+      const mins = parseInt(minsStr,10);
+      if (!mins || mins < 1 || mins > 120) return null;
+      return {
+        id: 'cmd-pomo',
+        title: `Start Pomodoro: ${mins} minutes → Focus Station`,
+        category: 'Focus',
+        icon: Timer,
+        run: () => {
+          try { localStorage.setItem('scc_pomo_requested_duration', String(mins)); } catch {}
+          onSelectWorkspace('retention');
+          onClose();
+        }
+      };
+    }
+    return null;
+  })();
+
   const filteredActions = actions.filter(
     (a) =>
       a.title.toLowerCase().includes(query.toLowerCase()) ||
@@ -305,7 +368,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type a workspace, tool, equation (e.g. 25*4), or course..."
+            onKeyDown={e=>{ if(e.key==='Enter' && commandAction){ e.preventDefault(); commandAction.run(); } }}
+            placeholder="Try: t Read bio ch5  •  note Bio Lab  •  pomo 50  •  or search tools..."
             className="w-full text-sm bg-transparent border-none outline-none text-[#141413] dark:text-[#FAF9F5] placeholder:text-[#8C897F]"
           />
           <kbd className="px-2 py-0.5 text-[10px] font-mono font-semibold bg-[#FAF9F5] dark:bg-[#252422] text-[#8C897F] rounded border border-[#DFDACB] dark:border-[#2C2B27]">
@@ -326,6 +390,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
         {/* Results List */}
         <div className="max-h-96 overflow-y-auto p-2 space-y-3">
+          {commandAction && (
+            <div>
+              <div className="px-2 py-1 text-[10px] font-bold text-[#D97757] uppercase tracking-wider">Action Launcher</div>
+              <button onClick={commandAction.run} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#D97757] text-white hover:bg-[#C86646] transition-colors text-left">
+                <commandAction.icon className="w-4 h-4" />
+                <span className="text-xs font-bold">{commandAction.title}</span>
+                <span className="ml-auto text-[10px] opacity-80">↵ Run</span>
+              </button>
+              <div className="px-2 pt-1 text-[10px] text-[#8C897F]">Tip: <span className="font-mono">t &lt;task&gt;</span> • <span className="font-mono">note &lt;title&gt;</span> • <span className="font-mono">pomo &lt;mins&gt;</span></div>
+            </div>
+          )}
           {/* Matched Assignments */}
           {matchedAssignments.length > 0 && (
             <div>

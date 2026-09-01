@@ -8,8 +8,40 @@ import {
   ChevronUp,
   Timer,
   Music,
+  Cloud,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { ambientAudio, TrackId, AMBIENT_TRACKS } from '../services/ambientAudio';
+
+function SyncIndicator({ isRefreshing }: { isRefreshing?: boolean }) {
+  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const [pending, setPending] = useState<number>(0);
+  useEffect(() => {
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    const poll = () => {
+      try {
+        const raw = localStorage.getItem('scc_user_assignments_v2');
+        const arr = raw ? JSON.parse(raw) : [];
+        const localOnly = arr.filter((a: any) => a.source === 'Manual' || !a.sheetRowIndex).length;
+        setPending(localOnly);
+      } catch {}
+    };
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); clearInterval(id); };
+  }, []);
+  if (isRefreshing) {
+    return <span className="flex items-center gap-1.5 text-[11px] font-bold text-blue-600" title="Syncing to Google"><Loader2 className="w-3 h-3 animate-spin" /><span className="hidden sm:inline">Syncing…</span></span>;
+  }
+  if (!isOnline) {
+    return <span className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600" title={`Working offline. ${pending} tasks saved locally.`}><AlertTriangle className="w-3 h-3" /><span className="hidden sm:inline">Offline • {pending} local</span><span className="w-2 h-2 rounded-full bg-amber-500 ring-2 ring-amber-500/30" /></span>;
+  }
+  return <span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600" title={pending>0 ? `Writing ${pending} local edits to Sheets…` : 'All channels live & synced'}><Cloud className="w-3 h-3" /><span className="hidden sm:inline">{pending>0 ? `${pending} pending` : 'Live Synced'}</span><span className={`w-2 h-2 rounded-full ${pending>0 ? 'bg-blue-500 animate-pulse ring-4 ring-blue-500/20' : 'bg-emerald-500 ring-4 ring-emerald-500/20'}`} /></span>;
+}
 
 interface NavbarProps {
   activeTabLabel?: string;
@@ -27,6 +59,7 @@ interface NavbarProps {
   onRefreshAll?: () => void;
   isRefreshing?: boolean;
   onToggleCollapseBar?: () => void;
+  onNotificationClick?: (n: any) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -45,6 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onRefreshAll,
   isRefreshing = false,
   onToggleCollapseBar,
+  onNotificationClick,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [hasDismissedBadge, setHasDismissedBadge] = useState(false);
@@ -64,10 +98,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="h-12 bg-[#FAF9F5]/90 dark:bg-[#141413]/90 backdrop-blur-md border-b border-[#DFDACB] dark:border-[#2C2B27] px-4 sm:px-6 flex items-center justify-between z-20 shrink-0 select-none">
       
-      {/* LEFT: Breadcrumb with Green Sync Status Dot */}
+      {/* LEFT: Breadcrumb with Rich Sync Indicator */}
       <div className="flex items-center gap-2.5 min-w-0">
+        <SyncIndicator isRefreshing={isRefreshing} />
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20 animate-pulse" title="System Live & Synced" />
           <div className="flex items-center text-xs font-semibold text-[#8C897F]">
             <span>StudentOS</span>
             <span className="mx-1.5 text-[#DFDACB] dark:text-[#2C2B27]">/</span>
@@ -224,10 +258,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div className="p-4 text-center text-[#8C897F]">No new notifications</div>
                 ) : (
                   notifications.map((n, i) => (
-                    <div key={i} className="p-3 hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B] transition-colors">
-                      <div className="font-semibold text-[#141413] dark:text-[#FAF9F5]">{n.title}</div>
+                    <button key={i} onClick={()=>{ setShowNotifications(false); onNotificationClick?.(n); if(n.link && n.link !== '#'){ window.open(n.link,'_blank'); } }} className="w-full text-left p-3 hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer">
+                      <div className="font-semibold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-1.5">{n.title} {n.tier==='urgent' && <span className="px-1 py-0.5 rounded text-[9px] bg-rose-100 text-rose-700">Urgent</span>}</div>
                       <div className="text-[11px] text-[#8C897F]">{n.description || n.message}</div>
-                    </div>
+                      <span className="text-[10px] text-[#D97757] font-bold">Jump → {n.source || 'Tracker'}</span>
+                    </button>
                   ))
                 )}
               </div>
