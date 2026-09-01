@@ -1,0 +1,45 @@
+import { useEffect, useState, useMemo } from 'react';
+import { Assignment, CanvasAssignment, EmailAlert } from '../types';
+import { loadCompletedCanvasIds } from '../services/canvas';
+
+export interface BadgeCounts {
+  canvasUnfinished: number;
+  urgentEmail: number;
+  pendingAssignment: number;
+  flashcardDue: number;
+}
+
+function countFlashcardsDue(): number {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const raw = localStorage.getItem('scc_flashcard_decks_v1');
+    if (raw) {
+      const decks = JSON.parse(raw);
+      return decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
+    }
+    const srsRaw = localStorage.getItem('scc_srs_decks_v2');
+    if (srsRaw) {
+      const decks = JSON.parse(srsRaw);
+      return decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
+    }
+  } catch {}
+  return 0;
+}
+
+export function useBadgeCounts(canvasAssignments: CanvasAssignment[], assignments: Assignment[], emailAlerts: EmailAlert[]): BadgeCounts {
+  const completedIds = useMemo(() => new Set(loadCompletedCanvasIds()), [canvasAssignments]);
+  const canvasUnfinished = useMemo(() => canvasAssignments.filter(a => !completedIds.has(a.id)).length, [canvasAssignments, completedIds]);
+  const urgentEmail = useMemo(() => emailAlerts.filter(e => (e.urgency === 'HIGH' || e.urgency === 'MEDIUM') && !e.isSpam).length, [emailAlerts]);
+  const pendingAssignment = useMemo(() => assignments.filter(a => a.status !== 'Done').length, [assignments]);
+  const [flashcardDue, setFlashcardDue] = useState<number>(() => countFlashcardsDue());
+
+  useEffect(() => {
+    const poll = () => setFlashcardDue(countFlashcardsDue());
+    const id = window.setInterval(poll, 4000);
+    window.addEventListener('storage', poll);
+    window.addEventListener('focus', poll);
+    return () => { clearInterval(id); window.removeEventListener('storage', poll); window.removeEventListener('focus', poll); };
+  }, []);
+
+  return { canvasUnfinished, urgentEmail, pendingAssignment, flashcardDue };
+}

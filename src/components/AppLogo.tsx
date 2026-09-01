@@ -64,35 +64,35 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'radar':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-bold shadow-md shadow-emerald-500/20 shrink-0 ${className}`}>
-          <Compass className={iconSizes} />
+          <Compass className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'tracker':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/20 shrink-0 ${className}`}>
-          <CheckSquare className={iconSizes} />
+          <CheckSquare className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'gmail':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-red-500 via-rose-500 to-amber-500 text-white flex items-center justify-center font-bold shadow-md shadow-red-500/20 shrink-0 ${className}`}>
-          <Mail className={iconSizes} />
+          <Mail className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'drive':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-amber-400 via-emerald-500 to-blue-500 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20 shrink-0 ${className}`}>
-          <HardDrive className={iconSizes} />
+          <HardDrive className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'classroom':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-emerald-600 to-green-700 text-white flex items-center justify-center font-bold shadow-md shadow-emerald-600/20 shrink-0 ${className}`}>
-          <GraduationCap className={iconSizes} />
+          <GraduationCap className={iconSizes} aria-hidden="true" />
         </div>
       );
 
@@ -106,7 +106,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'notebooklm':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-500 text-white flex items-center justify-center font-bold shadow-md shadow-purple-500/20 shrink-0 ${className}`}>
-          <Brain className={iconSizes} />
+          <Brain className={iconSizes} aria-hidden="true" />
         </div>
       );
 
@@ -121,7 +121,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'anki':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-sky-500 to-blue-700 text-white flex items-center justify-center font-bold shadow-md shadow-sky-500/20 shrink-0 ${className}`}>
-          <Layers className={iconSizes} />
+          <Layers className={iconSizes} aria-hidden="true" />
         </div>
       );
 
@@ -138,14 +138,14 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'zotero':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold shadow-md shadow-blue-600/20 shrink-0 ${className}`}>
-          <Bookmark className={iconSizes} />
+          <Bookmark className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'canva':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-cyan-400 via-teal-500 to-purple-600 text-white flex items-center justify-center font-bold shadow-md shadow-cyan-500/20 shrink-0 ${className}`}>
-          <Palette className={iconSizes} />
+          <Palette className={iconSizes} aria-hidden="true" />
         </div>
       );
 
@@ -163,7 +163,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'desmos-scientific':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-teal-500 to-cyan-700 text-white flex items-center justify-center font-bold shadow-md shadow-teal-500/20 shrink-0 ${className}`}>
-          <Calculator className={iconSizes} />
+          <Calculator className={iconSizes} aria-hidden="true" />
         </div>
       );
 
@@ -182,49 +182,49 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'phet':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center font-bold shadow-md shadow-orange-500/20 shrink-0 ${className}`}>
-          <Atom className={iconSizes} />
+          <Atom className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'scribble-latex':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-yellow-500 to-amber-600 text-white flex items-center justify-center font-bold shadow-md shadow-yellow-500/20 shrink-0 ${className}`}>
-          <Zap className={iconSizes} />
+          <Zap className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'excalidraw':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-violet-600 to-purple-700 text-white flex items-center justify-center font-bold shadow-md shadow-violet-600/20 shrink-0 ${className}`}>
-          <PenTool className={iconSizes} />
+          <PenTool className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'mermaid':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-pink-500 to-rose-600 text-white flex items-center justify-center font-bold shadow-md shadow-pink-500/20 shrink-0 ${className}`}>
-          <Network className={iconSizes} />
+          <Network className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'pomodoro':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-rose-500 to-red-600 text-white flex items-center justify-center font-bold shadow-md shadow-rose-500/20 shrink-0 ${className}`}>
-          <Timer className={iconSizes} />
+          <Timer className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'viva':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-fuchsia-600 to-pink-600 text-white flex items-center justify-center font-bold shadow-md shadow-fuchsia-600/20 shrink-0 ${className}`}>
-          <Mic className={iconSizes} />
+          <Mic className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'notes-markdown':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-blue-600 to-cyan-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-600/20 shrink-0 ${className}`}>
-          <FileText className={iconSizes} />
+          <FileText className={iconSizes} aria-hidden="true" />
         </div>
       );
 
@@ -233,7 +233,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'gradescope':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-amber-500 to-yellow-600 text-white flex items-center justify-center font-bold shadow-md shadow-amber-500/20 shrink-0 ${className}`}>
-          <ShieldCheck className={iconSizes} />
+          <ShieldCheck className={iconSizes} aria-hidden="true" />
         </div>
       );
 
@@ -241,49 +241,49 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'ai-suite':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-rose-600 to-red-700 text-white flex items-center justify-center font-bold shadow-md shadow-rose-600/20 shrink-0 ${className}`}>
-          <Sparkles className={iconSizes} />
+          <Sparkles className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'pdf-reader':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-rose-600 to-red-700 text-white flex items-center justify-center font-bold shadow-md shadow-rose-600/20 shrink-0 ${className}`}>
-          <FileText className={iconSizes} />
+          <FileText className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'quiz-generator':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-purple-600 to-indigo-700 text-white flex items-center justify-center font-bold shadow-md shadow-purple-600/20 shrink-0 ${className}`}>
-          <CheckSquare className={iconSizes} />
+          <CheckSquare className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'periodic-table':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center font-bold shadow-md shadow-cyan-500/20 shrink-0 ${className}`}>
-          <Atom className={iconSizes} />
+          <Atom className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'unit-converter':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-bold shadow-md shadow-emerald-500/20 shrink-0 ${className}`}>
-          <ArrowRightLeft className={iconSizes} />
+          <ArrowRightLeft className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'arxiv':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-rose-500 to-red-600 text-white flex items-center justify-center font-bold shadow-md shadow-rose-500/20 shrink-0 ${className}`}>
-          <BookOpen className={iconSizes} />
+          <BookOpen className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'open-library':
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold shadow-md shadow-blue-600/20 shrink-0 ${className}`}>
-          <Bookmark className={iconSizes} />
+          <Bookmark className={iconSizes} aria-hidden="true" />
         </div>
       );
 
@@ -297,7 +297,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     default:
       return (
         <div className={`${sizeClasses} bg-gradient-to-br from-[#D97757] to-[#C86646] text-white flex items-center justify-center font-bold shrink-0 ${className}`}>
-          <Sparkles className={iconSizes} />
+          <Sparkles className={iconSizes} aria-hidden="true" />
         </div>
       );
   }

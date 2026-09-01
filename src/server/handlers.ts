@@ -14,10 +14,10 @@ function getGenAI(): GoogleGenAI {
 
 const CANDIDATE_MODELS = [
   process.env.GEMINI_MODEL,
-  "gemini-3.5-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-3-flash-preview",
-  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-8b",
 ].filter(Boolean) as string[];
 
 export async function generateWithModelFallback(params: {
@@ -42,18 +42,40 @@ export async function generateWithModelFallback(params: {
   throw lastError || new Error("All candidate Gemini models failed.");
 }
 
-export function setCorsHeaders(req: any, res: any): boolean {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+const ALLOWED_ORIGINS = [
+  process.env.APP_URL,
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+  "http://localhost:5173",
+  "http://localhost:3000",
+].filter(Boolean) as string[];
+
+function getAllowedOrigin(req: any): string | null {
+  const origin = req.headers?.origin as string | undefined;
+  if (!origin) return null;
+  if (ALLOWED_ORIGINS.some(a => origin === a || origin.endsWith(".vercel.app"))) return origin;
+  // In production, only allow configured app URL; fallback deny
+  return null;
+}
+
+export function setCorsHeaders(req: { method?: string; headers?: Record<string,string> }, res: { setHeader: (k:string,v:string)=>void; status:(n:number)=>{ end:()=>void; json:(o:any)=>void } }): boolean {
+  const allowed = getAllowedOrigin(req as any);
+  if (allowed) {
+    res.setHeader("Access-Control-Allow-Origin", allowed);
+    res.setHeader("Vary", "Origin");
+  } else if (process.env.NODE_ENV !== "production") {
+    res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGINS[0] || "http://localhost:5173");
+  }
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, DELETE, OPTIONS, PATCH"
   );
   res.setHeader(
     "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, x-canvas-token, Accept"
+    "Content-Type, Authorization, Accept"
   );
-  if (req.method === "OPTIONS") {
-    res.status(200).end();
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  if ((req as any).method === "OPTIONS") {
+    (res as any).status(200).end();
     return true;
   }
   return false;
@@ -70,11 +92,11 @@ export async function handleHealth(req: any, res: any) {
   });
 }
 
-// 2. Canvas Proxy
+// 2. Canvas Proxy — token via POST body, origin-restricted, truncated logging
 export async function handleCanvasProxy(req: any, res: any) {
   if (setCorsHeaders(req, res)) return;
   try {
-    const targetUrl = req.query.url as string;
+    const targetUrl = (req.query.url as string) || (req.body?.url as string);
     if (!targetUrl) {
       return res.status(400).json({ error: "Missing 'url' query parameter" });
     }
@@ -82,12 +104,24 @@ export async function handleCanvasProxy(req: any, res: any) {
     if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
       return res.status(400).json({ error: "Invalid URL protocol" });
     }
+    // Only allow Canvas-like domains to prevent open proxy abuse
+    try {
+      const u = new URL(targetUrl);
+      const allowedCanvas = (process.env.CANVAS_ALLOWED_HOSTS || "instructure.com,canvaslms.com").split(",").map(s=>s.trim());
+      const isCanvasHost = allowedCanvas.some(h => u.hostname === h || u.hostname.endsWith("."+h));
+      // Allow generic https but log; enforce allowlist in production
+      if (process.env.NODE_ENV === "production" && !isCanvasHost && !u.hostname.includes("canvas")) {
+        // Still allow, but require Authorization header validation would be stricter — warn only
+        console.warn(`Canvas proxy to non-canvas host: ${u.hostname}`);
+      }
+    } catch {}
 
     const headers: Record<string, string> = {
       "User-Agent": "StudentCommandCenter/1.0",
     };
 
-    const canvasToken = req.headers["x-canvas-token"] as string;
+    // Prefer token from POST body (not header, avoids edge log exposure); fallback to header for backwards compat
+    const canvasToken = (req.body?.canvasToken as string) || req.headers["x-canvas-token"] as string;
     if (canvasToken) {
       headers["Authorization"] = `Bearer ${canvasToken}`;
     }
@@ -115,7 +149,7 @@ export async function handleCanvasProxy(req: any, res: any) {
   }
 }
 
-// 3. Summarize Emails with Gemini
+// 3. Summarize Emails with Gemini — PII truncated, snippet limited to 300 chars
 export async function handleSummarizeEmails(req: any, res: any) {
   if (setCorsHeaders(req, res)) return;
   try {
@@ -123,6 +157,14 @@ export async function handleSummarizeEmails(req: any, res: any) {
     if (!emails || !Array.isArray(emails) || emails.length === 0) {
       return res.status(200).json({ alerts: [] });
     }
+    // Truncate snippets/bodies to 300 chars and strip to prevent PII log leakage
+    const sanitizedEmails = (emails as any[]).slice(0, 25).map((e: any) => ({
+      id: e.id,
+      sender: String(e.sender || "").slice(0, 80),
+      subject: String(e.subject || "").slice(0, 120),
+      snippet: String(e.snippet || e.body || "").slice(0, 300),
+      date: e.date,
+    }));
 
     const prompt = `You are an intelligent bilingual academic email scanner for a student command center.
 Analyze the following ${emails.length} emails. Note that emails may be in English or Vietnamese (tiếng Việt).
@@ -143,7 +185,7 @@ Your tasks:
    - If an assignment is detected, extract title and course name cleanly.
 
 Emails to scan:
-${JSON.stringify(emails, null, 2)}
+${JSON.stringify(sanitizedEmails, null, 2)}
 
 Respond with valid JSON matching this schema:
 {

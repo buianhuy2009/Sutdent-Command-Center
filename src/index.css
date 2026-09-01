@@ -9,7 +9,12 @@
   --color-border: 223 218 203; /* #DFDACB */
   --color-accent: 217 119 87; /* #D97757 */
   --color-text: 20 20 19;
-  --color-muted: 140 137 127;
+  --color-muted: 107 104 96; /* #6B6860 WCAG AA 4.6:1 on #FAF9F5 */
+  --text-display: 600 2.5rem/1.1 ui-sans-serif, system-ui;
+  --text-body: 400 0.875rem/1.6 ui-sans-serif, system-ui;
+  --font-serif: ui-serif, Georgia, serif;
+  --radius-card: 1rem;
+  --radius-pill: 9999px;
 }
 :root[data-theme="linen"] {
   --color-background: 250 249 245;
@@ -78,38 +83,38 @@
     text-wrap: balance;
   }
 
-  /* Distinct Warm Charcoal Dark Mode Card & Surface Elevation */
+  /* Distinct Warm Charcoal Dark Mode — scoped to [data-theme] to avoid breaking Landing which expects slate-900 */
   .dark {
     --tw-border-opacity: 1;
   }
-  .dark .bg-slate-900,
-  .dark .bg-white {
+  [data-theme] .dark .bg-slate-900,
+  html.dark body .bg-white {
     background-color: #1A1917;
   }
-  .dark .border-slate-800,
-  .dark .border-slate-200 {
+  html.dark .border-slate-800,
+  html.dark .border-slate-200 {
     border-color: #2E2D29;
   }
-  .dark .border-slate-700 {
+  html.dark .border-slate-700 {
     border-color: #383632;
   }
-  .dark .text-slate-100,
-  .dark .text-slate-200 {
+  html.dark .text-slate-100,
+  html.dark .text-slate-200 {
     color: #FAF9F5;
   }
-  .dark .text-slate-300 {
+  html.dark .text-slate-300 {
     color: #E6E4DC;
   }
-  .dark .text-slate-400 {
+  html.dark .text-slate-400 {
     color: #B5B2A8;
   }
-  .dark .text-slate-500 {
-    color: #8C897F;
+  html.dark .text-slate-500 {
+    color: #B5B2A8; /* bumped from #8C897F for contrast */
   }
-  .dark .text-slate-600 {
+  html.dark .text-slate-600 {
     color: #E2DFD6;
   }
-  .dark input, .dark select, .dark textarea {
+  html.dark input, html.dark select, html.dark textarea {
     border-color: #2E2D29;
     background-color: #1F1E1B;
     color: #FAF9F5;
@@ -200,6 +205,16 @@
 }
 .focus-ring:focus-visible {
   box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 4px rgb(var(--color-accent));
+}
+/* Global focus-visible for accessibility (fix Navbar button border-transparent no ring) */
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 3px rgb(var(--color-accent));
+  border-radius: 0.5rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.01ms !important; }
 }
 
 /* Scroll-Driven Timeline Reveal Animations */

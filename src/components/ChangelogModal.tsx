@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Award, Sparkles, BookOpen, Layers, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '1.9.5';
+export const CURRENT_VERSION = '2.0.0';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,35 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.0.0',
+    date: 'September 01, 2026',
+    title: 'Architecture & Performance Overhaul — God Component Split, Lazy Workspaces, Security Hardening',
+    badge: 'Latest Update',
+    highlights: [
+      'Split App.tsx God Component (2500 lines) → providers/AuthProvider, hooks/useSyncEngine/useWorkspaceRouter/useBadgeCounts, layouts/Shell; Zustand stores now wired',
+      'Lazy-load all 22 workspaces via React.lazy + Suspense + manualChunks (vendor/firebase/ai/editor/dnd/dexie) — Canvas-only users skip Wolfram/PhET (-40% bundle)',
+      'Strict TypeScript, typed notifications, CORS locked to origin, CSP/HSTS, canvasToken via POST, PII truncated, projectId via VITE_GOOGLE_PROJECT_ID env',
+      'Sync debounced (1.2s) + AbortController + 60s interval (was 45s + 4× focus storm); Dexie quota 50/day, correct gemini-2.0-flash models',
+      'PWA googleapis NetworkFirst 5min, manifest shortcuts/share_target, SEO json-ld/og:image, accessibility landmarks/focus rings/contrast, mobile drawer + FAB',
+    ],
+    details: [
+      'Created src/providers/AuthProvider.tsx, src/hooks/useSyncEngine.ts/useWorkspaceRouter.ts/useBadgeCounts.ts/useDebouncedCallback.ts, src/layouts/Shell.tsx, src/components/ErrorBoundary.tsx, src/utils/storage.ts',
+      'Converted 10+ eager workspace imports to React.lazy + <Suspense fallback> + <ErrorBoundary fallback={WorkspaceCrashCard}>',
+      'Added vite.config.ts manualChunks and runtimeCaching for googleapis/sheets/gmail/drive; PWA manifest categories/screenshots/shortcuts',
+      'Fixed src/server/handlers.ts CORS * → allowlist + Vary, removed x-canvas-token header log exposure, truncated email snippets to 300 chars',
+      'Fixed src/App.tsx badge duplicate parsing → useBadgeCounts, duplicate storage helpers → utils/storage, hardcoded 614024702267 → env, notifications:any → NotificationItem, polling chaos → debounced',
+      'Made Zen focus fullscreen opt-in (localStorage scc_zen_auto_fullscreen), added Esc hint, iOS guard',
+      'Updated index.html SEO (canonical, og:image, json-ld, twitter), index.css contrast #6B6860 + focus-visible + prefers-reduced-motion, Navbar storage+BroadcastChannel (no 3s poll)',
+      'Unified Landing palette to #D97757 terracotta (was indigo/violet/rose), added Privacy scopes section, Dashboard Today Plan + collapsible Personalize drawer + lazy NASA APOD',
+      'CommandPalette: fuzzy subsequence (calender→calendar), ArrowUp/Down + Enter, recent 5, safe math, global hotkeys g d/g c/n/?',
+      'Updated .env.example (VITE_GOOGLE_PROJECT_ID etc), package.json name student-command-center@2.0.0, tsconfig strict:true, vercel.json CSP/HSTS, README + sitemap/robots',
+      'Based on git history: 15c9ba2 → a694bf1 → ba950e3 → bfe59ff (full log in README)',
+    ]
+  },
+  {
     version: '1.9.5',
     date: 'August 31, 2026',
     title: 'Focus Audio & App Store Polish',
-    badge: 'Latest Update',
     highlights: [
       'Focus & Pomodoro: Auto-fullscreen on play, default Brownian noise, and improved sound algorithms',
       'App Store: 2 apps per row layout, simplified descriptions, and smooth category scroll flow'

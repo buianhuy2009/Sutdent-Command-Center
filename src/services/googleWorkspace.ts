@@ -8,7 +8,7 @@ import {
 } from '../types';
 import { clearStoredGoogleToken } from './firebase';
 
-export const DEFAULT_PROJECT_NUMBER = '614024702267';
+export const DEFAULT_PROJECT_NUMBER = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID) || (typeof process !== 'undefined' ? (process as any).env?.VITE_GOOGLE_PROJECT_ID : undefined) || '614024702267';
 
 export class GoogleApiDisabledError extends Error {
   isServiceDisabled = true;

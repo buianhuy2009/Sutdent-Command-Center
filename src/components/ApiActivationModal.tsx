@@ -29,35 +29,35 @@ const WORKSPACE_APIS = [
     id: 'drive.googleapis.com',
     icon: FolderOpen,
     desc: 'Browse, sync, and access files in Google Drive',
-    url: 'https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=614024702267',
+    url: `https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=${(import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267'}`,
   },
   {
     name: 'Google Docs API',
     id: 'docs.googleapis.com',
     icon: FileText,
     desc: 'Auto-generate MLA/APA formatted project starters',
-    url: 'https://console.developers.google.com/apis/api/docs.googleapis.com/overview?project=614024702267',
+    url: `https://console.developers.google.com/apis/api/docs.googleapis.com/overview?project=${(import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267'}`,
   },
   {
     name: 'Google Sheets API',
     id: 'sheets.googleapis.com',
     icon: FileSpreadsheet,
     desc: 'Master Assignment Tracker two-way live spreadsheet sync',
-    url: 'https://console.developers.google.com/apis/api/sheets.googleapis.com/overview?project=614024702267',
+    url: `https://console.developers.google.com/apis/api/sheets.googleapis.com/overview?project=${(import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267'}`,
   },
   {
     name: 'Google Calendar API',
     id: 'calendar-json.googleapis.com',
     icon: Calendar,
     desc: 'Schedule study blocks and sync daily deadlines',
-    url: 'https://console.developers.google.com/apis/api/calendar-json.googleapis.com/overview?project=614024702267',
+    url: `https://console.developers.google.com/apis/api/calendar-json.googleapis.com/overview?project=${(import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267'}`,
   },
   {
     name: 'Gmail API',
     id: 'gmail.googleapis.com',
     icon: Mail,
     desc: 'AI academic email scanner and teacher draft composer',
-    url: 'https://console.developers.google.com/apis/api/gmail.googleapis.com/overview?project=614024702267',
+    url: `https://console.developers.google.com/apis/api/gmail.googleapis.com/overview?project=${(import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267'}`,
   },
 ];
 
@@ -70,7 +70,7 @@ export const ApiActivationModal: React.FC<ApiActivationModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const projectId = info?.projectId || '614024702267';
+  const projectId = info?.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267';
   const targetService = info?.serviceName || 'Google Drive API';
   const primaryActivationUrl =
     info?.activationUrl ||

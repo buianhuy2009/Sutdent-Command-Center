@@ -21,7 +21,8 @@ function SyncIndicator({ isRefreshing }: { isRefreshing?: boolean }) {
     const onOffline = () => setIsOnline(false);
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
-    const poll = () => {
+    const bc = (() => { try { return new BroadcastChannel('scc-sync'); } catch { return null; } })();
+    const updatePending = () => {
       try {
         const raw = localStorage.getItem('scc_user_assignments_v2');
         const arr = raw ? JSON.parse(raw) : [];
@@ -29,9 +30,12 @@ function SyncIndicator({ isRefreshing }: { isRefreshing?: boolean }) {
         setPending(localOnly);
       } catch {}
     };
-    poll();
-    const id = setInterval(poll, 3000);
-    return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); clearInterval(id); };
+    updatePending();
+    const onStorage = (e: StorageEvent) => { if (e.key === 'scc_user_assignments_v2') updatePending(); };
+    window.addEventListener('storage', onStorage);
+    bc?.addEventListener('message', updatePending as any);
+    // No polling interval — use storage + BroadcastChannel event driven
+    return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); window.removeEventListener('storage', onStorage); bc?.close(); };
   }, []);
   // Only show when disconnected/offline or actively syncing; otherwise hide (per UX request)
   if (isRefreshing) {
@@ -83,6 +87,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [hasDismissedBadge, setHasDismissedBadge] = useState(false);
   const [currentTrack, setCurrentTrack] = useState<TrackId>(ambientAudio.getTrack());
+  useEffect(() => {
+    if (!showNotifications) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowNotifications(false); };
+    const onClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-notif-root]')) setShowNotifications(false);
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('mousedown', onClickOutside);
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('mousedown', onClickOutside); };
+  }, [showNotifications]);
 
   useEffect(() => {
     const unsubscribe = ambientAudio.subscribe((track) => {
@@ -113,6 +128,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* CENTER: Floating Spotlight Search Pill (Cmd+K) & Music Button */}
+      <div className="flex sm:hidden items-center justify-center px-2">
+        <button onClick={onOpenCommandPalette} aria-label="Open command palette" className="p-2 rounded-xl bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] text-[#8C897F]"><Search className="w-4 h-4" /></button>
+      </div>
       <div className="hidden sm:flex items-center justify-center flex-1 max-w-md px-4 gap-2">
         <button
           onClick={onOpenCommandPalette}
@@ -230,19 +248,23 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         )}
 
-        {/* Notification Bell */}
-        <div className="relative">
+        {/* Notification Bell — keyboard accessible */}
+        <div className="relative" data-notif-root>
           <button
+            aria-label={`Notifications ${unreadCount ? `(${unreadCount} new)` : ''}`}
+            aria-haspopup="dialog"
+            aria-expanded={showNotifications}
             onClick={() => {
               setShowNotifications(!showNotifications);
               setHasDismissedBadge(true);
             }}
-            className="p-1.5 text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] hover:bg-[#EFECE2] dark:hover:bg-[#1F1E1B] rounded-lg transition-colors cursor-pointer border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27] relative"
+            onKeyDown={(e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); setShowNotifications(!showNotifications); setHasDismissedBadge(true);} if(e.key==='Escape') setShowNotifications(false); }}
+            className="p-1.5 text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] hover:bg-[#EFECE2] dark:hover:bg-[#1F1E1B] rounded-lg transition-colors cursor-pointer border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27] relative focus-visible:ring-2"
             title="Notifications"
           >
-            <Bell className="w-3.5 h-3.5" />
+            <Bell className="w-3.5 h-3.5" aria-hidden="true" />
             {unreadCount > 0 && (
-              <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-[#FAF9F5] dark:ring-[#141413]" />
+              <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-[#FAF9F5] dark:ring-[#141413]" aria-hidden="true" />
             )}
           </button>
 

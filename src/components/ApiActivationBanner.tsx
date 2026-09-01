@@ -13,7 +13,7 @@ export const ApiActivationBanner: React.FC<ApiActivationBannerProps> = ({
   onRetry,
   isRetrying = false,
 }) => {
-  const projectId = info.projectId || '614024702267';
+  const projectId = info.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267';
   const serviceName = info.serviceName || 'Google Drive API';
   const url =
     info.activationUrl ||

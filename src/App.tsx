@@ -1,52 +1,36 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from 'react';
 import { User } from 'firebase/auth';
 import {
-  Compass,
-  CheckSquare,
-  Layers,
-  GraduationCap,
-  Sparkles,
-  RefreshCw,
-  Clock,
-  Send,
-  Mail,
-  Radio,
   X,
   ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  HardDrive,
-  Atom,
-  Palette,
-  Brain,
-  FolderOpen,
-  Columns2,
-  LayoutDashboard,
 } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { DashboardHome } from './components/DashboardHome';
-import { AcademicRadarWorkspace } from './components/workspaces/AcademicRadarWorkspace';
-import { StemLabWorkspace } from './components/workspaces/StemLabWorkspace';
-import { CreationStudioWorkspace } from './components/workspaces/CreationStudioWorkspace';
-import { RetentionVaultWorkspace } from './components/workspaces/RetentionVaultWorkspace';
-import { DocumentHubWorkspace } from './components/workspaces/DocumentHubWorkspace';
-import { DesmosWorkspace } from './components/workspaces/DesmosWorkspace';
-import { GeoGebraWorkspace } from './components/workspaces/GeoGebraWorkspace';
-import { ExcalidrawWorkspace } from './components/workspaces/ExcalidrawWorkspace';
-import { PhETWorkspace } from './components/workspaces/PhETWorkspace';
-import { MermaidWorkspace } from './components/workspaces/MermaidWorkspace';
-import { WolframWorkspace } from './components/workspaces/WolframWorkspace';
-import { RubricCheckerWorkspace } from './components/workspaces/RubricCheckerWorkspace';
-import { FeynmanWorkspace } from './components/workspaces/FeynmanWorkspace';
-import { PhotoMathWorkspace } from './components/workspaces/PhotoMathWorkspace';
-import { PdfReaderWorkspace } from './components/workspaces/PdfReaderWorkspace';
-import { QuizGeneratorWorkspace } from './components/workspaces/QuizGeneratorWorkspace';
-import { PomodoroWorkspace } from './components/workspaces/PomodoroWorkspace';
-import { PeriodicTableWorkspace } from './components/workspaces/PeriodicTableWorkspace';
-import { UnitConverterWorkspace } from './components/workspaces/UnitConverterWorkspace';
-import { ArxivWorkspace } from './components/workspaces/ArxivWorkspace';
-import { OpenLibraryWorkspace } from './components/workspaces/OpenLibraryWorkspace';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { useBadgeCounts } from './hooks/useBadgeCounts';
+import { useDebouncedCallback } from './hooks/useDebouncedCallback';
+const AcademicRadarWorkspace = lazy(() => import('./components/workspaces/AcademicRadarWorkspace').then(m => ({ default: m.AcademicRadarWorkspace })));
+const StemLabWorkspace = lazy(() => import('./components/workspaces/StemLabWorkspace').then(m => ({ default: m.StemLabWorkspace })));
+const CreationStudioWorkspace = lazy(() => import('./components/workspaces/CreationStudioWorkspace').then(m => ({ default: m.CreationStudioWorkspace })));
+const RetentionVaultWorkspace = lazy(() => import('./components/workspaces/RetentionVaultWorkspace').then(m => ({ default: m.RetentionVaultWorkspace })));
+const DocumentHubWorkspace = lazy(() => import('./components/workspaces/DocumentHubWorkspace').then(m => ({ default: m.DocumentHubWorkspace })));
+const DesmosWorkspace = lazy(() => import('./components/workspaces/DesmosWorkspace').then(m => ({ default: m.DesmosWorkspace })));
+const GeoGebraWorkspace = lazy(() => import('./components/workspaces/GeoGebraWorkspace').then(m => ({ default: m.GeoGebraWorkspace })));
+const ExcalidrawWorkspace = lazy(() => import('./components/workspaces/ExcalidrawWorkspace').then(m => ({ default: m.ExcalidrawWorkspace })));
+const PhETWorkspace = lazy(() => import('./components/workspaces/PhETWorkspace').then(m => ({ default: m.PhETWorkspace })));
+const MermaidWorkspace = lazy(() => import('./components/workspaces/MermaidWorkspace').then(m => ({ default: m.MermaidWorkspace })));
+const WolframWorkspace = lazy(() => import('./components/workspaces/WolframWorkspace').then(m => ({ default: m.WolframWorkspace })));
+const RubricCheckerWorkspace = lazy(() => import('./components/workspaces/RubricCheckerWorkspace').then(m => ({ default: m.RubricCheckerWorkspace })));
+const FeynmanWorkspace = lazy(() => import('./components/workspaces/FeynmanWorkspace').then(m => ({ default: m.FeynmanWorkspace })));
+const PhotoMathWorkspace = lazy(() => import('./components/workspaces/PhotoMathWorkspace').then(m => ({ default: m.PhotoMathWorkspace })));
+const PdfReaderWorkspace = lazy(() => import('./components/workspaces/PdfReaderWorkspace').then(m => ({ default: m.PdfReaderWorkspace })));
+const QuizGeneratorWorkspace = lazy(() => import('./components/workspaces/QuizGeneratorWorkspace').then(m => ({ default: m.QuizGeneratorWorkspace })));
+const PomodoroWorkspace = lazy(() => import('./components/workspaces/PomodoroWorkspace').then(m => ({ default: m.PomodoroWorkspace })));
+const PeriodicTableWorkspace = lazy(() => import('./components/workspaces/PeriodicTableWorkspace').then(m => ({ default: m.PeriodicTableWorkspace })));
+const UnitConverterWorkspace = lazy(() => import('./components/workspaces/UnitConverterWorkspace').then(m => ({ default: m.UnitConverterWorkspace })));
+const ArxivWorkspace = lazy(() => import('./components/workspaces/ArxivWorkspace').then(m => ({ default: m.ArxivWorkspace })));
+const OpenLibraryWorkspace = lazy(() => import('./components/workspaces/OpenLibraryWorkspace').then(m => ({ default: m.OpenLibraryWorkspace })));
 import { WikipediaLookupModal } from './components/WikipediaLookupModal';
 import { StudyCardModal } from './components/StudyCardModal';
 import { PortfolioExportModal } from './components/PortfolioExportModal';
@@ -377,6 +361,7 @@ export default function App() {
       return next;
     });
   }, []);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // App Store & Pinned Tools State
   const [appStoreOpen, setAppStoreOpen] = useState(false);
@@ -460,79 +445,28 @@ export default function App() {
     return () => clearInterval(interval);
   }, [isFocusTimerRunning, focusTimerSeconds]);
 
-  // Auto fullscreen when entering Zen Focus Mode
+  // Zen Focus: opt-in fullscreen (respects user preference, iOS-safe, Esc to exit)
   useEffect(() => {
+    const prefersFullscreen = (() => { try { return localStorage.getItem('scc_zen_auto_fullscreen') === 'true'; } catch { return false; } })();
+    if (!prefersFullscreen) return;
+    // Guard iOS where requestFullscreen may fail
     if (zenFocusMode) {
       try {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen?.().catch(() => {});
+        if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().catch(() => {});
         }
       } catch {}
     } else {
       try {
-        if (document.fullscreenElement) {
-          document.exitFullscreen?.().catch(() => {});
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
         }
       } catch {}
     }
   }, [zenFocusMode]);
 
-  // Calculate live badge counts for sidebar
-  const completedCanvasIds = useMemo(() => new Set(loadCompletedCanvasIds()), [canvasAssignments]);
-  const canvasUnfinishedCount = useMemo(
-    () => canvasAssignments.filter((a) => !completedCanvasIds.has(a.id)).length,
-    [canvasAssignments, completedCanvasIds]
-  );
-  const urgentEmailCount = useMemo(
-    () => emailAlerts.filter((e) => (e.urgency === 'HIGH' || e.urgency === 'MEDIUM') && !e.isSpam).length,
-    [emailAlerts]
-  );
-  const pendingAssignmentCount = useMemo(
-    () => assignments.filter((a) => a.status !== 'Done').length,
-    [assignments]
-  );
-  const [flashcardDueCount, setFlashcardDueCount] = useState<number>(() => {
-    try {
-      const raw = localStorage.getItem('scc_flashcard_decks_v1');
-      if (raw) {
-        const decks = JSON.parse(raw);
-        const today = new Date().toISOString().split('T')[0];
-        return decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
-      }
-      const srsRaw = localStorage.getItem('scc_srs_decks_v2');
-      if (srsRaw) {
-        const decks = JSON.parse(srsRaw);
-        const today = new Date().toISOString().split('T')[0];
-        return decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
-      }
-    } catch {}
-    return 0;
-  });
-  useEffect(() => {
-    const poll = () => {
-      try {
-        const raw = localStorage.getItem('scc_flashcard_decks_v1');
-        if (raw) {
-          const decks = JSON.parse(raw);
-          const today = new Date().toISOString().split('T')[0];
-          const count = decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
-          setFlashcardDueCount(count); return;
-        }
-        const srsRaw = localStorage.getItem('scc_srs_decks_v2');
-        if (srsRaw) {
-          const decks = JSON.parse(srsRaw);
-          const today = new Date().toISOString().split('T')[0];
-          const count = decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
-          setFlashcardDueCount(count); return;
-        }
-        setFlashcardDueCount(0);
-      } catch { setFlashcardDueCount(0); }
-    };
-    const id = setInterval(poll, 2000);
-    window.addEventListener('storage', poll);
-    window.addEventListener('focus', poll);
-    return () => { clearInterval(id); window.removeEventListener('storage', poll); window.removeEventListener('focus', poll); };
-  }, []);
+  // Badge counts — extracted to reusable hook (no duplicated parsing)
+  const { canvasUnfinished: canvasUnfinishedCount, urgentEmail: urgentEmailCount, pendingAssignment: pendingAssignmentCount, flashcardDue: flashcardDueCount } = useBadgeCounts(canvasAssignments, assignments, emailAlerts);
 
   // Error States
   const [canvasError, setCanvasError] = useState<string | null>(null);
@@ -568,9 +502,10 @@ export default function App() {
   const [isScheduling, setIsScheduling] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
 
-  // Dynamic Aggregated Notification Center Model
-  const notifications = React.useMemo(() => {
-    const list: any[] = [];
+  interface NotificationItem { id: string; tier: 'urgent' | 'updates' | 'activity'; title: string; description: string; link: string; source: string; }
+  // Dynamic Aggregated Notification Center Model — strictly typed
+  const notifications: NotificationItem[] = React.useMemo(() => {
+    const list: NotificationItem[] = [];
     const now = new Date();
 
     // 1. Urgent Tiers (Deadlines in 24h, Grades posted)
@@ -1003,7 +938,7 @@ export default function App() {
           serviceName: err.serviceName || 'Google Calendar API',
           serviceId: err.serviceId || 'calendar-json.googleapis.com',
           activationUrl: err.activationUrl,
-          projectId: err.projectId || '614024702267',
+          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267',
         });
       } else {
         setCalendarApiInfo(null);
@@ -1075,7 +1010,7 @@ export default function App() {
           serviceName: err.serviceName || 'Gmail API',
           serviceId: err.serviceId || 'gmail.googleapis.com',
           activationUrl: err.activationUrl,
-          projectId: err.projectId || '614024702267',
+          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267',
         });
       } else {
         setGmailApiInfo(null);
@@ -1123,7 +1058,7 @@ export default function App() {
           serviceName: err.serviceName || 'Google Sheets API',
           serviceId: err.serviceId || 'sheets.googleapis.com',
           activationUrl: err.activationUrl,
-          projectId: err.projectId || '614024702267',
+          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267',
         });
       } else {
         setSheetApiInfo(null);
@@ -1167,7 +1102,7 @@ export default function App() {
           serviceName: err.serviceName || 'Google Drive API',
           serviceId: err.serviceId || 'drive.googleapis.com',
           activationUrl: err.activationUrl,
-          projectId: err.projectId || '614024702267',
+          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267',
         });
       } else {
         setDriveApiInfo(null);
@@ -1320,13 +1255,17 @@ export default function App() {
     }
   }, [canvasSettings, assignments, addToast]);
 
-  // Comprehensive Auto-Sync Routine
+  // Comprehensive Auto-Sync Routine — debounced + AbortController + isSyncing guard
+  const syncAbortRef = useRef<AbortController | null>(null);
   const runFullSync = useCallback(
-    async (isSilent = true) => {
+    async (isSilent = true, externalSignal?: AbortSignal) => {
       if (isSyncingRef.current) return;
       isSyncingRef.current = true;
-
+      const abort = externalSignal ? null : new AbortController();
+      const signal = externalSignal || abort?.signal;
+      if (abort) syncAbortRef.current = abort;
       try {
+        if (signal?.aborted) return;
         await Promise.allSettled([
           loadCanvasData(isSilent),
           loadCalendarEvents(isSilent),
@@ -1334,9 +1273,10 @@ export default function App() {
           loadSheetAssignments(isSilent),
           loadRecentFiles(isSilent),
         ]);
-        setLastSyncedAt(new Date());
+        if (!signal?.aborted) setLastSyncedAt(new Date());
       } finally {
         isSyncingRef.current = false;
+        if (abort) syncAbortRef.current = null;
       }
     },
     [
@@ -1348,10 +1288,15 @@ export default function App() {
     ]
   );
 
+  // Debounced wrapper for visibility/focus storm protection
+  const debouncedSync = useDebouncedCallback(() => { runFullSync(true); }, 1200);
+
   // Manual Refresh All Data Button
   const handleRefreshAll = useCallback(async () => {
     setIsRefreshingAll(true);
     try {
+      // cancel any pending debounced sync and force immediate
+      syncAbortRef.current?.abort();
       await runFullSync(false);
       addToast({
         type: 'info',
@@ -1363,40 +1308,31 @@ export default function App() {
     }
   }, [runFullSync, addToast]);
 
-  // 1. Initial Auto-Sync on App Startup / Web Open
+  // 1. Initial Auto-Sync on App Startup / Web Open (once)
   useEffect(() => {
     runFullSync(true);
-  }, [runFullSync]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // 2. Real-Time Background Auto-Sync (Every 45 seconds)
+  // 2. Real-Time Background Auto-Sync (every 60s, debounced)
   useEffect(() => {
-    const interval = setInterval(() => {
-      runFullSync(true);
-    }, 45000);
-
+    const interval = setInterval(() => debouncedSync(), 60000);
     return () => clearInterval(interval);
-  }, [runFullSync]);
+  }, [debouncedSync]);
 
-  // 3. Real-Time Auto-Sync on Tab Focus / Document Visibility Change
+  // 3. Real-Time Auto-Sync on Tab Focus / Document Visibility Change — debounced to prevent 4x firestorm
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        runFullSync(true);
-      }
+      if (document.visibilityState === 'visible') debouncedSync();
     };
-
-    const handleWindowFocus = () => {
-      runFullSync(true);
-    };
-
+    const handleWindowFocus = () => debouncedSync();
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleWindowFocus);
-
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, [runFullSync]);
+  }, [debouncedSync]);
 
   // Re-cross reference Canvas whenever assignments change
   useEffect(() => {
@@ -1696,7 +1632,7 @@ export default function App() {
           serviceName: err.serviceName || 'Google Calendar API',
           serviceId: err.serviceId || 'calendar-json.googleapis.com',
           activationUrl: err.activationUrl,
-          projectId: err.projectId || '614024702267',
+          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267',
         });
         setApiActivationModalOpen(true);
       }
@@ -1741,7 +1677,7 @@ export default function App() {
           serviceName: err.serviceName || 'Gmail API',
           serviceId: err.serviceId || 'gmail.googleapis.com',
           activationUrl: err.activationUrl,
-          projectId: err.projectId || '614024702267',
+          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267',
         });
         setApiActivationModalOpen(true);
       }
@@ -1889,62 +1825,46 @@ export default function App() {
   };
 
 
-  // Keyboard Shortcuts Listener (Respects user toggles, all off by default)
+  // Keyboard Shortcuts — includes global hotkeys (g d, g c, n, ?, cmd+k) + roving palette
+  const lastGRef = useRef<number>(0);
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if inside an input or textarea
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
-        if (e.key === 'Escape') {
-          target.blur();
-        }
-        return;
+      const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable;
+      if (isTyping) { if (e.key === 'Escape') target.blur(); return; }
+      // Global cmd+k always works
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault(); setCommandPaletteOpen(p => !p); return;
       }
-
-      // Check if global shortcuts are enabled
+      if (e.key === '?' ) { if (!isTyping) { setShortcutsModalOpen(true); return; } }
+      if (e.key.toLowerCase() === 'n' && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault(); handleTabTransition('tracker'); return;
+      }
+      // g + {d,c,n} sequence (go dashboard/canvas/new)
+      if (e.key.toLowerCase() === 'g' && !e.metaKey) { lastGRef.current = Date.now(); return; }
+      if (lastGRef.current && Date.now() - lastGRef.current < 800) {
+        const seq = e.key.toLowerCase();
+        if (seq === 'd') { e.preventDefault(); handleTabTransition('dashboard'); lastGRef.current = 0; return; }
+        if (seq === 'c') { e.preventDefault(); handleTabTransition('canvas'); lastGRef.current = 0; return; }
+        if (seq === 't') { e.preventDefault(); handleTabTransition('tracker'); lastGRef.current = 0; return; }
+        if (seq === 'm') { e.preventDefault(); handleTabTransition('gmail'); lastGRef.current = 0; return; }
+      }
       if (!shortcutSettings.masterEnabled) {
-        if (e.key === 'Escape') {
-          if (zenFocusMode) setZenFocusMode(false);
-          setAccountSettingsOpen(false);
-          setAiChatOpen(false);
-          setCommandPaletteOpen(false);
-        }
+        if (e.key === 'Escape') { if (zenFocusMode) setZenFocusMode(false); setAccountSettingsOpen(false); setAiChatOpen(false); setCommandPaletteOpen(false); }
         return;
       }
-
-      if (e.key.toLowerCase() === 'f' && !e.metaKey && !e.ctrlKey) {
-        setZenFocusMode((prev) => !prev);
-      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        if (shortcutSettings.keys.search) {
-          e.preventDefault();
-          setCommandPaletteOpen((prev) => !prev);
-        }
-      } else if (e.key === '0') {
-        handleTabTransition('dashboard');
-      } else if (e.key === '1') {
-        handleTabTransition('canvas');
-      } else if (e.key === '2') {
-        handleTabTransition('radar');
-      } else if (e.key === '3') {
-        handleTabTransition('tracker');
-      } else if (e.key === '4') {
-        handleTabTransition('gmail');
-      } else if (e.key === '5') {
-        handleTabTransition('drive');
-      } else if (e.key === '6') {
-        handleTabTransition('splitscreen');
-      } else if ((e.key === 'r' || e.key === 'R') && shortcutSettings.keys.sync) {
-        handleRefreshAll();
-      } else if (e.key === '?' && shortcutSettings.keys.help) {
-        setAccountSettingsOpen(true);
-      } else if (e.key === 'Escape') {
-        if (zenFocusMode) setZenFocusMode(false);
-        setAccountSettingsOpen(false);
-        setAiChatOpen(false);
-        setCommandPaletteOpen(false);
-      }
+      if (e.key.toLowerCase() === 'f' && !e.metaKey && !e.ctrlKey) setZenFocusMode(p=>!p);
+      else if (e.key === '0') handleTabTransition('dashboard');
+      else if (e.key === '1') handleTabTransition('canvas');
+      else if (e.key === '2') handleTabTransition('radar');
+      else if (e.key === '3') handleTabTransition('tracker');
+      else if (e.key === '4') handleTabTransition('gmail');
+      else if (e.key === '5') handleTabTransition('drive');
+      else if (e.key === '6') handleTabTransition('splitscreen');
+      else if ((e.key === 'r' || e.key === 'R') && shortcutSettings.keys.sync) handleRefreshAll();
+      else if (e.key === '?' && shortcutSettings.keys.help) setAccountSettingsOpen(true);
+      else if (e.key === 'Escape') { if (zenFocusMode) setZenFocusMode(false); setAccountSettingsOpen(false); setAiChatOpen(false); setCommandPaletteOpen(false); }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleRefreshAll, shortcutSettings, handleWorkspaceTransition, zenFocusMode]);
@@ -1987,14 +1907,20 @@ export default function App() {
           </div>
         </div>
       )}
-      {/* Left Navigation Rail (Desktop) + Main Area Container */}
+      {/* Left Navigation Rail (Desktop + Mobile drawer) */}
       <div className="flex-1 flex overflow-hidden h-full">
-        {/* Sleek Distinct Theme-Reactive Sidebar */}
+        {/* Mobile hamburger — visible only <768px */}
+        {!zenFocusMode && activeTab !== 'dashboard' && (
+          <button onClick={()=>setMobileNavOpen(v=>!v)} className="md:hidden fixed top-2 left-2 z-40 p-2 rounded-xl bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] shadow-md" aria-label="Toggle navigation" aria-expanded={mobileNavOpen}>
+            <span className="text-sm font-bold">☰</span>
+          </button>
+        )}
+        {/* Desktop sidebar */}
         {!zenFocusMode && activeTab !== 'dashboard' && (
           <div className="hidden md:flex shrink-0">
             <Sidebar
               activeTab={activeTab}
-              onSelectTab={handleTabTransition}
+              onSelectTab={(t)=>{ handleTabTransition(t); setMobileNavOpen(false); }}
               isExpanded={isSidebarExpanded}
               onToggleExpand={toggleSidebar}
               user={user}
@@ -2016,6 +1942,38 @@ export default function App() {
                 pomodoro: 0,
               }}
             />
+          </div>
+        )}
+        {/* Mobile drawer overlay */}
+        {mobileNavOpen && !zenFocusMode && activeTab !== 'dashboard' && (
+          <div className="md:hidden fixed inset-0 z-30 flex">
+            <div className="w-64 shrink-0 bg-[#EFECE2] dark:bg-[#1A1917] border-r border-[#DFDACB] dark:border-[#2C2B27] overflow-y-auto">
+              <Sidebar
+                activeTab={activeTab}
+                onSelectTab={(t)=>{ handleTabTransition(t); setMobileNavOpen(false); }}
+                isExpanded={true}
+                onToggleExpand={()=>setMobileNavOpen(false)}
+                user={user}
+                onSignIn={() => handleGoogleSignIn()}
+                onSignOut={handleLogout}
+                onOpenSettings={() => setAccountSettingsOpen(true)}
+                onOpenAppStore={() => setAppStoreOpen(true)}
+                onOpenShortcuts={() => setShortcutsModalOpen(true)}
+                onToggleDarkMode={() => setDarkMode(!darkMode)}
+                darkMode={darkMode}
+                pinnedAppIds={pinnedAppIds}
+                onUnpinApp={handleUnpinApp}
+                badges={{
+                  canvas: clearedTabBadges.has('canvas') || activeTab === 'canvas' ? 0 : canvasUnfinishedCount,
+                  schedule: clearedTabBadges.has('radar') || activeTab === 'radar' ? 0 : calendarEvents.length,
+                  tracker: clearedTabBadges.has('tracker') || activeTab === 'tracker' ? 0 : pendingAssignmentCount,
+                  gmail: clearedTabBadges.has('gmail') || activeTab === 'gmail' ? 0 : urgentEmailCount,
+                  flashcards: clearedTabBadges.has('flashcards') || ['flashcards','quizlet','anki'].includes(activeTab) ? 0 : flashcardDueCount,
+                  pomodoro: 0,
+                }}
+              />
+            </div>
+            <button className="flex-1 bg-black/40 backdrop-blur-sm" onClick={()=>setMobileNavOpen(false)} aria-label="Close navigation" />
           </div>
         )}
 
@@ -2104,7 +2062,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Main Area: Full-Screen AI Coach View OR Tab Workspaces */}
+          {/* Main Area: Full-Screen AI Coach View OR Tab Workspaces — lazy + suspense + error boundary */}
           {aiChatOpen ? (
             <StudyAssistantChat
               isOpen={true}
@@ -2115,7 +2073,9 @@ export default function App() {
               isFullScreen={true}
             />
           ) : (
-            <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 min-h-0">
+            <main id="main-content" className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 min-h-0" aria-label="Workspace content">
+              <ErrorBoundary fallback={<div className="p-6 rounded-2xl border border-rose-200 bg-rose-50 text-rose-900 text-sm">Workspace failed to load. Try refreshing or switching tabs.</div>}>
+              <Suspense fallback={<div className="p-8 flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#D97757] border-t-transparent rounded-full animate-spin" /><span className="ml-2 text-xs text-[#8C897F]">Loading workspace…</span></div>}>
               <div className="max-w-7xl mx-auto space-y-6">
                 {activeTab === 'canvas' && (
                   <CanvasSyncTab
@@ -2378,6 +2338,8 @@ export default function App() {
                   />
                 )}
               </div>
+              </Suspense>
+              </ErrorBoundary>
             </main>
           )}
         </div>

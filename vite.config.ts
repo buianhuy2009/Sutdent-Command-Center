@@ -12,19 +12,40 @@ export default defineConfig(() => {
       manifest: {
         name: 'StudentOS - Command Center',
         short_name: 'StudentOS',
-        description: 'Local-first academic workspace: notes, flashcards, pomodoro, research briefs',
+        description: 'Unified academic OS: Canvas LMS, Google Workspace, AI study coaching — local-first & offline capable',
         theme_color: '#D97757',
         background_color: '#FAF9F5',
         display: 'standalone',
-        icons: [{ src: '/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }]
+        scope: '/',
+        start_url: '/',
+        categories: ['education','productivity'],
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+        ],
+        screenshots: [
+          { src: '/screenshot-dashboard.png', sizes: '1280x720', type: 'image/png', form_factor: 'wide', label: 'Dashboard workspace' },
+          { src: '/screenshot-mobile.png', sizes: '360x740', type: 'image/png', form_factor: 'narrow', label: 'Mobile dashboard' }
+        ],
+        shortcuts: [
+          { name: 'New Task', short_name: 'Task', description: 'Create a new assignment', url: '/?newTask=1', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
+          { name: 'Focus Mode', short_name: 'Focus', description: 'Start Pomodoro', url: '/?focus=1', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
+          { name: 'Canvas LMS', short_name: 'Canvas', description: 'Open Canvas workspace', url: '/?w=canvas', icons: [{ src: '/icon-192.png', sizes: '192x192' }] }
+        ],
+        share_target: { action: '/?share-target=1', method: 'GET', params: { title: 'title', text: 'text', url: 'url' } }
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        navigateFallback: '/index.html',
         runtimeCaching: [
-          { urlPattern: /^https:\/\/generativelanguage\.googleapis\.com\/.*/i, handler: 'NetworkFirst', options: { cacheName: 'gemini-api', networkTimeoutSeconds: 10 } },
-          { urlPattern: /^https:\/\/export\.arxiv\.org\/.*/i, handler: 'StaleWhileRevalidate', options: { cacheName: 'arxiv-cache' } },
-          { urlPattern: /^https:\/\/openlibrary\.org\/.*/i, handler: 'StaleWhileRevalidate', options: { cacheName: 'openlib-cache' } }
+          { urlPattern: /^https:\/\/generativelanguage\.googleapis\.com\/.*/i, handler: 'NetworkFirst', options: { cacheName: 'gemini-api', networkTimeoutSeconds: 10, expiration: { maxEntries: 50, maxAgeSeconds: 300 } } },
+          { urlPattern: /^https:\/\/www\.googleapis\.com\/.*/i, handler: 'NetworkFirst', options: { cacheName: 'googleapis-cache', networkTimeoutSeconds: 8, expiration: { maxEntries: 100, maxAgeSeconds: 300 } } },
+          { urlPattern: /^https:\/\/sheets\.googleapis\.com\/.*/i, handler: 'NetworkFirst', options: { cacheName: 'sheets-api', networkTimeoutSeconds: 8, expiration: { maxEntries: 50, maxAgeSeconds: 300 } } },
+          { urlPattern: /^https:\/\/gmail\.googleapis\.com\/.*/i, handler: 'NetworkFirst', options: { cacheName: 'gmail-api', networkTimeoutSeconds: 8, expiration: { maxEntries: 50, maxAgeSeconds: 300 } } },
+          { urlPattern: /^https:\/\/www\.googleapis\.com\/drive\/.*/i, handler: 'NetworkFirst', options: { cacheName: 'drive-api', networkTimeoutSeconds: 8, expiration: { maxEntries: 50, maxAgeSeconds: 300 } } },
+          { urlPattern: /^https:\/\/export\.arxiv\.org\/.*/i, handler: 'StaleWhileRevalidate', options: { cacheName: 'arxiv-cache', expiration: { maxEntries: 50, maxAgeSeconds: 86400 } } },
+          { urlPattern: /^https:\/\/openlibrary\.org\/.*/i, handler: 'StaleWhileRevalidate', options: { cacheName: 'openlib-cache', expiration: { maxEntries: 50, maxAgeSeconds: 86400 } } }
         ]
       }
     })],
@@ -39,6 +60,22 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+    },
+    build: {
+      sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['react','react-dom','zustand'],
+            firebase: ['firebase/app','firebase/auth'],
+            ai: ['@google/genai'],
+            editor: ['mermaid','katex','react-markdown'],
+            dnd: ['@dnd-kit/core','@dnd-kit/sortable','@dnd-kit/utilities'],
+            dexie: ['dexie']
+          }
+        }
+      },
+      chunkSizeWarningLimit: 1000
     },
   };
 });

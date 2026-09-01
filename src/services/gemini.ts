@@ -50,7 +50,7 @@ export async function testGeminiApiKey(key: string): Promise<boolean> {
   try {
     const ai = new GoogleGenAI({ apiKey: key.trim() });
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash',
       contents: 'Respond with "pong".',
     });
     return (response.text || '').toLowerCase().includes('pong');
@@ -130,6 +130,37 @@ class GeminiRateLimiter {
 }
 
 const rateLimiter = new GeminiRateLimiter();
+
+// Per-user daily quota guard (50 Gemini calls/day — prevents burn from 20× parallel email summarize)
+const DAILY_QUOTA_KEY = 'scc_gemini_daily_quota_v1';
+const DAILY_QUOTA_LIMIT = 50;
+function checkDailyQuota(): boolean {
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const raw = localStorage.getItem(DAILY_QUOTA_KEY);
+    const data = raw ? JSON.parse(raw) : { date: today, count: 0 };
+    if (data.date !== today) return true;
+    return data.count < DAILY_QUOTA_LIMIT;
+  } catch { return true; }
+}
+function incrementQuota(): void {
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const raw = localStorage.getItem(DAILY_QUOTA_KEY);
+    const data = raw ? JSON.parse(raw) : { date: today, count: 0 };
+    if (data.date !== today) { localStorage.setItem(DAILY_QUOTA_KEY, JSON.stringify({ date: today, count: 1 })); return; }
+    localStorage.setItem(DAILY_QUOTA_KEY, JSON.stringify({ date: today, count: (data.count||0)+1 }));
+  } catch {}
+}
+export function getGeminiQuotaStatus(): { used: number; limit: number; remaining: number } {
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const raw = localStorage.getItem(DAILY_QUOTA_KEY);
+    const data = raw ? JSON.parse(raw) : { date: today, count: 0 };
+    const used = data.date === today ? (data.count||0) : 0;
+    return { used, limit: DAILY_QUOTA_LIMIT, remaining: Math.max(0, DAILY_QUOTA_LIMIT-used) };
+  } catch { return { used: 0, limit: DAILY_QUOTA_LIMIT, remaining: DAILY_QUOTA_LIMIT }; }
+}
 
 // Auto-Repair JSON utility
 export function repairJsonString<T = any>(raw: string): T {
@@ -212,9 +243,11 @@ export async function callGemini(params: {
   config?: any;
   model?: string;
 }): Promise<string> {
+  if (!checkDailyQuota()) throw new Error(`Daily Gemini quota reached (${DAILY_QUOTA_LIMIT} calls/day). Try again tomorrow or set your own API key in Settings.`);
   return rateLimiter.execute(async () => {
+    incrementQuota();
     const clientKey = getClientGeminiApiKey();
-    const targetModel = params.model || 'gemini-2.5-flash';
+    const targetModel = params.model || 'gemini-2.0-flash';
 
     // 1. Client-side user key priority
     if (clientKey) {

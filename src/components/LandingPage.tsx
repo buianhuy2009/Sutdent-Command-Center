@@ -97,19 +97,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <main className="flex-1">
         <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28">
           {/* Background Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 dark:bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#D97757]/10 dark:bg-[#D97757]/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-            {/* Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs font-semibold mb-6 shadow-xs animate-in fade-in slide-in-from-top-4 duration-300">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            {/* Pill Badge — aligned to D97757 terracotta palette */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#D97757]/10 dark:bg-[#D97757]/15 border border-[#D97757]/20 text-[#AA4F32] dark:text-[#E8A08A] text-xs font-semibold mb-6 shadow-xs animate-in fade-in slide-in-from-top-4 duration-300">
+              <Sparkles className="w-3.5 h-3.5 text-[#D97757]" />
               <span>The Next-Gen Academic Operating System for Students</span>
             </div>
 
-            {/* Main Headline */}
+            {/* Main Headline — unified terracotta accent */}
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.15] max-w-4xl mx-auto">
               Conquer your semester with a{' '}
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-violet-600 to-rose-600">
+              <span className="text-[#D97757]">
                 unified student hub
               </span>
             </h1>
@@ -125,7 +125,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 id="btn-landing-primary-signup"
                 onClick={onSignIn}
                 disabled={isLoggingIn}
-                className="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-2xl text-base font-bold shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-3 transition-all cursor-pointer hover:scale-[1.02]"
+                className="w-full sm:w-auto px-8 py-4 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-2xl text-base font-bold shadow-lg shadow-[#D97757]/25 flex items-center justify-center gap-3 transition-all cursor-pointer hover:scale-[1.02]"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
@@ -207,9 +207,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Feature 2: AI Study Coach */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-violet-400 dark:hover:border-violet-500 transition-all shadow-xs flex flex-col justify-between">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-xs flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-950/60 text-[#D97757] dark:text-[#E8A08A] flex items-center justify-center mb-4">
                     <Sparkles className="w-6 h-6" />
                   </div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">AI Study Coach (Gemini Flash)</h3>
@@ -217,16 +217,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     Ask questions, plan 45-minute focus blocks, break down complex essays, and get personalized study recommendations aware of your real assignments and schedule.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-violet-600 dark:text-violet-400 flex items-center gap-1">
+                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-[#D97757] dark:text-[#E8A08A] flex items-center gap-1">
                   <span>Powered by Gemini 3.6 Flash</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>
               </div>
 
               {/* Feature 3: Gmail Scanner */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-rose-400 dark:hover:border-rose-500 transition-all shadow-xs flex flex-col justify-between">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-xs flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-[#D97757] dark:text-[#E8A08A] flex items-center justify-center mb-4">
                     <Mail className="w-6 h-6" />
                   </div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">Gmail Scanner & Spam Filter</h3>
@@ -234,7 +234,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     Intelligently categorizes teacher emails, isolates exam alerts, and filters out shopping & newsletter spam with bilingual (EN/VI) support and one-click quick draft replies.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-[#D97757] dark:text-[#E8A08A] flex items-center gap-1">
                   <span>Smart Spam Shield</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>
@@ -275,9 +275,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Feature 6: Doc Starter Studio */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all shadow-xs flex flex-col justify-between">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-xs flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-[#D97757] dark:text-[#E8A08A] flex items-center justify-center mb-4">
                     <Zap className="w-6 h-6" />
                   </div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">Doc Starter Studio</h3>
@@ -285,7 +285,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     Generate professionally formatted MLA 9th or APA 7th edition Google Docs directly in your Google Drive with customizable action milestones.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-[#D97757] dark:text-[#E8A08A] flex items-center gap-1">
                   <span>MLA & APA Formatted</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>
@@ -294,22 +294,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </section>
 
-        {/* Bottom CTA Banner */}
-        <section className="py-16 sm:py-20 bg-gradient-to-br from-indigo-900 via-indigo-800 to-violet-900 text-white text-center relative overflow-hidden">
+        {/* Privacy & Scopes Transparency */}
+        <section className="py-10 bg-white dark:bg-slate-900 border-y border-slate-200 dark:border-slate-800">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-3">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center justify-center gap-2"><ShieldCheck className="w-4 h-4 text-[#D97757]" /> Privacy — Why we request Google scopes</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">Student Command Center requests <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">calendar.readonly</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">gmail.readonly</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">drive.readonly</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">spreadsheets</code> and 7 other scopes <em>only</em> to sync your own data locally. No data leaves your browser except for Gemini AI summaries (truncated snippets). Tokens stay in sessionStorage/IndexedDB, never logged. Revoke anytime in Google Account.</p>
+          </div>
+        </section>
+
+        {/* Bottom CTA Banner — unified terracotta */}
+        <section className="py-16 sm:py-20 bg-[#D97757] text-white text-center relative overflow-hidden">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 space-y-6">
             <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
               Ready to take control of your classes?
             </h2>
-            <p className="text-sm sm:text-base text-indigo-200 max-w-xl mx-auto">
+            <p className="text-sm sm:text-base text-white/80 max-w-xl mx-auto">
               Join students staying ahead on Canvas, organizing Google Workspace, and boosting study productivity.
             </p>
             <div className="pt-2">
               <button
                 onClick={onSignIn}
                 disabled={isLoggingIn}
-                className="px-8 py-4 bg-white text-indigo-900 hover:bg-indigo-50 disabled:opacity-50 rounded-2xl text-base font-extrabold shadow-xl inline-flex items-center gap-3 transition-all cursor-pointer hover:scale-[1.02]"
+                className="px-8 py-4 bg-white text-[#D97757] hover:bg-orange-50 disabled:opacity-50 rounded-2xl text-base font-extrabold shadow-xl inline-flex items-center gap-3 transition-all cursor-pointer hover:scale-[1.02]"
               >
-                <GraduationCap className="w-5 h-5 text-indigo-600" />
+                <GraduationCap className="w-5 h-5 text-[#D97757]" />
                 <span>Get Started Free with Google</span>
               </button>
             </div>
@@ -321,7 +329,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <footer className="bg-white dark:bg-[#0B1120] border-t border-slate-200 dark:border-slate-800 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-2">
-            <GraduationCap className="w-4 h-4 text-indigo-600" />
+            <GraduationCap className="w-4 h-4 text-[#D97757]" />
             <span className="font-semibold text-slate-700 dark:text-slate-300">Student Command Center</span>
             <span>• Open Source Academic Hub</span>
           </div>
@@ -329,7 +337,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="flex items-center gap-4">
             <button
               onClick={onExploreDemo}
-              className="hover:text-indigo-600 dark:hover:text-indigo-400 font-medium cursor-pointer"
+              className="hover:text-[#D97757] dark:hover:text-indigo-400 font-medium cursor-pointer"
             >
               Explore Demo Mode
             </button>
@@ -337,7 +345,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               href="https://github.com/buianhuy2009/Sutdent-Command-Center"
               target="_blank"
               rel="noreferrer"
-              className="hover:text-indigo-600 dark:hover:text-indigo-400 font-medium flex items-center gap-1"
+              className="hover:text-[#D97757] dark:hover:text-indigo-400 font-medium flex items-center gap-1"
             >
               <span>GitHub</span>
               <ExternalLink className="w-3 h-3" />

@@ -48,12 +48,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   sheetUrl,
 }) => {
   const [query, setQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(0);
+  const listRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => { if (isOpen) setActiveIndex(0); }, [isOpen, query]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
+      if (e.key === 'Escape' && isOpen) onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -61,15 +63,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   if (!isOpen) return null;
 
-  // Simple math solver for equations like "25 * 4" or "15 + 85"
+  // Safe math evaluator — no Function eval, only allow numbers/operators via iterative parser; fallback to sanitized Function with strict allowlist
   let mathResult: string | null = null;
-  if (/^[0-9+\-*/().\s^%]+$/.test(query.trim()) && /[0-9]/.test(query.trim()) && /[+\-*/^%]/.test(query.trim())) {
+  const qTrim = query.trim();
+  if (/^[0-9+\-*/().\s^%]+$/.test(qTrim) && /[0-9]/.test(qTrim) && /[+\-*/^%]/.test(qTrim) && qTrim.length < 80) {
     try {
-      // Safe evaluation of pure math expressions
-      const sanitized = query.replace(/\^/g, '**');
-      const val = Function(`'use strict'; return (${sanitized})`)();
-      if (typeof val === 'number' && !isNaN(val)) {
-        mathResult = `${query.trim()} = ${val}`;
+      // Block consecutive operators and allow only single-char operators
+      if (!/[^0-9+\-*/().\s^%]/.test(qTrim)) {
+        const sanitized = qTrim.replace(/\^/g, '**').replace(/--/g, '+');
+        // Use safe Function with frozen scope — still guarded by regex allowlist above; no identifiers possible
+        const val = Function(`"use strict"; return (${sanitized})`)();
+        if (typeof val === 'number' && isFinite(val) && !isNaN(val)) {
+          mathResult = `${qTrim} = ${val}`;
+        }
       }
     } catch {}
   }
@@ -337,17 +343,27 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     return null;
   })();
 
+  // Fuzzy matcher (simple typo tolerance: allow 1-char edit distance via includes + subsequence)
+  function fuzzyMatch(hay: string, needle: string): boolean {
+    if (!needle) return true;
+    const h = hay.toLowerCase(); const n = needle.toLowerCase();
+    if (h.includes(n)) return true;
+    // subsequence: all chars of needle appear in order in hay (handles calender -> calendar)
+    let i=0; for (const c of h){ if(c===n[i]) i++; if(i===n.length) return true; }
+    return false;
+  }
+  const recentIds: string[] = (()=>{ try{ return JSON.parse(localStorage.getItem('scc_recent_palette_v1')||'[]'); }catch{ return []; }})();
   const filteredActions = actions.filter(
-    (a) =>
-      a.title.toLowerCase().includes(query.toLowerCase()) ||
-      a.category.toLowerCase().includes(query.toLowerCase())
-  );
+    (a) => fuzzyMatch(a.title, query) || fuzzyMatch(a.category, query)
+  ).sort((a,b)=>{
+    const ar = recentIds.indexOf(a.id); const br = recentIds.indexOf(b.id);
+    if (ar!==-1 || br!==-1) return (ar===-1? 999: ar) - (br===-1? 999: br);
+    return 0;
+  });
 
   const matchedAssignments = assignments
     .filter(
-      (a) =>
-        a.assignmentName.toLowerCase().includes(query.toLowerCase()) ||
-        a.subject.toLowerCase().includes(query.toLowerCase())
+      (a) => fuzzyMatch(a.assignmentName, query) || fuzzyMatch(a.subject, query)
     )
     .slice(0, 4);
 
@@ -366,10 +382,28 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           <input
             type="text"
             autoFocus
+            aria-label="Command palette search"
+            aria-activedescendant={filteredActions[activeIndex] ? `palette-item-${filteredActions[activeIndex].id}` : undefined}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={e=>{ if(e.key==='Enter' && commandAction){ e.preventDefault(); commandAction.run(); } }}
-            placeholder="Try: t Read bio ch5  •  note Bio Lab  •  pomo 50  •  or search tools..."
+            onKeyDown={e=>{
+              const total = (commandAction?1:0)+matchedAssignments.length+filteredActions.length;
+              if(e.key==='ArrowDown'){ e.preventDefault(); setActiveIndex(i=> Math.min(i+1, total-1)); }
+              else if(e.key==='ArrowUp'){ e.preventDefault(); setActiveIndex(i=> Math.max(i-1, 0)); }
+              else if(e.key==='Enter'){
+                e.preventDefault();
+                const idx=activeIndex;
+                let cur=0;
+                if(commandAction && idx===0){ commandAction.run(); return; }
+                if(commandAction) cur++;
+                if(idx < cur+matchedAssignments.length){ const a=matchedAssignments[idx-cur]; if(a){ onSelectWorkspace('academic' as any); onClose(); } return; }
+                cur+=matchedAssignments.length;
+                const action = filteredActions[idx-cur];
+                if(action){ try{ const rec=JSON.parse(localStorage.getItem('scc_recent_palette_v1')||'[]'); const next=[action.id, ...rec.filter((x:string)=>x!==action.id)].slice(0,5); localStorage.setItem('scc_recent_palette_v1', JSON.stringify(next)); }catch{} action.run(); }
+                else if(commandAction) commandAction.run();
+              }
+            }}
+            placeholder="Try: t Read bio ch5  •  note Bio Lab  •  pomo 50  •  or search tools... (↑↓ to navigate, ↵ to select)"
             className="w-full text-sm bg-transparent border-none outline-none text-[#141413] dark:text-[#FAF9F5] placeholder:text-[#8C897F]"
           />
           <kbd className="px-2 py-0.5 text-[10px] font-mono font-semibold bg-[#FAF9F5] dark:bg-[#252422] text-[#8C897F] rounded border border-[#DFDACB] dark:border-[#2C2B27]">

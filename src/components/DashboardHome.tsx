@@ -167,13 +167,14 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     const poll = () => {
       try { const v = localStorage.getItem('scc_pomo_completed_v1'); setCompletedFocusSessions(v ? parseInt(v, 10) : 0); } catch {}
     };
-    const id = setInterval(poll, 1000);
+    let bc: BroadcastChannel | null = null; try { bc = new BroadcastChannel('scc-pomo'); } catch {}
     const onStorage = (e: StorageEvent) => { if (e.key === 'scc_pomo_completed_v1') poll(); };
     const onFocus = () => poll();
+    const onBc = () => poll();
     window.addEventListener('storage', onStorage);
     window.addEventListener('focus', onFocus);
-    document.addEventListener('visibilitychange', onFocus);
-    return () => { clearInterval(id); window.removeEventListener('storage', onStorage); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus); };
+    bc?.addEventListener('message', onBc as any);
+    return () => { window.removeEventListener('storage', onStorage); window.removeEventListener('focus', onFocus); bc?.close(); };
   }, []);
 
   const todayFormattedDate = useMemo(() => {
@@ -222,11 +223,15 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   return (
     <div className="min-h-screen w-full flex flex-col justify-between items-center bg-[#FAF9F5] dark:bg-[#141413] px-6 py-12 text-center animate-in fade-in duration-300 select-none relative overflow-y-auto">
       
-      {/* Optional NASA APOD Wallpaper Background */}
+      {/* NASA APOD — lazy loaded img with srcset for LCP */}
       {nasaApod && (
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-10 pointer-events-none transition-opacity duration-1000"
-          style={{ backgroundImage: `url(${nasaApod.url})` }}
+        <img
+          src={nasaApod.url}
+          alt={nasaApod.title || 'NASA Astronomy Picture of the Day'}
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none transition-opacity duration-1000"
+          referrerPolicy="no-referrer"
         />
       )}
 
@@ -317,8 +322,26 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
         </div>
 
-        {/* Customization Rails: Vibe Switcher & Focus Goal */}
-        <div className="bg-white/40 dark:bg-[#1C1B19]/30 backdrop-blur-md rounded-3xl border border-[#DFDACB]/60 dark:border-[#2C2B27]/60 p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-left">
+        {/* Today's Plan — centered value (3 next actions + CTA) */}
+        {pendingAssignments.length > 0 && (
+          <div className="bg-white/70 dark:bg-[#1C1B19]/60 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 text-left space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#8C897F] flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-[#D97757]" /><span>Today&apos;s Plan — Next 3 Actions</span></h3>
+            <div className="space-y-2">
+              {pendingAssignments.slice(0,3).map(a => (
+                <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB]/40 text-xs">
+                  <span className="font-semibold truncate">{a.assignmentName}</span>
+                  <span className="text-[11px] text-[#8C897F] ml-2 shrink-0">{a.subject} • Due {a.dueDate}</span>
+                </div>
+              ))}
+            </div>
+            <button onClick={()=>onNavigateWorkspace('tracker')} className="w-full py-2.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">Open Assignment Tracker <ArrowRight className="w-3.5 h-3.5" /></button>
+          </div>
+        )}
+
+        {/* Personalize — collapsible drawer (moved from center) */}
+        <details className="bg-white/40 dark:bg-[#1C1B19]/30 backdrop-blur-md rounded-3xl border border-[#DFDACB]/60 dark:border-[#2C2B27]/60 p-4 sm:p-5 text-xs text-left group">
+          <summary className="list-none flex items-center justify-between cursor-pointer font-bold text-[#8C897F] uppercase tracking-wider">Personalize <span className="text-[10px] bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] px-2 py-0.5 rounded-full">Edit</span></summary>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           {/* Left: Vibe / Ambient Light Selection */}
           <div className="space-y-2">
             <span className="font-bold text-[#8C897F] uppercase tracking-wider block">
@@ -377,7 +400,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        </details>
 
         {/* Real-time Academic Overview Block */}
         <div className="bg-white/60 dark:bg-[#1C1B19]/50 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 sm:p-6 text-left space-y-4">

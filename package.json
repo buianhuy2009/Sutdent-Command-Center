@@ -1,7 +1,8 @@
 {
-  "name": "react-example",
+  "name": "student-command-center",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
+  "description": "Student Command Center - Unified academic OS for Canvas LMS, Google Workspace, and AI study coaching",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
