@@ -203,7 +203,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             onClick={() => setActiveTab('UNFINISHED')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'UNFINISHED'
-                ? 'bg-[#D97757] text-white shadow-xs'
+                ? 'bg-[#D97757] text-white shadow-xs ring-2 ring-[#D97757]/50'
                 : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27]'
             }`}
           >
@@ -219,7 +219,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             onClick={() => setActiveTab('ALL')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'ALL'
-                ? 'bg-[#141413] text-white dark:bg-[#FAF9F5] dark:text-[#141413] shadow-xs'
+                ? 'bg-[#141413] text-white dark:bg-[#FAF9F5] dark:text-[#141413] shadow-xs ring-2 ring-[#141413]/20'
                 : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27]'
             }`}
           >
@@ -235,7 +235,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             onClick={() => setActiveTab('FINISHED')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'FINISHED'
-                ? 'bg-emerald-600 text-white shadow-xs'
+                ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-600/50'
                 : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27]'
             }`}
           >
@@ -354,8 +354,10 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
         </div>
       )}
 
-      {/* Grade What-If Predictor — always visible */}
-      <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-xs">
+      {/* Grade What-If Predictor — accordion (collapsed) */}
+      <details className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-xs group">
+        <summary className="list-none flex items-center justify-between cursor-pointer text-xs font-bold">Grade Predictor — What-if Final <span className="px-2 py-0.5 rounded-full bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[10px]">Expand</span></summary>
+        <div className="mt-3">
         <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-1.5"><Sliders className="w-3.5 h-3.5 text-[#D97757]" strokeWidth={1.75} /> Grade Predictor — What-if Final Exam</h4>
         <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
           <label className="space-y-1"><span className="text-[11px] font-bold text-[#6B6860]">Current %</span><input type="number" value={gradeCurrent} onChange={e=>setGradeCurrent(parseInt(e.target.value)||0)} className="w-full px-2 py-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg text-sm font-mono" /></label>
@@ -372,7 +374,8 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             </div>
           );
         })()}
-      </div>
+        </div>
+      </details>
 
       {/* Main High-Density macOS Table View (40px Rows) */}
       <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] overflow-hidden shadow-xs">
@@ -421,7 +424,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                       onClick={() => setSelectedAssignment(assignment)}
                       className={`h-10 hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer ${
                         isSelected ? 'bg-[#FAF9F5] dark:bg-[#1F1E1B] font-semibold' : ''
-                      } ${isCompleted ? 'opacity-60 line-through' : ''}`}
+                      } ${isCompleted ? 'opacity-60' : ''}`}
                     >
                       {/* Checkbox */}
                       <td className="py-1.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
@@ -443,7 +446,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                       {/* Title */}
                       <td className="py-1.5 px-3">
                         <div className="flex items-center gap-2 truncate">
-                          <span className={`text-[#141413] dark:text-[#FAF9F5] truncate ${isCompleted ? 'line-through text-[#8C897F]' : ''}`}>
+                          <span className={`text-[#141413] dark:text-[#FAF9F5] truncate ${isCompleted ? 'text-[#6B6860]' : ''}`}>
                             {assignment.name}
                           </span>
                           {assignment.pointsPossible !== undefined && (

@@ -347,7 +347,7 @@ export default function App() {
     });
   };
 
-  // Smooth View Transitions for workspace switching
+  // Smooth View Transitions for workspace switching — now unified with workspaceStore + recent + usage tracking
   const handleTabTransition = useCallback((newTab: string) => {
     if (newTab === 'ai-suite') {
       setAiSuiteTab('planner');
@@ -356,7 +356,22 @@ export default function App() {
     }
 
     setClearedTabBadges((prev) => new Set(prev).add(newTab));
-    setAiChatOpen(false); // return to normal workspace if coach was open
+    setAiChatOpen(false);
+
+    // IA: Recent:3 + Most Used tracking for dynamic Top8
+    try {
+      const recentRaw = localStorage.getItem('scc_recent_tabs_v1');
+      const recent: string[] = recentRaw ? JSON.parse(recentRaw) : [];
+      const nextRecent = [newTab, ...recent.filter((x:string)=> x!==newTab)].slice(0,10);
+      localStorage.setItem('scc_recent_tabs_v1', JSON.stringify(nextRecent));
+      const usageRaw = localStorage.getItem('scc_app_usage_v1');
+      const usage: Record<string, number> = usageRaw ? JSON.parse(usageRaw) : {};
+      usage[newTab] = (usage[newTab]||0)+1;
+      localStorage.setItem('scc_app_usage_v1', JSON.stringify(usage));
+      // also sync to workspaceStore for single source of truth
+      try { localStorage.setItem('scc_active_workspace_v1', newTab); } catch {}
+    } catch {}
+    try { trackEvent('command_executed', { command: newTab }); } catch {}
 
     if (typeof document !== 'undefined' && (document as any).startViewTransition) {
       (document as any).startViewTransition(() => {
@@ -615,7 +630,7 @@ export default function App() {
     list.push({
       id: 'activity-discussion-demo',
       tier: 'activity',
-      title: 'Discussion Reply: Peer feedback in AP Chemistry Group',
+      title: '[Demo] Discussion Reply: Peer feedback in AP Chemistry Group',
       description: 'Minh Nguyen replied to your comment on Lab 3 topic.',
       link: '#',
       source: 'Canvas',

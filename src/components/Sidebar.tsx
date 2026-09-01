@@ -119,10 +119,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
       .filter(Boolean) as typeof APP_CATALOG;
   }, [pinnedAppIds]);
 
+  const recentApps = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('scc_recent_tabs_v1') || localStorage.getItem('scc_command_recent_v1') || '[]';
+      const ids = JSON.parse(raw);
+      const list: string[] = Array.isArray(ids) ? ids.map((x:any)=> typeof x==='string'? x : x.id).filter(Boolean).slice(0,3) : [];
+      // also consider scc_app_usage
+      const usageRaw = localStorage.getItem('scc_app_usage_v1');
+      if (usageRaw && list.length<3) {
+        const usage = JSON.parse(usageRaw);
+        const sorted = Object.entries(usage).sort((a:any,b:any)=> b[1]-a[1]).map(([k])=>k).filter(k=> !list.includes(k) && !['canvas','radar','tracker','gmail','drive'].includes(k));
+        list.push(...sorted.slice(0, 3-list.length));
+      }
+      return list.slice(0,3).map((id:string) => APP_CATALOG.find(a=>a.id===id)).filter(Boolean) as typeof APP_CATALOG;
+    } catch { return []; }
+  }, [activeTab, pinnedAppIds]);
+
   return (
     <aside
       aria-label="Primary navigation"
-      className={`h-screen shrink-0 bg-[#EFECE2] dark:bg-[#1A1917] border-r border-[#DFDACB] dark:border-[#2C2B27] flex flex-col transition-all duration-300 z-30 select-none ${
+      style={{ willChange: "transform" }} className={`h-screen shrink-0 bg-[#EFECE2] dark:bg-[#1A1917] border-r border-[#DFDACB] dark:border-[#2C2B27] flex flex-col transition-all duration-300 z-30 select-none ${
         isExpanded ? 'w-64 p-4' : 'w-16 p-2'
       }`}
     >
@@ -202,7 +218,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {isExpanded ? (
                 <div className="flex items-center gap-1.5 shrink-0">
                   {hasBadge && (
-                    <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${isActive ? 'bg-white text-[#D97757] opacity-50' : 'bg-rose-500 text-white'}`}>
+                    <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${isActive ? 'bg-white text-rose-600' : 'bg-rose-500 text-white'}`}>
                       {tab.badge}
                     </span>
                   )}
@@ -219,12 +235,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ) : (
                 <>
                   {hasBadge && (
-                    <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#EFECE2] dark:ring-[#1A1917] ${isActive ? 'bg-rose-500 opacity-50' : 'bg-rose-500'}`} />
+                    <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#EFECE2] dark:ring-[#1A1917] ${isActive ? 'bg-rose-500' : 'bg-rose-500'}`} />
                   )}
-                  <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity delay-300 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">
+                  <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">
                     {tab.label}
                   </span>
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity delay-300 pointer-events-none">
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity delay-100 pointer-events-none">
                     ⌘{tab.key}
                   </span>
                 </>
@@ -232,6 +248,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           );
         })}
+
+        {/* Recent: 3 — above Pinned (IA) */}
+        {recentApps.length > 0 && (
+          <div className="pt-3">
+            {isExpanded && (
+              <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6860]">
+                Recent
+              </div>
+            )}
+            <div className="space-y-1">
+              {recentApps.map((app) => {
+                const isActive = activeTab === app.id;
+                return (
+                  <button
+                    key={`recent-${app.id}`}
+                    onClick={() => onSelectTab(app.id)}
+                    className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative ${isExpanded ? 'px-3 py-2.5 justify-between gap-3 min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'} ${isActive ? 'bg-[#D97757] text-white shadow-sm font-bold' : 'bg-[#FAF9F5]/70 hover:bg-[#FAF9F5] dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#141413] dark:text-[#FAF9F5] border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27]'}`}
+                    title={app.name}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <AppLogo id={app.id} size="sm" />
+                      {isExpanded && (
+                        <div className="text-left min-w-0">
+                          <div className="text-xs truncate leading-tight">{app.name}</div>
+                          <div className={`text-[10px] truncate ${isActive ? 'text-white/80' : 'text-[#6B6860]'}`}>{app.category}</div>
+                        </div>
+                      )}
+                    </div>
+                    {!isExpanded && (
+                      <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">{app.name}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Pinned Apps Section */}
         {pinnedApps.length > 0 && (
@@ -272,13 +325,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         )}
                       </div>
                       {hasBadge && isExpanded && (
-                        <span className={`ml-auto px-1.5 py-0.5 text-[9px] font-bold rounded-full ${isActive ? 'bg-white text-[#D97757] opacity-50' : 'bg-rose-500 text-white'}`}>{badgeCount > 99 ? '99+' : badgeCount}</span>
+                        <span className={`ml-auto px-1.5 py-0.5 text-[9px] font-bold rounded-full ${isActive ? 'bg-white text-rose-600' : 'bg-rose-500 text-white'}`}>{badgeCount > 99 ? '99+' : badgeCount}</span>
                       )}
                       {hasBadge && !isExpanded && (
-                        <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#EFECE2] dark:ring-[#1A1917] ${isActive ? 'bg-rose-500 opacity-50' : 'bg-rose-500'}`} />
+                        <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#EFECE2] dark:ring-[#1A1917] ${isActive ? 'bg-rose-500' : 'bg-rose-500'}`} />
                       )}
                       {!isExpanded && (
-                        <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity delay-300 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">
+                        <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">
                           {app.name}{hasBadge ? ` (${badgeCount})` : ''}
                         </span>
                       )}
@@ -313,7 +366,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {isExpanded && <span>Add Tools &amp; Apps</span>}
           </button>
           {!isExpanded && (
-            <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover/add:opacity-100 transition-opacity delay-300 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">
+            <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover/add:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">
               App Store
             </span>
           )}

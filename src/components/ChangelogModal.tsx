@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Award, Sparkles, BookOpen, Layers, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.0.0';
+export const CURRENT_VERSION = '2.1.0';
 
 interface VersionRelease {
   version: string;
@@ -13,6 +13,33 @@ interface VersionRelease {
 }
 
 const RELEASES: VersionRelease[] = [
+  {
+    version: '2.1.0',
+    date: 'September 02, 2026',
+    title: 'IA 2.1 — Plan/Create/Learn/Research (4) + Hierarchy Fix + Breadcrumb + Recent + Dynamic Top8',
+    badge: 'Latest Update',
+    highlights: [
+      'IA P0: 5-workspace myth → 4 Plan/Create/Learn/Research (AppStore categories), Recent:3 above Pinned in Sidebar, activeWorkspace+activeTab unified via workspaceStore + recent/usage localStorage, Breadcrumb Dashboard > Plan > Canvas clickable, TOP_8 dynamic Most Used + Recommended for your courses (Canvas courseName), star 5.0 removed → Used by N, Deadline Gantt promoted to AssignmentTracker Table|Board|Timeline toggle (not app)',
+      'UI Visual: bg-background token codemod started (index.css rgb(var(--color-background)) vs 200+ bg-[#FAF9F5] violations), dark .landing scope, shadows 3 elevations (card/micro/shadow-card), badge bg-white text-rose-600 opaque (not dim), tooltip 100ms pointer-events-none aria-describedby, terracotta reserve 1 CTA/page, Fraunces headings text-4xl font-serif, density --scale clamp()',
+      'Dashboard: justify-between removed max-w-3xl py-8, NASA opacity-25 + gradient mask + early guard, habit streak deterministic from Dexie/usePomodoroStore not Math.random, Personalize inline chips, single Focus Today + stats bar, intention dotted underline ✎, sprint 44px hit, quote copy button',
+      'Navbar+Sidebar: Zen+Settings to overflow <1100, SyncIndicator unified Dexie queue, notifications demo marked [Demo], bell role=dialog + focus trap + Mark all read, mobile drawer slide-over (not hidden), w-64 transform will-change',
+      'Landing: testimonials → GitHub Star embed (not fictional), hero checklist ✓ Canvas ✓ Gmail ✓ Sheets, demo.mp4 lazy poster (not z-50 placeholder), trust badges flex-wrap, privacy DRY /privacy#scopes, CTA focus-ring',
+      'Tracker: dnd-kit DndContext+Sortable, filter funnel popover, responsive header flex-col, inspector backdrop+Esc, quota hint 48/50, markdown+KaTeX notes, EmptyState Create first task, AssignmentCard extracted, mobile card already ok',
+      'Canvas: pills ring-2 selected, grade accordion collapsed, dueSoon sorted first, completed opacity-60 no strike green ✓, token warning Stored locally + View/Copy, mime icon + search, ExplainDifficultyButton deduped',
+      'Palette: recent scc_command_recent_v1 top5, global ⌘K on Landing/modals, inline calc =120/4→30, 12 actions (New Task/Sync/Zen/Settings/Theme), ? cheat sheet → ShortcutsModal',
+    ],
+    details: [
+      'IA: types.ts WorkspaceId 7→4 mapping Plan/Create/Learn/Research retained for compat but categories renamed via codemod src/components/AppStoreModal.tsx:36, Sidebar.tsx:77 Recent:3 via scc_recent_tabs_v1 + scc_app_usage_v1, App.tsx:350 handleTabTransition now writes recent+usage+workspaceStore, Navbar.tsx:167 breadcrumb clickable Dashboard > {category} > {app} via APP_CATALOG lookup, TOP_8 dynamic via usage+course heuristic (math→desmos etc), rating 5.0 hidden → Used by N, DeadlineGanttWorkspace moved to AssignmentTrackerTab header toggle Table|Board|Timeline (Timeline renders DeadlineGanttWorkspace inline).',
+      'UI: index.css:6 token usage started, .dark .bg-slate-900 scoped to html:not(.landing) to avoid Landing slate-900 break, shadows standardized to 3 elevations (index.css shadow-card, card-micro, shadow-2xs), Sidebar badge dim fixed to opaque, tooltip delay 100ms + pointer-events-none + aria-describedby, terracotta reserved for 1 primary CTA per page (secondary chips use violet/emerald), Fraunces applied to h1 text-4xl font-serif for brand differentiation, density toggle switched to --scale with clamp() + padding tokens (not html font-size).',
+      'DashboardHome: min-h-screen justify-between removed, py-12→py-8, LCP greeting text-5xl + NASA glow measured, NASA opacity 0.10→0.25 + gradient mask, habit Math.random replaced with deterministic dateToIntensity via usePomodoroStore completed per day, Personalize <details> → inline chips under greeting, 3 empty states merged to Focus Today card + stats bar, intention dotted underline + ✎, sprint Chevron 44px aria-label, quote shuffle always visible + Copy quote.',
+      'Navbar+Sidebar: isNarrow 1100 logic moved Zen/Settings to overflow earlier keep AI Coach+Search, SyncIndicator now reads db.assignmentsQueue length (not localStorage), notifications fabricated activity-discussion-demo marked [Demo] and excluded from badge count, bell panel role=dialog + focus trap + Mark all read button, mobile hamburger App.tsx:404 now renders slide-over drawer with transform + will-change + body scroll lock (not hidden md:flex).',
+      'Landing: TESTIMONIALS fictional Minh N./Sarah T. replaced with GitHub Star embed (ghbtns.com) + contributors, hero subtitle → checklist ✓ Canvas feed ✓ Gmail scan ✓ Sheets 2-way, Demo modal z-50 placeholder replaced with <video src=/demo.mp4 poster> lazy + Loom fallback, trust badges grid-cols-1 sm:grid-cols-3 reverted to flex-wrap to save mobile space, Privacy section DRY linked to /privacy#scopes table, CTA white on terracotta focus-ring added.',
+      'Tracker: @dnd-kit installed already but Kanban not draggable — wired DndContext + SortableContext + dragEnd→onUpdateStatus, filters showFilters dead code exposed as funnel popover, search 44ch overlap fixed flex-col sm:flex-row, inspector fixed inset-y-0 w-96 z-50 no backdrop → added bg-black/20 backdrop + click outside + Esc, AI Rank quota hint via getGeminiQuotaStatus 48/50, notes rendered with react-markdown+KaTeX, empty CheckSquare → EmptyState with Create first task CTA, mobile cards extracted to AssignmentCard component.',
+      'Canvas: status pills Unfinished/All/Finished now ring-2 selected border, grade predictor 220px always visible → accordion collapsed by default (moved to AcademicRadar where GPA belongs), dueSoon <3d red but sorted first via sort, completed row opacity-60 line-through → opacity-60 only + green ✓, token type=password + warning Stored locally never sent except POST proxy + View/Copy toggle, recentFiles mime icon + search filter via select filter, Brain Why Is This Hard deduped to single ExplainDifficultyButton component used in both drawers.',
+      'Palette: scc_command_recent_v1 top 5 persisted + sorted, global ⌘K listener at window level excludes input:focus and works on Landing/modals, inline calc =120/4→30 added to quickInput via eval (safe), palette missing actions → added 12 New Task/Sync now/Toggle Zen/Open Settings/Switch theme etc, ? bind to ShortcutsModal when palette closed already in App.tsx keyboard handler.',
+      'Perf/Data/Growth: motion unchunked + lucide unchunked still large — manualChunks lucide planned, editor 878k precache excluded until needed via PWA precache exclusion, maximumFileSize 4MB→6MB, CSP frame-src docs.google.com allowlist added, sitemap/robots already in public/ but claimed missing — verified present, og-image 1200x630 + maskable icons, token sessionStorage→IndexedDB migration plan documented, offline dual source consolidated Dexie only + exponential backoff, lastSyncedAt displayed header Last Canvas sync • 2m ago, Navbar AI 48/50 pill amber, title SEO Student Command Center — Canvas LMS + Gmail + Sheets Dashboard | Free Academic OS + FAQ BreadcrumbList schema.',
+    ]
+  },
   {
     version: '2.0.0',
     date: 'September 01, 2026',

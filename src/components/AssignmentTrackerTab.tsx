@@ -74,7 +74,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
   const [isClearingDone, setIsClearingDone] = useState(false);
   const [showAiAdd, setShowAiAdd] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'kanban' | 'timeline'>('table');
 
   // Selected row for Slide-Over Inspector Sheet
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
@@ -330,6 +330,17 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             >
               <LayoutGrid className="w-3.5 h-3.5" />
             </button>
+            <button
+              onClick={() => setViewMode('timeline')}
+              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewMode === 'timeline'
+                  ? 'bg-white dark:bg-[#252422] text-[#D97757] shadow-2xs'
+                  : 'text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5]'
+              }`}
+              title="Timeline Gantt View"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+            </button>
           </div>
 
           {/* AI Ranker */}
@@ -395,8 +406,20 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
         </form>
       )}
 
-      {/* VIEW RENDERER: TABLE OR KANBAN */}
-      {viewMode === 'kanban' ? (
+      {/* VIEW RENDERER: TABLE | BOARD | TIMELINE — Deadline Gantt promoted from app to toggle */}
+      {viewMode === 'timeline' ? (
+        <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-xs">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6860] flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-[#D97757]" /> Timeline — Deadline Gantt (Mermaid)</h4>
+          <div className="mt-3 p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] overflow-x-auto">
+            <pre className="text-xs font-mono whitespace-pre">{`gantt
+    title Deadline Radar Timeline
+    dateFormat YYYY-MM-DD
+${filteredAssignments.slice(0,8).map(a => `    section ${a.subject}
+    ${a.assignmentName.slice(0,20).replace(/:/g,' ')} : ${a.dueDate}, 1d`).join('\n')}`}</pre>
+          </div>
+          <p className="text-[11px] text-[#6B6860] mt-2">Copy to MermaidWorkspace for rendering. Auto-generated from filtered assignments.</p>
+        </div>
+      ) : viewMode === 'kanban' ? (
         /* KANBAN BOARD VIEW */
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in duration-150">
           {(
