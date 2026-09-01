@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Keyboard, X } from 'lucide-react';
+import { APP_CATALOG } from './AppStoreModal';
 
 interface ShortcutsModalProps {
   isOpen: boolean;
@@ -9,17 +10,25 @@ interface ShortcutsModalProps {
 export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
+  const dynamicAppShortcuts = useMemo(() => {
+    return APP_CATALOG.slice(0, 12).map((app, idx) => ({
+      key: idx < 5 ? `${idx+1}` : `g ${app.id.slice(0,2)}`,
+      description: `Open ${app.name} (${app.category})`,
+    }));
+  }, []);
+
   const shortcuts = [
     { key: '⌘ + K / Ctrl + K', description: 'Open Quick Command Palette & Search' },
     { key: '1', description: 'Switch to Canvas LMS Hub (Prioritized)' },
     { key: '2', description: 'Switch to Daily Schedule' },
-    { key: '3', description: 'Switch to Gmail AI Scanner' },
-    { key: '4', description: 'Switch to Master Assignment Tracker' },
-    { key: '5', description: 'Switch to Project Starter & Files' },
+    { key: '3', description: 'Switch to Assignment Tracker' },
+    { key: '4', description: 'Switch to Gmail AI Scanner' },
+    { key: '5', description: 'Switch to Google Drive' },
+    ...dynamicAppShortcuts.slice(5, 8),
     { key: 'R', description: 'Sync & Refresh all Workspace Data' },
     { key: 'D', description: 'Toggle Dark / Light Mode' },
     { key: 'A', description: 'Toggle AI Study Coach Slide-over' },
-    { key: '?', description: 'Show this Keyboard Shortcuts cheat-sheet' },
+    { key: '?', description: 'Show this Keyboard Shortcuts cheat-sheet (global ?)' },
     { key: 'Esc', description: 'Close active modal or drawer' },
   ];
 

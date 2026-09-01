@@ -22,7 +22,18 @@ export const usePomodoroStore = create<PomodoroState>()(
       incrementCompleted: () => {
         const next = get().completedSessions + 1;
         try { localStorage.setItem('scc_pomo_completed_v1', String(next)); } catch {}
-        // broadcast for sync
+        try {
+          const today=new Date().toISOString().slice(0,10);
+          const raw=localStorage.getItem('scc_focus_sessions_log');
+          const log: {date:string, minutes:number}[] = raw? JSON.parse(raw):[];
+          log.push({date: today, minutes: 25});
+          localStorage.setItem('scc_focus_sessions_log', JSON.stringify(log));
+          // also maintain scc_streak_history for compatibility
+          const shRaw=localStorage.getItem('scc_streak_history');
+          const sh: Record<string,number>=shRaw? JSON.parse(shRaw):{};
+          sh[today]=(sh[today]||0)+1;
+          localStorage.setItem('scc_streak_history', JSON.stringify(sh));
+        } catch {}
         try { new BroadcastChannel('scc-pomo').postMessage({ type: 'increment', value: next }); } catch {}
         set({ completedSessions: next });
       },

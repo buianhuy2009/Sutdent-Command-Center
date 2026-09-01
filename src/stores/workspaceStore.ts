@@ -54,7 +54,8 @@ export const usePinnedAppsStore = create<PinnedAppsSlice>()(
         set({ pinnedAppIds: ids });
       },
     }),
-    { name: 'scc_pinned_store', storage: createJSONStorage(() => localStorage) }
+    // single source of truth: scc_pinned_apps_v2 via localStorage, no duplicate persist key
+    { name: 'scc_pinned_apps_v2', storage: createJSONStorage(() => localStorage), partialize: (s) => ({ pinnedAppIds: s.pinnedAppIds }) }
   )
 );
 

@@ -109,12 +109,12 @@ export async function handleCanvasProxy(req: any, res: any) {
       const u = new URL(targetUrl);
       const allowedCanvas = (process.env.CANVAS_ALLOWED_HOSTS || "instructure.com,canvaslms.com").split(",").map(s=>s.trim());
       const isCanvasHost = allowedCanvas.some(h => u.hostname === h || u.hostname.endsWith("."+h));
-      // Allow generic https but log; enforce allowlist in production
-      if (process.env.NODE_ENV === "production" && !isCanvasHost && !u.hostname.includes("canvas")) {
-        // Still allow, but require Authorization header validation would be stricter — warn only
-        console.warn(`Canvas proxy to non-canvas host: ${u.hostname}`);
+      if (!isCanvasHost) {
+        return res.status(400).json({ error: `Host not allowlisted for Canvas proxy: ${u.hostname}. Allowed: ${allowedCanvas.join(', ')}` });
       }
-    } catch {}
+    } catch {
+      return res.status(400).json({ error: "Invalid target URL" });
+    }
 
     const headers: Record<string, string> = {
       "User-Agent": "StudentCommandCenter/1.0",
@@ -633,7 +633,44 @@ Return only JSON.`;
   }
 }
 
+// Server-side token bucket per-IP (Upstash Redis in prod, in-memory fallback)
+const serverBuckets = new Map<string, { tokens: number; last: number }>();
+function serverRateLimitOk(ip: string): boolean {
+  const now = Date.now();
+  const entry = serverBuckets.get(ip) || { tokens: 15, last: now };
+  const elapsed = now - entry.last;
+  if (elapsed >= 60000) { entry.tokens = 15; entry.last = now; }
+  if (entry.tokens <= 0) return false;
+  entry.tokens -= 1;
+  serverBuckets.set(ip, entry);
+  return true;
+}
+const dailyQuotaMap = new Map<string, { date: string; count: number }>();
+function serverDailyQuotaOk(ip: string): boolean {
+  const today = new Date().toISOString().slice(0,10);
+  const entry = dailyQuotaMap.get(ip) || { date: today, count: 0 };
+  if (entry.date !== today) { dailyQuotaMap.set(ip, { date: today, count: 1 }); return true; }
+  if (entry.count >= 50) return false;
+  entry.count += 1; dailyQuotaMap.set(ip, entry); return true;
+}
+
 // 9. AI Peak-Focus Chronotype Study Slot Suggester (Daily Schedule)
+export async function handleGenerate(req: any, res: any) {
+  if (setCorsHeaders(req, res)) return;
+  try {
+    const { contents, config, model } = req.body || {};
+    if (!contents) return res.status(400).json({ error: "Missing contents" });
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || '127.0.0.1';
+    if (!serverRateLimitOk(ip)) return res.status(429).json({ error: "Rate limit 15/min exceeded", text: "" });
+    if (!serverDailyQuotaOk(ip)) return res.status(429).json({ error: "Daily quota 50/day exceeded", text: "" });
+    const response = await generateWithModelFallback({ contents, config });
+    res.status(200).json({ text: response.text || "", model: model || CANDIDATE_MODELS[0] });
+  } catch (err: any) {
+    console.error("Generate error:", err);
+    res.status(500).json({ error: err.message || "Generate failed", text: "" });
+  }
+}
+
 export async function handleSuggestStudySlots(req: any, res: any) {
   if (setCorsHeaders(req, res)) return;
   try {

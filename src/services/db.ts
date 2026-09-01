@@ -4,11 +4,13 @@ import type { SRSCard } from '../services/srsEngine';
 
 export interface PersistedBrief { id: string; topic: string; subject: string; brief: string; createdAt: string; }
 
+export interface QueuedAssignment { id: string; assignmentName: string; subject: string; dueDate: string; priority: string; status: string; sheetRowIndex?: number; source?: string; queuedAt?: string; }
+
 export class StudentOSDatabase extends Dexie {
   notes!: Table<MarkdownNote, string>;
   srsCards!: Table<SRSCard & { deckId: string }, string>;
   briefs!: Table<PersistedBrief, string>;
-  assignmentsQueue!: Table<any, string>;
+  assignmentsQueue!: Table<QueuedAssignment, string>;
 
   constructor() {
     super('StudentOSDatabase');
@@ -22,7 +24,7 @@ export class StudentOSDatabase extends Dexie {
       notes: 'id, subject, title, updatedAt',
       srsCards: 'id, deckId, dueDate, easeFactor, repetitions',
       briefs: 'id, subject, topic, createdAt',
-      assignmentsQueue: 'id, dueDate, status',
+      assignmentsQueue: 'id, dueDate, status, sheetRowIndex',
       bibliography: 'id, source, year',
     });
     // @ts-ignore extra table for BIB

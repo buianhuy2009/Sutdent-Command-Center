@@ -14,6 +14,9 @@ export interface Assignment {
   notes?: string;
   sheetRowIndex?: number;
   estimatedMinutes?: number;
+  updatedAt?: string; // ISO for conflict resolution
+  repeats?: 'none' | 'daily' | 'weekly' | 'custom';
+  rrule?: string; // RRULE string for custom repeats
 }
 
 export interface CalendarEvent {

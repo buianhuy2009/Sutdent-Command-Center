@@ -194,26 +194,41 @@
   min-height: 0;
 }
 
-/* Glassmorphism Shell Utilities — unified blur */
+/* Glassmorphism Shell Utilities — unified blur with @supports fallback + mobile perf */
 .glass-panel {
-  background-color: rgba(250, 249, 246, 0.88);
-  backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
-  -webkit-backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
+  background-color: rgba(250, 249, 246, 0.92);
 }
-.dark .glass-panel {
-  background-color: rgba(11, 17, 32, 0.88);
-  backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
-  -webkit-backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
+@supports (backdrop-filter: blur(1px)) {
+  .glass-panel {
+    background-color: rgba(250, 249, 246, 0.88);
+    backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
+    -webkit-backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
+  }
+  .dark .glass-panel {
+    background-color: rgba(11, 17, 32, 0.88);
+    backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
+    -webkit-backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
+  }
 }
+.dark .glass-panel { background-color: rgba(11, 17, 32, 0.88); }
 .glass-card {
-  background-color: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(var(--blur-glass-card));
-  -webkit-backdrop-filter: blur(var(--blur-glass-card));
+  background-color: rgba(255, 255, 255, 0.9);
 }
-.dark .glass-card {
-  background-color: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(var(--blur-glass-card));
-  -webkit-backdrop-filter: blur(var(--blur-glass-card));
+@supports (backdrop-filter: blur(1px)) {
+  .glass-card {
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(var(--blur-glass-card));
+    -webkit-backdrop-filter: blur(var(--blur-glass-card));
+  }
+  .dark .glass-card {
+    background-color: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(var(--blur-glass-card));
+    -webkit-backdrop-filter: blur(var(--blur-glass-card));
+  }
+}
+.dark .glass-card { background-color: rgba(15, 23, 42, 0.7); }
+@media (max-width: 768px) {
+  :root { --blur-glass-panel: 8px; --blur-glass-card: 6px; --saturate-glass: 130%; }
 }
 
 /* Micro-borders & layered shadows system — radius token applied */
@@ -249,7 +264,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .animate-in, .animate-out { transition-property: opacity !important; }
 }
 
-/* Scroll-Driven Timeline Reveal Animations */
+/* Scroll-Driven Timeline Reveal Animations + fallback via IntersectionObserver */
 @keyframes timelineCardReveal {
   from {
     opacity: 0.3;
@@ -270,6 +285,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     animation-fill-mode: both;
   }
 }
+/* Fallback when animation-timeline not supported: JS will add .is-visible */
+.timeline-reveal-item:not(:is(*)) { /* placeholder */ }
+.timeline-reveal-fallback {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.timeline-reveal-fallback.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 /* Container Query Responsive Layouts */
 .cq-container {
@@ -285,15 +311,21 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   }
 }
 
-/* UI Density Modes — via CSS vars, not !important on utilities */
+/* UI Density Modes — via CSS vars, not !important on utilities — extended to p-4/p-5/gap-4 */
 html[data-density="compact"] {
   font-size: 13.5px;
+  --space-4: 0.75rem;
+  --space-5: 1rem;
   --space-6: 1rem;
   --space-8: 1.25rem;
   --space-y-6: 1rem;
+  --gap-4: 0.625rem;
 }
+html[data-density="compact"] .p-4 { padding: var(--space-4); }
+html[data-density="compact"] .p-5 { padding: var(--space-5); }
 html[data-density="compact"] .p-6 { padding: var(--space-6); }
 html[data-density="compact"] .p-8 { padding: var(--space-8); }
+html[data-density="compact"] .gap-4 { gap: var(--gap-4); }
 html[data-density="compact"] .space-y-6 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
   margin-top: calc(var(--space-y-6) * calc(1 - var(--tw-space-y-reverse)));
@@ -301,9 +333,12 @@ html[data-density="compact"] .space-y-6 > :not([hidden]) ~ :not([hidden]) {
 }
 html[data-density="spacious"] {
   font-size: 16px;
+  --space-4: 1.25rem;
+  --space-5: 1.5rem;
   --space-6: 2rem;
   --space-8: 2.5rem;
   --space-y-6: 2rem;
+  --gap-4: 1.25rem;
 }
 
 /* Color Theme Palette Classes — legacy midnight/ocean/forest already defined above */
@@ -327,10 +362,26 @@ html[data-theme="forest"].dark body {
 .bg-success { background-color: rgb(var(--color-success)); }
 .text-success { color: rgb(var(--color-success)); }
 
-/* will-change for hero glow LCP */
-.hero-glow { will-change: transform; }
+/* a11y high-contrast + reduce-motion emulation */
+.high-contrast { filter: contrast(1.2); }
+.high-contrast img { filter: contrast(1.1); }
+.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after {
+  animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important;
+}
+/* hero glow — will-change only on animate, removed permanent layer */
+.hero-glow { /* will-change removed, add only during animation via .hero-glow--animate */ }
+.hero-glow--animate { will-change: transform; }
 
-/* iOS input zoom prevention — keep inputs 16px on mobile via max(16px, 0.75rem) */
+/* Micro-borders system-wide: apply card-micro via data-card attribute lint */
+[data-card] { border: 1px solid rgba(0,0,0,0.06); box-shadow: var(--shadow-card); border-radius: var(--radius-card); }
+.dark [data-card] { border-color: rgba(255,255,255,0.06); box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.35); }
+
+/* Container queries applied helpers */
+.cq-card { container-type: inline-size; }
+
+/* iOS input zoom prevention — only on mobile and only when NOT compact */
 @media (max-width: 768px) {
-  input, select, textarea { font-size: max(16px, 0.875rem) !important; }
+  html:not([data-density="compact"]) input,
+  html:not([data-density="compact"]) select,
+  html:not([data-density="compact"]) textarea { font-size: max(16px, 0.875rem) !important; }
 }

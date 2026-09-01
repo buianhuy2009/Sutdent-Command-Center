@@ -1,3 +1,5 @@
+// Gemini service split — new modular imports available at ./gemini/client, ./gemini/prompts, ./gemini/rateLimiter, ./gemini/providers
+// This monolith kept for compat; new code should import from modular files. Provider fallback now includes server /api/gemini/generate route fix + Groq rotation.
 import { GoogleGenAI } from "@google/genai";
 import {
   EmailAlert,

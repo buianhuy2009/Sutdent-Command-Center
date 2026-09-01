@@ -119,17 +119,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
       .filter(Boolean) as typeof APP_CATALOG;
   }, [pinnedAppIds]);
 
+  // Consolidated recent via single key scc_recent_tabs_v1 + useWorkspaceRouter fallback
   const recentApps = useMemo(() => {
     try {
-      const raw = localStorage.getItem('scc_recent_tabs_v1') || localStorage.getItem('scc_command_recent_v1') || '[]';
-      const ids = JSON.parse(raw);
+      const raw = localStorage.getItem('scc_recent_tabs_v1');
+      const ids = raw ? JSON.parse(raw) : [];
       const list: string[] = Array.isArray(ids) ? ids.map((x:any)=> typeof x==='string'? x : x.id).filter(Boolean).slice(0,3) : [];
-      // also consider scc_app_usage
-      const usageRaw = localStorage.getItem('scc_app_usage_v1');
-      if (usageRaw && list.length<3) {
-        const usage = JSON.parse(usageRaw);
-        const sorted = Object.entries(usage).sort((a:any,b:any)=> b[1]-a[1]).map(([k])=>k).filter(k=> !list.includes(k) && !['canvas','radar','tracker','gmail','drive'].includes(k));
-        list.push(...sorted.slice(0, 3-list.length));
+      if (list.length < 3) {
+        const usageRaw = localStorage.getItem('scc_app_usage_v1');
+        if (usageRaw) {
+          const usage = JSON.parse(usageRaw);
+          const sorted = Object.entries(usage).sort((a:any,b:any)=> b[1]-a[1]).map(([k])=>k).filter(k=> !list.includes(k) && !['canvas','radar','tracker','gmail','drive'].includes(k));
+          list.push(...sorted.slice(0, 3-list.length));
+        }
       }
       return list.slice(0,3).map((id:string) => APP_CATALOG.find(a=>a.id===id)).filter(Boolean) as typeof APP_CATALOG;
     } catch { return []; }
@@ -138,7 +140,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       aria-label="Primary navigation"
-      style={{ willChange: "transform" }} className={`h-screen shrink-0 bg-[#EFECE2] dark:bg-[#1A1917] border-r border-[#DFDACB] dark:border-[#2C2B27] flex flex-col transition-all duration-300 z-30 select-none ${
+      className={`h-screen shrink-0 bg-[#EFECE2] dark:bg-[#1A1917] border-r border-[#DFDACB] dark:border-[#2C2B27] flex flex-col transition-all duration-300 z-30 select-none ${
         isExpanded ? 'w-64 p-4' : 'w-16 p-2'
       }`}
     >
@@ -185,16 +187,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        {/* Core Tabs */}
+        {/* Core Tabs — semantic badge colors */}
         {coreTabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const hasBadge = Boolean(tab.badge);
+          const badgeColor = tab.id==='canvas' ? 'bg-violet-600' : tab.id==='gmail' ? 'bg-amber-500' : tab.id==='tracker' ? 'bg-emerald-600' : 'bg-rose-500';
 
           return (
             <button
               key={tab.id}
+              aria-current={isActive ? 'page' : undefined}
               onClick={() => onSelectTab(tab.id)}
-              className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative group ${
+              className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D97757] ${
                 isExpanded ? 'px-3 py-2.5 justify-between gap-3 min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'
               } ${
                 isActive
@@ -218,7 +222,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {isExpanded ? (
                 <div className="flex items-center gap-1.5 shrink-0">
                   {hasBadge && (
-                    <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${isActive ? 'bg-white text-rose-600' : 'bg-rose-500 text-white'}`}>
+                    <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${isActive ? 'bg-white text-rose-600' : `${badgeColor} text-white`}`}>
                       {tab.badge}
                     </span>
                   )}
@@ -235,12 +239,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ) : (
                 <>
                   {hasBadge && (
-                    <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#EFECE2] dark:ring-[#1A1917] ${isActive ? 'bg-rose-500' : 'bg-rose-500'}`} />
+                    <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#EFECE2] dark:ring-[#1A1917] ${badgeColor}`} />
                   )}
-                  <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">
+                  <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">
                     {tab.label}
                   </span>
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity delay-100 pointer-events-none">
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] px-1 rounded opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity delay-100 pointer-events-none">
                     ⌘{tab.key}
                   </span>
                 </>

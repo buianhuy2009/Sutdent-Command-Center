@@ -63,21 +63,50 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   if (!isOpen) return null;
 
-  // Safe math evaluator — no Function eval, only allow numbers/operators via iterative parser; fallback to sanitized Function with strict allowlist
+  // Safe math evaluator — CSP-safe shunting-yard parser, no Function()
+  function safeEval(expr: string): number | null {
+    try {
+      const tokens: string[] = [];
+      let i=0;
+      while(i<expr.length){
+        const c=expr[i];
+        if(/\s/.test(c)){i++;continue;}
+        if(/[0-9.]/.test(c)){ let n=''; while(i<expr.length && /[0-9.]/.test(expr[i])) n+=expr[i++]; tokens.push(n); continue; }
+        if('+-*/()%^'.includes(c)){ tokens.push(c); i++; continue; }
+        return null;
+      }
+      // shunting-yard to RPN
+      const prec: Record<string,number> = {'+':1,'-':1,'*':2,'/':2,'%':2,'^':3};
+      const output:string[]=[]; const ops:string[]=[];
+      for(const t of tokens){
+        if(!isNaN(parseFloat(t))) output.push(t);
+        else if(t==='(') ops.push(t);
+        else if(t===')'){ while(ops.length && ops[ops.length-1]!=='(') output.push(ops.pop()!); ops.pop(); }
+        else { while(ops.length && ops[ops.length-1]!=='(' && (prec[ops[ops.length-1]]||0) >= (prec[t]||0)) output.push(ops.pop()!); ops.push(t); }
+      }
+      while(ops.length) output.push(ops.pop()!);
+      const stack:number[]=[];
+      for(const t of output){
+        if(!isNaN(parseFloat(t))) stack.push(parseFloat(t));
+        else {
+          const b=stack.pop()!, a=stack.pop()!;
+          if(a===undefined||b===undefined) return null;
+          if(t==='+') stack.push(a+b);
+          else if(t==='-') stack.push(a-b);
+          else if(t==='*') stack.push(a*b);
+          else if(t==='/') stack.push(b!==0?a/b:NaN);
+          else if(t==='%') stack.push(a%b);
+          else if(t==='^') stack.push(Math.pow(a,b));
+        }
+      }
+      return stack.length===1 && isFinite(stack[0]) ? stack[0] : null;
+    } catch { return null; }
+  }
   let mathResult: string | null = null;
   const qTrim = query.trim();
   if (/^[0-9+\-*/().\s^%]+$/.test(qTrim) && /[0-9]/.test(qTrim) && /[+\-*/^%]/.test(qTrim) && qTrim.length < 80) {
-    try {
-      // Block consecutive operators and allow only single-char operators
-      if (!/[^0-9+\-*/().\s^%]/.test(qTrim)) {
-        const sanitized = qTrim.replace(/\^/g, '**').replace(/--/g, '+');
-        // Use safe Function with frozen scope — still guarded by regex allowlist above; no identifiers possible
-        const val = Function(`"use strict"; return (${sanitized})`)();
-        if (typeof val === 'number' && isFinite(val) && !isNaN(val)) {
-          mathResult = `${qTrim} = ${val}`;
-        }
-      }
-    } catch {}
+    const val = safeEval(qTrim.replace(/\^/g,'^'));
+    if (val !== null && !isNaN(val)) mathResult = `${qTrim} = ${val}`;
   }
 
   const actions = [
@@ -367,15 +396,39 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     )
     .slice(0, 4);
 
+  // focus trap for Tab cycle
+  const dialogRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    if (!isOpen || !dialogRef.current) return;
+    const root = dialogRef.current;
+    const focusable = () => Array.from(root.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el => !el.hasAttribute('disabled'));
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const els = focusable();
+      if (!els.length) return;
+      const first = els[0], last = els[els.length-1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    root.addEventListener('keydown', onKey as any);
+    // autofocus input
+    const input = root.querySelector<HTMLInputElement>('input');
+    input?.focus();
+    return () => root.removeEventListener('keydown', onKey as any);
+  }, [isOpen]);
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Command palette"
       className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
       id="command-palette-backdrop"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden animate-in zoom-in-95">
+      <div ref={dialogRef} className="bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden animate-in zoom-in-95">
         {/* Search Input Bar */}
         <div className="flex items-center px-4 py-3.5 border-b border-[#DFDACB] dark:border-[#2C2B27]">
           <Search className="w-5 h-5 text-[#8C897F] mr-3 shrink-0" />

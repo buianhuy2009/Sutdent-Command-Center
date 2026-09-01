@@ -9,10 +9,10 @@ export const FeedbackWidget: React.FC = () => {
         <MessageCircle className="w-4 h-4" /> Help & Feedback
       </button>
       {open && (
-        <div className="fixed bottom-16 left-4 z-40 w-80 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-xl p-4 space-y-3">
+        <div role="dialog" aria-modal="true" aria-label="Feedback" className="fixed bottom-16 left-4 z-40 w-80 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-bold">We love feedback</h4>
-            <button onClick={()=>setOpen(false)} className="p-1 hover:bg-[#FAF9F5] dark:hover:bg-[#252422] rounded"><X className="w-4 h-4" /></button>
+            <button onClick={()=>setOpen(false)} aria-label="Close feedback" className="p-1 hover:bg-[#FAF9F5] dark:hover:bg-[#252422] rounded"><X className="w-4 h-4" /></button>
           </div>
           <p className="text-xs text-[#6B6860]">Report bugs, request features, or share your setup.</p>
           <div className="space-y-2">

@@ -7,6 +7,7 @@ import handleQuickDraft from "./gemini/quick-draft.js";
 import handleExtractSubtasks from "./gemini/extract-subtasks.js";
 import handleEstimateEffort from "./gemini/estimate-effort.js";
 import handleSuggestStudySlots from "./gemini/suggest-study-slots.js";
+import handleGenerate from "./gemini/generate.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -43,6 +44,9 @@ export default async function handler(req, res) {
   }
   if (cleanPath === "/gemini/suggest-study-slots") {
     return handleSuggestStudySlots(req, res);
+  }
+  if (cleanPath === "/gemini/generate") {
+    return handleGenerate(req, res);
   }
 
   res.status(404).json({ error: `API route not found: ${req.url}` });

@@ -17,11 +17,9 @@ import {
 import { User } from 'firebase/auth';
 import { Assignment, CalendarEvent, EmailAlert } from '../types';
 import { getTodayQuote, QUOTE_BANK, DailyQuote } from '../data/quotes';
-import { MOCK_EMAIL_ALERTS, getMockTodayEvents } from '../data/mockData';
 import { fetchNasaApod, NasaApod } from '../services/publicApis';
 import { usePomodoroStore } from '../stores/pomodoroStore';
-import { EmptyTodayEvents, EmptyAssignments, EmptyFiles } from './EmptyState';
-import { ChevronDown } from 'lucide-react';
+import { EmptyTodayEvents, EmptyAssignments } from './EmptyState';
 
 const LOCAL_STORAGE_NAME_KEY = 'scc_user_preferred_name';
 const LOCAL_STORAGE_INTENTION_KEY = 'scc_user_daily_intention';
@@ -41,6 +39,7 @@ interface DashboardHomeProps {
   onOpenStudyPlan?: () => void;
   calendarEvents?: CalendarEvent[];
   emailAlerts?: EmailAlert[];
+  isLoadingEvents?: boolean;
 }
 
 type VibeType = 'focus' | 'calm' | 'creative' | 'recharge';
@@ -54,6 +53,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   onOpenStudyPlan,
   calendarEvents = [],
   emailAlerts = [],
+  isLoadingEvents = false,
 }) => {
   // Time-aware greeting prefix
   const greetingPrefix = useMemo(() => {
@@ -105,17 +105,22 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     localStorage.setItem(LOCAL_STORAGE_VIBE_KEY, vibe);
   };
 
-  // Personalized Focus Sprint Goal — now via Zustand (prevents BroadcastChannel race)
-  const { sprintGoal, setSprintGoal, completedFocusSessions } = usePomodoroStore();
+  // Personalized Focus Sprint Goal — now via Zustand (prevents BroadcastChannel race), clamped floor 1
+  const { sprintGoal, setSprintGoal, completedFocusSessions, completedSessions } = usePomodoroStore();
   const handleAdjustSprintGoal = (amount: number) => {
-    setSprintGoal(sprintGoal + amount);
+    setSprintGoal(Math.max(1, sprintGoal + amount));
   };
 
-  // Today's quote
+  // Today's quote — exclude current index on shuffle
   const [quote, setQuote] = useState<DailyQuote>(() => getTodayQuote());
 
   const handleShuffleQuote = () => {
-    const randomIndex = Math.floor(Math.random() * QUOTE_BANK.length);
+    const currentIdx = QUOTE_BANK.findIndex(q => q.quote === quote.quote);
+    let randomIndex = Math.floor(Math.random() * QUOTE_BANK.length);
+    if (QUOTE_BANK.length > 1 && randomIndex === currentIdx) {
+      randomIndex = (randomIndex + 1 + Math.floor(Math.random() * (QUOTE_BANK.length - 1))) % QUOTE_BANK.length;
+      if (randomIndex === currentIdx) randomIndex = (randomIndex + 1) % QUOTE_BANK.length;
+    }
     setQuote(QUOTE_BANK[randomIndex]);
   };
 
@@ -152,12 +157,12 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     }).format(new Date());
   }, []);
 
-  // Vibe background glow settings — increased to /15 for light mode visibility
+  // Vibe background glow — bumped to /25 in dark for visibility
   const vibeGlowClass = {
-    focus: 'from-[#D97757]/15',
-    calm: 'from-blue-500/15 dark:from-blue-900/10',
-    creative: 'from-violet-500/15 dark:from-violet-900/10',
-    recharge: 'from-emerald-500/15 dark:from-emerald-900/10',
+    focus: 'from-[#D97757]/15 dark:from-[#D97757]/25',
+    calm: 'from-blue-500/15 dark:from-blue-900/25',
+    creative: 'from-violet-500/15 dark:from-violet-900/25',
+    recharge: 'from-emerald-500/15 dark:from-emerald-900/25',
   }[selectedVibe];
 
   const vibeBorderHoverClass = {
@@ -175,28 +180,50 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   }[selectedVibe];
 
   const [nasaApod, setNasaApod] = useState<NasaApod | null>(null);
+  const apodRef = React.useRef<HTMLImageElement>(null);
 
   useEffect(() => {
-    // Guard fetch until enabled — avoids wasted LCP fetch when disabled
     const isApodEnabled = localStorage.getItem('scc_enable_nasa_apod') === 'true';
     if (!isApodEnabled) return;
-    fetchNasaApod().then((data) => {
-      if (data && data.mediaType === 'image') {
-        setNasaApod(data);
+    const cacheKey='scc_nasa_apod_cache';
+    const cached = (()=>{ try{ const raw=localStorage.getItem(cacheKey); if(raw){ const d=JSON.parse(raw); if(d.date===new Date().toISOString().slice(0,10)) return d.data; } }catch{} return null; })();
+    if (cached && cached.mediaType==='image') { setNasaApod(cached); return; }
+    const observer = new IntersectionObserver((entries)=>{
+      if(entries[0].isIntersecting){
+        fetchNasaApod().then((data) => {
+          if (data && data.mediaType === 'image') {
+            setNasaApod(data);
+            try{ localStorage.setItem(cacheKey, JSON.stringify({date:new Date().toISOString().slice(0,10), data})); }catch{}
+          }
+        });
+        observer.disconnect();
       }
-    });
+    }, {rootMargin:'200px'});
+    if (apodRef.current) observer.observe(apodRef.current);
+    else {
+      // fallback immediate fetch if ref not yet
+      fetchNasaApod().then((data) => {
+        if (data && data.mediaType === 'image') {
+          setNasaApod(data);
+          try{ localStorage.setItem(cacheKey, JSON.stringify({date:new Date().toISOString().slice(0,10), data})); }catch{}
+        }
+      });
+    }
+    return ()=> observer.disconnect();
   }, []);
 
   return (
     <div className="min-h-screen w-full flex flex-col justify-between items-center bg-[#FAF9F5] dark:bg-[#141413] px-6 py-12 text-center animate-in fade-in duration-300 select-none relative overflow-y-auto">
       
-      {/* NASA APOD — lazy loaded img with srcset for LCP */}
+      {/* NASA APOD — lazy IntersectionObserver, cached DEMO_KEY */}
+      <div ref={apodRef as any} className="absolute inset-0 pointer-events-none" aria-hidden="true" />
       {nasaApod && (
         <img
           src={nasaApod.url}
           alt={nasaApod.title || 'NASA Astronomy Picture of the Day'}
           loading="lazy"
           decoding="async"
+          fetchPriority="low"
           className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none transition-opacity duration-1000"
           referrerPolicy="no-referrer"
         />
@@ -283,25 +310,59 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
         </div>
 
-        {/* Today's Plan — sorted by urgency + dueDate with HIGH dot */}
+        {/* Today's Plan — overdue grouping + due today */}
         {pendingAssignments.length > 0 ? (
           <div className="bg-white/70 dark:bg-[#1C1B19]/60 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 text-left space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#6B6860] flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-[#D97757]" strokeWidth={1.75} /><span>Today&apos;s Plan — Next 3 Actions</span></h3>
-            <div className="space-y-2">
-              {[...pendingAssignments].sort((a,b)=>{
+            {(() => {
+              const todayStr = new Date().toISOString().slice(0,10);
+              const overdue = pendingAssignments.filter(a => a.dueDate && a.dueDate < todayStr);
+              const dueToday = pendingAssignments.filter(a => a.dueDate === todayStr);
+              const upcoming = pendingAssignments.filter(a => !a.dueDate || a.dueDate > todayStr);
+              const sorted = (arr: typeof pendingAssignments) => [...arr].sort((a,b)=>{
                 const pri = { High:0, Med:1, Low:2 } as any;
                 const pa = pri[a.priority] ?? 1; const pb = pri[b.priority] ?? 1;
                 if (pa !== pb) return pa - pb;
                 const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
                 const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
                 return da - db;
-              }).slice(0,3).map(a => (
-                <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB]/40 text-xs">
-                  <span className="font-semibold truncate flex items-center gap-1.5"><span className={`w-1.5 h-1.5 rounded-full shrink-0 ${a.priority==='High'?'bg-rose-500': a.priority==='Med'?'bg-amber-500':'bg-emerald-500'}`} />{a.assignmentName}</span>
-                  <span className="text-[11px] text-[#6B6860] ml-2 shrink-0">{a.subject} • Due {a.dueDate} {a.priority==='High' && <span className="ml-1 px-1 py-0.5 rounded bg-rose-100 text-rose-700 text-[9px] font-bold">HIGH</span>}</span>
-                </div>
-              ))}
-            </div>
+              });
+              return (
+                <>
+                  {overdue.length>0 && (
+                    <div className="space-y-1.5">
+                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Overdue • {overdue.length}</h4>
+                      {sorted(overdue).slice(0,2).map(a=>(
+                        <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-xs">
+                          <span className="font-semibold truncate flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0" />{a.assignmentName}</span>
+                          <span className="text-[11px] text-rose-700 ml-2 shrink-0">{a.subject} • {a.dueDate}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {dueToday.length>0 && (
+                    <div className="space-y-1.5">
+                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Due Today • {dueToday.length}</h4>
+                      {sorted(dueToday).slice(0,2).map(a=>(
+                        <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs">
+                          <span className="font-semibold truncate flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />{a.assignmentName}</span>
+                          <span className="text-[11px] text-amber-800 ml-2 shrink-0">{a.subject} • Today</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#6B6860] flex items-center gap-1.5"><Clock className="w-3 h-3 text-[#D97757]" />Upcoming</h4>
+                    {sorted(upcoming).slice(0,3).map(a=>(
+                      <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB]/40 text-xs">
+                        <span className="font-semibold truncate flex items-center gap-1.5"><span className={`w-1.5 h-1.5 rounded-full shrink-0 ${a.priority==='High'?'bg-rose-500': a.priority==='Med'?'bg-amber-500':'bg-emerald-500'}`} />{a.assignmentName}</span>
+                        <span className="text-[11px] text-[#6B6860] ml-2 shrink-0">{a.subject} • Due {a.dueDate} {a.priority==='High' && <span className="ml-1 px-1 py-0.5 rounded bg-rose-100 text-rose-700 text-[9px] font-bold">HIGH</span>}</span>
+                      </div>
+                    ))}
+                    {upcoming.length===0 && overdue.length===0 && dueToday.length===0 && <div className="text-xs text-[#6B6860] italic">All caught up — no upcoming tasks.</div>}
+                  </div>
+                </>
+              );
+            })()}
             <button onClick={()=>onNavigateWorkspace('tracker')} className="w-full py-2.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 min-h-[44px]">Open Assignment Tracker <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} /></button>
           </div>
         ) : (
@@ -310,8 +371,12 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
         )}
 
-        {/* Personalize — collapsible drawer with chevron rotation */}
-        <details className="bg-white/40 dark:bg-[#1C1B19]/30 backdrop-blur-md rounded-3xl border border-[#DFDACB]/60 dark:border-[#2C2B27]/60 p-4 sm:p-5 text-xs text-left group">
+        {/* Personalize — collapsible drawer with chevron rotation + persistence */}
+        <details
+          className="bg-white/40 dark:bg-[#1C1B19]/30 backdrop-blur-md rounded-3xl border border-[#DFDACB]/60 dark:border-[#2C2B27]/60 p-4 sm:p-5 text-xs text-left group"
+          open={(() => { try { return localStorage.getItem('scc_dashboard_personalize_open')==='true'; } catch { return false; } })()}
+          onToggle={(e)=>{ try{ localStorage.setItem('scc_dashboard_personalize_open', String((e.currentTarget as HTMLDetailsElement).open)); }catch{} }}
+        >
           <summary className="list-none flex items-center justify-between cursor-pointer font-bold text-[#6B6860] uppercase tracking-wider">Personalize <span className="flex items-center gap-1.5 text-[10px] bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] px-2 py-0.5 rounded-full">Edit <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" strokeWidth={1.75} /></span></summary>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           {/* Left: Vibe / Ambient Light Selection */}
@@ -375,8 +440,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
         </details>
 
-        {/* Real-time Academic Overview Block — with empty illustrations */}
-        <div className="bg-white/60 dark:bg-[#1C1B19]/50 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 sm:p-6 text-left space-y-4 card-micro">
+        {/* Real-time Academic Overview Block — with empty illustrations + container query */}
+        <div className="cq-container bg-white/60 dark:bg-[#1C1B19]/50 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 sm:p-6 text-left space-y-4 card-micro">
           <div className="flex items-center justify-between pb-2 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#6B6860] flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-[#D97757]" strokeWidth={1.75} />
@@ -417,7 +482,9 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                   <Calendar className="w-3.5 h-3.5 text-blue-500" strokeWidth={1.75} />
                   <span>Today&apos;s Schedule</span>
                 </div>
-                {isGoogleConnected ? (
+                {isLoadingEvents ? (
+                  <div className="space-y-2 animate-pulse"><div className="h-3 bg-[#EFECE2] dark:bg-[#252422] rounded w-3/4" /><div className="h-3 bg-[#EFECE2] dark:bg-[#252422] rounded w-1/2" /></div>
+                ) : isGoogleConnected ? (
                   todayEvents.length === 0 ? <EmptyTodayEvents /> : (
                     <>
                       <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
@@ -482,14 +549,55 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
         </div>
 
-        {/* Habit Streak GitHub heatmap + Focus Analytics teaser */}
+        {/* Habit Streak GitHub heatmap persisted via scc_focus_sessions_log + scc_streak_history */}
+        {(() => {
+          const streakData = (() => {
+            try {
+              const raw = localStorage.getItem('scc_focus_sessions_log');
+              const log: {date:string, minutes:number}[] = raw ? JSON.parse(raw) : [];
+              const map = new Map<string, number>();
+              log.forEach(e => map.set(e.date, (map.get(e.date)||0)+e.minutes));
+              // also seed from current store completed count for today if log empty
+              if (map.size===0 && completedFocusSessions>0) {
+                const today = new Date().toISOString().slice(0,10);
+                map.set(today, completedFocusSessions*25);
+              }
+              return map;
+            } catch { return new Map<string, number>(); }
+          })();
+          const days: {dateStr:string, intensity:string, label:string}[] = Array.from({length:28}).map((_,i)=>{
+            const d=new Date(); d.setDate(d.getDate()-(27-i));
+            const dateStr=d.toISOString().slice(0,10);
+            const mins=streakData.get(dateStr)||0;
+            let intensity='bg-[#EFECE2] dark:bg-[#252422]';
+            if(mins>=60) intensity='bg-emerald-600';
+            else if(mins>=45) intensity='bg-emerald-500';
+            else if(mins>=25) intensity='bg-emerald-300';
+            else if(mins>0) intensity='bg-emerald-100 dark:bg-emerald-900/40';
+            return {dateStr, intensity, label: `${dateStr}: ${mins}m`};
+          });
+          return null;
+        })()}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card text-left">
             <h4 className="text-xs font-bold text-[#6B6860] uppercase tracking-wider flex items-center gap-1.5"><Timer className="w-3.5 h-3.5 text-[#D97757]" strokeWidth={1.75} /> Habit Streak • Last 28 days</h4>
             <div className="mt-3 grid grid-cols-7 gap-1">
               {Array.from({length:28}).map((_,i)=>{
-                const intensity = Math.random()>0.6 ? (Math.random()>0.5?'bg-emerald-500':'bg-emerald-300') : 'bg-[#EFECE2] dark:bg-[#252422]';
-                return <div key={i} className={`w-full aspect-square rounded-sm ${intensity}`} title={`Day ${i+1}`} />
+                const d=new Date(); d.setDate(d.getDate()-(27-i));
+                const dateStr=d.toISOString().slice(0,10);
+                let mins=0;
+                try{
+                  const raw=localStorage.getItem('scc_focus_sessions_log');
+                  const log: {date:string, minutes:number}[] = raw ? JSON.parse(raw) : [];
+                  mins=log.filter(e=>e.date===dateStr).reduce((a,b)=>a+b.minutes,0);
+                  if(mins===0 && dateStr===new Date().toISOString().slice(0,10) && completedFocusSessions>0) mins=completedFocusSessions*25;
+                }catch{}
+                let intensity='bg-[#EFECE2] dark:bg-[#252422]';
+                if(mins>=60) intensity='bg-emerald-600';
+                else if(mins>=45) intensity='bg-emerald-500';
+                else if(mins>=25) intensity='bg-emerald-300';
+                else if(mins>0) intensity='bg-emerald-200 dark:bg-emerald-900/50';
+                return <div key={i} className={`w-full aspect-square rounded-sm ${intensity}`} title={`${dateStr}: ${mins}m`} />
               })}
             </div>
             <p className="text-[11px] text-[#6B6860] mt-2">{completedFocusSessions} focus sprints • {sprintGoal} daily target</p>

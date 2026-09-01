@@ -513,10 +513,15 @@ export function crossReferenceCanvasWithSheet(
 
   return canvasList.map((canvasItem) => {
     const cName = canvasItem.name.toLowerCase().trim();
+    const cKey = `${canvasItem.courseId || canvasItem.courseName}::${canvasItem.id}`.toLowerCase();
     const matchingSheetItem = (sheetAssignments || []).find((sheetItem) => {
+      if (sheetItem.canvasId && canvasItem.id && sheetItem.canvasId === canvasItem.id) return true;
+      if (sheetItem.canvasId && cKey.includes(sheetItem.canvasId.toLowerCase())) return true;
       const sName = sheetItem.assignmentName.toLowerCase().trim();
       if (!sName || !cName) return false;
-      return sName === cName || sName.includes(cName) || cName.includes(sName);
+      // fallback name match only if course also matches to avoid cross-course collision
+      const sameCourse = !sheetItem.subject || !canvasItem.courseName || sheetItem.subject.toLowerCase() === canvasItem.courseName.toLowerCase();
+      return sameCourse && (sName === cName || sName.includes(cName) || cName.includes(sName));
     });
 
     const isAlreadyInSheet = Boolean(matchingSheetItem);

@@ -53,8 +53,8 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
   switch (id) {
     case 'canvas':
       return (
-        <div className={`${sizeClasses} bg-gradient-to-br from-red-500 to-rose-600 text-white flex items-center justify-center font-bold shadow-md shadow-red-500/20 shrink-0 ${className}`}>
-          <svg className={iconSizes} viewBox="0 0 24 24" fill="currentColor">
+        <div aria-hidden="true" className={`${sizeClasses} bg-gradient-to-br from-red-500 to-rose-600 text-white flex items-center justify-center font-bold shadow-md shadow-red-500/20 shrink-0 ${className}`}>
+          <svg className={iconSizes} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2.5" fill="none" strokeDasharray="3 3" />
             <circle cx="12" cy="12" r="4" fill="white" />
           </svg>
@@ -98,7 +98,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
 
     case 'moodle':
       return (
-        <div className={`${sizeClasses} bg-gradient-to-br from-orange-500 to-amber-600 text-white flex items-center justify-center font-bold shadow-md shadow-orange-500/20 shrink-0 ${className}`}>
+        <div aria-hidden="true" className={`${sizeClasses} bg-gradient-to-br from-orange-500 to-amber-600 text-white flex items-center justify-center font-bold shadow-md shadow-orange-500/20 shrink-0 ${className}`}>
           <span className="font-extrabold tracking-tighter">M</span>
         </div>
       );
@@ -151,8 +151,8 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
 
     case 'desmos-graphing':
       return (
-        <div className={`${sizeClasses} bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-bold shadow-md shadow-emerald-600/20 shrink-0 ${className}`}>
-          <svg className={iconSizes} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <div aria-hidden="true" className={`${sizeClasses} bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center font-bold shadow-md shadow-emerald-600/20 shrink-0 ${className}`}>
+          <svg className={iconSizes} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M3 12h18" />
             <path d="M12 3v18" />
             <path d="M4 17c4-1 6-9 8-9s4 8 8 7" />
@@ -169,8 +169,8 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
 
     case 'geogebra':
       return (
-        <div className={`${sizeClasses} bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold shadow-md shadow-blue-600/20 shrink-0 ${className}`}>
-          <svg className={iconSizes} viewBox="0 0 24 24" fill="currentColor">
+        <div aria-hidden="true" className={`${sizeClasses} bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold shadow-md shadow-blue-600/20 shrink-0 ${className}`}>
+          <svg className={iconSizes} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <circle cx="6" cy="12" r="3" />
             <circle cx="18" cy="12" r="3" />
             <circle cx="12" cy="6" r="3" />
@@ -289,8 +289,8 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
 
     case 'splitscreen':
       return (
-        <div className={`${sizeClasses} bg-gradient-to-br from-slate-600 to-zinc-700 text-white flex items-center justify-center font-bold shadow-md shadow-slate-600/20 shrink-0 ${className}`}>
-          <Columns2 className={iconSizes} />
+        <div aria-hidden="true" className={`${sizeClasses} bg-gradient-to-br from-slate-600 to-zinc-700 text-white flex items-center justify-center font-bold shadow-md shadow-slate-600/20 shrink-0 ${className}`}>
+          <Columns2 className={iconSizes} aria-hidden="true" />
         </div>
       );
 

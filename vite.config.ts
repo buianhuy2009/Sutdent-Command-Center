@@ -30,14 +30,18 @@ export default defineConfig(() => {
         shortcuts: [
           { name: 'New Task', short_name: 'Task', description: 'Create a new assignment', url: '/?newTask=1', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
           { name: 'Focus Mode', short_name: 'Focus', description: 'Start Pomodoro', url: '/?focus=1', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
-          { name: 'Canvas LMS', short_name: 'Canvas', description: 'Open Canvas workspace', url: '/?w=canvas', icons: [{ src: '/icon-192.png', sizes: '192x192' }] }
+          { name: 'Canvas LMS', short_name: 'Canvas', description: 'Open Canvas workspace', url: '/?w=canvas', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
+          { name: 'Create Quiz', short_name: 'Quiz', description: 'Generate practice quiz', url: '/?w=quiz-generator', icons: [{ src: '/icon-192.png', sizes: '192x192' }] },
+          { name: 'Search arXiv', short_name: 'arXiv', description: 'Search research papers', url: '/?w=arxiv', icons: [{ src: '/icon-192.png', sizes: '192x192' }] }
         ],
-        share_target: { action: '/?share-target=1', method: 'GET', params: { title: 'title', text: 'text', url: 'url' } }
+        share_target: { action: '/?share-target=1', method: 'GET', params: { title: 'title', text: 'text', url: 'url' }, enctype: 'multipart/form-data' as any }
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        globPatterns: ['**/*.{js,css,woff2}'],
+        globIgnores: ['**/index.html'],
+        maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           { urlPattern: /^https:\/\/generativelanguage\.googleapis\.com\/.*/i, handler: 'NetworkFirst', options: { cacheName: 'gemini-api', networkTimeoutSeconds: 10, expiration: { maxEntries: 50, maxAgeSeconds: 300 } } },
           { urlPattern: /^https:\/\/www\.googleapis\.com\/.*/i, handler: 'NetworkFirst', options: { cacheName: 'googleapis-cache', networkTimeoutSeconds: 8, expiration: { maxEntries: 100, maxAgeSeconds: 300 } } },
@@ -64,7 +68,8 @@ export default defineConfig(() => {
      build: {
       sourcemap: false,
       reportCompressedSize: true,
-      // brotli size reporting enabled; Vercel serves brotli automatically — chunk ~827k near 4MB limit now compressed
+      cssMinify: true,
+      // brotli size reporting enabled; Vercel serves brotli — warn at 600k to surface 827k risk earlier
       rollupOptions: {
         output: {
           manualChunks: {
@@ -79,7 +84,7 @@ export default defineConfig(() => {
           }
         }
       },
-      chunkSizeWarningLimit: 1000
+      chunkSizeWarningLimit: 600
     },
   };
 });

@@ -1,5 +1,5 @@
-// Simple analytics stub — Plausible/gtag/PostHog hook
-export type AnalyticsEvent = 'canvas_connected' | 'assignment_created' | 'pomodoro_complete' | 'syllabus_parsed' | 'command_executed' | 'focus_session' | 'grade_predicted' | 'page_view';
+// Simple analytics stub — Plausible/gtag/PostHog hook + web-vitals
+export type AnalyticsEvent = 'canvas_connected' | 'assignment_created' | 'pomodoro_complete' | 'syllabus_parsed' | 'command_executed' | 'focus_session' | 'grade_predicted' | 'page_view' | 'web_vital';
 export function trackEvent(event: AnalyticsEvent, props?: Record<string, any>) {
   try {
     // Plausible
@@ -8,9 +8,9 @@ export function trackEvent(event: AnalyticsEvent, props?: Record<string, any>) {
     (window as any).gtag?.('event', event, props);
     // PostHog
     (window as any).posthog?.capture(event, props);
-    // console for dev
+    // Vercel Speed Insights
+    (window as any).va?.track?.(event, props);
     console.debug('[analytics]', event, props);
-    // Persist locally for offline funnel
     const raw = localStorage.getItem('scc_analytics_queue_v1');
     const arr = raw ? JSON.parse(raw) : [];
     arr.push({ event, props, ts: Date.now() });
@@ -19,3 +19,23 @@ export function trackEvent(event: AnalyticsEvent, props?: Record<string, any>) {
   } catch {}
 }
 export function trackPageView(path: string) { trackEvent('page_view', { path }); }
+
+// Web vitals reporter — call from main.tsx
+export function reportWebVitals() {
+  try {
+    // dynamic import web-vitals if available, else fallback to PerformanceObserver
+    import('web-vitals').then(({ onCLS, onINP, onLCP }) => {
+      onCLS((m: any) => trackEvent('web_vital', { name: 'CLS', value: m.value, rating: m.rating }));
+      onINP((m: any) => trackEvent('web_vital', { name: 'INP', value: m.value, rating: m.rating }));
+      onLCP((m: any) => trackEvent('web_vital', { name: 'LCP', value: m.value, rating: m.rating }));
+    }).catch(() => {
+      // fallback PerformanceObserver for LCP
+      try {
+        const po = new PerformanceObserver((list) => {
+          list.getEntries().forEach((e: any) => trackEvent('web_vital', { name: e.name, duration: e.duration }));
+        });
+        po.observe({ type: 'largest-contentful-paint', buffered: true } as any);
+      } catch {}
+    });
+  } catch {}
+}

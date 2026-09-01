@@ -34,19 +34,22 @@ function SyncIndicator({ isRefreshing, lastSyncedAt }: { isRefreshing?: boolean;
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
     const bc = (() => { try { return new BroadcastChannel('scc-sync'); } catch { return null; } })();
-    const updatePending = () => {
+    const updatePending = async () => {
       try {
         const raw = localStorage.getItem('scc_user_assignments_v2');
         const arr = raw ? JSON.parse(raw) : [];
         const localOnly = arr.filter((a: any) => a.source === 'Manual' || !a.sheetRowIndex).length;
-        setPending(localOnly);
+        let queueLen = 0;
+        try { const { db } = await import('../services/db'); queueLen = await db.assignmentsQueue.count(); } catch {}
+        setPending(localOnly + queueLen);
       } catch {}
     };
     updatePending();
     const onStorage = (e: StorageEvent) => { if (e.key === 'scc_user_assignments_v2') updatePending(); };
     window.addEventListener('storage', onStorage);
     bc?.addEventListener('message', updatePending as any);
-    return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); window.removeEventListener('storage', onStorage); bc?.close(); };
+    const iv = setInterval(updatePending, 5000);
+    return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline); window.removeEventListener('storage', onStorage); bc?.close(); clearInterval(iv); };
   }, []);
   // GitHub-style transient Synced 2m ago
   useEffect(() => {
@@ -123,9 +126,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isNarrow, setIsNarrow] = useState(false);
   const [platformKey, setPlatformKey] = useState('⌘K');
   useEffect(() => {
-    // platform detection for search hint
-    const platform = (navigator as any).platform || navigator.userAgent;
-    const isMac = /Mac|iPhone|iPad|iPod/.test(platform);
+    // platform detection via userAgentData preferred
+    const uaData = (navigator as any).userAgentData;
+    const platform = uaData?.platform || (navigator as any).platform || navigator.userAgent;
+    const isMac = /Mac|iPhone|iPad|iPod/.test(platform || '');
     setPlatformKey(isMac ? '⌘K' : 'Ctrl+K');
     const onResize = () => setIsNarrow(window.innerWidth < 1100);
     onResize();
@@ -201,6 +205,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         {!isNarrow && (
           <button
             onClick={() => ambientAudio.cycleTrack()}
+            aria-live="polite"
+            aria-label={`Focus music ${currentTrackInfo.shortLabel}, click to cycle`}
             className={`px-2.5 py-1 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               currentTrack !== 'none'
                 ? 'bg-[#D97757]/10 text-[#D97757] border-[#D97757]/40 shadow-2xs'

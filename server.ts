@@ -11,6 +11,7 @@ import {
   handleExtractSubtasks,
   handleEstimateEffort,
   handleSuggestStudySlots,
+  handleGenerate,
 } from "./src/server/handlers";
 
 async function startServer() {
@@ -29,6 +30,7 @@ async function startServer() {
   app.post("/api/gemini/extract-subtasks", handleExtractSubtasks);
   app.post("/api/gemini/estimate-effort", handleEstimateEffort);
   app.post("/api/gemini/suggest-study-slots", handleSuggestStudySlots);
+  app.post("/api/gemini/generate", handleGenerate);
 
   // Vite middleware setup
   if (process.env.NODE_ENV !== "production") {

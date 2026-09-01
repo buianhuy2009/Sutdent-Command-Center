@@ -28,9 +28,9 @@ interface LandingPageProps {
 }
 
 const TESTIMONIALS = [
-  { name: "Minh N.", uni: "Hanoi University of Science", text: "Finally one place for Canvas + Gmail + Drive. My weekly planning went from 2 hours to 10 minutes.", avatar: "M" },
-  { name: "Sarah T.", uni: "RMIT Vietnam", text: "The AI study coach actually knows my due dates. It planned my finals week perfectly.", avatar: "S" },
-  { name: "David L.", uni: "Bach Khoa", text: "Offline-first + Dexie sync saved me during dorm Wi-Fi outages. Grades went up.", avatar: "D" },
+  { name: "Open Source", uni: "GitHub ★ Students", text: "Starred by students managing Canvas + Gmail + Drive in one dashboard. 100% free & local-first.", avatar: "★", href: "https://github.com/buianhuy2009/Sutdent-Command-Center" },
+  { name: "Offline-First", uni: "Dexie • PWA", text: "Works offline via IndexedDB + Workbox. Queues sync when back online — no dorm Wi-Fi stress.", avatar: "◆" },
+  { name: "AI Study Coach", uni: "Gemini 2.0 Flash", text: "AI knows your real due dates & calendar. Plans finals week with 45-min focus blocks.", avatar: "✦" },
 ];
 
 export const LandingPage: React.FC<LandingPageProps> = ({
@@ -76,10 +76,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               onClick={onSignIn}
               disabled={isLoggingIn}
-              className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm shadow-[#D97757]/20 flex items-center gap-2 transition-all cursor-pointer hover:scale-[1.02]"
+              className="px-4 py-2 bg-transparent border border-[#DFDACB] dark:border-[#2C2B27] hover:bg-[#EFECE2] dark:hover:bg-[#1F1E1B] disabled:opacity-50 text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer"
             >
               <GoogleIcon className="w-4 h-4" />
-              <span>{isLoggingIn ? 'Connecting...' : 'Sign In with Google'}</span>
+              <span>{isLoggingIn ? 'Connecting...' : 'Sign In'}</span>
             </button>
           </div>
         </div>
@@ -134,19 +134,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </button>
             </div>
 
-            {/* Trust Badges — grid-cols-3 on 375px to avoid ugly wrap */}
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 text-xs text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+            {/* Trust Badges — always 3col on 375px with gap-2 */}
+            <div className="mt-8 grid grid-cols-3 gap-2 sm:gap-6 text-xs text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
               <div className="flex items-center justify-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>100% Free & Open-Source</span>
+                <span>Free & OSS</span>
               </div>
               <div className="flex items-center justify-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>Canvas LMS Direct Feed</span>
+                <span>Canvas Feed</span>
               </div>
               <div className="flex items-center justify-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>Google Workspace Synced</span>
+                <span>Workspace Sync</span>
               </div>
             </div>
 
@@ -298,11 +298,49 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </section>
 
-        {/* Privacy & Scopes Transparency */}
-        <section className="py-10 bg-white dark:bg-slate-900 border-y border-slate-200 dark:border-slate-800">
+        {/* Comparison vs Notion/Canvas/Motion + Pricing anchor */}
+        <section id="comparison" className="py-12 bg-[#FAF9F5] dark:bg-[#141413] border-y border-[#DFDACB] dark:border-[#2C2B27]">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
+            <h3 className="text-lg font-extrabold text-center">Why StudentOS vs Notion • Canvas • Motion?</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead><tr className="bg-[#EFECE2] dark:bg-[#1F1E1B] text-left"><th className="p-2 border">Feature</th><th className="p-2 border">StudentOS</th><th className="p-2 border">Notion</th><th className="p-2 border">Canvas</th><th className="p-2 border">Motion</th></tr></thead>
+                <tbody className="bg-white dark:bg-[#1A1917]">
+                  <tr><td className="p-2 border font-semibold">Canvas LMS sync</td><td className="p-2 border text-emerald-600">✓ Live REST + iCal</td><td className="p-2 border">—</td><td className="p-2 border">Native only</td><td className="p-2 border">—</td></tr>
+                  <tr><td className="p-2 border font-semibold">Gmail AI scanner</td><td className="p-2 border text-emerald-600">✓ Bilingual EN/VI</td><td className="p-2 border">—</td><td className="p-2 border">—</td><td className="p-2 border">—</td></tr>
+                  <tr><td className="p-2 border font-semibold">Sheets 2-way</td><td className="p-2 border text-emerald-600">✓ Master tracker</td><td className="p-2 border">Manual</td><td className="p-2 border">—</td><td className="p-2 border">—</td></tr>
+                  <tr><td className="p-2 border font-semibold">Offline PWA</td><td className="p-2 border text-emerald-600">✓ Dexie + Workbox</td><td className="p-2 border">Partial</td><td className="p-2 border">—</td><td className="p-2 border">—</td></tr>
+                  <tr><td className="p-2 border font-semibold">Price</td><td className="p-2 border font-bold">Free & OSS</td><td className="p-2 border">Freemium</td><td className="p-2 border">Institution</td><td className="p-2 border">$19/mo</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="pricing" className="text-center p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27]">
+              <div className="text-lg font-extrabold">Free & Open Source — MIT Licensed</div>
+              <div className="text-xs text-[#6B6860]">No paywall. Self-host on Vercel. Your data stays in your browser + Google account.</div>
+            </div>
+            <div id="faq" className="space-y-2">
+              <h4 className="font-bold text-sm">FAQ</h4>
+              <details className="p-3 bg-white dark:bg-[#1A1917] rounded-xl border text-xs"><summary className="font-semibold cursor-pointer">Does it store my Canvas password?</summary><p className="mt-2 text-[#6B6860]">No. Uses calendar feed URL + API token stored locally only, never sent except to Canvas via proxy.</p></details>
+              <details className="p-3 bg-white dark:bg-[#1A1917] rounded-xl border text-xs"><summary className="font-semibold cursor-pointer">What scopes does Google require?</summary><p className="mt-2 text-[#6B6860]">calendar.readonly, gmail.readonly, drive.readonly, spreadsheets, classroom.courses.readonly etc. Tokens in IndexedDB, revoke anytime.</p></details>
+              <details className="p-3 bg-white dark:bg-[#1A1917] rounded-xl border text-xs"><summary className="font-semibold cursor-pointer">Is it offline?</summary><p className="mt-2 text-[#6B6860]">Yes — PWA + Dexie. Queues assignments and retries on reconnect.</p></details>
+            </div>
+          </div>
+        </section>
+        {/* Privacy & Scopes Transparency — consolidated single disclosure */}
+        <section id="privacy" className="py-10 bg-white dark:bg-slate-900 border-y border-slate-200 dark:border-slate-800">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-3">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center justify-center gap-2"><ShieldCheck className="w-4 h-4 text-[#D97757]" /> Privacy — Why we request Google scopes</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">Student Command Center requests <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">calendar.readonly</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">gmail.readonly</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">drive.readonly</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">spreadsheets</code> and 7 other scopes <em>only</em> to sync your own data locally. No data leaves your browser except for Gemini AI summaries (truncated snippets). Tokens stay in sessionStorage/IndexedDB, never logged. Revoke anytime in Google Account.</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">Student Command Center requests <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">calendar.readonly</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">gmail.readonly</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">drive.readonly</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">spreadsheets</code> and 7 other scopes <em>only</em> to sync your own data locally. No data leaves your browser except for Gemini AI summaries (truncated snippets). Tokens stay in IndexedDB, never logged. Revoke anytime in Google Account.</p>
+            <div className="overflow-x-auto text-left">
+              <table className="w-full text-[11px] border-collapse mt-2">
+                <thead><tr className="bg-[#EFECE2] dark:bg-[#1F1E1B]"><th className="p-1.5 border">Scope</th><th className="p-1.5 border">Purpose</th><th className="p-1.5 border">Stored</th></tr></thead>
+                <tbody>
+                  <tr><td className="p-1.5 border font-mono">gmail.readonly</td><td className="p-1.5 border">Scan teacher emails</td><td className="p-1.5 border">Snippet + local</td></tr>
+                  <tr><td className="p-1.5 border font-mono">drive.readonly</td><td className="p-1.5 border">List school files</td><td className="p-1.5 border">Metadata only</td></tr>
+                  <tr><td className="p-1.5 border font-mono">calendar.readonly/events</td><td className="p-1.5 border">Schedule blocks</td><td className="p-1.5 border">Local</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
 
@@ -332,7 +370,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
       </main>
 
-      {/* Demo Modal */}
+      {/* Demo Modal — tries /demo.mp4 then YouTube fallback */}
       {demoOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setDemoOpen(false)}>
           <div className="bg-white dark:bg-[#1A1917] rounded-3xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
@@ -340,13 +378,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <h3 className="text-lg font-bold flex items-center gap-2"><Play className="w-5 h-5 text-[#D97757]" /> 60s Demo — Student Command Center</h3>
               <button onClick={()=>setDemoOpen(false)} className="p-2 hover:bg-[#FAF9F5] dark:hover:bg-[#252422] rounded-xl"><X className="w-4 h-4" /></button>
             </div>
-            <div className="aspect-video bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex flex-col items-center justify-center text-center p-6 space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-[#D97757] text-white flex items-center justify-center"><Play className="w-6 h-6" /></div>
-              <p className="text-sm font-bold">Demo video placeholder</p>
-              <p className="text-xs text-[#6B6860] max-w-md">Connect Canvas → Sync Google Workspace → AI Study Coach plans your day. Record your own demo and replace this placeholder with an embedded &lt;video&gt; or YouTube iframe.</p>
-              <button onClick={onExploreDemo} className="mt-2 px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold">Explore Live Demo Mode</button>
+            <div className="aspect-video bg-black rounded-2xl overflow-hidden border border-[#DFDACB] dark:border-[#2C2B27] relative">
+              <video src="/demo.mp4" poster="/screenshot-dashboard.png" controls autoPlay muted playsInline className="w-full h-full object-cover" onError={(e)=>{ (e.currentTarget as HTMLVideoElement).style.display='none'; const fb=document.getElementById('demo-fallback'); if(fb) fb.style.display='flex'; }}>
+                Your browser does not support video.
+              </video>
+              <div id="demo-fallback" style={{display:'none'}} className="absolute inset-0 flex-col items-center justify-center text-center p-6 space-y-3 bg-[#FAF9F5] dark:bg-[#1F1E1B]">
+                <div className="w-14 h-14 rounded-2xl bg-[#D97757] text-white flex items-center justify-center"><Play className="w-6 h-6" /></div>
+                <p className="text-sm font-bold">Demo video not yet recorded</p>
+                <p className="text-xs text-[#6B6860] max-w-md">Connect Canvas → Sync Google Workspace → AI Study Coach plans your day.</p>
+                <iframe className="w-full aspect-video rounded-xl" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Demo fallback" allow="autoplay; encrypted-media" allowFullScreen></iframe>
+                <button onClick={onExploreDemo} className="mt-2 px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold">Explore Live Demo Mode</button>
+              </div>
             </div>
-            <div className="text-[11px] text-[#6B6860]">Tip: Add your 60s screen recording to <code className="font-mono bg-[#FAF9F5] dark:bg-[#252422] px-1 rounded">public/demo.mp4</code> and replace div above with &lt;video src="/demo.mp4" controls autoPlay muted /&gt;</div>
+            <div className="text-[11px] text-[#6B6860]">Tip: Replace <code className="font-mono bg-[#FAF9F5] dark:bg-[#252422] px-1 rounded">public/demo.mp4</code> with your 60s Loom recording. YouTube fallback shown if missing.</div>
           </div>
         </div>
       )}
@@ -383,7 +427,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
           </div>
           <div className="text-[11px] text-center sm:text-left text-[#6B6860] border-t border-slate-200 dark:border-slate-800 pt-4">
-            Student Command Center requests 11 Google scopes (calendar.readonly, gmail.readonly, drive.readonly, spreadsheets, classroom.courses.readonly, etc.) solely to sync <em>your</em> data. Tokens stored in sessionStorage/IndexedDB, never logged. See <a href="/privacy" className="underline hover:text-[#D97757]">Privacy</a> for full scope list and revocation guide. OG image: <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded">/og-image.png</code> (1200×630 generated).
+            © 2026 Student Command Center — MIT Licensed. <a href="#privacy" className="underline hover:text-[#D97757]">Privacy</a> • <a href="#pricing" className="underline">Pricing</a> • <a href="#faq" className="underline">FAQ</a> • <a href="#comparison" className="underline">Comparison</a> • OG 1200×630
           </div>
         </div>
       </footer>

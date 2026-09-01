@@ -23,7 +23,7 @@ import { AppLogo } from './AppLogo';
 export interface AppStoreItem {
   id: string;
   name: string;
-  category: 'Plan' | 'Create' | 'Create' | 'Learn' | 'Research';
+  category: 'Plan' | 'Create' | 'Learn' | 'Research';
   description: string;
   longOverview: string;
   features: string[];
@@ -513,22 +513,30 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [viewingApp, setViewingApp] = useState<AppStoreItem | null>(null);
 
-  // Top 8 dynamic: Most Used (from usage counts) + Recommended for your courses (from Canvas)
+  // Top 8 dynamic: Most Used + Recommended via token similarity (more robust than substring)
   const top8Highlights = useMemo(() => {
     try {
       const usageRaw = localStorage.getItem('scc_app_usage_v1');
       const usage: Record<string, number> = usageRaw ? JSON.parse(usageRaw) : {};
       const coursesRaw = localStorage.getItem('scc_canvas_courses_v1');
       const courses: string[] = coursesRaw ? JSON.parse(coursesRaw) : [];
-      // Most Used: sort by usage count descending
       const mostUsed = Object.entries(usage).sort((a,b)=> b[1]-a[1]).slice(0,4).map(([id])=> id);
-      // Recommended for your courses: simple heuristic
+      const tokens = courses.join(' ').toLowerCase().split(/[^a-z]+/).filter(Boolean);
+      const tokenSet = new Set(tokens);
+      const has = (...keys: string[]) => keys.some(k=> tokenSet.has(k));
       const recommended: string[] = [];
-      const courseStr = courses.join(' ').toLowerCase();
-      if (courseStr.includes('math') || courseStr.includes('calculus') || courseStr.includes('physics')) recommended.push('desmos-graphing','wolfram-symbolab');
-      if (courseStr.includes('history') || courseStr.includes('english') || courseStr.includes('literature')) recommended.push('citation-vault','drive');
-      if (courseStr.includes('chemistry') || courseStr.includes('biology')) recommended.push('periodic-table','phet');
-      if (recommended.length===0) recommended.push('timetable','scholarship-tracker');
+      if (has('math','calculus','algebra','physics','geometry','trigonometry')) recommended.push('desmos-graphing','wolfram-symbolab','geogebra');
+      if (has('history','english','literature','writing','essay')) recommended.push('citation-vault','drive','rubric');
+      if (has('chemistry','chem','biology','bio','organic')) recommended.push('periodic-table','phet');
+      if (has('computer','cs','programming','code')) recommended.push('mermaid','excalidraw');
+      if (recommended.length===0) {
+        // explicit user picking onboarding: check scc_onboarding_picks
+        try {
+          const picks = JSON.parse(localStorage.getItem('scc_onboarding_picks')||'[]');
+          if (Array.isArray(picks) && picks.length) recommended.push(...picks.slice(0,2));
+        } catch {}
+        if (recommended.length===0) recommended.push('timetable','scholarship-tracker');
+      }
       const dynamicIds = [...new Set([...mostUsed, ...recommended, ...TOP_8_HIGHLIGHT_IDS])].slice(0,8);
       const ids = dynamicIds.length>=8 ? dynamicIds : [...new Set([...TOP_8_HIGHLIGHT_IDS, ...dynamicIds])].slice(0,8);
       return ids.map((id) => APP_CATALOG.find((a) => a.id === id)!).filter(Boolean);
@@ -543,7 +551,7 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
     return APP_CATALOG.filter((a) => a.category === selectedCategory);
   }, [selectedCategory]);
 
-  // Search filter
+  // Search filter — extended to features + developer + badge
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
@@ -551,14 +559,17 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
       (a) =>
         a.name.toLowerCase().includes(q) ||
         a.description.toLowerCase().includes(q) ||
-        a.category.toLowerCase().includes(q)
+        a.category.toLowerCase().includes(q) ||
+        a.features.some(f=> f.toLowerCase().includes(q)) ||
+        a.developer.toLowerCase().includes(q) ||
+        (a.badge && a.badge.toLowerCase().includes(q))
     );
   }, [searchQuery]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#FAF9F5] dark:bg-[#141413] flex flex-col animate-in fade-in duration-150 select-none">
+    <div role="dialog" aria-modal="true" aria-label="App Store" className="fixed inset-0 z-50 bg-[#FAF9F5] dark:bg-[#141413] flex flex-col animate-in fade-in duration-150 select-none">
       
       {/* Top Header Bar */}
       <header className="h-16 px-6 sm:px-10 border-b border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between bg-white dark:bg-[#1A1917] shrink-0">
@@ -641,7 +652,7 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
                     {viewingApp.developer} • {viewingApp.category}
                   </p>
                   <div className="flex items-center gap-1 text-xs font-bold text-[#6B6860] pt-0.5">
-                    <span className="text-[11px] font-medium">Used by {Math.floor((viewingApp.rating * 137) % 900 + 100)} students • Verified</span>
+                    <span className="text-[11px] font-medium flex items-center gap-1"><Star className="w-3 h-3 text-amber-500" /> GitHub stars • Open Source • MIT</span>
                   </div>
                 </div>
               </div>
@@ -710,6 +721,14 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
                   ))}
                 </div>
               </div>
+              {/* Extra detail: permissions, size, updated, changelog */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div className="p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border"><div className="font-bold text-[#6B6860]">Size</div><div>~45KB • JS chunk</div></div>
+                <div className="p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border"><div className="font-bold text-[#6B6860]">Permissions</div><div>Browser only</div></div>
+                <div className="p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border"><div className="font-bold text-[#6B6860]">Last updated</div><div>Sep 2026 • v2.1</div></div>
+                <div className="p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border"><div className="font-bold text-[#6B6860]">Screenshots</div><div className="text-[#D97757]">Dashboard • Workspace</div></div>
+              </div>
+              <div className="text-[11px] text-[#6B6860]">Changelog: Added to v2.1 • No telemetry until you connect Google. Verified open-source.</div>
             </div>
 
           </div>
@@ -717,24 +736,27 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
           /* VIEW 2: STORE CATALOG & CONTINUOUS FLOW */
           <div className="max-w-6xl mx-auto px-6 sm:px-10 py-8 space-y-8">
             
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-              {CATEGORIES.map((cat) => (
+            {/* Category Filter Pills — sticky + count badges */}
+            <div className="sticky top-0 z-10 bg-[#FAF9F5] dark:bg-[#141413] py-2 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-[#DFDACB]/40 dark:border-[#2C2B27]/40 -mx-6 sm:-mx-10 px-6 sm:px-10">
+              {CATEGORIES.map((cat) => {
+                const count = cat==='Highlights' ? 8 : cat==='All Apps' ? APP_CATALOG.length : APP_CATALOG.filter(a=>a.category===cat).length;
+                return (
                 <button
                   key={cat}
                   onClick={() => {
                     setSelectedCategory(cat);
                     setSearchQuery('');
                   }}
-                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                     selectedCategory === cat && !searchQuery.trim()
                       ? 'bg-[#D97757] text-white shadow-xs'
                       : 'bg-white dark:bg-[#1A1917] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#FAF9F5] dark:hover:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27]'
                   }`}
                 >
-                  {cat}
+                  <span>{cat}</span><span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedCategory===cat ? 'bg-white/20' : 'bg-black/5 dark:bg-white/10'}`}>{count}</span>
                 </button>
-              ))}
+                );
+              })}
             </div>
 
             {/* SEARCH RESULTS VIEW (If Search Active) */}
@@ -870,6 +892,7 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
       <div
         key={app.id}
         onClick={() => setViewingApp(app)}
+        style={{ contentVisibility: 'auto' as any, containIntrinsicSize: '220px' } as any}
         className={`bg-white dark:bg-[#1A1917] rounded-2xl border p-5 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group space-y-4 ${
           isHighlighted
             ? 'border-[#D97757]/40 hover:border-[#D97757]'

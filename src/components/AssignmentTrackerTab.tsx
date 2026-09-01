@@ -829,10 +829,11 @@ ${filteredAssignments.slice(0,8).map(a => `    section ${a.subject}
 
             <form onSubmit={handleCreateAssignment} className="space-y-3 text-xs">
               <div>
-                <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
+                <label htmlFor="assign-title" className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
                   Assignment Title
                 </label>
                 <input
+                  id="assign-title"
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
@@ -844,8 +845,9 @@ ${filteredAssignments.slice(0,8).map(a => `    section ${a.subject}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">Subject</label>
+                  <label htmlFor="assign-subject" className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">Subject</label>
                   <input
+                    id="assign-subject"
                     type="text"
                     value={newSubject}
                     onChange={(e) => setNewSubject(e.target.value)}
@@ -854,8 +856,9 @@ ${filteredAssignments.slice(0,8).map(a => `    section ${a.subject}
                 </div>
 
                 <div>
-                  <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">Due Date</label>
+                  <label htmlFor="assign-due" className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">Due Date</label>
                   <input
+                    id="assign-due"
                     type="date"
                     value={newDueDate}
                     onChange={(e) => setNewDueDate(e.target.value)}
@@ -865,8 +868,9 @@ ${filteredAssignments.slice(0,8).map(a => `    section ${a.subject}
               </div>
 
               <div>
-                <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">Priority</label>
+                <label htmlFor="assign-priority" className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">Priority</label>
                 <select
+                  id="assign-priority"
                   value={newPriority}
                   onChange={(e) => setNewPriority(e.target.value as PriorityLevel)}
                   className="w-full px-3 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#D97757]"
@@ -878,8 +882,9 @@ ${filteredAssignments.slice(0,8).map(a => `    section ${a.subject}
               </div>
 
               <div>
-                <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">Notes (Optional)</label>
+                <label htmlFor="assign-notes" className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">Notes (Optional)</label>
                 <textarea
+                  id="assign-notes"
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
                   placeholder="Rubric notes or instructions..."

@@ -10,6 +10,7 @@ import { DashboardHome } from './components/DashboardHome';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useBadgeCounts } from './hooks/useBadgeCounts';
 import { useDebouncedCallback } from './hooks/useDebouncedCallback';
+import { initTheme, setTheme, syncDarkToTheme } from './services/theme';
 const AcademicRadarWorkspace = lazy(() => import('./components/workspaces/AcademicRadarWorkspace').then(m => ({ default: m.AcademicRadarWorkspace })));
 const StemLabWorkspace = lazy(() => import('./components/workspaces/StemLabWorkspace').then(m => ({ default: m.StemLabWorkspace })));
 const CreationStudioWorkspace = lazy(() => import('./components/workspaces/CreationStudioWorkspace').then(m => ({ default: m.CreationStudioWorkspace })));
@@ -200,37 +201,39 @@ function saveRawEmails(list: EmailMessage[]) {
 }
 
 export default function App() {
-  // Theme state
+  // Theme state — unified via src/services/theme.ts (single source)
   const [darkMode, setDarkMode] = useState<boolean>(() => {
-    return (
-      localStorage.getItem('scc_theme') === 'dark' ||
-      (!('scc_theme' in localStorage) &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches)
-    );
+    try {
+      const saved = localStorage.getItem('scc_theme');
+      if (saved) return saved === 'dark';
+      const dataTheme = document.documentElement.getAttribute('data-theme');
+      if (['nord','dracula','catppuccin','cyberpunk','midnight','ocean','forest'].includes(dataTheme||'')) return true;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch { return false; }
   });
 
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('scc_theme', 'dark');
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#1A1917');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('scc_theme', 'light');
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#D97757');
-    }
-    document.documentElement.style.colorScheme = darkMode ? 'dark' : 'light';
+    // unified via theme service
+    syncDarkToTheme(darkMode);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', darkMode ? '#1A1917' : '#D97757');
+    try {
+      const cur = localStorage.getItem('scc_color_theme_v1');
+      if (!cur || cur==='parchment') {
+        const next = darkMode ? 'midnight' : 'linen';
+        if (!cur) {
+          localStorage.setItem('scc_color_theme_v1', next);
+          document.documentElement.setAttribute('data-theme', next);
+        }
+      }
+    } catch {}
   }, [darkMode]);
 
-  // Initialize Density & Palette Theme attributes
+  // Initialize Density & Palette Theme attributes via theme service
   useEffect(() => {
+    initTheme();
     try {
       const savedDensity = localStorage.getItem('scc_ui_density_v1') || 'comfortable';
       document.documentElement.setAttribute('data-density', savedDensity);
-
-      const savedTheme = localStorage.getItem('scc_color_theme_v1') || 'parchment';
-      document.documentElement.setAttribute('data-theme', savedTheme);
-
       const autoSystem = localStorage.getItem('scc_auto_system_theme_v1') === 'true';
       if (autoSystem) {
         const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -241,29 +244,56 @@ export default function App() {
     }
   }, []);
 
-  // Live clock moved from DashboardHome to Navbar (saves 60px above fold)
+  // Live clock moved from DashboardHome to Navbar (throttled to 60s unless FocusTimer active)
   const [navClock, setNavClock] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   const [navDate, setNavDate] = useState(() => new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date()));
   useEffect(() => {
-    const id = setInterval(() => {
+    const update = () => {
       setNavClock(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       setNavDate(new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date()));
-    }, 1000);
+    };
+    update();
+    const id = setInterval(update, 60000);
     return () => clearInterval(id);
   }, []);
 
-  // PWA install prompt + beforeinstallprompt handling
+  // PWA install prompt + beforeinstallprompt handling — now renders Install banner
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [installDismissedUntil, setInstallDismissedUntil] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem('scc_install_dismissed_until')||'0',10); } catch { return 0; }
+  });
   useEffect(() => {
-    const onBeforeInstall = (e: any) => { e.preventDefault(); setDeferredPrompt(e); setShowInstallBtn(true); };
+    const onBeforeInstall = (e: any) => {
+      e.preventDefault();
+      if (Date.now() < installDismissedUntil) return;
+      setDeferredPrompt(e);
+      setShowInstallBtn(true);
+    };
     const onAppInstalled = () => { setShowInstallBtn(false); setDeferredPrompt(null); };
     window.addEventListener('beforeinstallprompt', onBeforeInstall);
     window.addEventListener('appinstalled', onAppInstalled);
     return () => { window.removeEventListener('beforeinstallprompt', onBeforeInstall); window.removeEventListener('appinstalled', onAppInstalled); };
+  }, [installDismissedUntil]);
+
+  // Dexie migration single source — storage sprawl fix
+  useEffect(() => {
+    (async () => {
+      try {
+        const { migrateLocalStorageToDexie } = await import('./services/db');
+        await migrateLocalStorageToDexie();
+      } catch {}
+    })();
   }, []);
 
 
+
+  // Dynamic title for SEO per workspace
+  useEffect(() => {
+    const labelMap: Record<string,string> = { dashboard:'Dashboard', canvas:'Canvas LMS', radar:'Daily Schedule', tracker:'Assignment Tracker', gmail:'Gmail AI', drive:'Google Drive', splitscreen:'Split Screen' };
+    const label = labelMap[activeTab] || activeTab || 'Dashboard';
+    document.title = `StudentOS — ${label} | Canvas + Workspace Academic OS`;
+  }, [activeTab]);
 
   // Auth & User
   const [user, setUser] = useState<User | null>(null);
@@ -481,12 +511,17 @@ export default function App() {
   useEffect(() => {
     try {
       localStorage.setItem('scc_reduced_motion', String(reducedMotion));
+      if (reducedMotion) document.documentElement.classList.add('reduce-motion');
+      else document.documentElement.classList.remove('reduce-motion');
+      document.documentElement.style.setProperty('--motion-reduce', reducedMotion ? '1' : '0');
     } catch {}
   }, [reducedMotion]);
 
   useEffect(() => {
     try {
       localStorage.setItem('scc_high_contrast', String(highContrast));
+      if (highContrast) document.documentElement.classList.add('high-contrast');
+      else document.documentElement.classList.remove('high-contrast');
     } catch {}
   }, [highContrast]);
 
@@ -626,18 +661,20 @@ export default function App() {
       });
     });
 
-    // 3. Activity Tier (Discussion replies)
-    list.push({
-      id: 'activity-discussion-demo',
-      tier: 'activity',
-      title: '[Demo] Discussion Reply: Peer feedback in AP Chemistry Group',
-      description: 'Minh Nguyen replied to your comment on Lab 3 topic.',
-      link: '#',
-      source: 'Canvas',
-    });
+    // 3. Activity Tier (Discussion replies) — gated behind isDemoMode
+    if (isDemoMode) {
+      list.push({
+        id: 'activity-discussion-demo',
+        tier: 'activity',
+        title: '[Demo] Discussion Reply: Peer feedback in AP Chemistry Group',
+        description: 'Minh Nguyen replied to your comment on Lab 3 topic.',
+        link: '#',
+        source: 'Canvas',
+      });
+    }
 
     return list;
-  }, [canvasAssignments, recentFiles, assignments]);
+  }, [canvasAssignments, recentFiles, assignments, isDemoMode]);
 
   // Modals & Panels
   const [quickDraftModalOpen, setQuickDraftModalOpen] = useState(false);
@@ -682,7 +719,7 @@ export default function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  // Share target ?share-target=1 handling → create assignment (after addToast defined)
+  // Share target ?share-target=1 handling → create assignment or PDF/image to PdfReaderWorkspace
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -690,19 +727,33 @@ export default function App() {
         const title = params.get('title') || '';
         const text = params.get('text') || '';
         const url = params.get('url') || '';
-        const name = title || text.slice(0, 80) || url || 'Shared note';
-        const assignmentName = name.slice(0, 120);
-        const notes = [text, url].filter(Boolean).join('\n');
-        setTimeout(() => {
-          setAssignments(prev => [...prev, { id: `share-${Date.now()}`, assignmentName, subject: 'General', dueDate: new Date(Date.now()+86400000*3).toISOString().split('T')[0], priority: 'Med', status: 'Not Started', source: 'Manual', notes }]);
-          addToast({ type: 'success', title: 'Shared content saved', message: `Created task from share: "${assignmentName}"` });
-        }, 800);
+        const isPdf = url.toLowerCase().endsWith('.pdf') || title.toLowerCase().endsWith('.pdf');
+        const isImage = /\.(png|jpe?g|gif|webp)$/i.test(url) || /\.(png|jpe?g|gif|webp)$/i.test(title);
+        if (isPdf || isImage) {
+          try { localStorage.setItem('scc_shared_file_url', url || text); } catch {}
+          setTimeout(() => {
+            handleTabTransition('pdf-reader');
+            addToast({ type: 'info', title: 'Shared file opened', message: isPdf ? 'PDF opened in Reader' : 'Image shared' });
+          }, 500);
+        } else {
+          const name = title || text.slice(0, 80) || url || 'Shared note';
+          const assignmentName = name.slice(0, 120);
+          const notes = [text, url].filter(Boolean).join('\n');
+          setTimeout(() => {
+            setAssignments(prev => [...prev, { id: `share-${Date.now()}`, assignmentName, subject: 'General', dueDate: new Date(Date.now()+86400000*3).toISOString().split('T')[0], priority: 'Med', status: 'Not Started', source: 'Manual', notes }]);
+            addToast({ type: 'success', title: 'Shared content saved', message: `Created task from share: "${assignmentName}"` });
+          }, 800);
+        }
         window.history.replaceState({}, '', window.location.pathname);
+      }
+      // also handle file share via POST (if service worker forwards)
+      if (params.get('fileShared') === '1') {
+        handleTabTransition('pdf-reader');
       }
     } catch {}
   }, [addToast]);
 
-  // Offline queue retry with exponential backoff via Dexie + navigator.onLine
+  // Offline queue retry with exponential backoff via Dexie + navigator.onLine + Background Sync
   useEffect(() => {
     const retryQueue = async () => {
       if (!navigator.onLine) return;
@@ -713,16 +764,34 @@ export default function App() {
         if (!token || !masterSheetId) return;
         for (const item of queued) {
           try {
-            await appendAssignmentToSheet(token, masterSheetId, item);
+            const anyItem: any = item;
+            if (anyItem._op === 'update' && anyItem.sheetRowIndex) {
+              await updateAssignmentInSheet(token, masterSheetId, anyItem.sheetRowIndex, anyItem);
+            } else if (anyItem._op === 'delete' && anyItem.sheetRowIndex) {
+              // delete not yet implemented on server — fallback to syncAll
+              await syncAllAssignmentsToSheet(token, masterSheetId, assignments);
+            } else {
+              await appendAssignmentToSheet(token, masterSheetId, item);
+            }
             await db.assignmentsQueue.delete(item.id);
           } catch (e) { console.warn('Queue retry failed', e); }
         }
       } catch {}
     };
     window.addEventListener('online', retryQueue);
+    // Background Sync API if available
+    try {
+      if ('serviceWorker' in navigator && 'SyncManager' in (window as any)) {
+        navigator.serviceWorker.ready.then((reg: any) => {
+          if (reg.sync) reg.sync.register('scc-queue-sync').catch(()=>{});
+        });
+      }
+    } catch {}
+    const onSyncMessage = (e: MessageEvent) => { if ((e.data as any)?.type === 'SYNC_QUEUE') retryQueue(); };
+    navigator.serviceWorker?.addEventListener('message', onSyncMessage as any);
     const iv = setInterval(retryQueue, 30000);
-    return () => { window.removeEventListener('online', retryQueue); clearInterval(iv); };
-  }, [masterSheetId]);
+    return () => { window.removeEventListener('online', retryQueue); navigator.serviceWorker?.removeEventListener('message', onSyncMessage as any); clearInterval(iv); };
+  }, [masterSheetId, assignments]);
 
   const handleExecuteAgentAction = useCallback((action: AgentAction) => {
     switch (action.type) {
@@ -1149,7 +1218,21 @@ export default function App() {
 
       const items = await fetchSheetAssignments(token, sheet.spreadsheetId);
       if (items && items.length > 0) {
-        setAssignments(items);
+        // Merge not replace: preserve manual tasks not in sheet, handle conflict via updatedAt
+        setAssignments(prev => {
+          if (!prev.length) return items;
+          const sheetIds = new Set(items.map((x:any)=> x.id));
+          const sheetNames = new Set(items.map((x:any)=> x.assignmentName.toLowerCase().trim()));
+          const manualOnly = prev.filter(p => !sheetIds.has(p.id) && !sheetNames.has(p.assignmentName.toLowerCase().trim()));
+          // conflict resolution: last write wins via updatedAt if exists
+          const merged = [...items];
+          // if sheet empty previously but manual exists, keep manualOnly
+          if (items.length === 0 && manualOnly.length) return prev;
+          return [...merged, ...manualOnly];
+        });
+      } else if (items && items.length === 0) {
+        // sheet empty -> do NOT overwrite existing manual tasks
+        console.warn('Sheet empty, preserving local assignments');
       }
       setSheetError(null);
       setSheetApiInfo(null);
@@ -1986,6 +2069,7 @@ export default function App() {
   // reducedMotion already handled via CSS prefers-reduced-motion + index.css; MotionConfig not required (motion 12 export issue avoided)
   return (
     <div className="h-screen max-h-screen overflow-hidden bg-[#FAF9F5] dark:bg-[#141413] text-[#141413] dark:text-[#FAF9F5] transition-colors flex flex-col font-sans selection:bg-[#D97757] selection:text-white">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-white dark:focus:bg-[#1A1917] focus:border focus:rounded-xl">Skip to content</a>
       {/* Demo Mode Top Alert */}
       {!user && isDemoMode && (
         <div className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white px-4 py-2 text-xs font-semibold flex items-center justify-between shadow-xs z-50 shrink-0">
@@ -2476,6 +2560,7 @@ export default function App() {
                       onOpenStudyPlan={() => setIsStudyPlanOpen(true)}
                       calendarEvents={calendarEvents}
                       emailAlerts={emailAlerts}
+                      isLoadingEvents={isLoadingEvents}
                     />
                   </div>
                 )}
@@ -2763,14 +2848,27 @@ export default function App() {
         onClose={() => setIsIntroTourOpen(false)}
       />
 
-      {/* Feedback widget + PWA install prompt */}
+      {/* Feedback widget + PWA install prompt — persistent banner with 7-day dismiss */}
       <FeedbackWidget />
-      {showInstallBtn && (
-        <button onClick={async()=>{
-          if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome==='accepted') trackEvent('pwa_install_accepted'); setShowInstallBtn(false); setDeferredPrompt(null); }
-        }} className="fixed bottom-4 right-4 z-30 px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-2xl text-xs font-bold shadow-lg">
-          Install StudentOS
-        </button>
+      {showInstallBtn && deferredPrompt && (
+        <div className="fixed bottom-4 right-4 z-30 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl shadow-xl p-3 flex items-center gap-3 animate-in slide-in-from-bottom-2">
+          <div className="w-8 h-8 rounded-xl bg-[#D97757] text-white flex items-center justify-center font-bold text-sm">S</div>
+          <div className="text-left">
+            <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">Install StudentOS</div>
+            <div className="text-[11px] text-[#6B6860]">Offline + 1-tap access</div>
+          </div>
+          <button onClick={async()=>{
+            if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome==='accepted') trackEvent('pwa_install_accepted'); setShowInstallBtn(false); setDeferredPrompt(null); }
+          }} className="px-3 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold shadow-xs">
+            Install
+          </button>
+          <button onClick={()=>{
+            const until=Date.now()+7*86400000;
+            try{ localStorage.setItem('scc_install_dismissed_until', String(until)); }catch{}
+            setInstallDismissedUntil(until);
+            setShowInstallBtn(false);
+          }} className="p-1 text-[#6B6860] hover:text-[#141413] text-xs">✕</button>
+        </div>
       )}
       {/* Toast Notification Container — pauseOnHover + undo */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} onUndo={(id:string)=>{

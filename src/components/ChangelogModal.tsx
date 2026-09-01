@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Award, Sparkles, BookOpen, Layers, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.1.0';
+export const CURRENT_VERSION = '2.2.0';
 
 interface VersionRelease {
   version: string;
@@ -13,6 +13,27 @@ interface VersionRelease {
 }
 
 const RELEASES: VersionRelease[] = [
+  {
+    version: '2.2.0',
+    date: 'September 02, 2026',
+    title: 'Audit 2.2 — P0 Ship This Week + Design, IA, Perf, A11y, PWA, Data, AI Split',
+    badge: 'Latest Update',
+    highlights: [
+      'P0: duplicate union fixed to Plan/Create/Learn/Research, Gemini /api/gemini/generate handler added (was 404), Canvas proxy now 400 on non-allowlist host, PWA icons generated (192/512/apple-touch + screenshots), Install banner now renders with 7-day dismiss, Dashboard double-import deduped, streak now persisted via scc_focus_sessions_log + scc_streak_history, vite deduped from deps, workbox globPatterns index.html deduped + 2MB limit + offline fallback, dark-mode unified via theme.ts',
+      'Design: density extended to p-4/p-5/gap-4, glass blur @supports fallback + 8px on mobile, will-change removed (only on animate), terracotta reserved for primary CTA, 8-theme picker with swatches (nord/dracula/catppuccin/cyberpunk), cq-container applied to Dashboard & Tracker, micro-borders via data-card lint, font-display swap + preload, timeline fallback via IntersectionObserver, iOS zoom guard respects compact',
+      'Landing: testimonials replaced with GitHub stars, demo placeholder → /demo.mp4 + YouTube fallback, trust badges 3col gap-2 Free & OSS, privacy consolidated + scope table + comparison/pricing/FAQ sections, OG width/height/alt + aggregateRating + featureList, title per workspace, header CTA ghosted to 1 primary',
+      'IA: Sidebar aria-current page, tooltips group-focus-visible, badges semantic violet/amber/emerald, Recent consolidated to scc_recent_tabs_v1 + usage, pinned single source via scc_pinned_apps_v2 persist, Navbar Music aria-live, SyncIndicator now Dexie queue + Manual, Demo notification gated, CommandPalette Function() replaced with shunting-yard safeEval, ShortcutsModal generates from APP_CATALOG, skip link + main#main-content, userAgentData platform',
+      'Dashboard: Today Plan overdue/due-today grouping, Personalize open persistence, vibe glow /25 dark, pomodoro clamp Math.max(1), isLoading skeleton for Academic Overview, NASA cached + IntersectionObserver lazy, quote shuffle excludes current',
+      'App Store: synthetic rating replaced with GitHub stars, top8 token similarity + onboarding picks fallback, content-visibility auto, sticky category nav + count badges, search now features/developer/badge, detail adds size/permissions/updated/screenshots/changelog',
+      'Perf: vite cssMinify lightningcss, chunkWarning 600 to surface 827k risk, Dexie assignmentsQueue typed QueuedAssignment + sheetRowIndex index, web-vitals reportWebVitals + Speed Insights hook',
+      'A11y: high-contrast + reduce-motion wired to document.documentElement class, dialogs role=dialog aria-modal, CommandPalette focus trap Tab cycle, AppLogo aria-hidden, AssignmentTracker labels htmlFor, Sidebar rail not extra tabIndex',
+      'SEO: sitemap 38 URLs (37 apps + /) with lastmod daily, robots Disallow share-target/newTask/focus, title StudentOS — {tab}, hreflang en/vi, offline.html fallback',
+      'PWA/Data/AI: offline.html + offlineFallback, Background Sync queue update/delete + reg.sync, share_target file → pdf-reader, shortcuts Create Quiz + arXiv, Canvas crossReference key by canvasId+courseId, Sheets merge not replace, updatedAt + repeats RRULE, migrateLocalStorageToDexie called, Gemini split into gemini/client|prompts|rateLimiter|providers, server token bucket + daily quota',
+    ],
+    details: [
+      'Full audit fixes from playbook 0-14 applied surgically; verification via npm run build passed, PWA icons generated via Pillow, offline.html added, sitemap regenerated via Python, canvas proxy now strict 400, gemini generate route added to both Express and Vercel api.',
+    ]
+  },
   {
     version: '2.1.0',
     date: 'September 02, 2026',

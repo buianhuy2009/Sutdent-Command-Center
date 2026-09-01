@@ -42,6 +42,7 @@ import {
   getClientGroqApiKey,
   setClientGroqApiKey,
 } from '../services/gemini';
+import { setTheme } from '../services/theme';
 
 export interface ShortcutSettings {
   masterEnabled: boolean;
@@ -135,12 +136,12 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   const [geminiTestStatus, setGeminiTestStatus] = useState<'idle' | 'success' | 'failed'>('idle');
   const [geminiStatusMsg, setGeminiStatusMsg] = useState('');
 
-  // UI Density & Themes
+  // UI Density & Themes — expose all 8 themes with preview swatches
   const [density, setDensity] = useState<'compact' | 'comfortable' | 'spacious'>(() => {
     return (localStorage.getItem('scc_ui_density_v1') as any) || 'comfortable';
   });
-  const [colorTheme, setColorTheme] = useState<'parchment' | 'midnight' | 'ocean' | 'forest'>(() => {
-    return (localStorage.getItem('scc_color_theme_v1') as any) || 'parchment';
+  const [colorTheme, setColorTheme] = useState<string>(() => {
+    return (localStorage.getItem('scc_color_theme_v1') as any) || 'linen';
   });
   const [autoSystemTheme, setAutoSystemTheme] = useState<boolean>(() => {
     return localStorage.getItem('scc_auto_system_theme_v1') === 'true';
@@ -185,10 +186,9 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
     document.documentElement.setAttribute('data-density', newDensity);
   };
 
-  const handleThemeChange = (newTheme: 'parchment' | 'midnight' | 'ocean' | 'forest') => {
+  const handleThemeChange = (newTheme: string) => {
     setColorTheme(newTheme);
-    localStorage.setItem('scc_color_theme_v1', newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
+    setTheme(newTheme as any);
   };
 
   const handleAutoSystemThemeChange = (val: boolean) => {
@@ -777,10 +777,14 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
-                      { id: 'parchment', name: 'Warm Parchment', color: 'bg-[#FAF9F5] text-[#141413] border-[#DFDACB]' },
-                      { id: 'midnight', name: 'Midnight Slate', color: 'bg-[#0A0A0C] text-white border-zinc-700' },
-                      { id: 'ocean', name: 'Ocean Navy', color: 'bg-[#0B132B] text-white border-blue-800' },
-                      { id: 'forest', name: 'Forest Calm', color: 'bg-[#061A14] text-white border-emerald-800' },
+                      { id: 'linen', name: 'Warm Parchment', color: 'bg-[#FAF9F5] text-[#141413] border-[#DFDACB]', accent:'bg-[#D97757]' },
+                      { id: 'midnight', name: 'Midnight Slate', color: 'bg-[#0A0A0C] text-white border-zinc-700', accent:'bg-[#6366F1]' },
+                      { id: 'ocean', name: 'Ocean Navy', color: 'bg-[#0B132B] text-white border-blue-800', accent:'bg-[#0EA5E9]' },
+                      { id: 'forest', name: 'Forest Calm', color: 'bg-[#061A14] text-white border-emerald-800', accent:'bg-[#10B981]' },
+                      { id: 'nord', name: 'Nord Frost', color: 'bg-[#2E3440] text-white border-slate-600', accent:'bg-[#88C0D0]' },
+                      { id: 'dracula', name: 'Dracula', color: 'bg-[#282A36] text-white border-[#6272A4]', accent:'bg-[#FF79C6]' },
+                      { id: 'catppuccin', name: 'Catppuccin', color: 'bg-[#1E1E2E] text-white border-[#45475A]', accent:'bg-[#CBA6F7]' },
+                      { id: 'cyberpunk', name: 'Cyberpunk', color: 'bg-[#0A0A12] text-[#00FFFF] border-[#581C66]', accent:'bg-[#00FFFF]' },
                     ].map((t) => (
                       <button
                         key={t.id}
@@ -793,7 +797,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                             : 'opacity-80 hover:opacity-100'
                         }`}
                       >
-                        <div className="w-3 h-3 rounded-full bg-[#D97757]" />
+                        <div className={`w-3 h-3 rounded-full ${t.accent}`} />
                         <span className="text-[11px] truncate">{t.name}</span>
                       </button>
                     ))}
