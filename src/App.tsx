@@ -2051,6 +2051,13 @@ export default function App() {
               isAiChatOpen={aiChatOpen}
               zenFocusMode={zenFocusMode}
               onToggleZenFocus={() => setZenFocusMode((prev) => !prev)}
+              focusTimerSeconds={focusTimerSeconds}
+              isFocusTimerRunning={isFocusTimerRunning}
+              onToggleFocusTimer={() => setIsFocusTimerRunning((prev) => !prev)}
+              onResetFocusTimer={() => {
+                setIsFocusTimerRunning(false);
+                setFocusTimerSeconds(25 * 60);
+              }}
               onOpenGeminiSettings={() => setAccountSettingsOpen(true)}
               onRefreshAll={handleRefreshAll}
               isRefreshing={isRefreshingAll}
@@ -2068,72 +2075,6 @@ export default function App() {
               >
                 <span>≡ Menu</span>
               </button>
-            </div>
-          )}
-
-          {/* Zen Focus Mode Tranquil Banner */}
-          {zenFocusMode && (
-            <div className="bg-[#FAF9F5] dark:bg-[#1A1917] border-b border-[#DFDACB] dark:border-[#2C2B27] px-4 sm:px-6 py-2.5 flex items-center justify-between shrink-0 animate-in fade-in duration-200">
-              <div className="flex items-center gap-2.5">
-                <Sparkles className="w-4 h-4 text-[#D97757]" />
-                <div>
-                  <h3 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] uppercase tracking-wider">
-                    Zen Focus Mode
-                  </h3>
-                  <p className="text-[10px] text-[#8C897F] hidden sm:block">
-                    Distractions cleared. Focus on your active coursework.
-                  </p>
-                </div>
-              </div>
-
-              {/* Focus Pomodoro Timer */}
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="flex items-center gap-2 bg-[#EFECE2] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl px-3 py-1 font-mono text-xs sm:text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">
-                  <span>
-                    {Math.floor(focusTimerSeconds / 60)}:
-                    {(focusTimerSeconds % 60).toString().padStart(2, '0')}
-                  </span>
-                  <button
-                    onClick={() => {
-                      const next = !isFocusTimerRunning;
-                      setIsFocusTimerRunning(next);
-                      if (next) {
-                        setZenFocusMode(true);
-                        if (!document.fullscreenElement) {
-                          document.documentElement.requestFullscreen().catch(() => {});
-                        }
-                      }
-                    }}
-                    className="px-2 py-0.5 rounded-lg text-xs font-bold bg-[#D97757] text-white hover:bg-[#C86646] transition-colors cursor-pointer"
-                  >
-                    {isFocusTimerRunning ? 'Pause' : 'Start'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsFocusTimerRunning(false);
-                      setFocusTimerSeconds(25 * 60);
-                    }}
-                    className="text-[10px] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] cursor-pointer hidden sm:inline"
-                    title="Reset to 25 mins"
-                  >
-                    Reset
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setZenFocusMode(false);
-                    setIsFocusTimerRunning(false);
-                    if (document.fullscreenElement) {
-                      document.exitFullscreen().catch(() => {});
-                    }
-                  }}
-                  className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs font-bold bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27] transition-colors cursor-pointer whitespace-nowrap"
-                  title="Exit Focus Mode (Esc)"
-                >
-                  Exit
-                </button>
-              </div>
             </div>
           )}
 

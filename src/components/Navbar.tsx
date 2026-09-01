@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
   Bell,
-  ExternalLink,
-  Key,
   Search,
   RefreshCw,
   SlidersHorizontal,
-  GraduationCap,
   ChevronUp,
   Timer,
+  Music,
 } from 'lucide-react';
+import { ambientAudio, TrackId, AMBIENT_TRACKS } from '../services/ambientAudio';
 
 interface NavbarProps {
   activeTabLabel?: string;
@@ -20,6 +19,10 @@ interface NavbarProps {
   isAiChatOpen?: boolean;
   zenFocusMode?: boolean;
   onToggleZenFocus?: () => void;
+  focusTimerSeconds?: number;
+  isFocusTimerRunning?: boolean;
+  onToggleFocusTimer?: () => void;
+  onResetFocusTimer?: () => void;
   onOpenGeminiSettings?: () => void;
   onRefreshAll?: () => void;
   isRefreshing?: boolean;
@@ -34,6 +37,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   isAiChatOpen = false,
   zenFocusMode = false,
   onToggleZenFocus,
+  focusTimerSeconds,
+  isFocusTimerRunning = false,
+  onToggleFocusTimer,
+  onResetFocusTimer,
   onOpenGeminiSettings,
   onRefreshAll,
   isRefreshing = false,
@@ -41,14 +48,23 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [hasDismissedBadge, setHasDismissedBadge] = useState(false);
-  const [notificationTier, setNotificationTier] = useState<'urgent' | 'updates' | 'activity'>('urgent');
+  const [currentTrack, setCurrentTrack] = useState<TrackId>(ambientAudio.getTrack());
+
+  useEffect(() => {
+    const unsubscribe = ambientAudio.subscribe((track) => {
+      setCurrentTrack(track);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const unreadCount = hasDismissedBadge ? 0 : notifications.length;
+  const currentTrackInfo =
+    AMBIENT_TRACKS.find((t) => t.id === currentTrack) || AMBIENT_TRACKS[0];
 
   return (
     <header className="h-12 bg-[#FAF9F5]/90 dark:bg-[#141413]/90 backdrop-blur-md border-b border-[#DFDACB] dark:border-[#2C2B27] px-4 sm:px-6 flex items-center justify-between z-20 shrink-0 select-none">
       
-      {/* LEFT: macOS Window Breadcrumb with Green Sync Status Dot */}
+      {/* LEFT: Breadcrumb with Green Sync Status Dot */}
       <div className="flex items-center gap-2.5 min-w-0">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20 animate-pulse" title="System Live & Synced" />
@@ -62,11 +78,11 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* CENTER: Floating Spotlight Search Pill (Cmd+K) */}
-      <div className="hidden sm:flex items-center justify-center flex-1 max-w-sm px-4">
+      {/* CENTER: Floating Spotlight Search Pill (Cmd+K) & Music Button */}
+      <div className="hidden sm:flex items-center justify-center flex-1 max-w-md px-4 gap-2">
         <button
           onClick={onOpenCommandPalette}
-          className="w-full bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]/60 rounded-xl py-1 px-3 text-xs flex items-center justify-between text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] shadow-2xs transition-all cursor-pointer group"
+          className="flex-1 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]/60 rounded-xl py-1 px-3 text-xs flex items-center justify-between text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] shadow-2xs transition-all cursor-pointer group"
         >
           <div className="flex items-center gap-2">
             <Search className="w-3.5 h-3.5 text-[#8C897F] group-hover:text-[#D97757] transition-colors" />
@@ -76,12 +92,28 @@ export const Navbar: React.FC<NavbarProps> = ({
             ⌘K
           </kbd>
         </button>
+
+        {/* Single Music Button next to Search bar */}
+        <button
+          onClick={() => ambientAudio.cycleTrack()}
+          className={`px-2.5 py-1 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+            currentTrack !== 'none'
+              ? 'bg-[#D97757]/10 text-[#D97757] border-[#D97757]/40 shadow-2xs'
+              : 'bg-white dark:bg-[#1A1917] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] border-[#DFDACB] dark:border-[#2C2B27]'
+          }`}
+          title="Click to cycle focus music track"
+        >
+          <Music className={`w-3.5 h-3.5 ${currentTrack !== 'none' ? 'text-[#D97757] animate-pulse' : ''}`} />
+          <span className="text-[11px] font-bold">
+            {currentTrackInfo.shortLabel}
+          </span>
+        </button>
       </div>
 
       {/* RIGHT: High-Density Control Cluster */}
       <div className="flex items-center space-x-2 shrink-0">
         
-        {/* Sync Button */}
+        {/* Sync / Reload Button */}
         {onRefreshAll && (
           <button
             onClick={onRefreshAll}
@@ -93,7 +125,35 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         )}
 
-        {/* Zen Focus Mode Button */}
+        {/* Zen Focus Mode Timer next to Reload in Menu */}
+        {(zenFocusMode || isFocusTimerRunning) && focusTimerSeconds !== undefined && (
+          <div className="flex items-center gap-1.5 bg-[#EFECE2] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg px-2.5 py-1 font-mono text-xs font-bold text-[#141413] dark:text-[#FAF9F5] animate-in fade-in duration-200">
+            <Timer className="w-3.5 h-3.5 text-[#D97757] shrink-0" />
+            <span>
+              {Math.floor(focusTimerSeconds / 60)}:
+              {(focusTimerSeconds % 60).toString().padStart(2, '0')}
+            </span>
+            {onToggleFocusTimer && (
+              <button
+                onClick={onToggleFocusTimer}
+                className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#D97757] text-white hover:bg-[#C86646] transition-colors cursor-pointer"
+              >
+                {isFocusTimerRunning ? 'Pause' : 'Start'}
+              </button>
+            )}
+            {onResetFocusTimer && (
+              <button
+                onClick={onResetFocusTimer}
+                className="text-[10px] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] cursor-pointer ml-0.5 hidden sm:inline"
+                title="Reset Timer"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Zen Focus Mode Toggle Button */}
         {onToggleZenFocus && (
           <button
             id="btn-nav-zen-focus"
@@ -106,7 +166,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="Toggle Zen Focus Mode"
           >
             <Timer className="w-3.5 h-3.5" />
-            <span className="hidden md:inline text-[11px]">{zenFocusMode ? 'Focusing' : 'Focus'}</span>
+            <span className="hidden md:inline text-[11px]">{zenFocusMode ? 'Zen Active' : 'Focus'}</span>
           </button>
         )}
 
@@ -189,3 +249,4 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+

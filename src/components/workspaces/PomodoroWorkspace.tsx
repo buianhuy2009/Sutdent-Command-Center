@@ -16,8 +16,7 @@ import {
   FileText,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-
-type SoundType = 'rain' | 'brown' | 'pink' | 'white' | 'binaural' | 'none';
+import { ambientAudio, AMBIENT_TRACKS, TrackId } from '../../services/ambientAudio';
 
 export const PomodoroWorkspace: React.FC = () => {
   // Timer States
@@ -35,8 +34,13 @@ export const PomodoroWorkspace: React.FC = () => {
   });
 
   // Ambient Sound Engine (Web Audio API)
-  const [activeSound, setActiveSound] = useState<SoundType>('none');
+  const [activeSound, setActiveSound] = useState<TrackId>(ambientAudio.getTrack());
   const [soundVolume, setSoundVolume] = useState<number>(0.5);
+
+  useEffect(() => {
+    const unsub = ambientAudio.subscribe((tr) => setActiveSound(tr));
+    return () => unsub();
+  }, []);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const sourceNodesRef = useRef<any[]>([]);
@@ -445,27 +449,18 @@ export const PomodoroWorkspace: React.FC = () => {
             </div>
 
             {/* Sound Selector Grid */}
-            <div className="grid grid-cols-2 gap-2">
-              {(
-                [
-                  { id: 'rain', label: 'Rain on Window' },
-                  { id: 'brown', label: 'Brown Noise (Deep)' },
-                  { id: 'pink', label: 'Pink Noise (Reading)' },
-                  { id: 'white', label: 'White Noise (Masking)' },
-                  { id: 'binaural', label: '40Hz Gamma Beat' },
-                  { id: 'none', label: 'Mute Audio' },
-                ] as const
-              ).map((snd) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {AMBIENT_TRACKS.map((snd) => (
                 <button
                   key={snd.id}
-                  onClick={() => startSynthesizer(snd.id)}
-                  className={`p-3 rounded-2xl border text-xs font-bold text-left transition-all cursor-pointer ${
+                  onClick={() => ambientAudio.playTrack(snd.id)}
+                  className={`p-2.5 rounded-xl border text-[11px] font-bold text-left transition-all cursor-pointer ${
                     activeSound === snd.id
                       ? 'bg-[#D97757] text-white border-[#D97757] shadow-xs'
                       : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] hover:border-[#D97757]/60'
                   }`}
                 >
-                  {snd.label}
+                  {snd.shortLabel}
                 </button>
               ))}
             </div>

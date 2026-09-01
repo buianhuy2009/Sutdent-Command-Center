@@ -21,6 +21,7 @@ import {
   Edit2,
   CheckCircle2,
   HelpCircle,
+  Info,
 } from 'lucide-react';
 
 export interface CanvaProject {
@@ -536,40 +537,23 @@ Format cleanly with markdown headers.`,
           : 'h-[calc(100vh-140px)] min-h-[620px]'
       }`}
     >
-      {/* 1. macOS High-Density Toolbar (38px–42px) */}
+      {/* 1. High-Density Toolbar (38px–42px) */}
       <div className="h-[42px] min-h-[42px] px-3 bg-[#F4F1EA] dark:bg-[#1A1917] border-b border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between gap-3 shrink-0 select-none">
-        {/* Left Section: macOS Traffic Lights & Project Tabs */}
-        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-          {/* macOS Traffic Lights */}
-          <div className="flex items-center gap-1.5 shrink-0 pr-1.5">
-            <button
-              onClick={() => {
-                if (activeProject) handleDeleteProject(activeProject.id);
-              }}
-              title="Close Active Project Tab"
-              className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center group"
-            >
-              <X className="w-2 h-2 text-[#7E0000] opacity-0 group-hover:opacity-100 transition-opacity" />
-            </button>
-            <button
-              onClick={() => setIsAiDrawerOpen(!isAiDrawerOpen)}
-              title="Toggle AI Outline Drawer"
-              className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center group"
-            >
-              <Sparkles className="w-2 h-2 text-[#805300] opacity-0 group-hover:opacity-100 transition-opacity" />
-            </button>
-            <button
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-              className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29] hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center group"
-            >
-              <Maximize2 className="w-2 h-2 text-[#0B5C1B] opacity-0 group-hover:opacity-100 transition-opacity" />
-            </button>
+        {/* Left Section: Studio Branding & Project Tabs */}
+        <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
+          {/* Canva Studio Title Badge */}
+          <div className="flex items-center gap-2 shrink-0 pr-1">
+            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#00C4CC] to-[#7D2AE8] text-white flex items-center justify-center shadow-2xs">
+              <Palette className="w-3.5 h-3.5" />
+            </div>
+            <span className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] hidden md:inline">
+              Canva Studio
+            </span>
           </div>
 
           <div className="h-4 w-[1px] bg-[#DFDACB] dark:bg-[#2C2B27] shrink-0 mx-0.5" />
 
-          {/* Project Header Pills / Tabs (macOS style) */}
+          {/* Project Header Pills / Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 min-w-0">
             {projects.map((proj) => {
               const isActive = proj.id === activeProjectId;
@@ -718,6 +702,26 @@ Format cleanly with markdown headers.`,
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
+      </div>
+
+      {/* View-Only Interactive Sync Disclaimer Banner */}
+      <div className="bg-[#D97757]/10 border-b border-[#D97757]/20 px-3.5 py-1.5 flex items-center justify-between text-xs text-[#D97757] shrink-0">
+        <div className="flex items-center gap-2 font-semibold text-[11px] sm:text-xs">
+          <Info className="w-3.5 h-3.5 shrink-0 text-[#D97757]" />
+          <span>
+            <strong>View-Only Preview:</strong> Live embeds are interactive view previews. Any changes made in Canva will automatically update live here.
+          </span>
+        </div>
+        {activeProject?.url && (
+          <a
+            href={activeProject.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[11px] font-bold underline hover:opacity-80 shrink-0 ml-2 hidden sm:inline"
+          >
+            Edit in Canva ↗
+          </a>
+        )}
       </div>
 
       {/* 2. Main Viewport & Optional AI Outline Drawer */}
