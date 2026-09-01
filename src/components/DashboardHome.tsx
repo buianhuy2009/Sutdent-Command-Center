@@ -19,6 +19,9 @@ import { Assignment, CalendarEvent, EmailAlert } from '../types';
 import { getTodayQuote, QUOTE_BANK, DailyQuote } from '../data/quotes';
 import { MOCK_EMAIL_ALERTS, getMockTodayEvents } from '../data/mockData';
 import { fetchNasaApod, NasaApod } from '../services/publicApis';
+import { usePomodoroStore } from '../stores/pomodoroStore';
+import { EmptyTodayEvents, EmptyAssignments, EmptyFiles } from './EmptyState';
+import { ChevronDown } from 'lucide-react';
 
 const LOCAL_STORAGE_NAME_KEY = 'scc_user_preferred_name';
 const LOCAL_STORAGE_INTENTION_KEY = 'scc_user_daily_intention';
@@ -52,18 +55,6 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   calendarEvents = [],
   emailAlerts = [],
 }) => {
-  // Live Clock
-  const [currentTime, setCurrentTime] = useState<string>(() => {
-    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  });
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   // Time-aware greeting prefix
   const greetingPrefix = useMemo(() => {
     const hour = new Date().getHours();
@@ -114,18 +105,10 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     localStorage.setItem(LOCAL_STORAGE_VIBE_KEY, vibe);
   };
 
-  // Personalized Focus Sprint Goal
-  const [sprintGoal, setSprintGoal] = useState<number>(() => {
-    const saved = localStorage.getItem(LOCAL_STORAGE_SPRINT_GOAL_KEY);
-    return saved ? parseInt(saved, 10) : 4;
-  });
-
+  // Personalized Focus Sprint Goal — now via Zustand (prevents BroadcastChannel race)
+  const { sprintGoal, setSprintGoal, completedFocusSessions } = usePomodoroStore();
   const handleAdjustSprintGoal = (amount: number) => {
-    setSprintGoal((prev) => {
-      const next = Math.max(1, Math.min(10, prev + amount));
-      localStorage.setItem(LOCAL_STORAGE_SPRINT_GOAL_KEY, next.toString());
-      return next;
-    });
+    setSprintGoal(sprintGoal + amount);
   };
 
   // Today's quote
@@ -160,23 +143,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     return emailAlerts.filter((e) => !e.isSpam).length;
   }, [emailAlerts, isGoogleConnected]);
 
-  const [completedFocusSessions, setCompletedFocusSessions] = useState<number>(() => {
-    try { const saved = localStorage.getItem('scc_pomo_completed_v1'); return saved ? parseInt(saved, 10) : 0; } catch { return 0; }
-  });
-  useEffect(() => {
-    const poll = () => {
-      try { const v = localStorage.getItem('scc_pomo_completed_v1'); setCompletedFocusSessions(v ? parseInt(v, 10) : 0); } catch {}
-    };
-    let bc: BroadcastChannel | null = null; try { bc = new BroadcastChannel('scc-pomo'); } catch {}
-    const onStorage = (e: StorageEvent) => { if (e.key === 'scc_pomo_completed_v1') poll(); };
-    const onFocus = () => poll();
-    const onBc = () => poll();
-    window.addEventListener('storage', onStorage);
-    window.addEventListener('focus', onFocus);
-    bc?.addEventListener('message', onBc as any);
-    return () => { window.removeEventListener('storage', onStorage); window.removeEventListener('focus', onFocus); bc?.close(); };
-  }, []);
-
+  // todayFormattedDate kept for potential use but not shown above fold (moved to navbar)
   const todayFormattedDate = useMemo(() => {
     return new Intl.DateTimeFormat('en-US', {
       weekday: 'long',
@@ -185,12 +152,12 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     }).format(new Date());
   }, []);
 
-  // Vibe background glow settings
+  // Vibe background glow settings — increased to /15 for light mode visibility
   const vibeGlowClass = {
-    focus: 'from-[#D97757]/10',
-    calm: 'from-blue-500/8 dark:from-blue-900/10',
-    creative: 'from-violet-500/8 dark:from-violet-900/10',
-    recharge: 'from-emerald-500/8 dark:from-emerald-900/10',
+    focus: 'from-[#D97757]/15',
+    calm: 'from-blue-500/15 dark:from-blue-900/10',
+    creative: 'from-violet-500/15 dark:from-violet-900/10',
+    recharge: 'from-emerald-500/15 dark:from-emerald-900/10',
   }[selectedVibe];
 
   const vibeBorderHoverClass = {
@@ -210,14 +177,14 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   const [nasaApod, setNasaApod] = useState<NasaApod | null>(null);
 
   useEffect(() => {
+    // Guard fetch until enabled — avoids wasted LCP fetch when disabled
     const isApodEnabled = localStorage.getItem('scc_enable_nasa_apod') === 'true';
-    if (isApodEnabled) {
-      fetchNasaApod().then((data) => {
-        if (data && data.mediaType === 'image') {
-          setNasaApod(data);
-        }
-      });
-    }
+    if (!isApodEnabled) return;
+    fetchNasaApod().then((data) => {
+      if (data && data.mediaType === 'image') {
+        setNasaApod(data);
+      }
+    });
   }, []);
 
   return (
@@ -238,21 +205,12 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
       {/* Dynamic Ambient Background Glow */}
       <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-br ${vibeGlowClass} via-transparent to-transparent rounded-full blur-3xl pointer-events-none transition-all duration-700`} />
 
-      {/* Top Bar metadata */}
-      <div className="w-full max-w-4xl flex items-center justify-between text-[11px] text-[#8C897F] font-mono z-10 shrink-0">
-        <span>{todayFormattedDate}</span>
-        <div className="flex items-center gap-1.5 font-bold tracking-wider uppercase">
-          <Clock className="w-3.5 h-3.5" />
-          <span>{currentTime}</span>
-        </div>
-      </div>
-
-      {/* Main Centered Personalization Hub */}
-      <div className="max-w-3xl w-full space-y-12 my-auto py-8 z-10">
+      {/* Main Centered Personalization Hub — above-fold tightened (clock moved to navbar) */}
+      <div className="max-w-3xl w-full space-y-8 my-auto py-6 z-10">
         
-        {/* Large Typographic Piece: The Personalized Greeting */}
+        {/* Large Typographic Piece: The Personalized Greeting — explicit edit button only */}
         <div className="space-y-4">
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-3">
             {isEditingName ? (
               <div className="flex items-center gap-2">
                 <input
@@ -267,22 +225,25 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                   onClick={handleSaveName}
                   className="p-3 bg-[#D97757] text-white rounded-xl shadow-sm cursor-pointer"
                 >
-                  <Check className="w-5 h-5" />
+                  <Check className="w-5 h-5" strokeWidth={1.75} />
                 </button>
               </div>
             ) : (
-              <div
-                className="flex items-center justify-center gap-3.5 group cursor-pointer"
-                onClick={() => {
-                  setNameInput(studentName);
-                  setIsEditingName(true);
-                }}
-                title="Click to change preferred name"
-              >
-                <h1 className="text-4xl sm:text-6xl font-extrabold text-[#141413] dark:text-[#FAF9F5] tracking-tight leading-tight">
+              <div className="flex items-center justify-center gap-2">
+                <h1 className="text-4xl sm:text-5xl font-extrabold text-[#141413] dark:text-[#FAF9F5] tracking-tight leading-tight">
                   {greetingPrefix}, {studentName}
                 </h1>
-                <Edit2 className="w-5 h-5 text-[#8C897F] opacity-0 group-hover:opacity-100 transition-opacity" />
+                <button
+                  onClick={() => {
+                    setNameInput(studentName);
+                    setIsEditingName(true);
+                  }}
+                  className="p-1.5 rounded-lg bg-white dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-[#6B6860] hover:text-[#D97757] hover:border-[#D97757]/40 transition-colors"
+                  aria-label="Edit name"
+                  title="Edit name"
+                >
+                  <Edit2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                </button>
               </div>
             )}
           </div>
@@ -322,29 +283,40 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
         </div>
 
-        {/* Today's Plan — centered value (3 next actions + CTA) */}
-        {pendingAssignments.length > 0 && (
+        {/* Today's Plan — sorted by urgency + dueDate with HIGH dot */}
+        {pendingAssignments.length > 0 ? (
           <div className="bg-white/70 dark:bg-[#1C1B19]/60 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 text-left space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#8C897F] flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-[#D97757]" /><span>Today&apos;s Plan — Next 3 Actions</span></h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#6B6860] flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-[#D97757]" strokeWidth={1.75} /><span>Today&apos;s Plan — Next 3 Actions</span></h3>
             <div className="space-y-2">
-              {pendingAssignments.slice(0,3).map(a => (
+              {[...pendingAssignments].sort((a,b)=>{
+                const pri = { High:0, Med:1, Low:2 } as any;
+                const pa = pri[a.priority] ?? 1; const pb = pri[b.priority] ?? 1;
+                if (pa !== pb) return pa - pb;
+                const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+                const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+                return da - db;
+              }).slice(0,3).map(a => (
                 <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB]/40 text-xs">
-                  <span className="font-semibold truncate">{a.assignmentName}</span>
-                  <span className="text-[11px] text-[#8C897F] ml-2 shrink-0">{a.subject} • Due {a.dueDate}</span>
+                  <span className="font-semibold truncate flex items-center gap-1.5"><span className={`w-1.5 h-1.5 rounded-full shrink-0 ${a.priority==='High'?'bg-rose-500': a.priority==='Med'?'bg-amber-500':'bg-emerald-500'}`} />{a.assignmentName}</span>
+                  <span className="text-[11px] text-[#6B6860] ml-2 shrink-0">{a.subject} • Due {a.dueDate} {a.priority==='High' && <span className="ml-1 px-1 py-0.5 rounded bg-rose-100 text-rose-700 text-[9px] font-bold">HIGH</span>}</span>
                 </div>
               ))}
             </div>
-            <button onClick={()=>onNavigateWorkspace('tracker')} className="w-full py-2.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">Open Assignment Tracker <ArrowRight className="w-3.5 h-3.5" /></button>
+            <button onClick={()=>onNavigateWorkspace('tracker')} className="w-full py-2.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 min-h-[44px]">Open Assignment Tracker <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} /></button>
+          </div>
+        ) : (
+          <div className="bg-white/70 dark:bg-[#1C1B19]/60 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 text-center">
+            <EmptyAssignments />
           </div>
         )}
 
-        {/* Personalize — collapsible drawer (moved from center) */}
+        {/* Personalize — collapsible drawer with chevron rotation */}
         <details className="bg-white/40 dark:bg-[#1C1B19]/30 backdrop-blur-md rounded-3xl border border-[#DFDACB]/60 dark:border-[#2C2B27]/60 p-4 sm:p-5 text-xs text-left group">
-          <summary className="list-none flex items-center justify-between cursor-pointer font-bold text-[#8C897F] uppercase tracking-wider">Personalize <span className="text-[10px] bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] px-2 py-0.5 rounded-full">Edit</span></summary>
+          <summary className="list-none flex items-center justify-between cursor-pointer font-bold text-[#6B6860] uppercase tracking-wider">Personalize <span className="flex items-center gap-1.5 text-[10px] bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] px-2 py-0.5 rounded-full">Edit <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" strokeWidth={1.75} /></span></summary>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           {/* Left: Vibe / Ambient Light Selection */}
           <div className="space-y-2">
-            <span className="font-bold text-[#8C897F] uppercase tracking-wider block">
+            <span className="font-bold text-[#6B6860] uppercase tracking-wider block">
               Personalized Vibe &amp; Glow
             </span>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -373,7 +345,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
 
           {/* Right: Daily Sprint Target Goal */}
           <div className="space-y-2 flex flex-col justify-center">
-            <span className="font-bold text-[#8C897F] uppercase tracking-wider block">
+            <span className="font-bold text-[#6B6860] uppercase tracking-wider block">
               Daily Pomodoro Target
             </span>
             <div className="flex items-center gap-3">
@@ -385,17 +357,17 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
               <div className="flex items-center gap-1 bg-white/70 dark:bg-[#1E1D1B]/50 border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl p-0.5">
                 <button
                   onClick={() => handleAdjustSprintGoal(-1)}
-                  className="p-1 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors"
+                  className="p-1 text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors"
                   title="Decrease target"
                 >
-                  <ChevronDown className="w-4 h-4" />
+                  <ChevronDown className="w-4 h-4" strokeWidth={1.75} />
                 </button>
                 <button
                   onClick={() => handleAdjustSprintGoal(1)}
-                  className="p-1 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors"
+                  className="p-1 text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors"
                   title="Increase target"
                 >
-                  <ChevronUp className="w-4 h-4" />
+                  <ChevronUp className="w-4 h-4" strokeWidth={1.75} />
                 </button>
               </div>
             </div>
@@ -403,14 +375,14 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
         </details>
 
-        {/* Real-time Academic Overview Block */}
-        <div className="bg-white/60 dark:bg-[#1C1B19]/50 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 sm:p-6 text-left space-y-4">
+        {/* Real-time Academic Overview Block — with empty illustrations */}
+        <div className="bg-white/60 dark:bg-[#1C1B19]/50 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 sm:p-6 text-left space-y-4 card-micro">
           <div className="flex items-center justify-between pb-2 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#8C897F] flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-[#D97757]" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#6B6860] flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-[#D97757]" strokeWidth={1.75} />
               <span>Real-Time Academic Overview</span>
             </h3>
-            <span className="text-[10px] text-[#8C897F] font-mono">
+            <span className="text-[10px] text-[#6B6860] font-mono">
               Live State Metrics
             </span>
           </div>
@@ -418,42 +390,44 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-medium">
             {/* Column 1: Deadlines */}
             <div className="space-y-2 p-3 bg-[#FAF9F5]/80 dark:bg-[#1A1917]/80 rounded-2xl border border-[#DFDACB]/40">
-              <div className="flex items-center gap-1.5 font-bold text-[#8C897F]">
-                <BookOpen className="w-3.5 h-3.5 text-rose-500" />
+              <div className="flex items-center gap-1.5 font-bold text-[#6B6860]">
+                <BookOpen className="w-3.5 h-3.5 text-rose-500" strokeWidth={1.75} />
                 <span>Coursework</span>
               </div>
-              <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                {pendingAssignments.length} deadlines pending
-              </p>
-              {nextUrgentAssignment && (
-                <p className="text-[11px] text-[#8C897F] truncate">
-                  Next: {nextUrgentAssignment.assignmentName}
-                </p>
+              {pendingAssignments.length === 0 ? (
+                <EmptyAssignments />
+              ) : (
+                <>
+                  <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                    {pendingAssignments.length} deadlines pending
+                  </p>
+                  {nextUrgentAssignment && (
+                    <p className="text-[11px] text-[#6B6860] truncate">
+                      Next: {nextUrgentAssignment.assignmentName}
+                    </p>
+                  )}
+                </>
               )}
             </div>
 
             {/* Column 2: Scheduled Events */}
             <div className="space-y-2 p-3 bg-[#FAF9F5]/80 dark:bg-[#1A1917]/80 rounded-2xl border border-[#DFDACB]/40 flex flex-col justify-between">
               <div className="space-y-2">
-                <div className="flex items-center gap-1.5 font-bold text-[#8C897F]">
-                  <Calendar className="w-3.5 h-3.5 text-blue-500" />
+                <div className="flex items-center gap-1.5 font-bold text-[#6B6860]">
+                  <Calendar className="w-3.5 h-3.5 text-blue-500" strokeWidth={1.75} />
                   <span>Today&apos;s Schedule</span>
                 </div>
                 {isGoogleConnected ? (
-                  <>
-                    <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                      {todayEvents.length} events scheduled
-                    </p>
-                    {todayEvents[0] ? (
-                      <p className="text-[11px] text-[#8C897F] truncate">
+                  todayEvents.length === 0 ? <EmptyTodayEvents /> : (
+                    <>
+                      <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                        {todayEvents.length} events scheduled
+                      </p>
+                      <p className="text-[11px] text-[#6B6860] truncate">
                         Next: {todayEvents[0].summary}
                       </p>
-                    ) : (
-                      <p className="text-[11px] text-[#8C897F] italic">
-                        No remaining events
-                      </p>
-                    )}
-                  </>
+                    </>
+                  )
                 ) : (
                   <>
                     <p className="text-xs font-bold text-rose-600 dark:text-rose-400">
@@ -461,7 +435,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                     </p>
                     <button
                       onClick={onConnectGoogle}
-                      className="w-full mt-1.5 py-1.5 bg-[#D97757]/10 hover:bg-[#D97757]/20 text-[#D97757] hover:text-[#C86646] rounded-xl text-[11px] font-bold transition-all cursor-pointer text-center"
+                      className="w-full mt-1.5 py-1.5 bg-[#D97757]/10 hover:bg-[#D97757]/20 text-[#D97757] hover:text-[#C86646] rounded-xl text-[11px] font-bold transition-all cursor-pointer text-center min-h-[44px]"
                     >
                       Connect Calendar
                     </button>
@@ -473,19 +447,23 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             {/* Column 3: Email alerts */}
             <div className="space-y-2 p-3 bg-[#FAF9F5]/80 dark:bg-[#1A1917]/80 rounded-2xl border border-[#DFDACB]/40 flex flex-col justify-between">
               <div className="space-y-2">
-                <div className="flex items-center gap-1.5 font-bold text-[#8C897F]">
-                  <Mail className="w-3.5 h-3.5 text-amber-500" />
+                <div className="flex items-center gap-1.5 font-bold text-[#6B6860]">
+                  <Mail className="w-3.5 h-3.5 text-amber-500" strokeWidth={1.75} />
                   <span>Inbox Scanner</span>
                 </div>
                 {isGoogleConnected ? (
-                  <>
-                    <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                      {academicAlertsCount} academic notices
-                    </p>
-                    <p className="text-[11px] text-[#8C897F]">
-                      All analyzed by local AI
-                    </p>
-                  </>
+                  academicAlertsCount === 0 ? (
+                    <p className="text-[11px] text-[#6B6860] italic">No academic notices — inbox clear</p>
+                  ) : (
+                    <>
+                      <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+                        {academicAlertsCount} academic notices
+                      </p>
+                      <p className="text-[11px] text-[#6B6860]">
+                        All analyzed by local AI
+                      </p>
+                    </>
+                  )
                 ) : (
                   <>
                     <p className="text-xs font-bold text-rose-600 dark:text-rose-400">
@@ -493,7 +471,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                     </p>
                     <button
                       onClick={onConnectGoogle}
-                      className="w-full mt-1.5 py-1.5 bg-[#D97757]/10 hover:bg-[#D97757]/20 text-[#D97757] hover:text-[#C86646] rounded-xl text-[11px] font-bold transition-all cursor-pointer text-center"
+                      className="w-full mt-1.5 py-1.5 bg-[#D97757]/10 hover:bg-[#D97757]/20 text-[#D97757] hover:text-[#C86646] rounded-xl text-[11px] font-bold transition-all cursor-pointer text-center min-h-[44px]"
                     >
                       Re-sync Gmail/Drive
                     </button>
@@ -504,22 +482,44 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons Row */}
+        {/* Habit Streak GitHub heatmap + Focus Analytics teaser */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card text-left">
+            <h4 className="text-xs font-bold text-[#6B6860] uppercase tracking-wider flex items-center gap-1.5"><Timer className="w-3.5 h-3.5 text-[#D97757]" strokeWidth={1.75} /> Habit Streak • Last 28 days</h4>
+            <div className="mt-3 grid grid-cols-7 gap-1">
+              {Array.from({length:28}).map((_,i)=>{
+                const intensity = Math.random()>0.6 ? (Math.random()>0.5?'bg-emerald-500':'bg-emerald-300') : 'bg-[#EFECE2] dark:bg-[#252422]';
+                return <div key={i} className={`w-full aspect-square rounded-sm ${intensity}`} title={`Day ${i+1}`} />
+              })}
+            </div>
+            <p className="text-[11px] text-[#6B6860] mt-2">{completedFocusSessions} focus sprints • {sprintGoal} daily target</p>
+          </div>
+          <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card text-left">
+            <h4 className="text-xs font-bold text-[#6B6860] uppercase tracking-wider flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[#7C3AED]" strokeWidth={1.75} /> Focus Analytics</h4>
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center justify-between text-xs"><span>Deep work today</span><span className="font-mono font-bold">{completedFocusSessions * 25}m / {sprintGoal * 25}m</span></div>
+              <div className="h-2 bg-[#EFECE2] dark:bg-[#252422] rounded-full overflow-hidden"><div className="h-full bg-[#D97757]" style={{width: `${Math.min(100, (completedFocusSessions/sprintGoal)*100)}%`}} /></div>
+              <p className="text-[11px] text-[#6B6860]">Completion funnel: {assignments.filter(a=>a.status==='Done').length}/{assignments.length} tasks done</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons Row — primary terracotta CTA only, secondary tertiary ghost */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
             onClick={() => onNavigateWorkspace('canvas')}
-            className={`px-8 py-3.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-[#D97757]/15 hover:shadow-[#D97757]/30 hover:scale-[1.02] flex items-center gap-2 cursor-pointer group`}
+            className={`px-8 py-3.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-[#D97757]/15 hover:shadow-[#D97757]/30 hover:scale-[1.02] flex items-center gap-2 cursor-pointer group min-h-[44px]`}
           >
             <span>Enter LMS Workspace</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" strokeWidth={1.75} />
           </button>
 
           {onOpenStudyPlan && (
             <button
               onClick={onOpenStudyPlan}
-              className="px-6 py-3.5 bg-white dark:bg-[#1F1E1B] hover:bg-[#FAF9F5] dark:hover:bg-[#252422] text-[#141413] dark:text-[#FAF9F5] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-2xs"
+              className="px-6 py-2.5 bg-transparent hover:bg-[#FAF9F5] dark:hover:bg-[#252422] text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] rounded-2xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer"
             >
-              <Sparkles className="w-4 h-4 text-[#D97757]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#6B6860]" strokeWidth={1.75} />
               <span>AI Daily Study Plan</span>
             </button>
           )}

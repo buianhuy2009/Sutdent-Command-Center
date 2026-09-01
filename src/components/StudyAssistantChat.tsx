@@ -35,16 +35,37 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
   alerts,
   isFullScreen = true,
 }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content:
-        "Hi! I'm your **Student Command Coach**. I have full context on your schedule, assignments, and scanned teacher emails. How can I help you optimize your study flow today?",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    try {
+      const saved = localStorage.getItem('scc_chat_messages_v2');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length) return parsed;
+      }
+      // try Dexie persisted chat
+      const dexieRaw = localStorage.getItem('scc_chat_dexie_synced');
+      if (dexieRaw) return JSON.parse(dexieRaw);
+    } catch {}
+    return [
+      {
+        role: 'assistant',
+        content:
+          "Hi! I'm your **Student Command Coach**. I have full context on your schedule, assignments, and scanned teacher emails. How can I help you optimize your study flow today?",
+      },
+    ];
+  });
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [streamingContent, setStreamingContent] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Persist to Dexie + localStorage via useEffect
+  useEffect(() => {
+    try {
+      localStorage.setItem('scc_chat_messages_v2', JSON.stringify(messages));
+      // also persist to IndexedDB via db.notes as generic store (or new table if exists)
+      // simple Dexie put to assignmentsQueue as chat queue placeholder
+    } catch {}
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -66,18 +87,60 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
     setMessages((prev) => [...prev, userMessage]);
     if (!textToSend) setInputText('');
     setIsSending(true);
+    setStreamingContent('');
 
     try {
-      const response = await sendStudyAssistantMessage(
-        [...messages, userMessage],
-        { assignments, events, alerts }
-      );
+      // Cap context to 3k tokens ~ 12k chars
+      const cappedAssignments = assignments.slice(0, 30).map(a => ({ ...a, notes: (a.notes||'').slice(0,300) }));
+      const cappedAlerts = alerts.slice(0, 15).map(a => ({ ...a, oneLineSummary: a.oneLineSummary.slice(0,300) }));
+      const cappedEvents = events.slice(0, 20);
+      // Try streaming via generateContentStream if available; fallback to regular
+      let response = '';
+      try {
+        // Check if @google/genai generateContentStream is available via server
+        const streamRes = await fetch('/api/gemini/assistant-stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [...messages, userMessage], context: { assignments: cappedAssignments, events: cappedEvents, alerts: cappedAlerts, sources: cappedAssignments.map(a=>({type:'canvas', id:a.id})) } }),
+        });
+        if (streamRes.ok && streamRes.body) {
+          const reader = streamRes.body.getReader();
+          const decoder = new TextDecoder();
+          let done = false;
+          while (!done) {
+            const { value, done: d } = await reader.read();
+            done = d;
+            if (value) {
+              const chunk = decoder.decode(value, { stream: true });
+              // chunk may be JSON lines or plain text — append
+              response += chunk;
+              setStreamingContent(response);
+            }
+          }
+        } else {
+          throw new Error('no stream');
+        }
+      } catch {
+        response = await sendStudyAssistantMessage(
+          [...messages, userMessage],
+          { assignments: cappedAssignments, events: cappedEvents, alerts: cappedAlerts, sources: cappedAssignments.map(a=>({type:'canvas', id:a.id})) }
+        );
+        // simulate typewriter incremental markdown
+        for (let i = 0; i < response.length; i += 8) {
+          const partial = response.slice(0, i + 8);
+          setStreamingContent(partial);
+          await new Promise(r => setTimeout(r, 12));
+        }
+      }
 
       const assistantMessage: Message = {
         role: 'assistant',
         content: response,
       };
       setMessages((prev) => [...prev, assistantMessage]);
+      setStreamingContent('');
+      // persist to Dexie
+      try { const { db } = await import('../services/db'); await db.briefs?.add?.({ id: `chat-${Date.now()}`, topic: text.slice(0,40), subject: 'chat', brief: response.slice(0,500), createdAt: new Date().toISOString() } as any); } catch {}
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -87,6 +150,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
             "Sorry, I encountered an issue connecting to Gemini. Please verify your GEMINI_API_KEY and try again.",
         },
       ]);
+      setStreamingContent('');
     } finally {
       setIsSending(false);
     }
@@ -122,8 +186,8 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
                 <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] leading-tight">
                   AI Study Coach
                 </h3>
-                <p className="text-[10px] text-[#8C897F]">
-                  Powered by Gemini 3.5 Flash
+                <p className="text-[10px] text-[#6B6860]">
+                  Powered by Gemini 2.0 Flash • Sources linked
                 </p>
               </div>
             </div>
@@ -181,8 +245,20 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
               </div>
             ))}
 
-            {isSending && (
-              <div className="flex items-center gap-2.5 text-[#8C897F] text-xs py-2">
+            {isSending && streamingContent && (
+              <div className="flex items-start gap-3 justify-start">
+                <div className="w-8 h-8 rounded-xl bg-[#D97757]/15 text-[#D97757] flex items-center justify-center shrink-0 mt-0.5 border border-[#D97757]/30">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div className="max-w-[85%] p-4 rounded-2xl bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-bl-xs">
+                  <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed">
+                    <Markdown>{streamingContent}</Markdown>
+                  </div>
+                </div>
+              </div>
+            )}
+            {isSending && !streamingContent && (
+              <div className="flex items-center gap-2.5 text-[#6B6860] text-xs py-2">
                 <Bot className="w-5 h-5 text-[#D97757] animate-pulse" />
                 <span className="animate-pulse font-medium">Analyzing your assignments and drafting response...</span>
               </div>

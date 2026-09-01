@@ -296,7 +296,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
 
     default:
       return (
-        <div className={`${sizeClasses} bg-gradient-to-br from-[#D97757] to-[#C86646] text-white flex items-center justify-center font-bold shrink-0 ${className}`}>
+        <div aria-hidden="true" className={`${sizeClasses} bg-gradient-to-br from-[#D97757] to-[#C86646] text-white flex items-center justify-center font-bold shrink-0 ${className}`}>
           <Sparkles className={iconSizes} aria-hidden="true" />
         </div>
       );

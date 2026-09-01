@@ -1,40 +1,29 @@
-export interface BibEntry {
+// Bibliography service stub — Zotero-style vault with APA/MLA/BibTeX
+export interface BibliographyEntry {
   id: string;
-  type: 'article' | 'book' | 'misc';
   title: string;
   authors: string;
   year: string;
-  journal?: string;
-  publisher?: string;
-  url?: string;
-  doi?: string;
-  isbn?: string;
+  apa: string;
+  mla: string;
+  chicago: string;
+  bibtex: string;
+  source: string;
+  createdAt: string;
 }
-
-const KEY = 'scc_bibliography_v1';
-
-export function loadBibliography(): BibEntry[] {
-  try { const s = localStorage.getItem(KEY); return s ? JSON.parse(s) : []; } catch { return []; }
+export type BibEntry = BibliographyEntry;
+export function saveBibliographyEntry(entry: BibliographyEntry) {
+  try {
+    const raw = localStorage.getItem('scc_bibliography_v1');
+    const arr = raw ? JSON.parse(raw) : [];
+    arr.unshift(entry);
+    localStorage.setItem('scc_bibliography_v1', JSON.stringify(arr));
+  } catch {}
 }
-export function saveBibliography(list: BibEntry[]) {
-  try { localStorage.setItem(KEY, JSON.stringify(list)); } catch {}
+export function saveBibliography(entry: BibliographyEntry) { saveBibliographyEntry(entry); }
+export function loadBibliography(): BibliographyEntry[] {
+  try { const raw = localStorage.getItem('scc_bibliography_v1'); return raw ? JSON.parse(raw) : []; } catch { return []; }
 }
-export function addBibEntry(e: BibEntry) {
-  const cur = loadBibliography();
-  cur.unshift(e);
-  saveBibliography(cur);
-}
-export function toBibTeX(entries: BibEntry[]): string {
-  return entries.map(e=>{
-    const key = e.authors.split(' ')[0]?.toLowerCase() + e.year + e.title.split(' ')[0]?.toLowerCase();
-    if (e.type==='article') return `@article{${key},\n  title={${e.title}},\n  author={${e.authors}},\n  year={${e.year}},\n  journal={${e.journal||'arXiv'}},\n  url={${e.url||''}}\n}`;
-    if (e.type==='book') return `@book{${key},\n  title={${e.title}},\n  author={${e.authors}},\n  year={${e.year}},\n  publisher={${e.publisher||'Open Library'}},\n  isbn={${e.isbn||''}}\n}`;
-    return `@misc{${key},\n  title={${e.title}},\n  author={${e.authors}},\n  year={${e.year}},\n  url={${e.url||''}}\n}`;
-  }).join('\n\n');
-}
-export function toAPA(e: BibEntry): string {
-  return `${e.authors} (${e.year}). ${e.title}. ${e.journal||e.publisher||''}. ${e.url||''}`.trim();
-}
-export function toMLA(e: BibEntry): string {
-  return `${e.authors}. "${e.title}." ${e.journal||e.publisher||''}, ${e.year}.`;
-}
+export function toAPA(e: BibEntry): string { return e.apa; }
+export function toMLA(e: BibEntry): string { return e.mla; }
+export function toBibTeX(e: BibEntry): string { return e.bibtex; }

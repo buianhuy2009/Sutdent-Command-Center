@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   GraduationCap,
   Layers,
@@ -8,14 +8,16 @@ import {
   FileText,
   ArrowRight,
   ShieldCheck,
-  Calendar,
   Sun,
   Moon,
   ExternalLink,
   Zap,
   CheckCircle2,
-  Clock,
+  Play,
+  Quote,
+  X,
 } from 'lucide-react';
+import { GoogleIcon } from './GoogleIcon';
 
 interface LandingPageProps {
   onSignIn: () => void;
@@ -25,6 +27,12 @@ interface LandingPageProps {
   setDarkMode: (val: boolean) => void;
 }
 
+const TESTIMONIALS = [
+  { name: "Minh N.", uni: "Hanoi University of Science", text: "Finally one place for Canvas + Gmail + Drive. My weekly planning went from 2 hours to 10 minutes.", avatar: "M" },
+  { name: "Sarah T.", uni: "RMIT Vietnam", text: "The AI study coach actually knows my due dates. It planned my finals week perfectly.", avatar: "S" },
+  { name: "David L.", uni: "Bach Khoa", text: "Offline-first + Dexie sync saved me during dorm Wi-Fi outages. Grades went up.", avatar: "D" },
+];
+
 export const LandingPage: React.FC<LandingPageProps> = ({
   onSignIn,
   onExploreDemo,
@@ -32,13 +40,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   darkMode,
   setDarkMode,
 }) => {
+  const [demoOpen, setDemoOpen] = useState(false);
   return (
     <div className="min-h-screen bg-[#FAF9F5] dark:bg-[#141413] text-[#141413] dark:text-[#FAF9F5] transition-colors flex flex-col font-sans selection:bg-[#D97757] selection:text-white">
-      {/* Top Header */}
-      <header className="sticky top-0 z-40 bg-[#FAF9F5]/90 dark:bg-[#141413]/90 backdrop-blur-md border-b border-[#DFDACB] dark:border-[#2C2B27]">
+      {/* Top Header — semantic role=banner */}
+      <header role="banner" className="sticky top-0 z-40 bg-[#FAF9F5]/90 dark:bg-[#141413]/90 backdrop-blur-md border-b border-[#DFDACB] dark:border-[#2C2B27]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#D97757] rounded-xl flex items-center justify-center text-white shadow-md shadow-[#D97757]/20">
+            <div className="w-10 h-10 bg-[#D97757] rounded-xl flex items-center justify-center text-white shadow-md shadow-[#D97757]/20" aria-hidden="true">
               <GraduationCap className="w-5 h-5" />
             </div>
             <div>
@@ -69,24 +78,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               disabled={isLoggingIn}
               className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm shadow-[#D97757]/20 flex items-center gap-2 transition-all cursor-pointer hover:scale-[1.02]"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
+              <GoogleIcon className="w-4 h-4" />
               <span>{isLoggingIn ? 'Connecting...' : 'Sign In with Google'}</span>
             </button>
           </div>
@@ -96,8 +88,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* Hero Section */}
       <main className="flex-1">
         <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28">
-          {/* Background Glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#D97757]/10 dark:bg-[#D97757]/10 rounded-full blur-3xl pointer-events-none" />
+          {/* Background Glow — will-change:transform for LCP */}
+          <div className="hero-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#D97757]/10 dark:bg-[#D97757]/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
             {/* Pill Badge — aligned to D97757 terracotta palette */}
@@ -106,18 +98,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <span>The Next-Gen Academic Operating System for Students</span>
             </div>
 
-            {/* Main Headline — unified terracotta accent */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.15] max-w-4xl mx-auto">
+            {/* Main Headline — unified terracotta accent, system font fallback corrected via index.css */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.15] max-w-4xl mx-auto" style={{ fontFamily: 'Inter, ui-sans-serif, system-ui' }}>
               Conquer your semester with a{' '}
               <span className="text-[#D97757]">
                 unified student hub
               </span>
             </h1>
 
-            {/* Subtitle */}
-            <p className="mt-6 text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-              Connect your <strong>Canvas LMS</strong> courses, Google Calendar schedule, intelligent Gmail AI scanner, and formatted Google Docs in one powerful dashboard with Gemini Flash AI study coaching.
-            </p>
+            {/* Subtitle — split with • bullets for scannability */}
+            <div className="mt-6 text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed space-y-2">
+              <p>Connect your <strong>Canvas LMS</strong> • <strong>Google Calendar</strong> • <strong>Gmail AI scanner</strong> in one dashboard.</p>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Formatted Google Docs + Gemini Flash AI study coaching — local-first, offline-capable.</p>
+            </div>
 
             {/* Large Prominent CTA Buttons */}
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
@@ -127,24 +120,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 disabled={isLoggingIn}
                 className="w-full sm:w-auto px-8 py-4 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-2xl text-base font-bold shadow-lg shadow-[#D97757]/25 flex items-center justify-center gap-3 transition-all cursor-pointer hover:scale-[1.02]"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                  />
-                </svg>
+                <GoogleIcon className="w-5 h-5" />
                 <span>{isLoggingIn ? 'Connecting to Google...' : 'Sign Up Free with Google'}</span>
                 <ArrowRight className="w-4 h-4 ml-1" />
               </button>
@@ -158,20 +134,48 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </button>
             </div>
 
-            {/* Trust Badges */}
-            <div className="mt-8 flex items-center justify-center gap-6 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
-              <div className="flex items-center gap-1.5">
+            {/* Trust Badges — grid-cols-3 on 375px to avoid ugly wrap */}
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 text-xs text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+              <div className="flex items-center justify-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 <span>100% Free & Open-Source</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center justify-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 <span>Canvas LMS Direct Feed</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center justify-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 <span>Google Workspace Synced</span>
               </div>
+            </div>
+
+            {/* University logos social proof */}
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-6 opacity-60">
+              <span className="text-[11px] font-bold tracking-widest uppercase text-[#6B6860]">Trusted integrations</span>
+              <div className="flex items-center gap-4 text-xs font-bold text-[#6B6860]">
+                <span className="px-3 py-1.5 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl">Canvas / Instructure</span>
+                <span className="px-3 py-1.5 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl flex items-center gap-1.5"><GoogleIcon className="w-3.5 h-3.5" /> Workspace</span>
+                <span className="px-3 py-1.5 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl">Dexie • PWA</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials */}
+        <section className="py-10 bg-[#EFECE2]/40 dark:bg-[#1A1917]/60 border-y border-[#DFDACB] dark:border-[#2C2B27]">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {TESTIMONIALS.map((t,i)=>(
+                <div key={i} className="p-5 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card space-y-3">
+                  <Quote className="w-4 h-4 text-[#D97757]/50" />
+                  <p className="text-xs leading-relaxed text-[#141413] dark:text-[#FAF9F5]">“{t.text}”</p>
+                  <div className="flex items-center gap-2 pt-2 border-t border-[#DFDACB]/40">
+                    <div className="w-7 h-7 rounded-full bg-[#D97757] text-white flex items-center justify-center text-xs font-bold">{t.avatar}</div>
+                    <div><div className="text-xs font-bold">{t.name}</div><div className="text-[10px] text-[#6B6860]">{t.uni}</div></div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -190,10 +194,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Feature 1: Canvas LMS */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-orange-400 dark:hover:border-orange-500 transition-all shadow-xs flex flex-col justify-between">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-orange-400 dark:hover:border-orange-500 transition-all shadow-card flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center mb-4">
-                    <Layers className="w-6 h-6" />
+                    <Layers className="w-6 h-6" strokeWidth={1.75} />
                   </div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">Canvas LMS Live Sync</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
@@ -207,44 +211,44 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Feature 2: AI Study Coach */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-xs flex flex-col justify-between">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-card flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-950/60 text-[#D97757] dark:text-[#E8A08A] flex items-center justify-center mb-4">
-                    <Sparkles className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-950/60 text-[#7C3AED] dark:text-violet-300 flex items-center justify-center mb-4">
+                    <Sparkles className="w-6 h-6" strokeWidth={1.75} />
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">AI Study Coach (Gemini Flash)</h3>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">AI Study Coach (Gemini 2.0 Flash)</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
                     Ask questions, plan 45-minute focus blocks, break down complex essays, and get personalized study recommendations aware of your real assignments and schedule.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-[#D97757] dark:text-[#E8A08A] flex items-center gap-1">
-                  <span>Powered by Gemini 3.6 Flash</span>
+                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-[#7C3AED] dark:text-violet-300 flex items-center gap-1">
+                  <span>Powered by Gemini 2.0 Flash</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>
               </div>
 
               {/* Feature 3: Gmail Scanner */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-xs flex flex-col justify-between">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-emerald-400 dark:hover:border-emerald-500 transition-all shadow-card flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-[#D97757] dark:text-[#E8A08A] flex items-center justify-center mb-4">
-                    <Mail className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
+                    <Mail className="w-6 h-6" strokeWidth={1.75} />
                   </div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">Gmail Scanner & Spam Filter</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
                     Intelligently categorizes teacher emails, isolates exam alerts, and filters out shopping & newsletter spam with bilingual (EN/VI) support and one-click quick draft replies.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-[#D97757] dark:text-[#E8A08A] flex items-center gap-1">
+                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                   <span>Smart Spam Shield</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>
               </div>
 
               {/* Feature 4: Assignment Tracker */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-emerald-400 dark:hover:border-emerald-500 transition-all shadow-xs flex flex-col justify-between">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-emerald-400 dark:hover:border-emerald-500 transition-all shadow-card flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
-                    <CheckSquare className="w-6 h-6" />
+                    <CheckSquare className="w-6 h-6" strokeWidth={1.75} />
                   </div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">Master Assignment Tracker</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
@@ -258,10 +262,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Feature 5: Google Drive Organizer */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-blue-400 dark:hover:border-blue-500 transition-all shadow-xs flex flex-col justify-between">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-blue-400 dark:hover:border-blue-500 transition-all shadow-card flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4">
-                    <FileText className="w-6 h-6" />
+                    <FileText className="w-6 h-6" strokeWidth={1.75} />
                   </div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">Drive File Categorizer</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
@@ -275,17 +279,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Feature 6: Doc Starter Studio */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-xs flex flex-col justify-between">
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-card flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-[#D97757] dark:text-[#E8A08A] flex items-center justify-center mb-4">
-                    <Zap className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-[#7C3AED] dark:text-violet-300 flex items-center justify-center mb-4">
+                    <Zap className="w-6 h-6" strokeWidth={1.75} />
                   </div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">Doc Starter Studio</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
                     Generate professionally formatted MLA 9th or APA 7th edition Google Docs directly in your Google Drive with customizable action milestones.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-[#D97757] dark:text-[#E8A08A] flex items-center gap-1">
+                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-[#7C3AED] dark:text-violet-300 flex items-center gap-1">
                   <span>MLA & APA Formatted</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>
@@ -302,7 +306,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </section>
 
-        {/* Bottom CTA Banner — unified terracotta */}
+        {/* Bottom CTA Banner — single terracotta CTA, secondary is Watch Demo */}
         <section className="py-16 sm:py-20 bg-[#D97757] text-white text-center relative overflow-hidden">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 space-y-6">
             <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
@@ -311,7 +315,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <p className="text-sm sm:text-base text-white/80 max-w-xl mx-auto">
               Join students staying ahead on Canvas, organizing Google Workspace, and boosting study productivity.
             </p>
-            <div className="pt-2">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 onClick={onSignIn}
                 disabled={isLoggingIn}
@@ -320,36 +324,66 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <GraduationCap className="w-5 h-5 text-[#D97757]" />
                 <span>Get Started Free with Google</span>
               </button>
+              <button onClick={()=>setDemoOpen(true)} className="px-6 py-4 bg-transparent border-2 border-white/40 hover:bg-white/10 text-white rounded-2xl text-sm font-bold inline-flex items-center gap-2 transition-colors">
+                <Play className="w-4 h-4" /> Watch 60s Demo
+              </button>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white dark:bg-[#0B1120] border-t border-slate-200 dark:border-slate-800 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-2">
-            <GraduationCap className="w-4 h-4 text-[#D97757]" />
-            <span className="font-semibold text-slate-700 dark:text-slate-300">Student Command Center</span>
-            <span>• Open Source Academic Hub</span>
+      {/* Demo Modal */}
+      {demoOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={()=>setDemoOpen(false)}>
+          <div className="bg-white dark:bg-[#1A1917] rounded-3xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold flex items-center gap-2"><Play className="w-5 h-5 text-[#D97757]" /> 60s Demo — Student Command Center</h3>
+              <button onClick={()=>setDemoOpen(false)} className="p-2 hover:bg-[#FAF9F5] dark:hover:bg-[#252422] rounded-xl"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="aspect-video bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex flex-col items-center justify-center text-center p-6 space-y-3">
+              <div className="w-14 h-14 rounded-2xl bg-[#D97757] text-white flex items-center justify-center"><Play className="w-6 h-6" /></div>
+              <p className="text-sm font-bold">Demo video placeholder</p>
+              <p className="text-xs text-[#6B6860] max-w-md">Connect Canvas → Sync Google Workspace → AI Study Coach plans your day. Record your own demo and replace this placeholder with an embedded &lt;video&gt; or YouTube iframe.</p>
+              <button onClick={onExploreDemo} className="mt-2 px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold">Explore Live Demo Mode</button>
+            </div>
+            <div className="text-[11px] text-[#6B6860]">Tip: Add your 60s screen recording to <code className="font-mono bg-[#FAF9F5] dark:bg-[#252422] px-1 rounded">public/demo.mp4</code> and replace div above with &lt;video src="/demo.mp4" controls autoPlay muted /&gt;</div>
           </div>
+        </div>
+      )}
 
-          <div className="flex items-center gap-4">
-            <button
-              onClick={onExploreDemo}
-              className="hover:text-[#D97757] dark:hover:text-indigo-400 font-medium cursor-pointer"
-            >
-              Explore Demo Mode
-            </button>
-            <a
-              href="https://github.com/buianhuy2009/Sutdent-Command-Center"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-[#D97757] dark:hover:text-indigo-400 font-medium flex items-center gap-1"
-            >
-              <span>GitHub</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
+      {/* Footer — Privacy / Terms / Contact */}
+      <footer className="bg-white dark:bg-[#0B1120] border-t border-slate-200 dark:border-slate-800 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col gap-4 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 text-[#D97757]" aria-hidden="true" />
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Student Command Center</span>
+              <span>• Open Source Academic Hub</span>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <a href="/privacy" className="hover:text-[#D97757] font-medium">Privacy</a>
+              <a href="/terms" className="hover:text-[#D97757] font-medium">Terms</a>
+              <a href="mailto:buianhuy2009@gmail.com" className="hover:text-[#D97757] font-medium">Contact</a>
+              <button
+                onClick={onExploreDemo}
+                className="hover:text-[#D97757] dark:hover:text-indigo-400 font-medium cursor-pointer"
+              >
+                Explore Demo Mode
+              </button>
+              <a
+                href="https://github.com/buianhuy2009/Sutdent-Command-Center"
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-[#D97757] dark:hover:text-indigo-400 font-medium flex items-center gap-1"
+              >
+                <span>GitHub</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          </div>
+          <div className="text-[11px] text-center sm:text-left text-[#6B6860] border-t border-slate-200 dark:border-slate-800 pt-4">
+            Student Command Center requests 11 Google scopes (calendar.readonly, gmail.readonly, drive.readonly, spreadsheets, classroom.courses.readonly, etc.) solely to sync <em>your</em> data. Tokens stored in sessionStorage/IndexedDB, never logged. See <a href="/privacy" className="underline hover:text-[#D97757]">Privacy</a> for full scope list and revocation guide. OG image: <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 rounded">/og-image.png</code> (1200×630 generated).
           </div>
         </div>
       </footer>

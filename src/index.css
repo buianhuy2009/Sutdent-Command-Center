@@ -2,53 +2,73 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* === Tokenized Theme Engine === */
+/* === Tokenized Theme Engine — Brand / Design System v2.0 === */
 :root {
   --color-background: 250 249 245; /* #FAF9F5 linen */
   --color-panel: 255 255 255;
   --color-border: 223 218 203; /* #DFDACB */
-  --color-accent: 217 119 87; /* #D97757 */
+  --color-accent: 217 119 87; /* #D97757 terracotta — primary CTA only */
+  --color-secondary: 124 58 237; /* #7C3AED violet — secondary semantic */
+  --color-success: 16 185 129; /* #10B981 emerald — success */
   --color-text: 20 20 19;
-  --color-muted: 107 104 96; /* #6B6860 WCAG AA 4.6:1 on #FAF9F5 */
-  --text-display: 600 2.5rem/1.1 ui-sans-serif, system-ui;
-  --text-body: 400 0.875rem/1.6 ui-sans-serif, system-ui;
-  --font-serif: ui-serif, Georgia, serif;
+  --color-muted: 107 104 96; /* #6B6860 WCAG AA 4.6:1 on #FAF9F5 — replaces #8C897F */
+  --color-muted-aa: 107 104 96;
+  --text-display: 600 2.5rem/1.1 Inter, ui-sans-serif, system-ui;
+  --text-body: 400 0.875rem/1.6 Inter, ui-sans-serif, system-ui;
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: Fraunces, ui-serif, Georgia, serif;
   --radius-card: 1rem;
   --radius-pill: 9999px;
+  /* spacing vars for density */
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-y-6: 1.5rem;
+  /* glass blur system — unified */
+  --blur-glass-panel: 14px;
+  --blur-glass-card: 10px;
+  --saturate-glass: 160%;
+  /* shadows */
+  --shadow-card: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.04);
+  --shadow-card-hover: 0 4px 12px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.06);
 }
-:root[data-theme="linen"] {
+/* Legacy aliases — App.tsx writes parchment/linen/midnight/ocean/forest; keep sync */
+:root[data-theme="linen"], :root[data-theme="parchment"] {
   --color-background: 250 249 245;
   --color-panel: 255 255 255;
   --color-border: 223 218 203;
   --color-accent: 217 119 87;
   --color-text: 20 20 19;
 }
+:root[data-theme="midnight"] { --color-background: 10 10 12; --color-panel: 26 25 23; --color-border: 46 45 41; --color-accent: 217 119 87; --color-text: 250 249 245; }
+:root[data-theme="ocean"] { --color-background: 11 19 43; --color-panel: 18 30 62; --color-border: 38 58 107; --color-accent: 96 165 250; --color-text: 236 239 244; }
+:root[data-theme="forest"] { --color-background: 6 26 20; --color-panel: 14 42 32; --color-border: 36 71 58; --color-accent: 52 211 153; --color-text: 236 253 245; }
+/* extra branded themes — keep nord/dracula/catppuccin/cyberpunk for power users, map to same vars */
 :root[data-theme="nord"] {
-  --color-background: 46 52 64; /* #2E3440 */
-  --color-panel: 59 66 82; /* #3B4252 */
+  --color-background: 46 52 64;
+  --color-panel: 59 66 82;
   --color-border: 76 86 102;
-  --color-accent: 136 192 208; /* #88C0D0 */
+  --color-accent: 136 192 208;
   --color-text: 236 239 244;
 }
 :root[data-theme="dracula"] {
-  --color-background: 40 42 54; /* #282A36 */
-  --color-panel: 68 71 90; /* #44475A */
+  --color-background: 40 42 54;
+  --color-panel: 68 71 90;
   --color-border: 98 114 164;
-  --color-accent: 255 121 198; /* #FF79C6 */
+  --color-accent: 255 121 198;
   --color-text: 248 248 242;
 }
 :root[data-theme="catppuccin"] {
-  --color-background: 30 30 46; /* #1E1E2E */
-  --color-panel: 49 50 68; /* #313244 */
+  --color-background: 30 30 46;
+  --color-panel: 49 50 68;
   --color-border: 69 71 90;
-  --color-accent: 203 166 247; /* #CBA6F7 */
+  --color-accent: 203 166 247;
   --color-text: 205 214 244;
 }
 :root[data-theme="cyberpunk"] {
   --color-background: 10 10 18;
   --color-panel: 20 20 35;
   --color-border: 88 28 102;
-  --color-accent: 0 255 255; /* cyan */
+  --color-accent: 0 255 255;
   --color-text: 255 255 200;
 }
 
@@ -57,6 +77,7 @@
     color-scheme: light;
     background-color: rgb(var(--color-background));
     color: rgb(var(--color-text));
+    font-family: var(--font-sans);
   }
   html.dark {
     color-scheme: dark;
@@ -67,22 +88,23 @@
     @apply antialiased;
     background-color: rgb(var(--color-background));
     color: rgb(var(--color-text));
+    font-family: var(--font-sans);
   }
   .dark body {
     background-color: rgb(var(--color-background));
     color: rgb(var(--color-text));
   }
-
   ::selection {
     background-color: #D97757;
     color: #FFFFFF;
   }
-
-  /* Balanced typography for headings */
   h1, h2, h3, h4, h5 {
     text-wrap: balance;
+    font-family: var(--font-sans);
   }
-
+  blockquote, .font-serif {
+    font-family: var(--font-serif);
+  }
   /* Distinct Warm Charcoal Dark Mode — scoped to [data-theme] to avoid breaking Landing which expects slate-900 */
   .dark {
     --tw-border-opacity: 1;
@@ -109,7 +131,7 @@
     color: #B5B2A8;
   }
   html.dark .text-slate-500 {
-    color: #B5B2A8; /* bumped from #8C897F for contrast */
+    color: #B5B2A8;
   }
   html.dark .text-slate-600 {
     color: #E2DFD6;
@@ -120,6 +142,10 @@
     color: #FAF9F5;
   }
 }
+
+/* WCAG contrast fix: globally map legacy #8C897F to AA compliant #6B6860 */
+.text-\[\#8C897F\] { color: rgb(var(--color-muted)) !important; }
+.text-slate-500 { color: rgb(var(--color-muted)) !important; }
 
 /* Native View Transitions API Styling */
 ::view-transition-old(root),
@@ -168,37 +194,40 @@
   min-height: 0;
 }
 
-/* Glassmorphism Shell Utilities */
+/* Glassmorphism Shell Utilities — unified blur */
 .glass-panel {
   background-color: rgba(250, 249, 246, 0.88);
-  backdrop-filter: blur(14px) saturate(160%);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
 }
 .dark .glass-panel {
   background-color: rgba(11, 17, 32, 0.88);
-  backdrop-filter: blur(14px) saturate(160%);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
 }
-
 .glass-card {
   background-color: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--blur-glass-card));
+  -webkit-backdrop-filter: blur(var(--blur-glass-card));
 }
 .dark .glass-card {
   background-color: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--blur-glass-card));
+  -webkit-backdrop-filter: blur(var(--blur-glass-card));
 }
 
-/* Micro-borders & layered shadows system */
+/* Micro-borders & layered shadows system — radius token applied */
 .card-micro {
   border: 1px solid rgba(0,0,0,0.06);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-card);
 }
 .dark .card-micro {
   border-color: rgba(255,255,255,0.06);
   box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.35);
+}
+.shadow-card {
+  box-shadow: var(--shadow-card);
 }
 .focus-ring {
   outline: none;
@@ -206,15 +235,18 @@
 .focus-ring:focus-visible {
   box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 4px rgb(var(--color-accent));
 }
-/* Global focus-visible for accessibility (fix Navbar button border-transparent no ring) */
+/* Global focus-visible — use outline for layout stability */
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 3px rgb(var(--color-accent));
+  outline: 2px solid rgb(var(--color-accent));
+  outline-offset: 2px;
+  box-shadow: none;
   border-radius: 0.5rem;
 }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.01ms !important; }
+  /* keep opacity fades for reduced motion */
+  .animate-in, .animate-out { transition-property: opacity !important; }
 }
 
 /* Scroll-Driven Timeline Reveal Animations */
@@ -243,7 +275,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .cq-container {
   container-type: inline-size;
 }
-
 @container (min-width: 480px) {
   .cq-row {
     flex-direction: row !important;
@@ -254,38 +285,52 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   }
 }
 
-/* UI Density Modes */
+/* UI Density Modes — via CSS vars, not !important on utilities */
 html[data-density="compact"] {
   font-size: 13.5px;
+  --space-6: 1rem;
+  --space-8: 1.25rem;
+  --space-y-6: 1rem;
 }
-html[data-density="compact"] .p-6 {
-  padding: 1rem !important;
-}
-html[data-density="compact"] .p-8 {
-  padding: 1.25rem !important;
-}
+html[data-density="compact"] .p-6 { padding: var(--space-6); }
+html[data-density="compact"] .p-8 { padding: var(--space-8); }
 html[data-density="compact"] .space-y-6 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
-  margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse))) !important;
-  margin-bottom: calc(1rem * var(--tw-space-y-reverse)) !important;
+  margin-top: calc(var(--space-y-6) * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(var(--space-y-6) * var(--tw-space-y-reverse));
 }
-
 html[data-density="spacious"] {
   font-size: 16px;
+  --space-6: 2rem;
+  --space-8: 2.5rem;
+  --space-y-6: 2rem;
 }
 
-/* Color Theme Palette Classes */
+/* Color Theme Palette Classes — legacy midnight/ocean/forest already defined above */
 html[data-theme="midnight"].dark,
 html[data-theme="midnight"].dark body {
   background-color: #0A0A0C;
 }
-
 html[data-theme="ocean"].dark,
 html[data-theme="ocean"].dark body {
   background-color: #0B132B;
 }
-
 html[data-theme="forest"].dark,
 html[data-theme="forest"].dark body {
   background-color: #061A14;
+}
+
+/* semantic secondary / success utilities — keep terracotta CTA-only */
+.bg-secondary { background-color: rgb(var(--color-secondary)); }
+.text-secondary { color: rgb(var(--color-secondary)); }
+.border-secondary { border-color: rgb(var(--color-secondary)); }
+.bg-success { background-color: rgb(var(--color-success)); }
+.text-success { color: rgb(var(--color-success)); }
+
+/* will-change for hero glow LCP */
+.hero-glow { will-change: transform; }
+
+/* iOS input zoom prevention — keep inputs 16px on mobile via max(16px, 0.75rem) */
+@media (max-width: 768px) {
+  input, select, textarea { font-size: max(16px, 0.875rem) !important; }
 }

@@ -541,10 +541,30 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            {/* Mobile card view <768px — avoids min-w-[600px] horizontal scroll */}
+            <div className="md:hidden p-3 space-y-2">
+              {filteredAssignments.map(a=>{
+                const isDone = a.status==='Done';
+                return (
+                  <div key={a.id} onClick={()=>setSelectedAssignment(a)} className={`p-3 rounded-2xl border bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27] flex flex-col gap-1.5 ${isDone?'opacity-60':''}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 truncate">{a.subject}</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${a.priority==='High'?'bg-rose-50 text-rose-700 border border-rose-200':'bg-slate-100 text-slate-600'}`}>{a.priority}</span>
+                    </div>
+                    <div className={`text-xs font-bold truncate ${isDone?'line-through text-[#6B6860]':''}`}>{a.assignmentName}</div>
+                    <div className="flex items-center justify-between text-[11px] text-[#6B6860]">
+                      <span>Due {a.dueDate || 'No date'}</span>
+                      <span className="text-[10px]">{a.status}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#DFDACB]/80 dark:border-[#2C2B27]/80 bg-[#FAF9F5] dark:bg-[#1F1E1B] text-[10px] font-bold uppercase tracking-wider text-[#8C897F]">
+                  <tr className="border-b border-[#DFDACB]/80 dark:border-[#2C2B27]/80 bg-[#FAF9F5] dark:bg-[#1F1E1B] text-[10px] font-bold uppercase tracking-wider text-[#6B6860]">
                     <th className="py-2.5 px-3 w-10 text-center">Done</th>
                     <th className="py-2.5 px-3 w-32">Subject</th>
                     <th className="py-2.5 px-3">Assignment Name</th>
@@ -634,6 +654,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       )}

@@ -66,6 +66,23 @@ export const SplitScreenStudio: React.FC = () => {
   const [savedLayouts, setSavedLayouts] = useState<Record<string, any>>(() => {
     try { const s = localStorage.getItem('scc_saved_layouts'); return s ? JSON.parse(s) : {}; } catch { return {}; }
   });
+  const [dragPct, setDragPct] = useState(50);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const handleDividerMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startPct = dragPct;
+    const onMove = (ev: MouseEvent) => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const delta = ((ev.clientX - startX) / rect.width) * 100;
+      const next = Math.max(20, Math.min(80, startPct + delta));
+      setDragPct(next);
+    };
+    const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
 
   const updateConfig = (newConfig: Partial<SplitScreenConfig>) => {
     const updated = { ...config, ...newConfig };
@@ -256,10 +273,10 @@ export const SplitScreenStudio: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className={`grid gap-4 h-[calc(85vh-160px)] min-h-[580px] ${gridStyle}`}>
+        <div ref={containerRef} className="flex h-[calc(85vh-160px)] min-h-[580px] gap-0 rounded-2xl overflow-hidden border border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B]">
         {/* Left Pane */}
         {(!config.activeFullscreenPane || config.activeFullscreenPane === 'left') && (
-          <div className="flex flex-col h-full bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] overflow-hidden shadow-xs">
+          <div style={{ flexBasis: config.activeFullscreenPane ? '100%' : `${dragPct}%` }} className="flex flex-col h-full bg-white dark:bg-[#1A1917] overflow-hidden shrink-0">
             <div className="p-3 border-b border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between bg-[#FAF9F5] dark:bg-[#1F1E1B] shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#8C897F]">Left Pane:</span>
@@ -294,10 +311,20 @@ export const SplitScreenStudio: React.FC = () => {
             </div>
           </div>
         )}
+        {/* Draggable divider — visible only when both panes shown */}
+        {!config.activeFullscreenPane && (
+          <div
+            onMouseDown={handleDividerMouseDown}
+            className="w-1.5 bg-[#DFDACB] dark:bg-[#2C2B27] hover:bg-[#D97757] dark:hover:bg-[#D97757] cursor-col-resize flex items-center justify-center shrink-0 select-none"
+            title="Drag to resize — 20% to 80%"
+          >
+            <div className="w-0.5 h-8 bg-white/60 rounded-full" />
+          </div>
+        )}
 
         {/* Right Pane */}
         {(!config.activeFullscreenPane || config.activeFullscreenPane === 'right') && (
-          <div className="flex flex-col h-full bg-white dark:bg-[#1A1917] rounded-2xl border border-black/[0.06] dark:border-white/[0.06] overflow-hidden shadow-xs">
+          <div style={{ flexBasis: config.activeFullscreenPane ? '100%' : `${100 - dragPct}%` }} className="flex flex-col h-full bg-white dark:bg-[#1A1917] overflow-hidden shrink-0">
             <div className="p-3 border-b border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between bg-[#FAF9F5] dark:bg-[#1F1E1B] shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#8C897F]">Right Pane:</span>

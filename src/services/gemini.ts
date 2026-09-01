@@ -22,27 +22,40 @@ import {
   MarkdownNote,
 } from '../types';
 
-// --- Client-Side API Key Management ---
+// --- Client-Side API Key Management — plaintext warning + sessionStorage option ---
 const GEMINI_KEY_STORAGE_KEY = 'scc_gemini_api_key';
+const GEMINI_KEY_SESSION_KEY = 'scc_gemini_api_key_session';
 
 export function getClientGeminiApiKey(): string {
   try {
+    // sessionStorage takes precedence if user opted for session-only
+    const sess = sessionStorage.getItem(GEMINI_KEY_SESSION_KEY);
+    if (sess) return sess;
     return localStorage.getItem(GEMINI_KEY_STORAGE_KEY) || '';
   } catch {
     return '';
   }
 }
 
-export function setClientGeminiApiKey(key: string): void {
+export function setClientGeminiApiKey(key: string, opts?: { sessionOnly?: boolean }): void {
   try {
     const trimmed = key.trim();
-    if (trimmed) {
-      localStorage.setItem(GEMINI_KEY_STORAGE_KEY, trimmed);
-    } else {
+    if (!trimmed) {
       localStorage.removeItem(GEMINI_KEY_STORAGE_KEY);
+      sessionStorage.removeItem(GEMINI_KEY_SESSION_KEY);
+      return;
+    }
+    if (opts?.sessionOnly) {
+      sessionStorage.setItem(GEMINI_KEY_SESSION_KEY, trimmed);
+      localStorage.removeItem(GEMINI_KEY_STORAGE_KEY);
+      console.warn('Gemini key stored in sessionStorage (cleared on tab close). More secure against persistent XSS, but will be lost on close.');
+    } else {
+      localStorage.setItem(GEMINI_KEY_STORAGE_KEY, trimmed);
+      sessionStorage.removeItem(GEMINI_KEY_SESSION_KEY);
+      console.warn('Gemini key stored in localStorage plaintext — visible to any script on this origin. Consider using Vault PIN or sessionStorage option for better security.');
     }
   } catch (e) {
-    console.error('Error storing Gemini API key in localStorage:', e);
+    console.error('Error storing Gemini API key:', e);
   }
 }
 
@@ -61,14 +74,38 @@ export async function testGeminiApiKey(key: string): Promise<boolean> {
 }
 
 // -------------------------------------------------------------
-// RATE-LIMIT & FREE-TIER RESILIENCE ENGINE (15 RPM Token Bucket)
+// RATE-LIMIT & FREE-TIER RESILIENCE ENGINE (15 RPM Token Bucket with burst 3)
 // -------------------------------------------------------------
 
 class GeminiRateLimiter {
-  private lastCallTimestamp = 0;
-  private minIntervalMs = 3800; // ~15.7 requests per minute max
+  private tokens = 15;
+  private maxTokens = 15;
+  private refillIntervalMs = 60000; // 15 per minute
+  private lastRefill = Date.now();
   private queue: Array<() => Promise<void>> = [];
   private isProcessing = false;
+
+  private refill() {
+    const now = Date.now();
+    const elapsed = now - this.lastRefill;
+    if (elapsed >= this.refillIntervalMs) {
+      const refillCount = Math.floor(elapsed / this.refillIntervalMs) * 15;
+      this.tokens = Math.min(this.maxTokens, this.tokens + refillCount);
+      this.lastRefill = now;
+    }
+  }
+
+  private async acquireToken(): Promise<void> {
+    this.refill();
+    if (this.tokens > 0) {
+      this.tokens -= 1;
+      return;
+    }
+    // wait for refill
+    const wait = this.refillIntervalMs - (Date.now() - this.lastRefill);
+    await new Promise(r => setTimeout(r, Math.max(0, wait)));
+    return this.acquireToken();
+  }
 
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     return new Promise<T>((resolve, reject) => {
@@ -77,12 +114,7 @@ class GeminiRateLimiter {
         const maxAttempts = 4;
         while (attempts < maxAttempts) {
           try {
-            const now = Date.now();
-            const elapsed = now - this.lastCallTimestamp;
-            if (elapsed < this.minIntervalMs) {
-              await new Promise((r) => setTimeout(r, this.minIntervalMs - elapsed));
-            }
-            this.lastCallTimestamp = Date.now();
+            await this.acquireToken();
             const result = await fn();
             resolve(result);
             return;
@@ -94,6 +126,8 @@ class GeminiRateLimiter {
               err?.message?.includes('RESOURCE_EXHAUSTED');
 
             if (is429 && attempts < maxAttempts) {
+              // exponential backoff + token replenish hint
+              this.tokens = Math.max(0, this.tokens - 2);
               const backoffMs = Math.pow(2, attempts) * 1000 + Math.random() * 500;
               console.warn(
                 `Gemini 429 Rate-limit encountered. Backing off for ${Math.round(
@@ -213,26 +247,31 @@ export async function callGroqDirect(promptText: string, jsonMode: boolean = fal
     throw new Error('No Groq API key available for direct client call.');
   }
 
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${groqKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: promptText }],
-      temperature: 0.3,
-      response_format: jsonMode ? { type: 'json_object' } : undefined,
-    }),
-  });
+  const tryModel = async (model: string) => {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${groqKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: promptText }],
+        temperature: 0.3,
+        response_format: jsonMode ? { type: 'json_object' } : undefined,
+      }),
+    });
+    if (!res.ok) throw new Error(`Groq ${model} error: ${res.statusText}`);
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || '';
+  };
 
-  if (!res.ok) {
-    throw new Error(`Groq Direct API error: ${res.statusText}`);
+  try {
+    return await tryModel('llama-3.3-70b-versatile');
+  } catch (e) {
+    console.warn('Groq 70B failed, falling back to cheaper llama-3.1-8b-instant', e);
+    return await tryModel('llama-3.1-8b-instant');
   }
-
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || '';
 }
 
 /**
@@ -555,6 +594,7 @@ Extract:
 2. Major Exams (Midterms, Finals, Unit Tests) with exact or estimated dates (format YYYY-MM-DD), weight percentage, and topics covered.
 3. Automatically calculate the 14-day, 7-day, and 2-day prep timeline for each exam (calculate dates based on the exam date).
 4. Major assignments and homework projects with due dates and weight percent.
+5. Confidence 0-1 for overall parse (1 = dates explicitly stated, 0.5 = inferred, <0.3 = ambiguous).
 
 Provided text (if any):
 ${params.textContent || 'None (refer to uploaded document)'}
@@ -563,6 +603,7 @@ Respond with strict JSON:
 {
   "courseName": "string",
   "instructor": "string",
+  "confidence": 0.85,
   "exams": [
     {
       "examName": "Midterm Exam",
@@ -570,6 +611,7 @@ Respond with strict JSON:
       "examDate": "YYYY-MM-DD",
       "weightPercent": 25,
       "topics": ["Topic 1", "Topic 2"],
+      "confidence": 0.9,
       "timeline": {
         "prep14Days": "YYYY-MM-DD",
         "sprint7Days": "YYYY-MM-DD",
@@ -578,7 +620,7 @@ Respond with strict JSON:
     }
   ],
   "keyAssignments": [
-    { "title": "string", "dueDate": "YYYY-MM-DD", "weightPercent": 15 }
+    { "title": "string", "dueDate": "YYYY-MM-DD", "weightPercent": 15, "confidence": 0.85 }
   ]
 }
 Return only JSON.`;

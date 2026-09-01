@@ -31,10 +31,19 @@ const PeriodicTableWorkspace = lazy(() => import('./components/workspaces/Period
 const UnitConverterWorkspace = lazy(() => import('./components/workspaces/UnitConverterWorkspace').then(m => ({ default: m.UnitConverterWorkspace })));
 const ArxivWorkspace = lazy(() => import('./components/workspaces/ArxivWorkspace').then(m => ({ default: m.ArxivWorkspace })));
 const OpenLibraryWorkspace = lazy(() => import('./components/workspaces/OpenLibraryWorkspace').then(m => ({ default: m.OpenLibraryWorkspace })));
+const CitationVaultWorkspace = lazy(() => import('./components/workspaces/CitationVaultWorkspace').then(m => ({ default: m.CitationVaultWorkspace })));
+const TimetableWorkspace = lazy(() => import('./components/workspaces/TimetableWorkspace').then(m => ({ default: m.TimetableWorkspace })));
+const ScholarshipTrackerWorkspace = lazy(() => import('./components/workspaces/ScholarshipTrackerWorkspace').then(m => ({ default: m.ScholarshipTrackerWorkspace })));
+const GroupProjectWorkspace = lazy(() => import('./components/workspaces/GroupProjectWorkspace').then(m => ({ default: m.GroupProjectWorkspace })));
+const PeerQAWorkspace = lazy(() => import('./components/workspaces/PeerQAWorkspace').then(m => ({ default: m.PeerQAWorkspace })));
+const NotionImportWorkspace = lazy(() => import('./components/workspaces/NotionImportWorkspace').then(m => ({ default: m.NotionImportWorkspace })));
+const DeadlineGanttWorkspace = lazy(() => import('./components/workspaces/DeadlineGanttWorkspace').then(m => ({ default: m.DeadlineGanttWorkspace })));
 import { WikipediaLookupModal } from './components/WikipediaLookupModal';
 import { StudyCardModal } from './components/StudyCardModal';
 import { PortfolioExportModal } from './components/PortfolioExportModal';
 import { MorningCheckInModal } from './components/MorningCheckInModal';
+import { FeedbackWidget } from './components/FeedbackWidget';
+import { OnboardingChecklist } from './components/OnboardingChecklist';
 import { SplitScreenStudio } from './components/SplitScreenStudio';
 import { DailyRadarTab } from './components/DailyRadarTab';
 import { GmailRadarTab } from './components/GmailRadarTab';
@@ -67,6 +76,9 @@ import { ToastContainer } from './components/Toast';
 import confetti from 'canvas-confetti';
 import { WorkspaceId, AgentAction } from './types';
 import { loadSRSDecks, saveSRSDecks, createNewSRSCard, SRSDeck } from './services/srsEngine';
+import { usePomodoroStore } from './stores/pomodoroStore';
+import { trackEvent } from './services/analytics';
+import { db } from './services/db';
 
 import {
   signInWithGoogle,
@@ -201,10 +213,13 @@ export default function App() {
     if (darkMode) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('scc_theme', 'dark');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#1A1917');
     } else {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('scc_theme', 'light');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#D97757');
     }
+    document.documentElement.style.colorScheme = darkMode ? 'dark' : 'light';
   }, [darkMode]);
 
   // Initialize Density & Palette Theme attributes
@@ -225,6 +240,30 @@ export default function App() {
       console.error('Theme init error:', e);
     }
   }, []);
+
+  // Live clock moved from DashboardHome to Navbar (saves 60px above fold)
+  const [navClock, setNavClock] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+  const [navDate, setNavDate] = useState(() => new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date()));
+  useEffect(() => {
+    const id = setInterval(() => {
+      setNavClock(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      setNavDate(new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date()));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // PWA install prompt + beforeinstallprompt handling
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
+  useEffect(() => {
+    const onBeforeInstall = (e: any) => { e.preventDefault(); setDeferredPrompt(e); setShowInstallBtn(true); };
+    const onAppInstalled = () => { setShowInstallBtn(false); setDeferredPrompt(null); };
+    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    window.addEventListener('appinstalled', onAppInstalled);
+    return () => { window.removeEventListener('beforeinstallprompt', onBeforeInstall); window.removeEventListener('appinstalled', onAppInstalled); };
+  }, []);
+
+
 
   // Auth & User
   const [user, setUser] = useState<User | null>(null);
@@ -270,6 +309,7 @@ export default function App() {
   const [isChangelogOpen, setIsChangelogOpen] = useState(false);
   const [isStudyPlanOpen, setIsStudyPlanOpen] = useState(false);
   const [isIntroTourOpen, setIsIntroTourOpen] = useState(false);
+  const [showChangelogDot, setShowChangelogDot] = useState(false);
   const onboardingDialogRef = useRef<HTMLDialogElement | null>(null);
 
   useEffect(() => {
@@ -285,10 +325,10 @@ export default function App() {
         setIsMorningCheckInOpen(true);
       }
       
+      // Changelog: show dot not modal — user clicks What's New dot to open
       const lastSeenVersion = localStorage.getItem('scc_last_seen_version');
       if (lastSeenVersion !== CURRENT_VERSION) {
-        setIsChangelogOpen(true);
-        localStorage.setItem('scc_last_seen_version', CURRENT_VERSION);
+        setShowChangelogDot(true);
       }
     } catch (e) {
       console.error('Error checking morning checkin and version seen:', e);
@@ -362,6 +402,11 @@ export default function App() {
     });
   }, []);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  useEffect(() => {
+    if (mobileNavOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileNavOpen]);
 
   // App Store & Pinned Tools State
   const [appStoreOpen, setAppStoreOpen] = useState(false);
@@ -621,6 +666,48 @@ export default function App() {
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  // Share target ?share-target=1 handling → create assignment (after addToast defined)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('share-target') === '1') {
+        const title = params.get('title') || '';
+        const text = params.get('text') || '';
+        const url = params.get('url') || '';
+        const name = title || text.slice(0, 80) || url || 'Shared note';
+        const assignmentName = name.slice(0, 120);
+        const notes = [text, url].filter(Boolean).join('\n');
+        setTimeout(() => {
+          setAssignments(prev => [...prev, { id: `share-${Date.now()}`, assignmentName, subject: 'General', dueDate: new Date(Date.now()+86400000*3).toISOString().split('T')[0], priority: 'Med', status: 'Not Started', source: 'Manual', notes }]);
+          addToast({ type: 'success', title: 'Shared content saved', message: `Created task from share: "${assignmentName}"` });
+        }, 800);
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    } catch {}
+  }, [addToast]);
+
+  // Offline queue retry with exponential backoff via Dexie + navigator.onLine
+  useEffect(() => {
+    const retryQueue = async () => {
+      if (!navigator.onLine) return;
+      try {
+        const queued = await db.assignmentsQueue.toArray();
+        if (!queued.length) return;
+        const token = getStoredGoogleToken();
+        if (!token || !masterSheetId) return;
+        for (const item of queued) {
+          try {
+            await appendAssignmentToSheet(token, masterSheetId, item);
+            await db.assignmentsQueue.delete(item.id);
+          } catch (e) { console.warn('Queue retry failed', e); }
+        }
+      } catch {}
+    };
+    window.addEventListener('online', retryQueue);
+    const iv = setInterval(retryQueue, 30000);
+    return () => { window.removeEventListener('online', retryQueue); clearInterval(iv); };
+  }, [masterSheetId]);
 
   const handleExecuteAgentAction = useCallback((action: AgentAction) => {
     switch (action.type) {
@@ -1881,6 +1968,7 @@ export default function App() {
     );
   }
 
+  // reducedMotion already handled via CSS prefers-reduced-motion + index.css; MotionConfig not required (motion 12 export issue avoided)
   return (
     <div className="h-screen max-h-screen overflow-hidden bg-[#FAF9F5] dark:bg-[#141413] text-[#141413] dark:text-[#FAF9F5] transition-colors flex flex-col font-sans selection:bg-[#D97757] selection:text-white">
       {/* Demo Mode Top Alert */}
@@ -1934,11 +2022,11 @@ export default function App() {
               pinnedAppIds={pinnedAppIds}
               onUnpinApp={handleUnpinApp}
               badges={{
-                canvas: clearedTabBadges.has('canvas') || activeTab === 'canvas' ? 0 : canvasUnfinishedCount,
-                schedule: clearedTabBadges.has('radar') || activeTab === 'radar' ? 0 : calendarEvents.length,
-                tracker: clearedTabBadges.has('tracker') || activeTab === 'tracker' ? 0 : pendingAssignmentCount,
-                gmail: clearedTabBadges.has('gmail') || activeTab === 'gmail' ? 0 : urgentEmailCount,
-                flashcards: clearedTabBadges.has('flashcards') || ['flashcards','quizlet','anki'].includes(activeTab) ? 0 : flashcardDueCount,
+                canvas: clearedTabBadges.has('canvas') ? 0 : canvasUnfinishedCount,
+                schedule: clearedTabBadges.has('radar') ? 0 : calendarEvents.length,
+                tracker: clearedTabBadges.has('tracker') ? 0 : pendingAssignmentCount,
+                gmail: clearedTabBadges.has('gmail') ? 0 : urgentEmailCount,
+                flashcards: clearedTabBadges.has('flashcards') ? 0 : flashcardDueCount,
                 pomodoro: 0,
               }}
             />
@@ -1964,11 +2052,11 @@ export default function App() {
                 pinnedAppIds={pinnedAppIds}
                 onUnpinApp={handleUnpinApp}
                 badges={{
-                  canvas: clearedTabBadges.has('canvas') || activeTab === 'canvas' ? 0 : canvasUnfinishedCount,
-                  schedule: clearedTabBadges.has('radar') || activeTab === 'radar' ? 0 : calendarEvents.length,
-                  tracker: clearedTabBadges.has('tracker') || activeTab === 'tracker' ? 0 : pendingAssignmentCount,
-                  gmail: clearedTabBadges.has('gmail') || activeTab === 'gmail' ? 0 : urgentEmailCount,
-                  flashcards: clearedTabBadges.has('flashcards') || ['flashcards','quizlet','anki'].includes(activeTab) ? 0 : flashcardDueCount,
+                  canvas: clearedTabBadges.has('canvas') ? 0 : canvasUnfinishedCount,
+                  schedule: clearedTabBadges.has('radar') ? 0 : calendarEvents.length,
+                  tracker: clearedTabBadges.has('tracker') ? 0 : pendingAssignmentCount,
+                  gmail: clearedTabBadges.has('gmail') ? 0 : urgentEmailCount,
+                  flashcards: clearedTabBadges.has('flashcards') ? 0 : flashcardDueCount,
                   pomodoro: 0,
                 }}
               />
@@ -2036,6 +2124,9 @@ export default function App() {
               onOpenGeminiSettings={() => setAccountSettingsOpen(true)}
               onRefreshAll={handleRefreshAll}
               isRefreshing={isRefreshingAll}
+              lastSyncedAt={lastSyncedAt}
+              clockText={navClock}
+              dateText={navDate}
               onToggleCollapseBar={() => setIsNavbarHidden(true)}
               onNotificationClick={(n)=>{
                 if (n.source==='Canvas' || n.title?.includes('Canvas') || n.title?.includes('Deadline')) handleTabTransition('canvas');
@@ -2279,6 +2370,34 @@ export default function App() {
                   <OpenLibraryWorkspace />
                 )}
 
+                {activeTab === 'citation-vault' && (
+                  <CitationVaultWorkspace />
+                )}
+
+                {activeTab === 'timetable' && (
+                  <TimetableWorkspace />
+                )}
+
+                {activeTab === 'scholarship-tracker' && (
+                  <ScholarshipTrackerWorkspace />
+                )}
+
+                {activeTab === 'group-project' && (
+                  <GroupProjectWorkspace />
+                )}
+
+                {activeTab === 'peer-qa' && (
+                  <PeerQAWorkspace />
+                )}
+
+                {activeTab === 'notion-import' && (
+                  <NotionImportWorkspace />
+                )}
+
+                {activeTab === 'deadline-gantt' && (
+                  <DeadlineGanttWorkspace assignments={assignments} canvasAssignments={canvasAssignments} />
+                )}
+
                 {activeTab === 'stem' && (
                   <StemLabWorkspace />
                 )}
@@ -2310,32 +2429,40 @@ export default function App() {
                 )}
 
                 {activeTab === 'dashboard' && (
-                  <DashboardHome
-                    assignments={assignments}
-                    onToggleAssignment={handleToggleAssignmentById}
-                    onNavigateWorkspace={(ws) => handleTabTransition(ws)}
-                    onOpenQuickDraft={(emailAlert) => {
-                      if (emailAlert) {
-                        setDraftInitialEmail(emailAlert.rawEmail || null);
-                        setDraftInitialAlert(emailAlert);
-                      } else {
-                        setDraftInitialEmail(null);
-                        setDraftInitialAlert(null);
-                      }
-                      setQuickDraftModalOpen(true);
-                    }}
-                    onOpenAiSuite={(tab) => {
-                      setAiSuiteTab(tab || 'planner');
-                      setAiSuiteOpen(true);
-                    }}
-                    onOpenAppStore={() => setAppStoreOpen(true)}
-                    user={user}
-                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
-                    onConnectGoogle={() => handleGoogleSignIn(true)}
-                    onOpenStudyPlan={() => setIsStudyPlanOpen(true)}
-                    calendarEvents={calendarEvents}
-                    emailAlerts={emailAlerts}
-                  />
+                  <div className="space-y-6">
+                    <OnboardingChecklist
+                      onConnectCanvas={()=>handleTabTransition('canvas')}
+                      onConnectGoogle={()=>handleGoogleSignIn(true)}
+                      onCreateTask={()=>handleTabTransition('tracker')}
+                      onStartPomodoro={()=>{ handleTabTransition('pomodoro'); setZenFocusMode(true); }}
+                    />
+                    <DashboardHome
+                      assignments={assignments}
+                      onToggleAssignment={handleToggleAssignmentById}
+                      onNavigateWorkspace={(ws) => handleTabTransition(ws)}
+                      onOpenQuickDraft={(emailAlert) => {
+                        if (emailAlert) {
+                          setDraftInitialEmail(emailAlert.rawEmail || null);
+                          setDraftInitialAlert(emailAlert);
+                        } else {
+                          setDraftInitialEmail(null);
+                          setDraftInitialAlert(null);
+                        }
+                        setQuickDraftModalOpen(true);
+                      }}
+                      onOpenAiSuite={(tab) => {
+                        setAiSuiteTab(tab || 'planner');
+                        setAiSuiteOpen(true);
+                      }}
+                      onOpenAppStore={() => setAppStoreOpen(true)}
+                      user={user}
+                      isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                      onConnectGoogle={() => handleGoogleSignIn(true)}
+                      onOpenStudyPlan={() => setIsStudyPlanOpen(true)}
+                      calendarEvents={calendarEvents}
+                      emailAlerts={emailAlerts}
+                    />
+                  </div>
                 )}
               </div>
               </Suspense>
@@ -2621,8 +2748,29 @@ export default function App() {
         onClose={() => setIsIntroTourOpen(false)}
       />
 
-      {/* Toast Notification Container */}
-      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      {/* Feedback widget + PWA install prompt */}
+      <FeedbackWidget />
+      {showInstallBtn && (
+        <button onClick={async()=>{
+          if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome==='accepted') trackEvent('pwa_install_accepted'); setShowInstallBtn(false); setDeferredPrompt(null); }
+        }} className="fixed bottom-4 right-4 z-30 px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-2xl text-xs font-bold shadow-lg">
+          Install StudentOS
+        </button>
+      )}
+      {/* Toast Notification Container — pauseOnHover + undo */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} onUndo={(id:string)=>{
+        // undo delete-assignment: restore last deleted from localStorage stash
+        try {
+          const raw = localStorage.getItem('scc_last_deleted_assignment');
+          if (raw) {
+            const a = JSON.parse(raw);
+            setAssignments(prev=> [...prev, a]);
+            localStorage.removeItem('scc_last_deleted_assignment');
+            addToast({ type:'success', title:'Restored', message: a.assignmentName });
+          }
+        } catch {}
+        dismissToast(id);
+      }} />
     </div>
   );
 }

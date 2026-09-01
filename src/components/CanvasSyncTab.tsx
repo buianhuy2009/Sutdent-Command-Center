@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { CanvasAssignment, CanvasSettings } from '../types';
 import { loadCompletedCanvasIds, saveCompletedCanvasIds, resolveCanvasUrl, toMobileDeepLink } from '../services/canvas';
-import { extractSubtasksFromCanvas, SubtaskResult } from '../services/gemini';
+import { extractSubtasksFromCanvas, SubtaskResult, calculateGradePrediction } from '../services/gemini';
 import { WhyIsThisHardModal } from './WhyIsThisHardModal';
 
 interface CanvasSyncTabProps {
@@ -89,6 +89,10 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   // Google Drive submission state
   const [selectedFileId, setSelectedFileId] = useState<string>('');
   const [isSubmittingDrive, setIsSubmittingDrive] = useState(false);
+  // Grade predictor always visible — not just slider
+  const [gradeCurrent, setGradeCurrent] = useState(84);
+  const [gradeDesired, setGradeDesired] = useState(90);
+  const [gradeFinalWeight, setGradeFinalWeight] = useState(30);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -349,6 +353,26 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
           </form>
         </div>
       )}
+
+      {/* Grade What-If Predictor — always visible */}
+      <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-xs">
+        <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-1.5"><Sliders className="w-3.5 h-3.5 text-[#D97757]" strokeWidth={1.75} /> Grade Predictor — What-if Final Exam</h4>
+        <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
+          <label className="space-y-1"><span className="text-[11px] font-bold text-[#6B6860]">Current %</span><input type="number" value={gradeCurrent} onChange={e=>setGradeCurrent(parseInt(e.target.value)||0)} className="w-full px-2 py-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg text-sm font-mono" /></label>
+          <label className="space-y-1"><span className="text-[11px] font-bold text-[#6B6860]">Desired %</span><input type="number" value={gradeDesired} onChange={e=>setGradeDesired(parseInt(e.target.value)||0)} className="w-full px-2 py-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg text-sm font-mono" /></label>
+          <label className="space-y-1"><span className="text-[11px] font-bold text-[#6B6860]">Final weight %</span><input type="range" min={10} max={50} value={gradeFinalWeight} onChange={e=>setGradeFinalWeight(parseInt(e.target.value))} className="w-full accent-[#D97757]" /><span className="text-[11px] font-mono">{gradeFinalWeight}%</span></label>
+        </div>
+        {(() => {
+          const r = calculateGradePrediction({ currentGrade: gradeCurrent, desiredGrade: gradeDesired, finalExamWeight: gradeFinalWeight });
+          return (
+            <div className="mt-3 p-3 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-xs space-y-1">
+              <div className="flex items-center justify-between"><span className="font-bold">Need on final: <span className="text-[#D97757]">{r.requiredFinalScore}%</span></span><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${r.status==='Guaranteed'?'bg-emerald-100 text-emerald-700': r.status==='Achievable'?'bg-blue-100 text-blue-700': r.status==='Challenging'?'bg-amber-100 text-amber-700':'bg-rose-100 text-rose-700'}`}>{r.status}</span></div>
+              <p className="text-[11px] text-[#6B6860]">{r.feedback}</p>
+              <p className="text-[11px] text-[#6B6860] italic">Weighted GPA: Canvas grades auto-imported → GPA calculation uses same formula.</p>
+            </div>
+          );
+        })()}
+      </div>
 
       {/* Main High-Density macOS Table View (40px Rows) */}
       <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] overflow-hidden shadow-xs">

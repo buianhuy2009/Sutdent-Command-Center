@@ -1,14 +1,24 @@
-import React from 'react';
-import { CheckCircle2, AlertCircle, Info, X, ExternalLink } from 'lucide-react';
+import React, { useRef } from 'react';
+import { CheckCircle2, AlertCircle, Info, X, ExternalLink, Undo2 } from 'lucide-react';
 import { ToastNotification } from '../types';
 
 interface ToastProps {
   toasts: ToastNotification[];
   onDismiss: (id: string) => void;
+  onUndo?: (id: string) => void;
 }
 
-export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
+export const ToastContainer: React.FC<ToastProps & { onUndo?: any }> = ({ toasts, onDismiss, onUndo }) => {
   if (toasts.length === 0) return null;
+  const timersRef = useRef<Map<string, number>>(new Map());
+
+  const pause = (id: string) => {
+    const t = timersRef.current.get(id);
+    if (t) clearTimeout(t);
+  };
+  const resume = (id: string) => {
+    // resume via parent timeout — placeholder; parent handles dismiss via setTimeout
+  };
 
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 max-w-md w-full pointer-events-none px-4">
@@ -16,6 +26,8 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
         <div
           key={toast.id}
           id={`toast-${toast.id}`}
+          onMouseEnter={() => pause(toast.id)}
+          onMouseLeave={() => resume(toast.id)}
           className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-200 animate-in slide-in-from-bottom-5 ${
             toast.type === 'success'
               ? 'bg-emerald-950/90 border-emerald-800/80 text-emerald-100'
@@ -48,6 +60,11 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
                 {toast.actionLabel || 'Open Link'}
                 <ExternalLink className="w-3 h-3" />
               </a>
+            )}
+            {(toast as any).undoLabel && onUndo && (
+              <button onClick={() => onUndo(toast.id)} className="inline-flex items-center gap-1 text-xs font-bold mt-1.5 px-2 py-1 bg-white/10 hover:bg-white/20 rounded-lg">
+                <Undo2 className="w-3 h-3" /> {(toast as any).undoLabel}
+              </button>
             )}
           </div>
 

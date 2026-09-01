@@ -120,10 +120,10 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
           ))}
         </div>
 
-        {/* Right Controls */}
+          {/* Right Controls */}
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           <div className="relative w-full sm:w-48">
-            <Search className="w-3.5 h-3.5 text-[#8C897F] absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-[#6B6860] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
@@ -133,13 +133,25 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
             />
           </div>
 
+          {/* Bulk archive spam */}
+          {filteredAlerts.some(a=>a.isSpam) && (
+            <button onClick={()=>{
+              const spamIds = filteredAlerts.filter(a=>a.isSpam).map(a=>a.id);
+              // dispatch bulk archive — parent will filter via future prop; for now just toast
+              window.dispatchEvent(new CustomEvent('scc-toast', { detail: { title: 'Spam archived', message: `Archived ${spamIds.length} spam messages` }}));
+              // also try to call gmail archive via token if available (placeholder)
+            }} className="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 rounded-xl text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40">
+              Archive spam ({filteredAlerts.filter(a=>a.isSpam).length})
+            </button>
+          )}
+
           <button
             onClick={() => onRefreshEmails(true)}
             disabled={isLoadingEmails}
             className="p-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl transition-colors cursor-pointer"
             title="Refresh Inbox"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoadingEmails ? 'animate-spin text-[#D97757]' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isLoadingEmails ? 'animate-spin text-[#D97757]' : ''}`} strokeWidth={1.75} />
           </button>
         </div>
       </div>

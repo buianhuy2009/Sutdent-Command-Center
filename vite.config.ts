@@ -61,15 +61,19 @@ export default defineConfig(() => {
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
-    build: {
+     build: {
       sourcemap: false,
+      reportCompressedSize: true,
+      // brotli size reporting enabled; Vercel serves brotli automatically — chunk ~827k near 4MB limit now compressed
       rollupOptions: {
         output: {
           manualChunks: {
             vendor: ['react','react-dom','zustand'],
             firebase: ['firebase/app','firebase/auth'],
             ai: ['@google/genai'],
-            editor: ['mermaid','katex','react-markdown'],
+            mermaid: ['mermaid'],
+            katex: ['katex'],
+            markdown: ['react-markdown'],
             dnd: ['@dnd-kit/core','@dnd-kit/sortable','@dnd-kit/utilities'],
             dexie: ['dexie']
           }

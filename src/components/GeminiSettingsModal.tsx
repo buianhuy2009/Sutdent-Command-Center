@@ -15,6 +15,7 @@ import {
   getClientGeminiApiKey,
   setClientGeminiApiKey,
   testGeminiApiKey,
+  getGeminiQuotaStatus,
 } from '../services/gemini';
 import { vaultSet, vaultGet, vaultExists, vaultClear } from '../services/vault';
 
@@ -35,12 +36,13 @@ export const GeminiSettingsModal: React.FC<GeminiSettingsModalProps> = ({
   const [vaultPin, setVaultPin] = useState('');
   const [vaultLocked, setVaultLocked] = useState(vaultExists());
 
+  const quota = getGeminiQuotaStatus();
   useEffect(() => {
     if (isOpen) {
       const saved = getClientGeminiApiKey();
       setApiKey(saved);
       setTestStatus(saved ? 'success' : 'idle');
-      setStatusMessage(saved ? 'API Key configured in local storage.' : '');
+      setStatusMessage(saved ? 'API Key configured. Plaintext warning: key visible to site scripts — use Vault PIN or sessionStorage for better security.' : '');
     }
   }, [isOpen]);
 
@@ -169,6 +171,18 @@ export const GeminiSettingsModal: React.FC<GeminiSettingsModalProps> = ({
             </div>
           </div>
 
+          {/* Daily quota progress bar — surfaced before error (50/day) */}
+          <div className="p-3 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] space-y-1.5">
+            <div className="flex items-center justify-between text-xs font-bold">
+              <span>Daily Gemini quota</span>
+              <span className="font-mono text-[11px] text-[#6B6860]">{quota.used} / {quota.limit} used • {quota.remaining} left</span>
+            </div>
+            <div className="h-2 bg-white dark:bg-[#252422] rounded-full overflow-hidden border border-[#DFDACB] dark:border-[#2C2B27]">
+              <div className="h-full bg-[#D97757] transition-all" style={{ width: `${Math.min(100, (quota.used/quota.limit)*100)}%` }} />
+            </div>
+            <p className="text-[11px] text-[#6B6860]">Resets midnight UTC. Prevents burn from parallel email summarize.</p>
+          </div>
+
           {/* Test Status Banner */}
           {statusMessage && (
             <div
@@ -186,6 +200,14 @@ export const GeminiSettingsModal: React.FC<GeminiSettingsModalProps> = ({
               <span>{statusMessage}</span>
             </div>
           )}
+          {/* sessionStorage option */}
+          <div className="flex items-center gap-2 text-[11px] text-[#6B6860]">
+            <input type="checkbox" id="sessionOnly" onChange={(e)=>{
+              if (e.target.checked) setClientGeminiApiKey(apiKey, { sessionOnly: true });
+              else setClientGeminiApiKey(apiKey, { sessionOnly: false });
+            }} />
+            <label htmlFor="sessionOnly">Store key in sessionStorage only (cleared on tab close, more secure)</label>
+          </div>
 
           <div className="pt-1 flex items-center justify-between text-xs">
             <a

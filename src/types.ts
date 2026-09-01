@@ -244,11 +244,13 @@ export interface SyllabusExamMilestone {
 export interface SyllabusParsedResult {
   courseName: string;
   instructor?: string;
-  exams: SyllabusExamMilestone[];
+  confidence?: number; // 0-1 overall parse confidence
+  exams: (SyllabusExamMilestone & { confidence?: number })[];
   keyAssignments: {
     title: string;
     dueDate: string;
     weightPercent?: number;
+    confidence?: number;
   }[];
 }
 
