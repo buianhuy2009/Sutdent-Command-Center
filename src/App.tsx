@@ -43,7 +43,6 @@ import { WikipediaLookupModal } from './components/WikipediaLookupModal';
 import { StudyCardModal } from './components/StudyCardModal';
 import { PortfolioExportModal } from './components/PortfolioExportModal';
 import { MorningCheckInModal } from './components/MorningCheckInModal';
-import { FeedbackWidget } from './components/FeedbackWidget';
 import { OnboardingChecklist } from './components/OnboardingChecklist';
 import { SplitScreenStudio } from './components/SplitScreenStudio';
 import { DailyRadarTab } from './components/DailyRadarTab';
@@ -275,6 +274,24 @@ export default function App() {
     window.addEventListener('appinstalled', onAppInstalled);
     return () => { window.removeEventListener('beforeinstallprompt', onBeforeInstall); window.removeEventListener('appinstalled', onAppInstalled); };
   }, [installDismissedUntil]);
+
+  const handleInstallPwa = useCallback(async () => {
+    if (!deferredPrompt) return;
+    try {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') trackEvent('pwa_install_accepted');
+      setShowInstallBtn(false);
+      setDeferredPrompt(null);
+    } catch {}
+  }, [deferredPrompt]);
+
+  const handleDismissPwa = useCallback(() => {
+    const until = Date.now() + 7 * 86400000;
+    try { localStorage.setItem('scc_install_dismissed_until', String(until)); } catch {}
+    setInstallDismissedUntil(until);
+    setShowInstallBtn(false);
+  }, []);
 
   // Dexie migration single source — storage sprawl fix
   useEffect(() => {
@@ -2597,6 +2614,10 @@ export default function App() {
         setHighContrast={setHighContrast}
         isSidebarExpanded={isSidebarExpanded}
         toggleSidebar={toggleSidebar}
+        pwaInstallAvailable={showInstallBtn && !!deferredPrompt}
+        deferredPrompt={deferredPrompt}
+        onInstallPwa={handleInstallPwa}
+        onDismissPwa={handleDismissPwa}
       />
 
       {/* Quick Draft Modal */}
@@ -2848,29 +2869,7 @@ export default function App() {
         onClose={() => setIsIntroTourOpen(false)}
       />
 
-      {/* Feedback widget + PWA install prompt — persistent banner with 7-day dismiss */}
-      <FeedbackWidget />
-      {showInstallBtn && deferredPrompt && (
-        <div className="fixed bottom-4 right-4 z-30 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl shadow-xl p-3 flex items-center gap-3 animate-in slide-in-from-bottom-2">
-          <div className="w-8 h-8 rounded-xl bg-[#D97757] text-white flex items-center justify-center font-bold text-sm">S</div>
-          <div className="text-left">
-            <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">Install StudentOS</div>
-            <div className="text-[11px] text-[#6B6860]">Offline + 1-tap access</div>
-          </div>
-          <button onClick={async()=>{
-            if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome==='accepted') trackEvent('pwa_install_accepted'); setShowInstallBtn(false); setDeferredPrompt(null); }
-          }} className="px-3 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold shadow-xs">
-            Install
-          </button>
-          <button onClick={()=>{
-            const until=Date.now()+7*86400000;
-            try{ localStorage.setItem('scc_install_dismissed_until', String(until)); }catch{}
-            setInstallDismissedUntil(until);
-            setShowInstallBtn(false);
-          }} className="p-1 text-[#6B6860] hover:text-[#141413] text-xs">✕</button>
-        </div>
-      )}
-      {/* Toast Notification Container — pauseOnHover + undo */}
+      {/* Toast Notification Container — pauseOnHover + undo (Feedback + PWA Install now live inside Settings → Help & Support) */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} onUndo={(id:string)=>{
         // undo delete-assignment: restore last deleted from localStorage stash
         try {

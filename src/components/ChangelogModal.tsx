@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Award, Sparkles, BookOpen, Layers, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.2.0';
+export const CURRENT_VERSION = '2.2.1';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,25 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.2.1',
+    date: 'September 02, 2026',
+    title: 'UX 2.2.1 — Remove Floating Clutter + Help & Support Consolidation',
+    badge: 'Latest Update',
+    highlights: [
+      'UX: Removed floating Help & Feedback widget and PWA Install banner from canvas — both now live inside Settings → Help & Support to eliminate overlay clutter and improve thumb-reach on mobile',
+      'Settings: New Help & Support section consolidates PWA Install Now/Later (with standalone detection + install guide), GitHub Issue, Tally Feature form, Share on X, and version About card — single discoverable hub',
+      'Changelog: ALWAYS updated — 2.2.1 → 2.2.0 history preserved; version bump synced in CURRENT_VERSION + App support card',
+    ],
+    details: [
+      'App.tsx now no longer renders <FeedbackWidget/> or fixed install banner; deferredPrompt + handleInstallPwa/handleDismissPwa lifted and passed as props to AccountSettingsModal; floating z-40 buttons removed to satisfy “remove the floating Download app and Report Bug, put it somewhere like in settings”.',
+      'AccountSettingsModal gains support section (HelpCircle) with PWA card (Download + Later, fallback installed/missing guide), Feedback card (Github Bug + Tally Feature + Share2 X), About card linking to changelog; navItems extended to 7, header subtitle added.',
+      'ChangelogModal CURRENT_VERSION bumped 2.2.0→2.2.1; new top release with highlights/detail keeps prior audit 2.2.0 entry intact; npm run build verified.',
+    ]
+  },
+  {
     version: '2.2.0',
     date: 'September 02, 2026',
     title: 'Audit 2.2 — P0 Ship This Week + Design, IA, Perf, A11y, PWA, Data, AI Split',
-    badge: 'Latest Update',
     highlights: [
       'P0: duplicate union fixed to Plan/Create/Learn/Research, Gemini /api/gemini/generate handler added (was 404), Canvas proxy now 400 on non-allowlist host, PWA icons generated (192/512/apple-touch + screenshots), Install banner now renders with 7-day dismiss, Dashboard double-import deduped, streak now persisted via scc_focus_sessions_log + scc_streak_history, vite deduped from deps, workbox globPatterns index.html deduped + 2MB limit + offline fallback, dark-mode unified via theme.ts',
       'Design: density extended to p-4/p-5/gap-4, glass blur @supports fallback + 8px on mobile, will-change removed (only on animate), terracotta reserved for primary CTA, 8-theme picker with swatches (nord/dracula/catppuccin/cyberpunk), cq-container applied to Dashboard & Tracker, micro-borders via data-card lint, font-display swap + preload, timeline fallback via IntersectionObserver, iOS zoom guard respects compact',

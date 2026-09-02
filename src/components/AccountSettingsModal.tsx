@@ -34,6 +34,12 @@ import {
   AppWindow,
   Zap,
   AlertTriangle,
+  MessageCircle,
+  Bug,
+  Download,
+  Share2,
+  Github,
+  Heart,
 } from 'lucide-react';
 import {
   getClientGeminiApiKey,
@@ -98,9 +104,13 @@ interface AccountSettingsModalProps {
   setHighContrast: (val: boolean) => void;
   isSidebarExpanded?: boolean;
   toggleSidebar?: () => void;
+  pwaInstallAvailable?: boolean;
+  deferredPrompt?: any;
+  onInstallPwa?: () => Promise<void>;
+  onDismissPwa?: () => void;
 }
 
-type SettingsSection = 'general' | 'models' | 'sync' | 'appearance' | 'shortcuts' | 'integrations';
+type SettingsSection = 'general' | 'models' | 'sync' | 'appearance' | 'shortcuts' | 'integrations' | 'support';
 
 export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   isOpen,
@@ -124,6 +134,10 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   setReducedMotion,
   highContrast,
   setHighContrast,
+  pwaInstallAvailable,
+  deferredPrompt,
+  onInstallPwa,
+  onDismissPwa,
 }) => {
   const [activeSection, setActiveSection] = useState<SettingsSection>('general');
 
@@ -272,6 +286,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
     { id: 'integrations', label: 'Integrations & LMS', icon: Layers },
+    { id: 'support', label: 'Help & Support', icon: HelpCircle },
   ];
 
   return (
@@ -353,6 +368,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 {activeSection === 'appearance' && 'Customize theme warmth, contrast, and motion reduction.'}
                 {activeSection === 'shortcuts' && 'Keyboard navigation and quick action hotkeys.'}
                 {activeSection === 'integrations' && 'Connected LMS hubs, Classroom, and external study utilities.'}
+                {activeSection === 'support' && 'Download app, report bugs, feedback & share love.'}
               </p>
             </div>
 
@@ -998,6 +1014,77 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {/* SECTION 7: HELP & SUPPORT — moved from floating FeedbackWidget + PWA Install banner */}
+            {activeSection === 'support' && (
+              <div className="space-y-4">
+                {/* PWA Install */}
+                <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-[#D97757] text-white flex items-center justify-center font-bold text-xs">S</div>
+                    <div>
+                      <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">Install StudentOS App</div>
+                      <div className="text-[11px] text-[#8C897F]">Offline + 1-tap home-screen access. No app store needed (PWA).</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {pwaInstallAvailable && deferredPrompt ? (
+                      <>
+                        <button
+                          onClick={async () => { if (onInstallPwa) await onInstallPwa(); }}
+                          className="flex-1 px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Install Now</span>
+                        </button>
+                        {onDismissPwa && (
+                          <button onClick={onDismissPwa} className="px-3 py-2 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs font-bold text-[#6B6860] cursor-pointer">
+                            Later
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div className="w-full p-2.5 rounded-xl bg-white dark:bg-[#141413] border border-[#DFDACB] dark:border-[#2C2B27] text-[11px] text-[#6B6860] leading-relaxed">
+                        {typeof window !== 'undefined' && (window.matchMedia?.('(display-mode: standalone)')?.matches || (navigator as any).standalone) ? '✓ Already installed — you’re running in standalone mode.' : 'No install prompt available yet. On desktop use Chrome menu → Cast, save and share → Install StudentOS. On iOS use Share → Add to Home Screen.'}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-[#8C897F]">Tip: Installing pins StudentOS to your dock/home screen with offline support (Dexie + Workbox cache).</div>
+                </div>
+
+                {/* Help & Feedback */}
+                <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3">
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-[#D97757]" />
+                    <span className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">Help & Feedback</span>
+                  </div>
+                  <p className="text-[11px] text-[#6B6860] leading-relaxed">Report bugs, request features, or share your academic setup — we read every submission.</p>
+                  <div className="space-y-2">
+                    <a href="https://github.com/buianhuy2009/Sutdent-Command-Center/issues/new" target="_blank" rel="noreferrer" className="w-full flex items-center justify-between p-3 rounded-xl bg-white dark:bg-[#141413] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-xs font-bold text-[#141413] dark:text-[#FAF9F5] transition-colors">
+                      <span className="flex items-center gap-2"><Github className="w-3.5 h-3.5" /> Report a Bug — GitHub Issue</span>
+                      <ExternalLink className="w-3 h-3 text-[#8C897F]" />
+                    </a>
+                    <a href="https://tally.so" target="_blank" rel="noreferrer" className="w-full flex items-center justify-between p-3 rounded-xl bg-white dark:bg-[#141413] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-xs font-bold text-[#141413] dark:text-[#FAF9F5] transition-colors">
+                      <span className="flex items-center gap-2"><Bug className="w-3.5 h-3.5" /> Request Feature — Tally Form</span>
+                      <ExternalLink className="w-3 h-3 text-[#8C897F]" />
+                    </a>
+                    <a href="https://twitter.com/intent/tweet?text=Check%20out%20Student%20Command%20Center%20%E2%80%94%20my%20unified%20academic%20OS%20https://student-command-center.vercel.app" target="_blank" rel="noreferrer" className="w-full flex items-center justify-center gap-1.5 p-3 rounded-xl bg-[#D97757] hover:bg-[#C86646] text-white text-xs font-bold shadow-xs transition-colors">
+                      <Share2 className="w-3.5 h-3.5" />
+                      <span>Share your setup on X</span>
+                    </a>
+                  </div>
+                </div>
+
+                {/* About + Version */}
+                <div className="p-4 bg-white dark:bg-[#141413] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-1.5"><Heart className="w-3.5 h-3.5 text-rose-500" /> StudentOS</div>
+                    <div className="text-[11px] text-[#8C897F]">Open-source • Local-first • v2.2.1 • <a href="https://github.com/buianhuy2009/Sutdent-Command-Center" target="_blank" rel="noreferrer" className="underline hover:text-[#D97757]">GitHub</a> • <span className="cursor-pointer underline hover:text-[#D97757]" onClick={() => { onClose(); onOpenChangelog?.(); }}>What’s new?</span></div>
+                  </div>
+                  <div className="text-[10px] font-mono text-[#8C897F] bg-[#FAF9F5] dark:bg-[#1F1E1B] px-2 py-1 rounded-lg border">v2.2.1</div>
+                </div>
               </div>
             )}
 
