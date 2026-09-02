@@ -244,18 +244,7 @@ export default function App() {
     }
   }, []);
 
-  // Live clock moved from DashboardHome to Navbar (throttled to 60s unless FocusTimer active)
-  const [navClock, setNavClock] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-  const [navDate, setNavDate] = useState(() => new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date()));
-  useEffect(() => {
-    const update = () => {
-      setNavClock(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-      setNavDate(new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date()));
-    };
-    update();
-    const id = setInterval(update, 60000);
-    return () => clearInterval(id);
-  }, []);
+  // (Removed navClock/navDate — menu bar decluttered per user request)
 
   // PWA install prompt + beforeinstallprompt handling — now renders Install banner
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -339,7 +328,6 @@ export default function App() {
   const [aiSuiteOpen, setAiSuiteOpen] = useState(false);
   const [aiSuiteTab, setAiSuiteTab] = useState<'planner' | 'syllabus' | 'quiz' | 'grades'>('planner');
   const [clearedTabBadges, setClearedTabBadges] = useState<Set<string>>(new Set());
-  const [isNavbarHidden, setIsNavbarHidden] = useState(false);
   const [isWikipediaModalOpen, setIsWikipediaModalOpen] = useState(false);
   const [wikipediaInitialQuery, setWikipediaInitialQuery] = useState('');
   const [isStudyCardOpen, setIsStudyCardOpen] = useState(false);
@@ -404,6 +392,9 @@ export default function App() {
 
   // Smooth View Transitions for workspace switching — now unified with workspaceStore + recent + usage tracking
   const handleTabTransition = useCallback((newTab: string) => {
+    // Legacy mapping: academic workspace no longer exists (now Pinned)
+    if (newTab === 'academic') newTab = 'canvas';
+    if (newTab === 'ws-academic') newTab = 'canvas';
     if (newTab === 'ai-suite') {
       setAiSuiteTab('planner');
       setAiSuiteOpen(true);
@@ -2223,8 +2214,8 @@ export default function App() {
 
         {/* Right Main Column with Top Header, Scrollable Content, and Bottom Status Bar */}
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#FAF9F5] dark:bg-[#141413]">
-          {/* Top Header */}
-          {!isNavbarHidden && activeTab !== 'dashboard' && (
+          {/* Top Header — simplified */}
+          {activeTab !== 'dashboard' && (
             <Navbar
               activeTabLabel={
                 {
@@ -2268,22 +2259,6 @@ export default function App() {
               onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
               notifications={notifications}
               isAiChatOpen={aiChatOpen}
-              zenFocusMode={zenFocusMode}
-              onToggleZenFocus={() => setZenFocusMode((prev) => !prev)}
-              focusTimerSeconds={focusTimerSeconds}
-              isFocusTimerRunning={isFocusTimerRunning}
-              onToggleFocusTimer={() => setIsFocusTimerRunning((prev) => !prev)}
-              onResetFocusTimer={() => {
-                setIsFocusTimerRunning(false);
-                setFocusTimerSeconds(25 * 60);
-              }}
-              onOpenGeminiSettings={() => setAccountSettingsOpen(true)}
-              onRefreshAll={handleRefreshAll}
-              isRefreshing={isRefreshingAll}
-              lastSyncedAt={lastSyncedAt}
-              clockText={navClock}
-              dateText={navDate}
-              onToggleCollapseBar={() => setIsNavbarHidden(true)}
               onNotificationClick={(n)=>{
                 if (n.source==='Canvas' || n.title?.includes('Canvas') || n.title?.includes('Deadline')) handleTabTransition('canvas');
                 else if (n.source==='Google Drive') handleTabTransition('drive');
@@ -2296,27 +2271,14 @@ export default function App() {
             />
           )}
 
-          {/* PWA Install Banner — now renders below Navbar (was never rendered before) */}
+          {/* PWA Install Banner — simplified */}
           {showInstallBtn && !zenFocusMode && activeTab !== 'dashboard' && (
-            <div className="mx-4 mt-2 p-3 bg-gradient-to-r from-[#D97757] to-amber-600 text-white rounded-2xl flex items-center justify-between text-xs shadow-md animate-in slide-in-from-top-2">
-              <div className="flex items-center gap-2"><span>📲</span><span className="font-bold">Install StudentOS as app?</span><span className="hidden sm:inline opacity-90">Offline + faster launch</span></div>
+            <div className="mx-4 mt-2 p-3 bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl flex items-center justify-between text-xs shadow-sm">
+              <div className="flex items-center gap-2"><span>📲</span><span className="font-semibold">Install app for offline access</span></div>
               <div className="flex items-center gap-2">
-                <button onClick={handleInstallPwa} className="px-3 py-1.5 bg-white text-[#D97757] rounded-xl font-bold hover:bg-orange-50">Install</button>
-                <button onClick={handleDismissPwa} className="px-2 py-1 text-white/80 hover:text-white">Later</button>
+                <button onClick={handleInstallPwa} className="px-3 py-1.5 bg-[#D97757] text-white rounded-xl font-bold hover:bg-[#C86646]">Install</button>
+                <button onClick={handleDismissPwa} className="px-2 py-1 text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5]">Later</button>
               </div>
-            </div>
-          )}
-
-          {/* Floating Minimal Restore Pill (When Top Bar is Collapsed) */}
-          {isNavbarHidden && !zenFocusMode && activeTab !== 'dashboard' && (
-            <div className="absolute top-3 right-4 z-40">
-              <button
-                onClick={() => setIsNavbarHidden(false)}
-                className="px-2.5 py-1 rounded-xl bg-white/90 dark:bg-[#1A1917]/90 hover:bg-white dark:hover:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs text-xs font-bold text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-all flex items-center gap-1.5 cursor-pointer backdrop-blur-xs"
-                title="Show Top Navigation Bar"
-              >
-                <span>≡ Menu</span>
-              </button>
             </div>
           )}
 

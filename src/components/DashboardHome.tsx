@@ -639,7 +639,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
 
       {/* Bottom Section: Command Center Label */}
       <div className="text-[10px] text-[#8C897F] font-mono select-none uppercase tracking-wider shrink-0">
-        Student Command Center • Version 2.0
+        Student Command Center • Version 2.3.1
       </div>
 
     </div>

@@ -123,11 +123,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     },
     {
       id: 'ws-academic',
-      title: 'Academic Radar & LMS Hub (Canvas, Classroom, Deadlines)',
+      title: 'Canvas & Assignments Hub (Canvas, Classroom, Tracker)',
       category: 'Workspaces',
       icon: Layers,
       run: () => {
-        onSelectWorkspace('academic');
+        onSelectWorkspace('canvas');
         onClose();
       },
     },
@@ -189,7 +189,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       category: 'Actions',
       icon: Plus,
       run: () => {
-        onSelectWorkspace('academic');
+        onSelectWorkspace('tracker');
         onOpenNewAssignment();
         onClose();
       },
@@ -251,7 +251,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       category: 'AI Slash Commands',
       icon: Layers,
       run: () => {
-        onSelectWorkspace('academic');
+        onSelectWorkspace('tracker');
         onClose();
       },
     },
@@ -449,7 +449,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 let cur=0;
                 if(commandAction && idx===0){ commandAction.run(); return; }
                 if(commandAction) cur++;
-                if(idx < cur+matchedAssignments.length){ const a=matchedAssignments[idx-cur]; if(a){ onSelectWorkspace('academic' as any); onClose(); } return; }
+                if(idx < cur+matchedAssignments.length){ const a=matchedAssignments[idx-cur]; if(a){ onSelectWorkspace('tracker' as any); onClose(); } return; }
                 cur+=matchedAssignments.length;
                 const action = filteredActions[idx-cur];
                 if(action){ try{ const rec=JSON.parse(localStorage.getItem('scc_recent_palette_v1')||'[]'); const next=[action.id, ...rec.filter((x:string)=>x!==action.id)].slice(0,5); localStorage.setItem('scc_recent_palette_v1', JSON.stringify(next)); }catch{} action.run(); }
@@ -499,7 +499,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   <button
                     key={a.id}
                     onClick={() => {
-                      onSelectWorkspace('academic');
+                      onSelectWorkspace('tracker');
                       onClose();
                     }}
                     className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer group"

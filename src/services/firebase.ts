@@ -2,10 +2,14 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   getAuth,
   signInWithPopup,
+  signInWithRedirect,
   GoogleAuthProvider,
   onAuthStateChanged,
   User,
   signOut,
+  setPersistence,
+  browserLocalPersistence,
+  getRedirectResult,
 } from 'firebase/auth';
 import rawFirebaseConfig from '../../firebase-applet-config.json';
 
@@ -28,6 +32,22 @@ export const effectiveFirebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(effectiveFirebaseConfig) : getApp();
 export const auth = getAuth(app);
+// Ensure local persistence survives reloads and tab closes
+if (typeof window !== 'undefined') {
+  setPersistence(auth, browserLocalPersistence).catch(() => {});
+  // Handle redirect result (fallback for popup-blocked browsers)
+  getRedirectResult(auth).then((result) => {
+    if (result?.user) {
+      const cred = GoogleAuthProvider.credentialFromResult(result);
+      if (cred?.accessToken) {
+        try {
+          sessionStorage.setItem('google_workspace_access_token', cred.accessToken);
+          sessionStorage.setItem('google_token_acquired_at', String(Date.now()));
+        } catch {}
+      }
+    }
+  }).catch(() => {});
+}
 
 export const basicProvider = new GoogleAuthProvider();
 
@@ -138,7 +158,26 @@ export const signInWithGoogle = async (
 
   try {
     isSigningIn = true;
-    const result = await signInWithPopup(auth, targetProvider);
+    // Ensure persistence before popup
+    try { await setPersistence(auth, browserLocalPersistence); } catch {}
+    let result: any;
+    try {
+      result = await signInWithPopup(auth, targetProvider);
+    } catch (popupErr: any) {
+      const code = popupErr?.code || '';
+      // Fallback to redirect if popup blocked/closed by browser
+      if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        // Try redirect as fallback for popup-blocked; for user-closed, just return null
+        if (code === 'auth/popup-blocked') {
+          try {
+            await signInWithRedirect(auth, targetProvider);
+            return null; // redirect will reload page
+          } catch {}
+        }
+        throw popupErr;
+      }
+      throw popupErr;
+    }
     const credential = GoogleAuthProvider.credentialFromResult(result);
     
     // Store access token in memory & sessionStorage + IndexedDB (survives tab close)

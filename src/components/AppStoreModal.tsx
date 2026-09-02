@@ -525,11 +525,20 @@ const CATEGORIES = [
 const LOCAL_PINNED_APPS_KEY = 'scc_pinned_apps_v2';
 
 export function loadPinnedAppIds(): string[] {
+  const defaults = ['canvas', 'radar', 'tracker', 'gmail', 'drive'];
   try {
     const saved = localStorage.getItem(LOCAL_PINNED_APPS_KEY);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length) {
+        // Ensure 5 defaults are present (migration from filtered pinned)
+        const merged = [...defaults.filter(id => !parsed.includes(id)), ...parsed];
+        // Deduplicate and keep order: defaults first then user adds
+        return [...new Set(merged)];
+      }
+    }
   } catch {}
-  return ['canvas', 'radar', 'tracker', 'gmail', 'drive'];
+  return defaults;
 }
 
 export function savePinnedAppIds(ids: string[]) {

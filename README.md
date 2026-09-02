@@ -2,7 +2,7 @@
 
 > Canvas LMS + Google Workspace (Calendar, Gmail, Sheets, Drive, Docs, Classroom) + Gemini AI Study Coaching — local-first, offline-capable, PWA.
 
-![Version](https://img.shields.io/badge/version-2.3.0-%23D97757)
+![Version](https://img.shields.io/badge/version-2.3.1-%23D97757)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
@@ -158,7 +158,7 @@ Hardcoded `614024702267` removed — all usages now read `import.meta.env.VITE_G
 
 ## Changelog
 
-See in-app `ChangelogModal` (`CURRENT_VERSION = 2.0.0`) — full git log:
+See in-app `ChangelogModal` (`CURRENT_VERSION = 2.3.1`) — full git log:
 
 ```
 a694bf1 feat: architectural overhaul — zustand slices, dexie, themes, command launcher...
@@ -166,6 +166,7 @@ a694bf1 feat: architectural overhaul — zustand slices, dexie, themes, command 
 ...
 ```
 
+`v2.3.1` (2026-09-02) — Clean menu (only search + AI + bell), Pinned replaces Academic Core (5 defaults), Google sign-in more reliable (popup block → redirect + clearer help), changelog rewritten in plain English + fixed 4× Latest bug, sitemap updated, swipe to close, 550k bundle.
 `v2.3.0` (2026-09-02) — Full 95-point audit: IA Plan|Create|Learn|Research + NavSection + Why chip + breadcrumb clickable, 827k→592k via lazy modals, glass + card tokens unified, greeting truncate + streak memo, LCP preload + Deploy to Vercel + sticky comparison + rickroll removed + FAQ schema, workbox png/svg, fonts subset, token IndexedDB + quota Dexie + conflict toast + 15-key migration, vault PIN AES-GCM, PII truncate, swipe drawer, single pill, redirect Sutdent typo, 46-app catalog (Budget/Code Runner/Resume/Grade Forecaster).
 `v2.0.0` (2026-09-01) — God Component split, lazy workspaces, manualChunks, strict TS, CORS/CSP, polling debounce, env projectId, ErrorBoundary, PWA googleapis, contrast + landmarks, mobile drawer, Landing terracotta, Dashboard Today Plan + personal drawer, CommandPalette fuzzy+keys, Dexie quota, Gemini model fix.
 
