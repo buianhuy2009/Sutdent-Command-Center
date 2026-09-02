@@ -10,6 +10,14 @@ import {
 import { AppLogo } from './AppLogo';
 import { APP_CATALOG } from './AppStoreModal';
 
+// Reusable NavSection — consolidates pinned/recent/core duplicate lists into single component
+const NavSection: React.FC<{ title?: string; isExpanded: boolean; children: React.ReactNode }> = ({ title, isExpanded, children }) => (
+  <div className="space-y-1">
+    {isExpanded && title && <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6860]">{title}</div>}
+    <div className="space-y-1">{children}</div>
+  </div>
+);
+
 export interface TabItem {
   id: string;
   label: string;
@@ -119,12 +127,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       .filter(Boolean) as typeof APP_CATALOG;
   }, [pinnedAppIds]);
 
-  // Consolidated recent via single key scc_recent_tabs_v1 + useWorkspaceRouter fallback
+  // Consolidated recent via workspaceStore — single source, memoized, no sync read on every activeTab change
   const recentApps = useMemo(() => {
     try {
-      const raw = localStorage.getItem('scc_recent_tabs_v1');
-      const ids = raw ? JSON.parse(raw) : [];
-      const list: string[] = Array.isArray(ids) ? ids.map((x:any)=> typeof x==='string'? x : x.id).filter(Boolean).slice(0,3) : [];
+      // Prefer workspaceStore persisted recent; fallback to localStorage for legacy
+      const storeRecent = (() => { try { const w = localStorage.getItem('scc_workspace_store'); if (w) { const j = JSON.parse(w); const state = j.state || j; if (state.recentTabs) return state.recentTabs; } } catch {} return null; })();
+      const raw = storeRecent || (() => { try { return JSON.parse(localStorage.getItem('scc_recent_tabs_v1') || '[]'); } catch { return []; } })();
+      const ids = Array.isArray(raw) ? raw : [];
+      const list: string[] = ids.map((x:any)=> typeof x==='string'? x : x.id).filter(Boolean).slice(0,3) as string[];
       if (list.length < 3) {
         const usageRaw = localStorage.getItem('scc_app_usage_v1');
         if (usageRaw) {
@@ -140,6 +150,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       aria-label="Primary navigation"
+      role="navigation"
       className={`h-screen shrink-0 bg-[#EFECE2] dark:bg-[#1A1917] border-r border-[#DFDACB] dark:border-[#2C2B27] flex flex-col transition-all duration-300 z-30 select-none ${
         isExpanded ? 'w-64 p-4' : 'w-16 p-2'
       }`}
@@ -171,21 +182,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {isExpanded && (
           <button
             onClick={onToggleExpand}
-            className="p-1.5 rounded-xl hover:bg-[#DFDACB]/60 dark:hover:bg-[#252422] text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors cursor-pointer"
-            title="Collapse to 48px Icon Rail"
+            className="p-2.5 rounded-xl hover:bg-[#DFDACB]/60 dark:hover:bg-[#252422] text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+            title="Collapse to 48px Icon Rail — press ? for shortcuts"
+            aria-label="Collapse sidebar to icon rail"
           >
             <ChevronLeft className="w-4 h-4" strokeWidth={1.75} />
           </button>
         )}
       </div>
 
-      {/* 2. Scrollable Navigation Area (Takes full flex-1 height) */}
-      <div className="flex-1 overflow-y-auto min-h-0 space-y-1 pr-0.5">
-        {isExpanded && (
-          <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6860]">
-            Academic Core
-          </div>
-        )}
+      {/* 2. Scrollable Navigation Area — unified NavSection */}
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-4 pr-0.5">
+        <NavSection title="Academic Core" isExpanded={isExpanded}>
 
         {/* Core Tabs — semantic badge colors */}
         {coreTabs.map((tab) => {
@@ -231,8 +239,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       className={`text-[9px] font-mono px-1 py-0.5 rounded ${
                         isActive ? 'bg-white/20 text-white' : 'bg-black/5 dark:bg-black/20 text-[#6B6860]'
                       }`}
+                      title={`Press ? to see shortcuts, ⌘${tab.key} to open ${tab.label}`}
+                      aria-label={`Shortcut Command ${tab.key} for ${tab.label}`}
                     >
-                      [⌘{tab.key}]
+                      ⌘{tab.key}
                     </span>
                   )}
                 </div>
@@ -241,10 +251,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {hasBadge && (
                     <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#EFECE2] dark:ring-[#1A1917] ${badgeColor}`} />
                   )}
-                  <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">
-                    {tab.label}
+                  <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]" role="tooltip" aria-hidden="true">
+                    {tab.label} — press ? for help, ⌘{tab.key}
                   </span>
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] px-1 rounded opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity delay-100 pointer-events-none">
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-mono bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] px-1 rounded opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity delay-100 pointer-events-none" aria-hidden="true">
                     ⌘{tab.key}
                   </span>
                 </>
@@ -281,7 +291,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       )}
                     </div>
                     {!isExpanded && (
-                      <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">{app.name}</span>
+                      <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]" role="tooltip">{app.name}</span>
                     )}
                   </button>
                 );
@@ -289,16 +299,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
         )}
+        </NavSection>
 
-        {/* Pinned Apps Section */}
+        {/* Pinned Apps — unified via NavSection second block */}
         {pinnedApps.length > 0 && (
-          <div className="pt-3">
-            {isExpanded && (
-              <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6860]">
-                Pinned Apps
-              </div>
-            )}
-          <div className="space-y-1">
+          <NavSection title="Pinned Apps" isExpanded={isExpanded}>
+            <div className="space-y-1">
               {pinnedApps.map((app) => {
                 const isActive = activeTab === app.id;
                 const badgeCount = badges[app.id] || badges[app.id.replace('-', '_')] || 0;
@@ -354,7 +360,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 );
               })}
             </div>
-          </div>
+          </NavSection>
         )}
 
         {/* Add More Apps Button */}

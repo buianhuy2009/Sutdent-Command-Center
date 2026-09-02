@@ -42,34 +42,14 @@
 :root[data-theme="midnight"] { --color-background: 10 10 12; --color-panel: 26 25 23; --color-border: 46 45 41; --color-accent: 217 119 87; --color-text: 250 249 245; }
 :root[data-theme="ocean"] { --color-background: 11 19 43; --color-panel: 18 30 62; --color-border: 38 58 107; --color-accent: 96 165 250; --color-text: 236 239 244; }
 :root[data-theme="forest"] { --color-background: 6 26 20; --color-panel: 14 42 32; --color-border: 36 71 58; --color-accent: 52 211 153; --color-text: 236 253 245; }
-/* extra branded themes — keep nord/dracula/catppuccin/cyberpunk for power users, map to same vars */
-:root[data-theme="nord"] {
-  --color-background: 46 52 64;
-  --color-panel: 59 66 82;
-  --color-border: 76 86 102;
-  --color-accent: 136 192 208;
-  --color-text: 236 239 244;
-}
-:root[data-theme="dracula"] {
-  --color-background: 40 42 54;
-  --color-panel: 68 71 90;
-  --color-border: 98 114 164;
-  --color-accent: 255 121 198;
-  --color-text: 248 248 242;
-}
-:root[data-theme="catppuccin"] {
-  --color-background: 30 30 46;
-  --color-panel: 49 50 68;
-  --color-border: 69 71 90;
-  --color-accent: 203 166 247;
-  --color-text: 205 214 244;
-}
-:root[data-theme="cyberpunk"] {
-  --color-background: 10 10 18;
-  --color-panel: 20 20 35;
-  --color-border: 88 28 102;
-  --color-accent: 0 255 255;
-  --color-text: 255 255 200;
+/* extra branded themes — deprecated, kept for backward compat but not shown in picker (reduces token bloat). Keep terracotta CTA-only. */
+:root[data-theme="nord"], :root[data-theme="dracula"], :root[data-theme="catppuccin"], :root[data-theme="cyberpunk"] {
+  /* fallback to midnight to enforce 2-theme system (Light/Dark) + 1 accent */
+  --color-background: 10 10 12;
+  --color-panel: 26 25 23;
+  --color-border: 46 45 41;
+  --color-accent: 217 119 87;
+  --color-text: 250 249 245;
 }
 
 @layer base {
@@ -230,14 +210,18 @@
 @media (max-width: 768px) {
   :root { --blur-glass-panel: 8px; --blur-glass-card: 6px; --saturate-glass: 130%; }
 }
+@media (prefers-reduced-data: reduce) {
+  :root { --blur-glass-panel: 0px; --blur-glass-card: 0px; --saturate-glass: 100%; }
+  .glass-panel, .glass-card { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+}
 
-/* Micro-borders & layered shadows system — radius token applied */
-.card-micro {
+/* Micro-borders & layered shadows — single canonical token .card-micro; [data-card] is alias (pick one) */
+.card-micro, [data-card] {
   border: 1px solid rgba(0,0,0,0.06);
   box-shadow: var(--shadow-card);
   border-radius: var(--radius-card);
 }
-.dark .card-micro {
+.dark .card-micro, .dark [data-card] {
   border-color: rgba(255,255,255,0.06);
   box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.35);
 }
@@ -250,18 +234,19 @@
 .focus-ring:focus-visible {
   box-shadow: 0 0 0 2px rgb(var(--color-background)), 0 0 0 4px rgb(var(--color-accent));
 }
-/* Global focus-visible — use outline for layout stability */
+/* Global focus-visible — use outline for layout stability + offset 3px to avoid clipping */
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: 2px solid rgb(var(--color-accent));
-  outline-offset: 2px;
+  outline-offset: 3px;
   box-shadow: none;
   border-radius: 0.5rem;
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
-  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.01ms !important; }
-  /* keep opacity fades for reduced motion */
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.15s !important; animation-name: fadeIn !important; }
+  /* keep opacity fades for reduced motion — do not kill confetti entirely, just reduce */
   .animate-in, .animate-out { transition-property: opacity !important; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 }
 
 /* Scroll-Driven Timeline Reveal Animations + fallback via IntersectionObserver */
@@ -372,16 +357,16 @@ html[data-theme="forest"].dark body {
 .hero-glow { /* will-change removed, add only during animation via .hero-glow--animate */ }
 .hero-glow--animate { will-change: transform; }
 
-/* Micro-borders system-wide: apply card-micro via data-card attribute lint */
-[data-card] { border: 1px solid rgba(0,0,0,0.06); box-shadow: var(--shadow-card); border-radius: var(--radius-card); }
-.dark [data-card] { border-color: rgba(255,255,255,0.06); box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.35); }
+/* lint: prefer .card-micro class; [data-card] kept as alias for legacy */
 
 /* Container queries applied helpers */
 .cq-card { container-type: inline-size; }
 
-/* iOS input zoom prevention — only on mobile and only when NOT compact */
+/* iOS input zoom prevention — only on mobile and only when NOT compact + touch-action */
 @media (max-width: 768px) {
   html:not([data-density="compact"]) input,
   html:not([data-density="compact"]) select,
-  html:not([data-density="compact"]) textarea { font-size: max(16px, 0.875rem) !important; }
+  html:not([data-density="compact"]) textarea { font-size: max(16px, 0.875rem) !important; touch-action: manipulation; }
+  /* prevent double-tap zoom on CTAs */
+  button, a { touch-action: manipulation; }
 }

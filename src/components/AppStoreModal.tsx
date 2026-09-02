@@ -455,6 +455,50 @@ export const APP_CATALOG: AppStoreItem[] = [
     developer: 'StudentOS',
     rating: 4.8,
   },
+  {
+    id: 'grade-forecaster',
+    name: 'Grade Forecaster',
+    category: 'Plan',
+    description: 'What-if GPA calculator: 84% → 90% with 30% final = need 96%.',
+    longOverview: 'Interactive GPA what-if calculator using calculateGradePrediction. Slide final weight, target grade, see required final score & status (Guaranteed/Achievable/High Risk).',
+    features: ['Slider 84% → 90% need 96% calc', 'Cumulative & per-semester GPA', 'Target grade status', '1-click link from CanvasSyncTab'],
+    badge: 'New',
+    developer: 'StudentOS',
+    rating: 5.0,
+  },
+  {
+    id: 'budget-tracker',
+    name: 'Budget Tracker',
+    category: 'Plan',
+    description: 'Student expense tracker: rent, books, food, stipend.',
+    longOverview: 'Simple student budget tracker with categories, monthly total, Dexie persistence, export CSV.',
+    features: ['Expense categories', 'Monthly sum & remaining', 'Dexie local', 'CSV export'],
+    badge: 'Finance',
+    developer: 'StudentOS',
+    rating: 4.7,
+  },
+  {
+    id: 'code-runner',
+    name: 'Code Runner (Pyodide)',
+    category: 'Create',
+    description: 'In-browser Python runner via Pyodide for CS courses.',
+    longOverview: 'Run Python 3 in browser via Pyodide WebAssembly. No server, instant exec, stdout + error capture, share snippet.',
+    features: ['Pyodide WASM Python 3', 'Instant exec & stdout', 'Error traceback', 'Share snippet via URL hash'],
+    badge: 'CS Lab',
+    developer: 'Pyodide • StudentOS',
+    rating: 4.9,
+  },
+  {
+    id: 'resume-builder',
+    name: 'Resume Builder',
+    category: 'Research',
+    description: 'Markdown → PDF resume with LaTeX template.',
+    longOverview: 'Build resume from markdown, preview LaTeX-styled PDF, export print-ready, ATS keywords check via Gemini.',
+    features: ['Markdown editor', 'LaTeX PDF preview', 'ATS check', 'Export PDF'],
+    badge: 'Career',
+    developer: 'StudentOS',
+    rating: 4.8,
+  },
 ];
 
 // Top 8 Recommended Highlight Apps (Exactly 8)
@@ -802,6 +846,21 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
                         <p className="text-xs text-[#8C897F] mt-0.5">
                           The curated core tools every student needs for daily academic workflow
                         </p>
+                        {/* Why recommended chip — explains dynamic logic */}
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {(() => {
+                            try {
+                              const coursesRaw = localStorage.getItem('scc_canvas_courses_v1');
+                              const courses: string[] = coursesRaw ? JSON.parse(coursesRaw) : [];
+                              const hasCourse = courses.join(' ').toLowerCase();
+                              if (hasCourse.includes('calculus') || hasCourse.includes('math')) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 text-violet-700 border border-violet-200">Because you have Calculus — Try Desmos & Wolfram</span>;
+                              if (hasCourse.includes('chemistry') || hasCourse.includes('chem')) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">Because you have Chemistry — Periodic Table & PhET</span>;
+                              if (hasCourse) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">Recommended for your courses: {courses.slice(0,2).join(', ')}</span>;
+                              try { const usage = JSON.parse(localStorage.getItem('scc_app_usage_v1')||'{}'); const top = Object.entries(usage).sort((a:any,b:any)=>b[1]-a[1])[0]; if (top) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20">Because you use {top[0]} most</span>; } catch {}
+                              return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border">Starter essentials — add your courses to personalize</span>;
+                            } catch { return null; }
+                          })()}
+                        </div>
                       </div>
                     </div>
                   </div>

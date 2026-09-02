@@ -1,4 +1,8 @@
 {
+  "redirects": [
+    { "source": "/sutdent-command-center", "destination": "/", "permanent": true },
+    { "source": "/Sutdent-Command-Center", "destination": "/", "permanent": true }
+  ],
   "rewrites": [
     {
       "source": "/((?!api/).*)",

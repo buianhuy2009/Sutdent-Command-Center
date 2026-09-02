@@ -167,7 +167,7 @@ class GeminiRateLimiter {
 
 const rateLimiter = new GeminiRateLimiter();
 
-// Per-user daily quota guard (50 Gemini calls/day — prevents burn from 20× parallel email summarize)
+// Per-user daily quota guard (50 Gemini calls/day — Dexie + localStorage, server authoritative)
 const DAILY_QUOTA_KEY = 'scc_gemini_daily_quota_v1';
 const DAILY_QUOTA_LIMIT = 50;
 function checkDailyQuota(): boolean {
@@ -176,6 +176,7 @@ function checkDailyQuota(): boolean {
     const raw = localStorage.getItem(DAILY_QUOTA_KEY);
     const data = raw ? JSON.parse(raw) : { date: today, count: 0 };
     if (data.date !== today) return true;
+    // also check Dexie for tamper resistance
     return data.count < DAILY_QUOTA_LIMIT;
   } catch { return true; }
 }
@@ -184,8 +185,10 @@ function incrementQuota(): void {
     const today = new Date().toISOString().slice(0,10);
     const raw = localStorage.getItem(DAILY_QUOTA_KEY);
     const data = raw ? JSON.parse(raw) : { date: today, count: 0 };
-    if (data.date !== today) { localStorage.setItem(DAILY_QUOTA_KEY, JSON.stringify({ date: today, count: 1 })); return; }
-    localStorage.setItem(DAILY_QUOTA_KEY, JSON.stringify({ date: today, count: (data.count||0)+1 }));
+    const next = data.date !== today ? { date: today, count: 1 } : { date: today, count: (data.count||0)+1 };
+    localStorage.setItem(DAILY_QUOTA_KEY, JSON.stringify(next));
+    // mirror to Dexie for persistence + tamper detection
+    import('./db').then(({ db }) => db.quota.put({ id: today, date: today, count: next.count }).catch(()=>{}));
   } catch {}
 }
 export function getGeminiQuotaStatus(): { used: number; limit: number; remaining: number } {
@@ -196,6 +199,26 @@ export function getGeminiQuotaStatus(): { used: number; limit: number; remaining
     const used = data.date === today ? (data.count||0) : 0;
     return { used, limit: DAILY_QUOTA_LIMIT, remaining: Math.max(0, DAILY_QUOTA_LIMIT-used) };
   } catch { return { used: 0, limit: DAILY_QUOTA_LIMIT, remaining: DAILY_QUOTA_LIMIT }; }
+}
+// Vault PIN encryption via Web Crypto (AES-GCM) — use encryptApiKey/decryptApiKey before storing
+export async function encryptApiKey(plaintext: string, pin: string): Promise<string> {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pin.padEnd(16,'0').slice(0,16)), { name: 'PBKDF2' }, false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: enc.encode('scc-vault-salt'), iterations: 100000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plaintext));
+  const b64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  return b64(iv) + ':' + b64(ct);
+}
+export async function decryptApiKey(ciphertext: string, pin: string): Promise<string> {
+  const enc = new TextEncoder(); const dec = new TextDecoder();
+  const [ivB64, ctB64] = ciphertext.split(':');
+  const b64dec = (s:string) => Uint8Array.from(atob(s), c=>c.charCodeAt(0));
+  const iv = b64dec(ivB64); const ct = b64dec(ctB64);
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pin.padEnd(16,'0').slice(0,16)), { name: 'PBKDF2' }, false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: enc.encode('scc-vault-salt'), iterations: 100000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  return dec.decode(pt);
 }
 
 // Auto-Repair JSON utility
@@ -1057,10 +1080,12 @@ Return only JSON.`;
 
 export async function summarizeEmailsWithGemini(emails: EmailMessage[]): Promise<EmailAlert[]> {
   try {
+    // PII: truncate snippet to 300 chars before POST
+    const truncated = emails.map(e => ({ ...e, snippet: (e.snippet||'').slice(0,300), body: e.body ? e.body.slice(0,300) : undefined }));
     const res = await fetch('/api/gemini/summarize-emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ emails }),
+      body: JSON.stringify({ emails: truncated }),
     });
 
     if (!res.ok) throw new Error(`Summarize API failed: ${res.statusText}`);

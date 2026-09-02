@@ -8,7 +8,11 @@ import {
 } from '../types';
 import { clearStoredGoogleToken } from './firebase';
 
-export const DEFAULT_PROJECT_NUMBER = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID) || (typeof process !== 'undefined' ? (process as any).env?.VITE_GOOGLE_PROJECT_ID : undefined) || '614024702267';
+export const DEFAULT_PROJECT_NUMBER = (() => {
+  const env = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID) || (typeof process !== 'undefined' ? (process as any).env?.VITE_GOOGLE_PROJECT_ID : undefined);
+  if (!env) console.warn('VITE_GOOGLE_PROJECT_ID not set — Google API error links will lack project ID. Set it in .env');
+  return env || '';
+})();
 
 export class GoogleApiDisabledError extends Error {
   isServiceDisabled = true;

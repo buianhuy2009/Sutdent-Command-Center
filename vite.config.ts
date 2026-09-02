@@ -37,11 +37,11 @@ export default defineConfig(() => {
         share_target: { action: '/?share-target=1', method: 'GET', params: { title: 'title', text: 'text', url: 'url' }, enctype: 'multipart/form-data' as any }
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,woff2}'],
+        globPatterns: ['**/*.{js,css,woff2,png,svg,webp}'],
         globIgnores: ['**/index.html'],
         maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/share-target/],
         runtimeCaching: [
           { urlPattern: /^https:\/\/generativelanguage\.googleapis\.com\/.*/i, handler: 'NetworkFirst', options: { cacheName: 'gemini-api', networkTimeoutSeconds: 10, expiration: { maxEntries: 50, maxAgeSeconds: 300 } } },
           { urlPattern: /^https:\/\/www\.googleapis\.com\/.*/i, handler: 'NetworkFirst', options: { cacheName: 'googleapis-cache', networkTimeoutSeconds: 8, expiration: { maxEntries: 100, maxAgeSeconds: 300 } } },

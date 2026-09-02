@@ -111,6 +111,21 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     setSprintGoal(Math.max(1, sprintGoal + amount));
   };
 
+  // Streak heatmap — memoized once per render (not 28 JSON.parse per cell)
+  const streakMap = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('scc_focus_sessions_log');
+      const log: {date:string, minutes:number}[] = raw ? JSON.parse(raw) : [];
+      const map = new Map<string, number>();
+      log.forEach(e => map.set(e.date, (map.get(e.date)||0)+e.minutes));
+      if (map.size===0 && completedFocusSessions>0) {
+        const today = new Date().toISOString().slice(0,10);
+        map.set(today, completedFocusSessions*25);
+      }
+      return map;
+    } catch { return new Map<string, number>(); }
+  }, [completedFocusSessions]);
+
   // Today's quote — exclude current index on shuffle
   const [quote, setQuote] = useState<DailyQuote>(() => getTodayQuote());
 
@@ -256,16 +271,16 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                 </button>
               </div>
             ) : (
-              <div className="flex items-center justify-center gap-2">
-                <h1 className="text-4xl sm:text-5xl font-extrabold text-[#141413] dark:text-[#FAF9F5] tracking-tight leading-tight">
-                  {greetingPrefix}, {studentName}
+              <div className="flex items-center justify-center gap-2 min-w-0 max-w-full">
+                <h1 className="text-4xl sm:text-5xl font-extrabold text-[#141413] dark:text-[#FAF9F5] tracking-tight leading-tight truncate min-w-0 max-w-[60vw] sm:max-w-none">
+                  {greetingPrefix}, <span className="truncate">{studentName}</span>
                 </h1>
                 <button
                   onClick={() => {
                     setNameInput(studentName);
                     setIsEditingName(true);
                   }}
-                  className="p-1.5 rounded-lg bg-white dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-[#6B6860] hover:text-[#D97757] hover:border-[#D97757]/40 transition-colors"
+                  className="p-1.5 rounded-lg bg-white dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-[#6B6860] hover:text-[#D97757] hover:border-[#D97757]/40 transition-colors shrink-0"
                   aria-label="Edit name"
                   title="Edit name"
                 >
@@ -371,10 +386,10 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
         )}
 
-        {/* Personalize — collapsible drawer with chevron rotation + persistence */}
+        {/* Personalize — collapsible drawer; defaults true for first-run (persist scc_dashboard_personalize_open) */}
         <details
           className="bg-white/40 dark:bg-[#1C1B19]/30 backdrop-blur-md rounded-3xl border border-[#DFDACB]/60 dark:border-[#2C2B27]/60 p-4 sm:p-5 text-xs text-left group"
-          open={(() => { try { return localStorage.getItem('scc_dashboard_personalize_open')==='true'; } catch { return false; } })()}
+          open={(() => { try { const v=localStorage.getItem('scc_dashboard_personalize_open'); return v===null ? true : v==='true'; } catch { return true; } })()}
           onToggle={(e)=>{ try{ localStorage.setItem('scc_dashboard_personalize_open', String((e.currentTarget as HTMLDetailsElement).open)); }catch{} }}
         >
           <summary className="list-none flex items-center justify-between cursor-pointer font-bold text-[#6B6860] uppercase tracking-wider">Personalize <span className="flex items-center gap-1.5 text-[10px] bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] px-2 py-0.5 rounded-full">Edit <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" strokeWidth={1.75} /></span></summary>
@@ -549,35 +564,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
         </div>
 
-        {/* Habit Streak GitHub heatmap persisted via scc_focus_sessions_log + scc_streak_history */}
-        {(() => {
-          const streakData = (() => {
-            try {
-              const raw = localStorage.getItem('scc_focus_sessions_log');
-              const log: {date:string, minutes:number}[] = raw ? JSON.parse(raw) : [];
-              const map = new Map<string, number>();
-              log.forEach(e => map.set(e.date, (map.get(e.date)||0)+e.minutes));
-              // also seed from current store completed count for today if log empty
-              if (map.size===0 && completedFocusSessions>0) {
-                const today = new Date().toISOString().slice(0,10);
-                map.set(today, completedFocusSessions*25);
-              }
-              return map;
-            } catch { return new Map<string, number>(); }
-          })();
-          const days: {dateStr:string, intensity:string, label:string}[] = Array.from({length:28}).map((_,i)=>{
-            const d=new Date(); d.setDate(d.getDate()-(27-i));
-            const dateStr=d.toISOString().slice(0,10);
-            const mins=streakData.get(dateStr)||0;
-            let intensity='bg-[#EFECE2] dark:bg-[#252422]';
-            if(mins>=60) intensity='bg-emerald-600';
-            else if(mins>=45) intensity='bg-emerald-500';
-            else if(mins>=25) intensity='bg-emerald-300';
-            else if(mins>0) intensity='bg-emerald-100 dark:bg-emerald-900/40';
-            return {dateStr, intensity, label: `${dateStr}: ${mins}m`};
-          });
-          return null;
-        })()}
+        {/* Habit Streak — memoized via streakMap (single JSON.parse) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card text-left">
             <h4 className="text-xs font-bold text-[#6B6860] uppercase tracking-wider flex items-center gap-1.5"><Timer className="w-3.5 h-3.5 text-[#D97757]" strokeWidth={1.75} /> Habit Streak • Last 28 days</h4>
@@ -585,13 +572,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
               {Array.from({length:28}).map((_,i)=>{
                 const d=new Date(); d.setDate(d.getDate()-(27-i));
                 const dateStr=d.toISOString().slice(0,10);
-                let mins=0;
-                try{
-                  const raw=localStorage.getItem('scc_focus_sessions_log');
-                  const log: {date:string, minutes:number}[] = raw ? JSON.parse(raw) : [];
-                  mins=log.filter(e=>e.date===dateStr).reduce((a,b)=>a+b.minutes,0);
-                  if(mins===0 && dateStr===new Date().toISOString().slice(0,10) && completedFocusSessions>0) mins=completedFocusSessions*25;
-                }catch{}
+                let mins = streakMap.get(dateStr) || 0;
+                if(mins===0 && dateStr===new Date().toISOString().slice(0,10) && completedFocusSessions>0 && streakMap.size<=1) mins=completedFocusSessions*25;
                 let intensity='bg-[#EFECE2] dark:bg-[#252422]';
                 if(mins>=60) intensity='bg-emerald-600';
                 else if(mins>=45) intensity='bg-emerald-500';
@@ -625,10 +607,10 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           {onOpenStudyPlan && (
             <button
               onClick={onOpenStudyPlan}
-              className="px-6 py-2.5 bg-transparent hover:bg-[#FAF9F5] dark:hover:bg-[#252422] text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] rounded-2xl text-xs font-medium transition-all flex items-center gap-2 cursor-pointer"
+              className="px-2 py-2 text-xs font-semibold text-[#D97757] hover:text-[#C86646] hover:underline underline-offset-4 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#6B6860]" strokeWidth={1.75} />
-              <span>AI Daily Study Plan</span>
+              <Sparkles className="w-3.5 h-3.5" strokeWidth={1.75} />
+              <span>AI Daily Study Plan — text link</span>
             </button>
           )}
         </div>

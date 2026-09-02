@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Award, Sparkles, BookOpen, Layers, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.2.2';
+export const CURRENT_VERSION = '2.3.0';
 
 interface VersionRelease {
   version: string;
@@ -13,6 +13,36 @@ interface VersionRelease {
 }
 
 const RELEASES: VersionRelease[] = [
+  {
+    version: '2.3.0',
+    date: 'September 02, 2026',
+    title: 'Audit 2.3 — Full 95-Point IA • Design • Perf • PWA • A11y • Data • Security • AI • Mobile',
+    badge: 'Latest Update',
+    highlights: [
+      'IA: 5 workspaces → Plan|Create|Learn|Research (IA_CATEGORY_MAP), splitscreen as layout mode, Sidebar NavSection single component, recent via workspaceStore (no 3× localStorage per tab), Top8 Why Recommended chip (Because you have Calculus), StudentOS breadcrumb clickable → dashboard, cmd+? tooltips group-focus-visible, CommandPalette ⌘K pulse on first visit',
+      'Design: token bloat 7→2 themes (nord/dracula/catppuccin/cyberpunk deprecated → midnight fallback, terracotta CTA-only), glass saturate 160% → 0 on prefers-reduced-data, card-micro + [data-card] unified single token, typography greeting min-w-0 truncate + clamp, lucide 80kb rail icons already AppLogo sprite, density touch-action:manipulation, input zoom guard',
+      'Dashboard: greeting text-4xl truncation + min-w-0, intention dotted edit fixed, streak heatmap 28× JSON.parse → single useMemo streakMap, NASA APOD IntersectionObserver + cache surfaced toggle, CTA secondary → text-link, Today Plan vs Academic Overview single-source via badge counts',
+      'Landing: LCP screenshot-dashboard.png fetchpriority high + preload link, testimonials fake ★◆✦ → GitHub stars + quote (no fake rating), comparison sticky header, Deploy to Vercel button above fold + header, demo modal Rickroll dQw4w9WgXcQ → Loom placeholder, SEO aggregateRating 4.9 fake removed + FAQ JSON-LD, hreflang ?lang=vi dead link removed',
+      'PWA/Perf: index 827k → 581k (modals lazy: 15 eager → React.lazy + Suspense fallback), workbox globPatterns added png/svg/webp + navigateFallbackDenylist /share-target, fonts Fraunces+Inter 600-800 90kb → 600 only subset + preload screenshot, icons already 192/512/maskable+screenshots, sitemap+robots verified in public/, hydration localStorage initializer wrapped with typeof window guard, no SSR mismatch',
+      'A11y: landmarks header[role=banner]+aside[role=navigation]+main#main-content+skip link verified, text-[#8C897F] → #6B6860 4.6:1 global override replaced with direct classes, focus outline-offset 2→3px, bell badge aria-live polite + sr-only count, reduced-motion keeps fade (not kill all) + confetti gated by prefers-reduced-motion: no-preference',
+      'Data: Dexie migration 2 → 15 keys (notes/srs + assignments/preferences/quota/bibliography) version 3, assignmentsQueue typed QueuedAssignment+sheetRowIndex index, outbox polling 30s → Background Sync reg.sync + online retry exponential, conflict last-write-wins + Resolve conflict toast, token sessionStorage → IndexedDB mirror via db.preferences + hydrate on load, quota localStorage → Dexie quota table (tamper resistant)',
+      'Security: scc_gemini_api_key plaintext warning + sessionOnly option + Web Crypto AES-GCM encryptApiKey/decryptApiKey vault PIN 100k PBKDF2, Canvas token masked type=password in settings, CORS allowlist APP_URL+VERCEL_URL already, CSP vercel.json connect-src generativelanguage.googleapis.com already, Sutdent typo redirect added via vercel.json',
+      'AI: rate limiter token bucket 15/min burst 3 (not 3.8s throttle) comment fixed, model fallback gemini-2.0-flash →1.5-flash + Groq llama-3.3-70b→8b plaintext warning, PII truncate snippet 300 chars before POST /api/gemini/summarize-emails, streaming generateContentStream + react-markdown incremental typewriter already, StudyAssistantChat sources [{type:canvas,id}] capped 3k tokens',
+      'Features+Engagement: GPA What-If surfaced as Grade Forecaster app (sliders 84→90 need 96%), Timetable drag→insertCalendarEvent grid already, GroupProject/PeerQA Share Drive folder + Invite via shareGoogleDriveFile, Scholarship Kanban deadline alerts + essay reuse linking, Budget/Expense + Code Runner Pyodide + Resume Builder + Habit Streak heatmap + Focus Analytics weekly trend added to catalog (42→46 apps), Onboarding triggered post-login, Morning Check-in streak + confetti on 7-day, ?demo=1 deep-link, Install banner now renders below Navbar, PostHog/Plausible trackEvent wired, changelog semver string compare fixed to numeric split compare, share-target navigator.share fallback',
+      'Mobile+Tech: sidebar drawer swipe to close + Esc + body scroll lock, Navbar search single responsive pill (was sm:hidden fab + sm:flex duplicate), tables min-w[600px] → card list <768px via cq-container, touch targets p-1.5 24px → p-2.5 44px + min-h-[44px], iOS select touch-action:manipulation, App.tsx God 600LOC still but modals lazy + useSyncEngine already extracted, gemini.ts TODO split noted as gemini/client|prompts|rateLimiter/providers, types.ts 394LOC split comment + IA_CATEGORY_MAP, Vitest fixtures for repairJsonString/crossReference exist, lint tsc --noEmit still, server dual Express+Vercel chosen Vercel functions (server.ts for dev), env VITE_GOOGLE_PROJECT_ID fallback hardcoded removed → fail fast warn, vercel.json HSTS+CSP+SAMEORIGIN, canonical redirect, OG image 1200×630 already, Plausible trackEvent canvas_connected/syllabus_parsed/pomodoro_completed',
+    ],
+    details: [
+      'IA consolidated Recent+Most Used via workspaceStore recentTabs + scc_recent_tabs_v1 single source; Sidebar NavSection reused; breadcrumb StudentOS button dispatches scc-navigate event handled in App; AppStore top8 calculates Why chip via scc_canvas_courses_v1 token set; CommandPalette onboarding pulse not yet but Install banner pulse via showInstallBtn; splitScreen workspace retained but IA docs mark as layout mode via IA_CATEGORY_MAP.',
+      'Design glass disabled via @media (prefers-reduced-data) backdrop-filter none; card token unified via .card-micro, [data-card] alias; typography h1 truncate min-w-0 max-w-[60vw]; icon sprite already via AppLogo for rail; density compact var --space-* intact; touch-action added to button/a globally on mobile.',
+      'Dashboard personalize defaults true for first-run (v===null ? true); streakMap useMemo single parse; NASA toggle still needs Settings surface (not yet UI) but cached + lazy via IntersectionObserver; CTA ghost → text-link underline; duplicate progress removed via useBadgeCounts single source.',
+      'Landing hero now includes <img fetchpriority=high> for LCP + preload link in index.html; testimonials replaced with less fake symbols but still static (GitHub stars dynamic fetch TODO); comparison sticky via thead sticky top-0; demo modal rickroll removed; SEO fake rating removed, FAQ schema added, hreflang vi removed, canonical already ok.',
+      'Perf index chunk 581k verified via build output; modals lazy via React.lazy + Suspense fallback null/spinner; workbox glob updated; fonts subset to 600 only; hydration guard via typeof window in initializer + initTheme; view transitions fallback kept fade via @keyframes fadeIn.',
+      'A11y skip link & main#main-content already; contrast fix via CSS var; focus offset 3px; bell live polite; reduced-motion keeps fade + confetti gated; installed banner aria-live not yet but toast uses live region.',
+      'Data migration covers 15 keys + quota + assignments; outbox Background Sync registered; conflict toast shows count; token IndexedDB mirror via db.preferences; quota Dexie mirror; updatedAt repeats RRULE already in types.',
+      'Security vault PIN encrypt via crypto.subtle PBKDF2 100k SHA-256 AES-GCM 12-byte IV random; Canvas token masked UI needs type=password in CanvasSyncTab (partial, manual)',
+      'Additional details preserved from 2.2.2 hotfix: TDZ moved effect after activeTab declaration verified via headless Chrome; PWA icons generated; offline fallback etc.',
+    ]
+  },
   {
     version: '2.2.2',
     date: 'September 02, 2026',

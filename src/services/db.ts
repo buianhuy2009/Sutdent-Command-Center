@@ -6,11 +6,15 @@ export interface PersistedBrief { id: string; topic: string; subject: string; br
 
 export interface QueuedAssignment { id: string; assignmentName: string; subject: string; dueDate: string; priority: string; status: string; sheetRowIndex?: number; source?: string; queuedAt?: string; }
 
+export interface StoredAssignment { id: string; data: any; updatedAt: string; }
 export class StudentOSDatabase extends Dexie {
   notes!: Table<MarkdownNote, string>;
   srsCards!: Table<SRSCard & { deckId: string }, string>;
   briefs!: Table<PersistedBrief, string>;
   assignmentsQueue!: Table<QueuedAssignment, string>;
+  assignments!: Table<StoredAssignment, string>;
+  preferences!: Table<{ key: string; value: any }, string>;
+  quota!: Table<{ id: string; date: string; count: number }, string>;
 
   constructor() {
     super('StudentOSDatabase');
@@ -27,6 +31,16 @@ export class StudentOSDatabase extends Dexie {
       assignmentsQueue: 'id, dueDate, status, sheetRowIndex',
       bibliography: 'id, source, year',
     });
+    this.version(3).stores({
+      notes: 'id, subject, title, updatedAt',
+      srsCards: 'id, deckId, dueDate, easeFactor, repetitions',
+      briefs: 'id, subject, topic, createdAt',
+      assignmentsQueue: 'id, dueDate, status, sheetRowIndex',
+      bibliography: 'id, source, year',
+      assignments: 'id, updatedAt',
+      preferences: 'key',
+      quota: 'id, date',
+    });
     // @ts-ignore extra table for BIB
     (this as any).bibliography = (this as any).table('bibliography');
   }
@@ -34,7 +48,7 @@ export class StudentOSDatabase extends Dexie {
 
 export const db = new StudentOSDatabase();
 
-// Migration helper: hydrate from localStorage once
+// Migration helper: hydrate from localStorage once — now covers 15+ keys (was only 2)
 export async function migrateLocalStorageToDexie(): Promise<void> {
   try {
     const notesRaw = localStorage.getItem('scc_markdown_notes_v1');
@@ -51,6 +65,32 @@ export async function migrateLocalStorageToDexie(): Promise<void> {
       }
       if (flat.length) await db.srsCards.bulkPut(flat).catch(() => {});
     }
+    // Migrate assignments (scc_user_assignments_v2)
+    try {
+      const assignRaw = localStorage.getItem('scc_user_assignments_v2');
+      if (assignRaw) {
+        const arr = JSON.parse(assignRaw);
+        if (Array.isArray(arr) && arr.length) {
+          await db.assignments.bulkPut(arr.map((a: any) => ({ id: a.id, data: a, updatedAt: a.updatedAt || new Date().toISOString() }))).catch(()=>{});
+        }
+      }
+    } catch {}
+    // Migrate preferences (15 keys) to Dexie preferences table
+    const prefKeys = ['scc_user_preferred_name','scc_user_daily_intention','scc_user_selected_vibe','scc_user_sprint_goal','scc_canvas_settings_v1','scc_gemini_daily_quota_v1','scc_pinned_apps_v2','scc_recent_tabs_v1','scc_app_usage_v1','scc_sidebar_expanded','scc_theme','scc_color_theme_v1','scc_ui_density_v1','scc_shortcut_settings','scc_dashboard_personalize_open'];
+    for (const k of prefKeys) {
+      try {
+        const v = localStorage.getItem(k);
+        if (v !== null) await db.preferences.put({ key: k, value: JSON.parse(v) }).catch(async ()=> { await db.preferences.put({ key: k, value: v }); });
+      } catch {}
+    }
+    // Migrate quota to Dexie quota table
+    try {
+      const quotaRaw = localStorage.getItem('scc_gemini_daily_quota_v1');
+      if (quotaRaw) {
+        const q = JSON.parse(quotaRaw);
+        if (q.date && typeof q.count === 'number') await db.quota.put({ id: q.date, date: q.date, count: q.count }).catch(()=>{});
+      }
+    } catch {}
   } catch (e) { console.warn('Dexie migration skipped', e); }
 }
 

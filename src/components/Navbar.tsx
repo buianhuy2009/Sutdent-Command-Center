@@ -163,17 +163,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header role="banner" className="h-12 bg-[#FAF9F5]/90 dark:bg-[#141413]/90 backdrop-blur-md border-b border-[#DFDACB] dark:border-[#2C2B27] px-4 sm:px-6 flex items-center justify-between z-20 shrink-0 select-none">
       
-      {/* LEFT: Breadcrumb with Rich Sync Indicator + clock moved from DashboardHome */}
+      {/* LEFT: Breadcrumb with Rich Sync Indicator + clock — StudentOS clickable to dashboard */}
       <div className="flex items-center gap-2.5 min-w-0">
         <SyncIndicator isRefreshing={isRefreshing} lastSyncedAt={lastSyncedAt} />
         <div className="flex items-center gap-2">
-          <div className="flex items-center text-xs font-semibold text-[#6B6860]">
-            <span>StudentOS</span>
+          <nav aria-label="Breadcrumb" className="flex items-center text-xs font-semibold text-[#6B6860]">
+            <button onClick={() => window.dispatchEvent(new CustomEvent('scc-navigate', { detail: 'dashboard' }))} className="hover:text-[#D97757] hover:underline transition-colors cursor-pointer" aria-label="Go to Dashboard">StudentOS</button>
             <span className="mx-1.5 text-[#DFDACB] dark:text-[#2C2B27]">/</span>
-            <span className="font-bold text-[#141413] dark:text-[#FAF9F5] truncate">
+            <span className="font-bold text-[#141413] dark:text-[#FAF9F5] truncate" aria-current="page">
               {activeTabLabel}
             </span>
-          </div>
+          </nav>
           {clockText && dateText && (
             <div className="hidden lg:flex items-center gap-2 ml-3 pl-3 border-l border-[#DFDACB] dark:border-[#2C2B27] text-[11px] font-mono text-[#6B6860]">
               <span>{dateText}</span>
@@ -183,11 +183,15 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* CENTER: Floating Spotlight Search Pill (Cmd+K) & Music Button */}
-      <div className="flex sm:hidden items-center justify-center px-2">
-        <button onClick={onOpenCommandPalette} aria-label="Open command palette" className="p-2 rounded-xl bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] text-[#6B6860]"><Search className="w-4 h-4" strokeWidth={1.75} /></button>
-      </div>
-      <div className="hidden sm:flex items-center justify-center flex-1 max-w-md px-4 gap-2">
+      {/* CENTER: Single responsive Spotlight Search Pill (Cmd+K) & Music */}
+      <div className="flex items-center justify-center flex-1 max-w-md px-2 sm:px-4 gap-2">
+        {/* Mobile: icon-only pill collapses gracefully via single button */}
+        <button
+          onClick={onOpenCommandPalette}
+          aria-label="Open command palette"
+          className="flex sm:hidden p-2 rounded-xl bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] text-[#6B6860]"
+        ><Search className="w-4 h-4" strokeWidth={1.75} /></button>
+        <div className="hidden sm:flex flex-1 items-center gap-2 max-w-md">
         <button
           onClick={onOpenCommandPalette}
           className="flex-1 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]/60 rounded-xl py-1 px-3 text-xs flex items-center justify-between text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] shadow-2xs transition-all cursor-pointer group"
@@ -220,6 +224,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
           </button>
         )}
+        </div>
       </div>
 
       {/* RIGHT: High-Density Control Cluster — collapses to More ••• on <1100px */}
@@ -340,8 +345,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Bell className="w-3.5 h-3.5" aria-hidden="true" strokeWidth={1.75} />
             {unreadCount > 0 && (
-              <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-[#FAF9F5] dark:ring-[#141413]" aria-hidden="true" />
+              <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-[#FAF9F5] dark:ring-[#141413]" aria-hidden="true" aria-live="polite" />
             )}
+            {unreadCount > 0 && <span className="sr-only" aria-live="polite">{unreadCount} new notifications</span>}
           </button>
 
           {/* Notification Dropdown Menu */}

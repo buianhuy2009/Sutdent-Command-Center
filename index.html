@@ -8,8 +8,7 @@
     <title>Student Command Center — Unified Academic OS</title>
     <meta name="description" content="Student Command Center: unified academic OS — Canvas LMS live sync, Google Calendar & Gmail AI scanner, Sheets tracker, Drive organizer, and Gemini study coaching. Local-first, offline-capable." />
     <link rel="canonical" href="https://student-command-center.vercel.app/" />
-    <link rel="alternate" hreflang="en" href="https://student-command-center.vercel.app/?lang=en" />
-    <link rel="alternate" hreflang="vi" href="https://student-command-center.vercel.app/?lang=vi" />
+    <link rel="alternate" hreflang="en" href="https://student-command-center.vercel.app/" />
     <link rel="alternate" hreflang="x-default" href="https://student-command-center.vercel.app/" />
     <meta property="og:title" content="Student Command Center — Unified Academic OS" />
     <meta property="og:description" content="Canvas LMS + Google Workspace + Gemini AI in one dashboard. Track deadlines, scan teacher emails, schedule focus blocks, and stay ahead." />
@@ -23,14 +22,16 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M22 10v6'/><path d='M2 10l10-5 10 5-10 5z'/><path d='M6 12v5c3 3 9 3 12 0v-5'/></svg>" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0..1,600;9..144,0..1,700&family=Inter:wght@400;500;600;700;800&display=swap" />
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0..1,600;9..144,0..1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0..1,600;9..144,0..1,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" /></noscript>
+    <link rel="preload" as="image" href="/screenshot-dashboard.png" fetchpriority="high" imagesrcset="/screenshot-dashboard.png 1280w" imagesizes="100vw" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Student Command Center — unified academic OS dashboard" />
     <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com" />
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Student Command Center","description":"Unified academic OS for students","applicationCategory":"EducationApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"aggregateRating":{"@type":"AggregateRating","ratingValue":"4.9","ratingCount":"127"},"featureList":["Canvas LMS sync","Gmail AI scanner","Sheets tracker","Drive organizer","Gemini study coaching","37 integrated apps"]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Student Command Center","description":"Unified academic OS for students","applicationCategory":"EducationApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["Canvas LMS sync","Gmail AI scanner","Sheets tracker","Drive organizer","Gemini study coaching","37 integrated apps"]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does it store my Canvas password?","acceptedAnswer":{"@type":"Answer","text":"No. Uses calendar feed URL + API token stored locally only, never sent except to Canvas via proxy."}},{"@type":"Question","name":"What scopes does Google require?","acceptedAnswer":{"@type":"Answer","text":"calendar.readonly, gmail.readonly, drive.readonly, spreadsheets, classroom.courses.readonly etc. Tokens in IndexedDB, revoke anytime."}},{"@type":"Question","name":"Is it offline?","acceptedAnswer":{"@type":"Answer","text":"Yes — PWA + Dexie. Queues assignments and retries on reconnect."}}]}</script>
   </head>
   <body>
     <div id="root"></div>

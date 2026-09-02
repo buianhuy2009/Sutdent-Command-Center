@@ -2,7 +2,7 @@
 
 > Canvas LMS + Google Workspace (Calendar, Gmail, Sheets, Drive, Docs, Classroom) + Gemini AI Study Coaching — local-first, offline-capable, PWA.
 
-![Version](https://img.shields.io/badge/version-2.0.0-%23D97757)
+![Version](https://img.shields.io/badge/version-2.3.0-%23D97757)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
@@ -62,8 +62,8 @@ src/
 
 ### Code Splitting
 
-`vite.config.ts` → `manualChunks: { vendor, firebase, ai, editor, dnd, dexie }`  
-All workspaces `React.lazy(() => import('./components/workspaces/...'))` + `<Suspense>` — Canvas-only users don't download Wolfram/PhET. Bundle: `index ~827k` + `editor ~878k` lazy.
+`vite.config.ts` → `manualChunks: { vendor, firebase, ai, mermaid, katex, markdown, dnd, dexie }`  
+All workspaces + 15 modals `React.lazy(() => import('./components/...'))` + `<Suspense>` — Canvas-only users don't download Wolfram/PhET. Bundle: `index ~592k` (was 827k) + `mermaid 750k` lazy + `editor 594k`.
 
 ### PWA
 
@@ -166,6 +166,7 @@ a694bf1 feat: architectural overhaul — zustand slices, dexie, themes, command 
 ...
 ```
 
+`v2.3.0` (2026-09-02) — Full 95-point audit: IA Plan|Create|Learn|Research + NavSection + Why chip + breadcrumb clickable, 827k→592k via lazy modals, glass + card tokens unified, greeting truncate + streak memo, LCP preload + Deploy to Vercel + sticky comparison + rickroll removed + FAQ schema, workbox png/svg, fonts subset, token IndexedDB + quota Dexie + conflict toast + 15-key migration, vault PIN AES-GCM, PII truncate, swipe drawer, single pill, redirect Sutdent typo, 46-app catalog (Budget/Code Runner/Resume/Grade Forecaster).
 `v2.0.0` (2026-09-01) — God Component split, lazy workspaces, manualChunks, strict TS, CORS/CSP, polling debounce, env projectId, ErrorBoundary, PWA googleapis, contrast + landmarks, mobile drawer, Landing terracotta, Dashboard Today Plan + personal drawer, CommandPalette fuzzy+keys, Dexie quota, Gemini model fix.
 
 ---

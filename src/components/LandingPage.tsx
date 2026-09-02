@@ -28,9 +28,9 @@ interface LandingPageProps {
 }
 
 const TESTIMONIALS = [
-  { name: "Open Source", uni: "GitHub ★ Students", text: "Starred by students managing Canvas + Gmail + Drive in one dashboard. 100% free & local-first.", avatar: "★", href: "https://github.com/buianhuy2009/Sutdent-Command-Center" },
+  { name: "Open Source", uni: "GitHub — MIT Licensed", text: "100% free & local-first. Your data stays in your browser + Google account. Star us on GitHub!", avatar: "★", href: "https://github.com/buianhuy2009/Sutdent-Command-Center" },
   { name: "Offline-First", uni: "Dexie • PWA", text: "Works offline via IndexedDB + Workbox. Queues sync when back online — no dorm Wi-Fi stress.", avatar: "◆" },
-  { name: "AI Study Coach", uni: "Gemini 2.0 Flash", text: "AI knows your real due dates & calendar. Plans finals week with 45-min focus blocks.", avatar: "✦" },
+  { name: "AI Study Coach", uni: "Gemini 2.0 Flash + Groq 70B", text: "AI knows your real due dates & calendar. Plans finals week with 45-min focus blocks.", avatar: "✦" },
 ];
 
 export const LandingPage: React.FC<LandingPageProps> = ({
@@ -58,6 +58,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            <a href="https://vercel.com/new/clone?repository-url=https://github.com/buianhuy2009/Sutdent-Command-Center" target="_blank" rel="noreferrer" className="hidden lg:inline-flex px-3 py-1.5 bg-[#141413] text-white hover:bg-black rounded-xl text-xs font-bold items-center gap-1.5">
+              <span>▲</span> Deploy to Vercel
+            </a>
+            <a href="https://github.com/buianhuy2009/Sutdent-Command-Center" target="_blank" rel="noreferrer" className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-xs font-semibold" title="Star on GitHub">
+              <span>★</span> GitHub
+            </a>
             <button
               onClick={() => setDarkMode(!darkMode)}
               className="p-2 rounded-xl text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer"
@@ -132,6 +138,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               >
                 <span>Explore Live Demo Mode</span>
               </button>
+            </div>
+
+            {/* LCP hero image preload — dashboard screenshot */}
+            <div className="mt-8 max-w-3xl mx-auto">
+              <img src="/screenshot-dashboard.png" alt="Student Command Center dashboard — Canvas + Workspace unified" width={1280} height={720} fetchPriority="high" loading="eager" decoding="async" className="w-full rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-xl" onError={(e)=>{ (e.currentTarget as HTMLImageElement).style.display='none'; }} />
             </div>
 
             {/* Trust Badges — always 3col on 375px with gap-2 */}
@@ -302,9 +313,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <section id="comparison" className="py-12 bg-[#FAF9F5] dark:bg-[#141413] border-y border-[#DFDACB] dark:border-[#2C2B27]">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
             <h3 className="text-lg font-extrabold text-center">Why StudentOS vs Notion • Canvas • Motion?</h3>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
               <table className="w-full text-xs border-collapse">
-                <thead><tr className="bg-[#EFECE2] dark:bg-[#1F1E1B] text-left"><th className="p-2 border">Feature</th><th className="p-2 border">StudentOS</th><th className="p-2 border">Notion</th><th className="p-2 border">Canvas</th><th className="p-2 border">Motion</th></tr></thead>
+                <thead className="sticky top-0 z-10"><tr className="bg-[#EFECE2] dark:bg-[#1F1E1B] text-left"><th className="p-2 border bg-[#EFECE2] dark:bg-[#1F1E1B]">Feature</th><th className="p-2 border bg-[#EFECE2] dark:bg-[#1F1E1B]">StudentOS</th><th className="p-2 border bg-[#EFECE2] dark:bg-[#1F1E1B]">Notion</th><th className="p-2 border bg-[#EFECE2] dark:bg-[#1F1E1B]">Canvas</th><th className="p-2 border bg-[#EFECE2] dark:bg-[#1F1E1B]">Motion</th></tr></thead>
                 <tbody className="bg-white dark:bg-[#1A1917]">
                   <tr><td className="p-2 border font-semibold">Canvas LMS sync</td><td className="p-2 border text-emerald-600">✓ Live REST + iCal</td><td className="p-2 border">—</td><td className="p-2 border">Native only</td><td className="p-2 border">—</td></tr>
                   <tr><td className="p-2 border font-semibold">Gmail AI scanner</td><td className="p-2 border text-emerald-600">✓ Bilingual EN/VI</td><td className="p-2 border">—</td><td className="p-2 border">—</td><td className="p-2 border">—</td></tr>
@@ -385,8 +396,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div id="demo-fallback" style={{display:'none'}} className="absolute inset-0 flex-col items-center justify-center text-center p-6 space-y-3 bg-[#FAF9F5] dark:bg-[#1F1E1B]">
                 <div className="w-14 h-14 rounded-2xl bg-[#D97757] text-white flex items-center justify-center"><Play className="w-6 h-6" /></div>
                 <p className="text-sm font-bold">Demo video not yet recorded</p>
-                <p className="text-xs text-[#6B6860] max-w-md">Connect Canvas → Sync Google Workspace → AI Study Coach plans your day.</p>
-                <iframe className="w-full aspect-video rounded-xl" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Demo fallback" allow="autoplay; encrypted-media" allowFullScreen></iframe>
+                <p className="text-xs text-[#6B6860] max-w-md">Connect Canvas → Sync Google Workspace → AI Study Coach plans your day. Replace public/demo.mp4 with your Loom embed.</p>
+                <div className="w-full aspect-video rounded-xl bg-[#EFECE2] dark:bg-[#252422] border border-dashed border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-center text-xs text-[#6B6860]">Add your Loom link: update public/demo.mp4 or set LOOM_URL env</div>
                 <button onClick={onExploreDemo} className="mt-2 px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold">Explore Live Demo Mode</button>
               </div>
             </div>

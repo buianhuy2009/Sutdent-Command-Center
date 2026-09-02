@@ -172,6 +172,15 @@ export interface ApiEnablementInfo {
   rawMessage?: string;
 }
 
+export type IACategory = 'Plan' | 'Create' | 'Learn' | 'Research';
+// IA hierarchy: 4 categories Plan|Create|Learn|Research — splitscreen is now a layout mode, not a workspace
+export const IA_CATEGORY_MAP: Record<string, IACategory> = {
+  dashboard: 'Plan',
+  canvas: 'Plan', radar: 'Plan', tracker: 'Plan', gmail: 'Plan', drive: 'Plan', classroom: 'Plan', moodle: 'Plan', timetable: 'Plan', 'scholarship-tracker': 'Plan', 'deadline-gantt': 'Plan', 'group-project': 'Plan',
+  'desmos-graphing': 'Create', 'desmos-scientific': 'Create', geogebra: 'Create', phet: 'Create', excalidraw: 'Create', mermaid: 'Create', canva: 'Create', 'wolfram-symbolab': 'Create', 'scribble-latex': 'Create', 'periodic-table': 'Create', 'unit-converter': 'Create',
+  flashcards: 'Learn', quizlet: 'Learn', anki: 'Learn', notebooklm: 'Learn', viva: 'Learn', pomodoro: 'Learn', 'quiz-generator': 'Learn', 'peer-qa': 'Learn',
+  drive: 'Research', 'notes-markdown': 'Research', rubric: 'Research', feynman: 'Research', 'pdf-reader': 'Research', arxiv: 'Research', 'open-library': 'Research', 'citation-vault': 'Research', 'notion-import': 'Research',
+};
 export type WorkspaceId =
   | 'dashboard'
   | 'academic'

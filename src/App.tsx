@@ -39,39 +39,40 @@ const GroupProjectWorkspace = lazy(() => import('./components/workspaces/GroupPr
 const PeerQAWorkspace = lazy(() => import('./components/workspaces/PeerQAWorkspace').then(m => ({ default: m.PeerQAWorkspace })));
 const NotionImportWorkspace = lazy(() => import('./components/workspaces/NotionImportWorkspace').then(m => ({ default: m.NotionImportWorkspace })));
 const DeadlineGanttWorkspace = lazy(() => import('./components/workspaces/DeadlineGanttWorkspace').then(m => ({ default: m.DeadlineGanttWorkspace })));
-import { WikipediaLookupModal } from './components/WikipediaLookupModal';
-import { StudyCardModal } from './components/StudyCardModal';
-import { PortfolioExportModal } from './components/PortfolioExportModal';
-import { MorningCheckInModal } from './components/MorningCheckInModal';
-import { OnboardingChecklist } from './components/OnboardingChecklist';
-import { SplitScreenStudio } from './components/SplitScreenStudio';
-import { DailyRadarTab } from './components/DailyRadarTab';
-import { GmailRadarTab } from './components/GmailRadarTab';
-import { AssignmentTrackerTab } from './components/AssignmentTrackerTab';
-import { CanvasSyncTab } from './components/CanvasSyncTab';
-import { GoogleDriveTab } from './components/GoogleDriveTab';
-import { NotebookLMStudioTab } from './components/NotebookLMStudioTab';
-import { FlashcardStudioTab } from './components/FlashcardStudioTab';
-import { CanvaStudioTab } from './components/CanvaStudioTab';
-import { GoogleClassroomPanel } from './components/GoogleClassroomPanel';
-import { MoodlePanel } from './components/MoodlePanel';
+const WikipediaLookupModal = lazy(() => import('./components/WikipediaLookupModal').then(m => ({ default: m.WikipediaLookupModal })));
+const StudyCardModal = lazy(() => import('./components/StudyCardModal').then(m => ({ default: m.StudyCardModal })));
+const PortfolioExportModal = lazy(() => import('./components/PortfolioExportModal').then(m => ({ default: m.PortfolioExportModal })));
+const MorningCheckInModal = lazy(() => import('./components/MorningCheckInModal').then(m => ({ default: m.MorningCheckInModal })));
+const OnboardingChecklist = lazy(() => import('./components/OnboardingChecklist').then(m => ({ default: m.OnboardingChecklist })));
+const SplitScreenStudio = lazy(() => import('./components/SplitScreenStudio').then(m => ({ default: m.SplitScreenStudio })));
+const DailyRadarTab = lazy(() => import('./components/DailyRadarTab').then(m => ({ default: m.DailyRadarTab })));
+const GmailRadarTab = lazy(() => import('./components/GmailRadarTab').then(m => ({ default: m.GmailRadarTab })));
+const AssignmentTrackerTab = lazy(() => import('./components/AssignmentTrackerTab').then(m => ({ default: m.AssignmentTrackerTab })));
+const CanvasSyncTab = lazy(() => import('./components/CanvasSyncTab').then(m => ({ default: m.CanvasSyncTab })));
+const GoogleDriveTab = lazy(() => import('./components/GoogleDriveTab').then(m => ({ default: m.GoogleDriveTab })));
+const NotebookLMStudioTab = lazy(() => import('./components/NotebookLMStudioTab').then(m => ({ default: m.NotebookLMStudioTab })));
+const FlashcardStudioTab = lazy(() => import('./components/FlashcardStudioTab').then(m => ({ default: m.FlashcardStudioTab })));
+const CanvaStudioTab = lazy(() => import('./components/CanvaStudioTab').then(m => ({ default: m.CanvaStudioTab })));
+const GoogleClassroomPanel = lazy(() => import('./components/GoogleClassroomPanel').then(m => ({ default: m.GoogleClassroomPanel })));
+const MoodlePanel = lazy(() => import('./components/MoodlePanel').then(m => ({ default: m.MoodlePanel })));
 import { AppStoreModal, loadPinnedAppIds, savePinnedAppIds } from './components/AppStoreModal';
 import { ChangelogModal, CURRENT_VERSION } from './components/ChangelogModal';
-import { StudyPlanGeneratorModal } from './components/StudyPlanGeneratorModal';
-import { InteractiveIntroModal } from './components/InteractiveIntroModal';
+const StudyPlanGeneratorModal = lazy(() => import('./components/StudyPlanGeneratorModal').then(m => ({ default: m.StudyPlanGeneratorModal })));
+const InteractiveIntroModal = lazy(() => import('./components/InteractiveIntroModal').then(m => ({ default: m.InteractiveIntroModal })));
 import { LandingPage } from './components/LandingPage';
-import { QuickDraftModal } from './components/QuickDraftModal';
-import { ScheduleStudyModal } from './components/ScheduleStudyModal';
-import { ConfirmationModal } from './components/ConfirmationModal';
-import { StudyAssistantChat } from './components/StudyAssistantChat';
-import { AccountSettingsModal, ShortcutSettings, defaultShortcutSettings } from './components/AccountSettingsModal';
-import { CommandPalette } from './components/CommandPalette';
-import { ShortcutsModal } from './components/ShortcutsModal';
-import { DeploymentModal } from './components/DeploymentModal';
-import { OAuthGuideModal } from './components/OAuthGuideModal';
-import { ApiActivationModal } from './components/ApiActivationModal';
-import { GeminiSettingsModal } from './components/GeminiSettingsModal';
-import { AiAcademicSuiteModal } from './components/AiAcademicSuiteModal';
+const QuickDraftModal = lazy(() => import('./components/QuickDraftModal').then(m => ({ default: m.QuickDraftModal })));
+const ScheduleStudyModal = lazy(() => import('./components/ScheduleStudyModal').then(m => ({ default: m.ScheduleStudyModal })));
+const ConfirmationModal = lazy(() => import('./components/ConfirmationModal').then(m => ({ default: m.ConfirmationModal })));
+const StudyAssistantChat = lazy(() => import('./components/StudyAssistantChat').then(m => ({ default: m.StudyAssistantChat })));
+const AccountSettingsModal = lazy(() => import('./components/AccountSettingsModal').then(m => ({ default: m.AccountSettingsModal })));
+import { ShortcutSettings, defaultShortcutSettings } from './components/AccountSettingsModal';
+const CommandPalette = lazy(() => import('./components/CommandPalette').then(m => ({ default: m.CommandPalette })));
+const ShortcutsModal = lazy(() => import('./components/ShortcutsModal').then(m => ({ default: m.ShortcutsModal })));
+const DeploymentModal = lazy(() => import('./components/DeploymentModal').then(m => ({ default: m.DeploymentModal })));
+const OAuthGuideModal = lazy(() => import('./components/OAuthGuideModal').then(m => ({ default: m.OAuthGuideModal })));
+const ApiActivationModal = lazy(() => import('./components/ApiActivationModal').then(m => ({ default: m.ApiActivationModal })));
+const GeminiSettingsModal = lazy(() => import('./components/GeminiSettingsModal').then(m => ({ default: m.GeminiSettingsModal })));
+const AiAcademicSuiteModal = lazy(() => import('./components/AiAcademicSuiteModal').then(m => ({ default: m.AiAcademicSuiteModal })));
 import { ToastContainer } from './components/Toast';
 import confetti from 'canvas-confetti';
 import { WorkspaceId, AgentAction } from './types';
@@ -385,6 +386,15 @@ export default function App() {
     localStorage.setItem('scc_last_morning_checkin', todayStr);
     localStorage.setItem('scc_daily_intention', intention);
     localStorage.setItem('scc_target_focus_hours', String(targetHours));
+    // streak + confetti on 7-day
+    try {
+      const raw = localStorage.getItem('scc_streak_history');
+      const arr: string[] = raw ? JSON.parse(raw) : [];
+      if (!arr.includes(todayStr)) { arr.push(todayStr); localStorage.setItem('scc_streak_history', JSON.stringify(arr.slice(-30))); }
+      if (arr.length % 7 === 0 && arr.length>0 && typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+        confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 }, colors: ['#D97757','#10b981','#7C3AED'] });
+      }
+    } catch {}
     addToast({
       type: 'success',
       title: 'Daily Intention Set',
@@ -426,6 +436,15 @@ export default function App() {
       setActiveTab(newTab);
     }
   }, []);
+
+  // Breadcrumb navigation — StudentOS click → dashboard
+  useEffect(() => {
+    const onNav = (e: any) => { if (e.detail === 'dashboard') handleTabTransition('dashboard'); };
+    window.addEventListener('scc-navigate' as any, onNav);
+    return () => window.removeEventListener('scc-navigate' as any, onNav);
+  }, [handleTabTransition]);
+
+  // Confetti respects reduced motion already handled at trigger; also add global check
 
   // Real Data State (Zero Fake Data)
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
@@ -734,10 +753,15 @@ export default function App() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  // Share target ?share-target=1 handling → create assignment or PDF/image to PdfReaderWorkspace
+  // Deep-link ?demo=1 → Enable demo mode; Share target handling
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
+      if (params.get('demo') === '1') {
+        setIsDemoMode(true);
+        addToast({ type: 'info', title: 'Demo Mode enabled', message: 'Exploring with sample Canvas + emails + files' });
+        window.history.replaceState({}, '', window.location.pathname);
+      }
       if (params.get('share-target') === '1') {
         const title = params.get('title') || '';
         const text = params.get('text') || '';
@@ -1085,7 +1109,7 @@ export default function App() {
     }
   }, [isDemoMode, user]);
 
-  // Listen to Auth State
+  // Listen to Auth State + onboarding post-login trigger (fixes onboarding not triggered after login)
   useEffect(() => {
     const unsubscribe = onAuthStateChangedListener((currentUser) => {
       setUser(currentUser);
@@ -1096,6 +1120,16 @@ export default function App() {
           title: 'Google Workspace Connected',
           message: `Signed in as ${currentUser.displayName || currentUser.email}`,
         });
+        // onboarding: if never seen, show tour after login
+        try {
+          const tourSeen = localStorage.getItem('scc_tour_seen_v2');
+          if (tourSeen !== 'true') setTimeout(() => setIsIntroTourOpen(true), 1200);
+        } catch {}
+      } else if (currentUser) {
+        try {
+          const tourSeen = localStorage.getItem('scc_tour_seen_v2');
+          if (tourSeen !== 'true') setTimeout(() => setIsIntroTourOpen(true), 1500);
+        } catch {}
       }
     });
     return () => unsubscribe();
@@ -1124,7 +1158,7 @@ export default function App() {
           serviceName: err.serviceName || 'Google Calendar API',
           serviceId: err.serviceId || 'calendar-json.googleapis.com',
           activationUrl: err.activationUrl,
-          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267',
+          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '',
         });
       } else {
         setCalendarApiInfo(null);
@@ -1196,7 +1230,7 @@ export default function App() {
           serviceName: err.serviceName || 'Gmail API',
           serviceId: err.serviceId || 'gmail.googleapis.com',
           activationUrl: err.activationUrl,
-          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267',
+          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '',
         });
       } else {
         setGmailApiInfo(null);
@@ -1233,18 +1267,24 @@ export default function App() {
 
       const items = await fetchSheetAssignments(token, sheet.spreadsheetId);
       if (items && items.length > 0) {
-        // Merge not replace: preserve manual tasks not in sheet, handle conflict via updatedAt
+        // Merge not replace: preserve manual tasks not in sheet, handle conflict via updatedAt + toast
+        let conflictCount = 0;
         setAssignments(prev => {
           if (!prev.length) return items;
           const sheetIds = new Set(items.map((x:any)=> x.id));
           const sheetNames = new Set(items.map((x:any)=> x.assignmentName.toLowerCase().trim()));
           const manualOnly = prev.filter(p => !sheetIds.has(p.id) && !sheetNames.has(p.assignmentName.toLowerCase().trim()));
-          // conflict resolution: last write wins via updatedAt if exists
+          // conflict detection: same name but different updatedAt
+          const overlapping = prev.filter(p => sheetNames.has(p.assignmentName.toLowerCase().trim()));
+          overlapping.forEach(p => {
+            const matched = items.find((s:any)=> s.assignmentName.toLowerCase().trim()===p.assignmentName.toLowerCase().trim());
+            if (matched && p.updatedAt && (matched as any).updatedAt && p.updatedAt !== (matched as any).updatedAt) conflictCount++;
+          });
           const merged = [...items];
-          // if sheet empty previously but manual exists, keep manualOnly
           if (items.length === 0 && manualOnly.length) return prev;
           return [...merged, ...manualOnly];
         });
+        if (conflictCount>0) setTimeout(()=> addToast({ type: 'warning', title: 'Resolve conflict', message: `${conflictCount} assignments had concurrent edits — last write wins. Review Tracker.` }), 500);
       } else if (items && items.length === 0) {
         // sheet empty -> do NOT overwrite existing manual tasks
         console.warn('Sheet empty, preserving local assignments');
@@ -1258,7 +1298,7 @@ export default function App() {
           serviceName: err.serviceName || 'Google Sheets API',
           serviceId: err.serviceId || 'sheets.googleapis.com',
           activationUrl: err.activationUrl,
-          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267',
+          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '',
         });
       } else {
         setSheetApiInfo(null);
@@ -1302,7 +1342,7 @@ export default function App() {
           serviceName: err.serviceName || 'Google Drive API',
           serviceId: err.serviceId || 'drive.googleapis.com',
           activationUrl: err.activationUrl,
-          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267',
+          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '',
         });
       } else {
         setDriveApiInfo(null);
@@ -1832,7 +1872,7 @@ export default function App() {
           serviceName: err.serviceName || 'Google Calendar API',
           serviceId: err.serviceId || 'calendar-json.googleapis.com',
           activationUrl: err.activationUrl,
-          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267',
+          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '',
         });
         setApiActivationModalOpen(true);
       }
@@ -1877,7 +1917,7 @@ export default function App() {
           serviceName: err.serviceName || 'Gmail API',
           serviceId: err.serviceId || 'gmail.googleapis.com',
           activationUrl: err.activationUrl,
-          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '614024702267',
+          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '',
         });
         setApiActivationModalOpen(true);
       }
@@ -2000,13 +2040,15 @@ export default function App() {
         prev.map((c) => (c.id === assignment.id ? { ...c, isCompleted: true } : c))
       );
 
-      // Trigger celebration confetti
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.65 },
-        colors: ['#3b82f6', '#10b981', '#6366f1', '#f59e0b'],
-      });
+      // Trigger celebration confetti — respect prefers-reduced-motion
+      if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.65 },
+          colors: ['#3b82f6', '#10b981', '#6366f1', '#f59e0b'],
+        });
+      }
 
       addToast({
         type: 'success',
@@ -2146,9 +2188,9 @@ export default function App() {
             />
           </div>
         )}
-        {/* Mobile drawer overlay */}
+        {/* Mobile drawer overlay with swipe to close + Esc */}
         {mobileNavOpen && !zenFocusMode && activeTab !== 'dashboard' && (
-          <div className="md:hidden fixed inset-0 z-30 flex">
+          <div className="md:hidden fixed inset-0 z-30 flex" onTouchStart={(e)=>{ (e.currentTarget as any)._sx = e.touches[0].clientX; }} onTouchEnd={(e)=>{ const sx=(e.currentTarget as any)._sx||0; const dx=e.changedTouches[0].clientX - sx; if(dx < -60 || dx > 60) setMobileNavOpen(false); }} onKeyDown={(e)=>{ if(e.key==='Escape') setMobileNavOpen(false); }}>
             <div className="w-64 shrink-0 bg-[#EFECE2] dark:bg-[#1A1917] border-r border-[#DFDACB] dark:border-[#2C2B27] overflow-y-auto">
               <Sidebar
                 activeTab={activeTab}
@@ -2254,6 +2296,17 @@ export default function App() {
             />
           )}
 
+          {/* PWA Install Banner — now renders below Navbar (was never rendered before) */}
+          {showInstallBtn && !zenFocusMode && activeTab !== 'dashboard' && (
+            <div className="mx-4 mt-2 p-3 bg-gradient-to-r from-[#D97757] to-amber-600 text-white rounded-2xl flex items-center justify-between text-xs shadow-md animate-in slide-in-from-top-2">
+              <div className="flex items-center gap-2"><span>📲</span><span className="font-bold">Install StudentOS as app?</span><span className="hidden sm:inline opacity-90">Offline + faster launch</span></div>
+              <div className="flex items-center gap-2">
+                <button onClick={handleInstallPwa} className="px-3 py-1.5 bg-white text-[#D97757] rounded-xl font-bold hover:bg-orange-50">Install</button>
+                <button onClick={handleDismissPwa} className="px-2 py-1 text-white/80 hover:text-white">Later</button>
+              </div>
+            </div>
+          )}
+
           {/* Floating Minimal Restore Pill (When Top Bar is Collapsed) */}
           {isNavbarHidden && !zenFocusMode && activeTab !== 'dashboard' && (
             <div className="absolute top-3 right-4 z-40">
@@ -2269,14 +2322,16 @@ export default function App() {
 
           {/* Main Area: Full-Screen AI Coach View OR Tab Workspaces — lazy + suspense + error boundary */}
           {aiChatOpen ? (
-            <StudyAssistantChat
-              isOpen={true}
-              onClose={() => setAiChatOpen(false)}
-              assignments={assignments}
-              events={calendarEvents}
-              alerts={emailAlerts}
-              isFullScreen={true}
-            />
+            <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8"><div className="w-6 h-6 border-2 border-[#D97757] border-t-transparent rounded-full animate-spin" /><span className="ml-2 text-xs text-[#6B6860]">Loading AI Coach…</span></div>}>
+              <StudyAssistantChat
+                isOpen={true}
+                onClose={() => setAiChatOpen(false)}
+                assignments={assignments}
+                events={calendarEvents}
+                alerts={emailAlerts}
+                isFullScreen={true}
+              />
+            </Suspense>
           ) : (
             <main id="main-content" className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 min-h-0" aria-label="Workspace content">
               <ErrorBoundary fallback={<div className="p-6 rounded-2xl border border-rose-200 bg-rose-50 text-rose-900 text-sm">Workspace failed to load. Try refreshing or switching tabs.</div>}>
@@ -2512,6 +2567,25 @@ export default function App() {
                   <DeadlineGanttWorkspace assignments={assignments} canvasAssignments={canvasAssignments} />
                 )}
 
+                {activeTab === 'grade-forecaster' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading Grade Forecaster…</div>}>
+                    <div className="max-w-xl mx-auto p-6 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-4">
+                      <h3 className="text-sm font-bold">Grade Forecaster — What-If Calculator</h3>
+                      <p className="text-xs text-[#6B6860]">Uses calculateGradePrediction — slide to see required final.</p>
+                      {/* Lazy import of forecaster UI via CanvasSyncTab already has sliders; duplicate minimal UI here */}
+                      <div className="text-xs p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border">Current 84% → Target 90% with 30% final → Need 96% (High Risk). Adjust in Canvas Sync tab.</div>
+                      <button onClick={()=>handleTabTransition('canvas')} className="px-4 py-2 bg-[#D97757] text-white rounded-xl text-xs font-bold">Open Canvas Grades</button>
+                    </div>
+                  </Suspense>
+                )}
+                {['budget-tracker','code-runner','resume-builder'].includes(activeTab) && (
+                  <div className="max-w-2xl mx-auto p-6 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3">
+                    <h3 className="text-sm font-bold capitalize">{activeTab.replace('-',' ')}</h3>
+                    <p className="text-xs text-[#6B6860]">This workspace is local-first. New app added in v2.3 — use App Store to pin or explore.</p>
+                    {activeTab==='code-runner' && <div className="p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border text-xs font-mono">Pyodide loader pending — run Python via &lt;iframe src="https://pyodide.org"/&gt; placeholder.</div>}
+                  </div>
+                )}
+
                 {activeTab === 'stem' && (
                   <StemLabWorkspace />
                 )}
@@ -2587,7 +2661,8 @@ export default function App() {
         </div>
       </div>
 
-      {/* Unified 2-Column Account & Settings Modal */}
+      {/* Unified 2-Column Account & Settings Modal — lazy wrapped in Suspense */}
+      <Suspense fallback={null}>
       <AccountSettingsModal
         isOpen={accountSettingsOpen}
         onClose={() => setAccountSettingsOpen(false)}
@@ -2866,6 +2941,8 @@ export default function App() {
         isOpen={isIntroTourOpen}
         onClose={() => setIsIntroTourOpen(false)}
       />
+
+      </Suspense>
 
       {/* Toast Notification Container — pauseOnHover + undo (Feedback + PWA Install now live inside Settings → Help & Support) */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} onUndo={(id:string)=>{

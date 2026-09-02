@@ -75,17 +75,39 @@ export class OAuthTestUserRequiredError extends Error {
   }
 }
 
-// Token Storage Key in sessionStorage (persists across page reloads in the browser tab)
+// Token Storage Key — now in IndexedDB (via Dexie) + sessionStorage mirror for sync access
 const TOKEN_STORAGE_KEY = 'google_workspace_access_token';
+const TOKEN_IDB_KEY = 'google_workspace_access_token_v2';
 
-// In-memory cache backed by sessionStorage
+// In-memory cache backed by sessionStorage + IndexedDB hydrate
 let cachedAccessToken: string | null = null;
 if (typeof window !== 'undefined') {
   try {
     cachedAccessToken = sessionStorage.getItem(TOKEN_STORAGE_KEY);
+    // hydrate from IndexedDB if sessionStorage empty (survives tab close)
+    if (!cachedAccessToken) {
+      try {
+        // async hydrate — will populate cache next tick
+        import('./db').then(({ db }) => {
+          db.preferences.get(TOKEN_IDB_KEY).then((row: any) => {
+            if (row?.value) {
+              cachedAccessToken = row.value;
+              try { sessionStorage.setItem(TOKEN_STORAGE_KEY, row.value); } catch {}
+            }
+          }).catch(()=>{});
+        });
+      } catch {}
+    }
   } catch {
     cachedAccessToken = null;
   }
+}
+async function persistTokenToIDB(token: string | null) {
+  try {
+    const { db } = await import('./db');
+    if (token) await db.preferences.put({ key: TOKEN_IDB_KEY, value: token });
+    else await db.preferences.delete(TOKEN_IDB_KEY);
+  } catch {}
 }
 
 let isSigningIn = false;
@@ -99,9 +121,8 @@ export const clearStoredGoogleToken = () => {
   if (typeof window !== 'undefined') {
     try {
       sessionStorage.removeItem(TOKEN_STORAGE_KEY);
-    } catch {
-      // ignore
-    }
+    } catch {}
+    persistTokenToIDB(null);
   }
 };
 
@@ -120,16 +141,17 @@ export const signInWithGoogle = async (
     const result = await signInWithPopup(auth, targetProvider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     
-    // Store access token in memory & sessionStorage
+    // Store access token in memory & sessionStorage + IndexedDB (survives tab close)
     if (credential?.accessToken) {
       cachedAccessToken = credential.accessToken;
       if (typeof window !== 'undefined') {
         try {
           sessionStorage.setItem(TOKEN_STORAGE_KEY, credential.accessToken);
           sessionStorage.setItem('google_token_acquired_at', String(Date.now()));
-        } catch {
-          // ignore
-        }
+          persistTokenToIDB(credential.accessToken);
+          // also persist acquiredAt to IDB
+          import('./db').then(({ db }) => db.preferences.put({ key: 'google_token_acquired_at', value: String(Date.now()) }).catch(()=>{}));
+        } catch {}
       }
     } else {
       cachedAccessToken = '';
@@ -244,9 +266,8 @@ export const setCachedToken = (token: string | null) => {
       } else {
         sessionStorage.removeItem(TOKEN_STORAGE_KEY);
       }
-    } catch {
-      // ignore
-    }
+      persistTokenToIDB(token);
+    } catch {}
   }
 };
 

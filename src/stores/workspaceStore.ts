@@ -4,7 +4,9 @@ import type { WorkspaceId } from '../types';
 
 export interface WorkspaceSlice {
   activeWorkspace: WorkspaceId;
+  recentTabs: string[];
   setWorkspace: (id: WorkspaceId) => void;
+  pushRecentTab: (id: string) => void;
 }
 
 export interface PinnedAppsSlice {
@@ -22,14 +24,26 @@ export interface UISlice {
 
 export const useWorkspaceStore = create<WorkspaceSlice>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       activeWorkspace: (localStorage.getItem('scc_active_workspace_v1') as WorkspaceId) || 'dashboard',
+      recentTabs: (() => { try { const raw = localStorage.getItem('scc_recent_tabs_v1'); return raw ? JSON.parse(raw) : []; } catch { return []; } })(),
       setWorkspace: (id: WorkspaceId) => {
         try { localStorage.setItem('scc_active_workspace_v1', id); } catch {}
         set({ activeWorkspace: id });
+        // also push recent
+        const cur = get().recentTabs || [];
+        const next = [id, ...cur.filter((x) => x !== id)].slice(0, 10);
+        try { localStorage.setItem('scc_recent_tabs_v1', JSON.stringify(next)); } catch {}
+        set({ recentTabs: next });
+      },
+      pushRecentTab: (id: string) => {
+        const cur = get().recentTabs || [];
+        const next = [id, ...cur.filter((x) => x !== id)].slice(0, 10);
+        try { localStorage.setItem('scc_recent_tabs_v1', JSON.stringify(next)); } catch {}
+        set({ recentTabs: next });
       },
     }),
-    { name: 'scc_workspace_store', storage: createJSONStorage(() => localStorage) }
+    { name: 'scc_workspace_store', storage: createJSONStorage(() => localStorage), partialize: (s) => ({ activeWorkspace: s.activeWorkspace, recentTabs: s.recentTabs }) }
   )
 );
 
