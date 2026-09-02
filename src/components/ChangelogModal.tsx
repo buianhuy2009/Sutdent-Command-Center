@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Award, Sparkles, BookOpen, Layers, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.2.1';
+export const CURRENT_VERSION = '2.2.2';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,25 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.2.2',
+    date: 'September 02, 2026',
+    title: 'Hotfix 2.2.2 — Blank Screen Corruption (TDZ) + Stable Render',
+    badge: 'Latest Update',
+    highlights: [
+      'Critical: Fixed blank background crash caused by ReferenceError: Cannot access \'activeTab\' before initialization — dynamic title useEffect was evaluated before useState declaration (TDZ). Moved effect after activeTab state to restore render on both dev and production builds',
+      'Verified via headless Chrome dump-dom + screenshot: Landing renders full hero, integrations, pricing, FAQ — no ReferenceError, title correctly StudentOS — Dashboard',
+      'Changelog ALWAYS updated — 2.2.2 hotfix on top of 2.2.1 Help & Support consolidation; version bump synced in CURRENT_VERSION + package.json',
+    ],
+    details: [
+      'Root cause: src/App.tsx:309 dynamic title useEffect with [activeTab] dependency was placed at line 309 before const [activeTab] = useState(\'dashboard\') at line 345 — dependency array reads activeTab at render time → TDZ ReferenceError → React tree unmounted → blank #FAF9F5 background (reproduced via vite dev and chrome headless). Fix moved effect to after activeTab declaration (now after onboardingDialogRef, line 353) with comment “MUST be after activeTab declaration to avoid TDZ”.',
+      'Verification: npm run build passes (922k index chunk), vite preview on 4178 + Chrome headless dump-dom shows full landing HTML (header, hero The Next-Gen Academic OS, trusted integrations, comparison, pricing, privacy, footer) and screenshot 149k, no pageerror console, document.title correctly set.',
+      'Also preserved 2.2.1 Help & Support work: floating FeedbackWidget + PWA banner removed, consolidated into Settings → Help & Support with Install Now/Later + GitHub/Tally/Share + About card; no floating z-40 overlays remain.',
+    ]
+  },
+  {
     version: '2.2.1',
     date: 'September 02, 2026',
     title: 'UX 2.2.1 — Remove Floating Clutter + Help & Support Consolidation',
-    badge: 'Latest Update',
     highlights: [
       'UX: Removed floating Help & Feedback widget and PWA Install banner from canvas — both now live inside Settings → Help & Support to eliminate overlay clutter and improve thumb-reach on mobile',
       'Settings: New Help & Support section consolidates PWA Install Now/Later (with standalone detection + install guide), GitHub Issue, Tally Feature form, Share on X, and version About card — single discoverable hub',

@@ -303,15 +303,6 @@ export default function App() {
     })();
   }, []);
 
-
-
-  // Dynamic title for SEO per workspace
-  useEffect(() => {
-    const labelMap: Record<string,string> = { dashboard:'Dashboard', canvas:'Canvas LMS', radar:'Daily Schedule', tracker:'Assignment Tracker', gmail:'Gmail AI', drive:'Google Drive', splitscreen:'Split Screen' };
-    const label = labelMap[activeTab] || activeTab || 'Dashboard';
-    document.title = `StudentOS — ${label} | Canvas + Workspace Academic OS`;
-  }, [activeTab]);
-
   // Auth & User
   const [user, setUser] = useState<User | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -358,6 +349,13 @@ export default function App() {
   const [isIntroTourOpen, setIsIntroTourOpen] = useState(false);
   const [showChangelogDot, setShowChangelogDot] = useState(false);
   const onboardingDialogRef = useRef<HTMLDialogElement | null>(null);
+
+  // Dynamic title for SEO per workspace — MUST be after activeTab declaration to avoid TDZ
+  useEffect(() => {
+    const labelMap: Record<string,string> = { dashboard:'Dashboard', canvas:'Canvas LMS', radar:'Daily Schedule', tracker:'Assignment Tracker', gmail:'Gmail AI', drive:'Google Drive', splitscreen:'Split Screen' };
+    const label = labelMap[activeTab] || activeTab || 'Dashboard';
+    document.title = `StudentOS — ${label} | Canvas + Workspace Academic OS`;
+  }, [activeTab]);
 
   useEffect(() => {
     try {

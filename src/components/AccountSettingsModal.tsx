@@ -1081,9 +1081,9 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 <div className="p-4 bg-white dark:bg-[#141413] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between">
                   <div>
                     <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-1.5"><Heart className="w-3.5 h-3.5 text-rose-500" /> StudentOS</div>
-                    <div className="text-[11px] text-[#8C897F]">Open-source • Local-first • v2.2.1 • <a href="https://github.com/buianhuy2009/Sutdent-Command-Center" target="_blank" rel="noreferrer" className="underline hover:text-[#D97757]">GitHub</a> • <span className="cursor-pointer underline hover:text-[#D97757]" onClick={() => { onClose(); onOpenChangelog?.(); }}>What’s new?</span></div>
+                    <div className="text-[11px] text-[#8C897F]">Open-source • Local-first • v2.2.2 • <a href="https://github.com/buianhuy2009/Sutdent-Command-Center" target="_blank" rel="noreferrer" className="underline hover:text-[#D97757]">GitHub</a> • <span className="cursor-pointer underline hover:text-[#D97757]" onClick={() => { onClose(); onOpenChangelog?.(); }}>What’s new?</span></div>
                   </div>
-                  <div className="text-[10px] font-mono text-[#8C897F] bg-[#FAF9F5] dark:bg-[#1F1E1B] px-2 py-1 rounded-lg border">v2.2.1</div>
+                  <div className="text-[10px] font-mono text-[#8C897F] bg-[#FAF9F5] dark:bg-[#1F1E1B] px-2 py-1 rounded-lg border">v2.2.2</div>
                 </div>
               </div>
             )}
