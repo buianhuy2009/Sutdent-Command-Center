@@ -27,10 +27,14 @@ function countFlashcardsDue(): number {
 }
 
 export function useBadgeCounts(canvasAssignments: CanvasAssignment[], assignments: Assignment[], emailAlerts: EmailAlert[]): BadgeCounts {
-  const completedIds = useMemo(() => new Set(loadCompletedCanvasIds()), [canvasAssignments]);
-  const canvasUnfinished = useMemo(() => canvasAssignments.filter(a => !completedIds.has(a.id)).length, [canvasAssignments, completedIds]);
-  const urgentEmail = useMemo(() => emailAlerts.filter(e => (e.urgency === 'HIGH' || e.urgency === 'MEDIUM') && !e.isSpam).length, [emailAlerts]);
-  const pendingAssignment = useMemo(() => assignments.filter(a => a.status !== 'Done').length, [assignments]);
+  const completedIds = useMemo(() => { try { return new Set(loadCompletedCanvasIds()); } catch { return new Set<string>(); } }, [canvasAssignments]);
+  // Null-safe: malformed records must never throw in App's render body (white screen)
+  const safeCanvas = Array.isArray(canvasAssignments) ? canvasAssignments : [];
+  const safeAssignments = Array.isArray(assignments) ? assignments : [];
+  const safeAlerts = Array.isArray(emailAlerts) ? emailAlerts : [];
+  const canvasUnfinished = useMemo(() => safeCanvas.filter(a => a && !completedIds.has((a as any).id)).length, [canvasAssignments, completedIds]);
+  const urgentEmail = useMemo(() => safeAlerts.filter(e => e && (e.urgency === 'HIGH' || e.urgency === 'MEDIUM') && !e.isSpam).length, [emailAlerts]);
+  const pendingAssignment = useMemo(() => safeAssignments.filter(a => a && a.status !== 'Done').length, [assignments]);
   const [flashcardDue, setFlashcardDue] = useState<number>(() => countFlashcardsDue());
 
   useEffect(() => {

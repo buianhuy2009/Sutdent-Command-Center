@@ -17,6 +17,60 @@ describe('RRULE repeats', () => {
   });
 });
 
+describe('crossReferenceCanvasWithSheet hardening (no white screen)', () => {
+  it('never throws on malformed items and normalizes names', async () => {
+    const { crossReferenceCanvasWithSheet } = await import('./canvas');
+    const canvas = [
+      { id: 'c1', name: 'Problem Set 1', courseName: 'Calc', dueAt: '2026-09-10', isSynced: false },
+      { id: 'c2', name: undefined, courseName: undefined, dueAt: undefined, isSynced: false },
+      null,
+      { id: 'c3', title: 'Lab Report', course_code: 'PHYS', dueAt: '2026-09-12', isSynced: false },
+    ];
+    const sheet = [
+      { id: 's1', assignmentName: 'problem set 1', subject: 'Calc', dueDate: '2026-09-10', status: 'Not Started' },
+      { id: 's2', assignmentName: undefined, subject: undefined, dueDate: '', status: 'Not Started' },
+      null,
+    ];
+    let res: any;
+    expect(() => { res = crossReferenceCanvasWithSheet(canvas as any, sheet as any); }).not.toThrow();
+    expect(Array.isArray(res)).toBe(true);
+    expect(res.length).toBe(3); // null canvas item skipped, rest normalized
+    expect(res[0].isSynced).toBe(true); // matched by name+course
+  });
+});
+
+describe('sanitizers', () => {
+  it('drops nulls and defaults missing fields', async () => {
+    const { sanitizeAssignments, sanitizeCanvasAssignments } = await import('../utils/sanitize');
+    const a = sanitizeAssignments([null, {}, { assignmentName: '  ', subject: null }]);
+    expect(a.length).toBe(2);
+    expect(a[0].assignmentName).toBe('Untitled Assignment');
+    expect(a[0].status).toBe('Not Started');
+    const c = sanitizeCanvasAssignments([null, { name: undefined }]);
+    expect(c.length).toBe(1);
+    expect(c[0].name).toBe('Canvas Assignment');
+  });
+});
+
+describe('google token expiry', () => {
+  it('treats old tokens as expired and fresh tokens as valid', async () => {
+    const fb = await import('./firebase');
+    fb.setStoredGoogleToken('test-token-1234567890');
+    // fresh stamp → valid
+    try { localStorage.setItem('google_token_acquired_at', String(Date.now())); } catch {}
+    try { sessionStorage.setItem('google_token_acquired_at', String(Date.now())); } catch {}
+    expect(fb.isGoogleTokenExpired()).toBe(false);
+    expect(fb.getValidGoogleToken()).toBe('test-token-1234567890');
+    // 2-hour-old stamp → expired
+    const old = String(Date.now() - 2 * 60 * 60 * 1000);
+    try { localStorage.setItem('google_token_acquired_at', old); } catch {}
+    try { sessionStorage.setItem('google_token_acquired_at', old); } catch {}
+    expect(fb.isGoogleTokenExpired()).toBe(true);
+    expect(fb.getValidGoogleToken()).toBeNull();
+    expect(fb.needsGoogleReconnect()).toBe(true);
+    fb.clearStoredGoogleToken();
+  });
+});
 describe('crossReferenceCanvasWithSheet (dedup logic)', () => {
   it('matches by normalized title + date', () => {
     const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();

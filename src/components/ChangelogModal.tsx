@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Award, Sparkles, BookOpen, Layers, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.4.0';
+export const CURRENT_VERSION = '2.4.1';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,27 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.4.1',
+    date: 'September 03, 2026',
+    title: 'Fixed: Blank Canvas Page & Google Sign-In Going Stale',
+    badge: 'Latest Update',
+    highlights: [
+      'Fixed the blank page when opening Canvas — one bad item in your data can no longer crash the whole app',
+      'Canvas failures now say what went wrong with a Try Again button, instead of looking empty',
+      'Google sign-in lasts about an hour — the app now tells you when it expires and reconnects in one click',
+      'Your tasks and events stay on screen while reconnecting — nothing gets wiped by a failed sync',
+    ],
+    details: [
+      'Some students tapped “Enter LMS Workspace” and got a blank page. This happened when a single assignment record was missing its title (from an old save, an email scan, or a blank spreadsheet row) — it crashed the page with no way back. Every list is now cleaned automatically, and a last-resort safety screen with a “Back to Dashboard” button catches anything unexpected.',
+      'When Canvas sync failed, the tab said “All caught up!” with zero tasks, which looked broken and empty. It now shows a clear error box explaining the problem with a Try Again button, and keeps your previously loaded assignments visible.',
+      'Google only lets sign-ins last about an hour. Before, the app kept showing you as connected while every sync quietly failed. Now it detects the expired sign-in, explains it in plain words, and offers a one-click Reconnect — in the warning message, in every affected tab, and automatically after an hour.',
+      'Failed syncs no longer delete what you already have. If Canvas, Calendar, Gmail, Sheets or Drive fail to refresh, your existing data stays put until the next successful sync.',
+    ]
+  },
+  {
     version: '2.4.0',
     date: 'September 03, 2026',
     title: 'Study Smarter — Auto-Planner, Grade Simulator & 15 New Tools',
-    badge: 'Latest Update',
     highlights: [
       'New one-tap focus planner — it looks at your free gaps and pending work, then suggests study blocks you can accept or drag around',
       'Grade simulator v2 — see what final-exam score you need, try “what if I drop my lowest quiz”, and plan your GPA across the semester',

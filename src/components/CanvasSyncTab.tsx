@@ -43,6 +43,8 @@ interface CanvasSyncTabProps {
   onSubmitAssignment?: (assignment: CanvasAssignment, fileId: string) => Promise<void>;
   googleToken?: string;
   onConnectGoogle?: () => void;
+  sessionExpired?: boolean;
+  onReconnectGoogle?: () => void;
 }
 
 export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
@@ -60,6 +62,8 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   onSubmitAssignment,
   googleToken,
   onConnectGoogle,
+  sessionExpired = false,
+  onReconnectGoogle,
 }) => {
   const safeSettings = settings || { calendarFeedUrl: '', apiDomain: 'https://canvas.instructure.com', apiToken: '', autoSync: true };
   const [feedUrl, setFeedUrl] = useState(safeSettings.calendarFeedUrl || '');
@@ -196,6 +200,41 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Sync error banner — previously errorMessage was accepted but never rendered,
+          so failures looked like a blank page. Now: message + working Retry. */}
+      {errorMessage && (
+        <div className="p-4 rounded-2xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 flex items-start gap-3" role="alert">
+          <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <h4 className="text-xs font-bold text-rose-700 dark:text-rose-300">Couldn't sync Canvas</h4>
+            <p className="text-xs text-rose-600 dark:text-rose-400 mt-0.5 break-words">{errorMessage}</p>
+            <p className="text-[11px] text-rose-500 dark:text-rose-400/80 mt-1">Your previously loaded assignments are kept below.</p>
+          </div>
+          <button
+            onClick={onFetchCanvas}
+            className="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shrink-0 min-h-[44px] inline-flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Try again
+          </button>
+        </div>
+      )}
+      {sessionExpired && (
+        <div className="p-4 rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 flex items-start gap-3" role="alert">
+          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <h4 className="text-xs font-bold text-amber-800 dark:text-amber-200">Google session expired</h4>
+            <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">Sign-ins last about an hour. Reconnect to resume Canvas-to-Sheet sync — nothing is lost.</p>
+          </div>
+          {onReconnectGoogle && (
+            <button
+              onClick={onReconnectGoogle}
+              className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shrink-0 min-h-[44px]"
+            >
+              Reconnect
+            </button>
+          )}
+        </div>
+      )}
       {/* Top Filter & Actions Header */}
       <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
         

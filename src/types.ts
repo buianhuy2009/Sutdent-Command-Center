@@ -158,6 +158,7 @@ export interface ToastNotification {
   persistent?: boolean; // sticky error toasts that need a Retry button
   retryLabel?: string;
   onRetry?: () => void;
+  reconnectGoogle?: boolean; // retry button triggers Google reconnect
   undoLabel?: string; // 5s undo for deletes
   groupKey?: string; // toasts with same groupKey collapse into one
   source?: { kind: 'canvas' | 'gmail' | 'drive' | 'ai' | 'system'; id?: string; url?: string };

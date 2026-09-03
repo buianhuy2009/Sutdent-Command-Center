@@ -509,18 +509,27 @@ export function crossReferenceCanvasWithSheet(
 ): CanvasAssignment[] {
   if (!Array.isArray(canvasList)) return [];
 
-  const completedSet = new Set(completedIds);
+  const completedSet = new Set(Array.isArray(completedIds) ? completedIds : []);
 
-  return canvasList.map((canvasItem) => {
+  return canvasList.flatMap((rawItem) => {
+    // Never throw on malformed records — normalize or skip. A single bad item
+    // previously crashed setState updaters above all error boundaries (white screen).
+    if (!rawItem || typeof rawItem !== 'object') return [];
+    const canvasItem = {
+      ...rawItem,
+      name: String(rawItem.name ?? (rawItem as any).title ?? 'Canvas Assignment'),
+      courseName: String(rawItem.courseName ?? (rawItem as any).course_code ?? 'Canvas Course'),
+    };
     const cName = canvasItem.name.toLowerCase().trim();
     const cKey = `${canvasItem.courseId || canvasItem.courseName}::${canvasItem.id}`.toLowerCase();
-    const matchingSheetItem = (sheetAssignments || []).find((sheetItem) => {
+    const matchingSheetItem = (Array.isArray(sheetAssignments) ? sheetAssignments : []).find((sheetItem) => {
+      if (!sheetItem || typeof sheetItem !== 'object') return false;
       if (sheetItem.canvasId && canvasItem.id && sheetItem.canvasId === canvasItem.id) return true;
-      if (sheetItem.canvasId && cKey.includes(sheetItem.canvasId.toLowerCase())) return true;
-      const sName = sheetItem.assignmentName.toLowerCase().trim();
+      if (sheetItem.canvasId && cKey.includes(String(sheetItem.canvasId).toLowerCase())) return true;
+      const sName = String(sheetItem.assignmentName ?? '').toLowerCase().trim();
       if (!sName || !cName) return false;
       // fallback name match only if course also matches to avoid cross-course collision
-      const sameCourse = !sheetItem.subject || !canvasItem.courseName || sheetItem.subject.toLowerCase() === canvasItem.courseName.toLowerCase();
+      const sameCourse = !sheetItem.subject || !canvasItem.courseName || String(sheetItem.subject).toLowerCase() === canvasItem.courseName.toLowerCase();
       return sameCourse && (sName === cName || sName.includes(cName) || cName.includes(sName));
     });
 
@@ -528,11 +537,11 @@ export function crossReferenceCanvasWithSheet(
     const isDoneInSheet = matchingSheetItem?.status === 'Done';
     const isCompleted = isDoneInSheet || Boolean(canvasItem.isCompleted) || completedSet.has(canvasItem.id);
 
-    return {
+    return [{
       ...canvasItem,
       isSynced: isAlreadyInSheet,
       isCompleted,
-    };
+    }];
   });
 }
 

@@ -181,9 +181,51 @@ export const clearStoredGoogleToken = () => {
 };
 
 export const hasActiveGoogleWorkspaceToken = (): boolean => {
-  const token = getStoredGoogleToken();
-  return Boolean(token && token.length > 10);
+  return getValidGoogleToken() !== null;
 };
+
+/**
+ * Google OAuth access tokens expire after ~60 minutes and the web client gets
+ * no refresh token — an old token string looks "connected" while every API
+ * call 401s. These helpers make expiry explicit so sync surfaces a Reconnect
+ * prompt instead of failing silently.
+ */
+export const GOOGLE_TOKEN_TTL_MS = 55 * 60 * 1000; // refresh 5 min before the real ~60 min expiry
+const TOKEN_ACQUIRED_AT_KEY = 'google_token_acquired_at';
+
+export function getGoogleTokenAgeMs(): number | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw =
+      sessionStorage.getItem(TOKEN_ACQUIRED_AT_KEY) ||
+      localStorage.getItem(TOKEN_ACQUIRED_AT_KEY);
+    if (!raw) return null; // signed in before timestamps existed → unknown, treat as fresh
+    const age = Date.now() - parseInt(raw, 10);
+    return Number.isFinite(age) && age >= 0 ? age : null;
+  } catch {
+    return null;
+  }
+}
+
+export function isGoogleTokenExpired(): boolean {
+  const token = getStoredGoogleToken();
+  if (!token) return false; // nothing to expire
+  const age = getGoogleTokenAgeMs();
+  if (age === null) return false; // unknown age → preserve current behavior
+  return age > GOOGLE_TOKEN_TTL_MS;
+}
+
+/** Returns the token only if present AND fresh; null otherwise (missing or expired). */
+export function getValidGoogleToken(): string | null {
+  const token = getStoredGoogleToken();
+  if (!token) return null;
+  return isGoogleTokenExpired() ? null : token;
+}
+
+/** True when a token exists but is past its TTL — i.e. user must reconnect. */
+export function needsGoogleReconnect(): boolean {
+  return getStoredGoogleToken() !== null && isGoogleTokenExpired();
+}
 
 export const signInWithGoogle = async (
   options: { requestWorkspace?: boolean } = { requestWorkspace: true }

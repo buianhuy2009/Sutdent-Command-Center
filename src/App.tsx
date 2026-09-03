@@ -112,6 +112,10 @@ import {
   signOutUser,
   onAuthStateChangedListener,
   getStoredGoogleToken,
+  getValidGoogleToken,
+  needsGoogleReconnect,
+  hasActiveGoogleWorkspaceToken,
+  clearStoredGoogleToken,
 } from './services/firebase';
 import {
   fetchTodayCalendarEvents,
@@ -156,6 +160,7 @@ import {
   PriorityLevel,
   ApiEnablementInfo,
 } from './types';
+import { sanitizeAssignments, sanitizeCanvasAssignments, sanitizeEmailAlerts, sanitizeRawEmails } from './utils/sanitize';
 
 const LOCAL_ASSIGNMENTS_KEY = 'scc_user_assignments_v2';
 const LOCAL_EMAIL_ALERTS_KEY = 'scc_cached_email_alerts_v2';
@@ -166,7 +171,8 @@ function loadSavedAssignments(): Assignment[] {
     const saved = localStorage.getItem(LOCAL_ASSIGNMENTS_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) return parsed;
+      // Sanitize: legacy/corrupt entries with missing fields used to crash setState updaters (white screen)
+      if (Array.isArray(parsed)) return sanitizeAssignments(parsed);
     }
   } catch (e) {
     console.error('Error loading saved assignments:', e);
@@ -187,7 +193,7 @@ function loadSavedEmailAlerts(): EmailAlert[] {
     const saved = localStorage.getItem(LOCAL_EMAIL_ALERTS_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) return sanitizeEmailAlerts(parsed);
     }
   } catch (e) {
     console.error('Error loading cached email alerts:', e);
@@ -200,7 +206,7 @@ function loadSavedRawEmails(): EmailMessage[] {
     const saved = localStorage.getItem(LOCAL_RAW_EMAILS_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) return sanitizeRawEmails(parsed);
     }
   } catch (e) {
     console.error('Error loading cached raw emails:', e);
@@ -622,6 +628,10 @@ export default function App() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [sheetError, setSheetError] = useState<string | null>(null);
   const [driveError, setDriveError] = useState<string | null>(null);
+  // True when the stored Google token exists but is past its ~55 min TTL.
+  // Google gives web clients no refresh token, so sync must pause and ask for
+  // a 1-click reconnect instead of firing 401s that look like "sync is broken".
+  const [googleSessionExpired, setGoogleSessionExpired] = useState(false);
 
   // API Disabled Info (for Google Cloud Console Enablement)
   const [driveApiInfo, setDriveApiInfo] = useState<ApiEnablementInfo | null>(null);
@@ -773,6 +783,8 @@ export default function App() {
     const newToast = { ...toast, id };
     setToasts((prev) => [...prev, newToast]);
 
+    // Persistent error toasts (and duration: 0) stay until dismissed or retried
+    if ((toast as any).persistent === true || toast.duration === 0) return;
     const timeout = toast.duration || 5000;
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -1167,11 +1179,28 @@ export default function App() {
 
   // Fetch Google Calendar Events
   const loadCalendarEvents = useCallback(async (isSilent = false) => {
-    const token = getStoredGoogleToken();
+    const token = getValidGoogleToken();
     if (!token) {
-      setCalendarEvents([]);
-      setCalendarError(null);
-      setCalendarApiInfo(null);
+      if (needsGoogleReconnect()) {
+        // Expired, not signed out: keep existing events, prompt reconnect
+        setGoogleSessionExpired(true);
+        setCalendarError('Google session expired. Reconnect to resume Calendar sync — your events are kept.');
+        setCalendarApiInfo(null);
+        if (!isSilent) {
+          addToast({
+            type: 'warning',
+            title: 'Google session expired',
+            message: 'Your sign-in expired after ~1 hour. One click reconnects — nothing is lost.',
+            retryLabel: 'Reconnect now',
+            persistent: true,
+            reconnectGoogle: true,
+          } as any);
+        }
+      } else {
+        setCalendarEvents([]);
+        setCalendarError(null);
+        setCalendarApiInfo(null);
+      }
       return;
     }
 
@@ -1183,6 +1212,7 @@ export default function App() {
       setCalendarApiInfo(null);
     } catch (err: any) {
       console.error('Calendar fetch error:', err);
+      if (/401|expired|unauthorized/i.test(err?.message || '')) setGoogleSessionExpired(true);
       if (err?.isServiceDisabled) {
         setCalendarApiInfo({
           serviceName: err.serviceName || 'Google Calendar API',
@@ -1210,12 +1240,25 @@ export default function App() {
 
   // Fetch Academic Emails & Summarize with Gemini
   const loadEmailsAndAlerts = useCallback(async (isSilent = false, forceResort = false, options?: FetchEmailOptions) => {
-    const token = getStoredGoogleToken();
+    const token = getValidGoogleToken();
     if (!token) {
-      setRawEmails([]);
-      setEmailAlerts([]);
-      setEmailError(null);
-      setGmailApiInfo(null);
+      if (needsGoogleReconnect()) {
+        setGoogleSessionExpired(true);
+        setEmailError('Google session expired. Reconnect to resume Gmail scanning — your inbox data is kept.');
+        setGmailApiInfo(null);
+        if (!isSilent) {
+          addToast({
+            type: 'warning', title: 'Google session expired',
+            message: 'Your sign-in expired after ~1 hour. One click reconnects — nothing is lost.',
+            retryLabel: 'Reconnect now', persistent: true, reconnectGoogle: true,
+          });
+        }
+      } else {
+        setRawEmails([]);
+        setEmailAlerts([]);
+        setEmailError(null);
+        setGmailApiInfo(null);
+      }
       return;
     }
 
@@ -1236,12 +1279,12 @@ export default function App() {
 
       if (isSameSet && currentAlerts.length > 0) {
         // Cached classification is valid and up to date! Do not re-call Gemini!
-        setRawEmails(emails);
+        setRawEmails(sanitizeRawEmails(emails));
         return;
       }
 
-      setRawEmails(emails);
-      saveRawEmails(emails);
+      setRawEmails(sanitizeRawEmails(emails));
+      saveRawEmails(sanitizeRawEmails(emails));
 
       if (emails.length > 0) {
         let alerts: EmailAlert[] = [];
@@ -1255,27 +1298,29 @@ export default function App() {
             const isDue = text.includes('due') || text.includes('assignment') || text.includes('homework') || text.includes('submit') || text.includes('deadline') || text.includes('hạn');
             const isSpam = text.includes('unsubscribe') || text.includes('newsletter') || text.includes('promo') || text.includes('discount');
             const isUrgent = isExam || isDue || text.includes('urgent') || text.includes('important');
+            const summary = msg.snippet ? (msg.snippet.slice(0, 160) + (msg.snippet.length > 160 ? '...' : '')) : msg.subject;
 
             return {
               id: `alert-${msg.id || idx}`,
-              messageId: msg.id,
               sender: msg.sender,
               subject: msg.subject,
-              summary: msg.snippet ? (msg.snippet.slice(0, 160) + (msg.snippet.length > 160 ? '...' : '')) : msg.subject,
+              oneLineSummary: summary,
               urgency: isUrgent ? ('HIGH' as const) : ('MEDIUM' as const),
               category: isExam ? ('EXAM' as const) : isDue ? ('ASSIGNMENT' as const) : isSpam ? ('ANNOUNCEMENT' as const) : ('GENERAL' as const),
-              actionRequired: isDue || isExam,
               isSpam,
               detectedAssignment: isDue || isExam ? {
-                title: msg.subject,
-                dueDate: msg.date || 'Upcoming',
+                isAssignment: true,
+                name: msg.subject,
                 subject: 'Coursework',
+                dueDate: msg.date || 'Upcoming',
+                priority: 'Med' as const,
               } : undefined,
+              rawEmail: msg,
             };
           });
         }
-        setEmailAlerts(alerts);
-        saveEmailAlerts(alerts);
+        setEmailAlerts(sanitizeEmailAlerts(alerts));
+        saveEmailAlerts(sanitizeEmailAlerts(alerts));
       } else {
         setEmailAlerts([]);
         try {
@@ -1284,6 +1329,7 @@ export default function App() {
       }
     } catch (err: any) {
       console.error('Email fetch error:', err);
+      if (/401|expired|unauthorized/i.test(err?.message || '')) setGoogleSessionExpired(true);
       if (err?.isServiceDisabled) {
         setGmailApiInfo({
           serviceName: err.serviceName || 'Gmail API',
@@ -1311,10 +1357,23 @@ export default function App() {
 
   // Fetch Master Sheet Assignments
   const loadSheetAssignments = useCallback(async (isSilent = false) => {
-    const token = getStoredGoogleToken();
+    const token = getValidGoogleToken();
     if (!token) {
-      setSheetError(null);
-      setSheetApiInfo(null);
+      if (needsGoogleReconnect()) {
+        setGoogleSessionExpired(true);
+        setSheetError('Google session expired. Reconnect to resume Sheet sync — your tasks are kept.');
+        setSheetApiInfo(null);
+        if (!isSilent) {
+          addToast({
+            type: 'warning', title: 'Google session expired',
+            message: 'Your sign-in expired after ~1 hour. One click reconnects — nothing is lost.',
+            retryLabel: 'Reconnect now', persistent: true, reconnectGoogle: true,
+          });
+        }
+      } else {
+        setSheetError(null);
+        setSheetApiInfo(null);
+      }
       return;
     }
 
@@ -1326,21 +1385,25 @@ export default function App() {
 
       const items = await fetchSheetAssignments(token, sheet.spreadsheetId);
       if (items && items.length > 0) {
-        // Merge not replace: preserve manual tasks not in sheet, handle conflict via updatedAt + toast
+        // Merge not replace: preserve manual tasks not in sheet, handle conflict via updatedAt + toast.
+        // All key access is null-safe: one malformed row must never crash the updater (white screen).
+        const safeItems = sanitizeAssignments(items);
         let conflictCount = 0;
+        const nameKey = (v: any): string => String(v?.assignmentName ?? '').toLowerCase().trim();
         setAssignments(prev => {
-          if (!prev.length) return items;
-          const sheetIds = new Set(items.map((x:any)=> x.id));
-          const sheetNames = new Set(items.map((x:any)=> x.assignmentName.toLowerCase().trim()));
-          const manualOnly = prev.filter(p => !sheetIds.has(p.id) && !sheetNames.has(p.assignmentName.toLowerCase().trim()));
+          const safePrev = sanitizeAssignments(prev);
+          if (!safePrev.length) return safeItems;
+          const sheetIds = new Set(safeItems.map((x: any) => x.id));
+          const sheetNames = new Set(safeItems.map(nameKey));
+          const manualOnly = safePrev.filter(p => !sheetIds.has(p.id) && !sheetNames.has(nameKey(p)));
           // conflict detection: same name but different updatedAt
-          const overlapping = prev.filter(p => sheetNames.has(p.assignmentName.toLowerCase().trim()));
+          const overlapping = safePrev.filter(p => sheetNames.has(nameKey(p)));
           overlapping.forEach(p => {
-            const matched = items.find((s:any)=> s.assignmentName.toLowerCase().trim()===p.assignmentName.toLowerCase().trim());
+            const matched = safeItems.find((s: any) => nameKey(s) === nameKey(p));
             if (matched && p.updatedAt && (matched as any).updatedAt && p.updatedAt !== (matched as any).updatedAt) conflictCount++;
           });
-          const merged = [...items];
-          if (items.length === 0 && manualOnly.length) return prev;
+          const merged = [...safeItems];
+          if (safeItems.length === 0 && manualOnly.length) return safePrev;
           return [...merged, ...manualOnly];
         });
         if (conflictCount>0) setTimeout(()=> addToast({ type: 'warning', title: 'Resolve conflict', message: `${conflictCount} assignments had concurrent edits — last write wins. Review Tracker.` }), 500);
@@ -1352,6 +1415,7 @@ export default function App() {
       setSheetApiInfo(null);
     } catch (err: any) {
       console.error('Sheet fetch error:', err);
+      if (/401|expired|unauthorized/i.test(err?.message || '')) setGoogleSessionExpired(true);
       if (err?.isServiceDisabled) {
         setSheetApiInfo({
           serviceName: err.serviceName || 'Google Sheets API',
@@ -1379,11 +1443,24 @@ export default function App() {
 
   // Fetch Recent Files
   const loadRecentFiles = useCallback(async (isSilent = false) => {
-    const token = getStoredGoogleToken();
+    const token = getValidGoogleToken();
     if (!token) {
-      setRecentFiles([]);
-      setDriveError(null);
-      setDriveApiInfo(null);
+      if (needsGoogleReconnect()) {
+        setGoogleSessionExpired(true);
+        setDriveError('Google session expired. Reconnect to resume Drive sync — your files list is kept.');
+        setDriveApiInfo(null);
+        if (!isSilent) {
+          addToast({
+            type: 'warning', title: 'Google session expired',
+            message: 'Your sign-in expired after ~1 hour. One click reconnects — nothing is lost.',
+            retryLabel: 'Reconnect now', persistent: true, reconnectGoogle: true,
+          });
+        }
+      } else {
+        setRecentFiles([]);
+        setDriveError(null);
+        setDriveApiInfo(null);
+      }
       return;
     }
 
@@ -1395,6 +1472,7 @@ export default function App() {
       setDriveApiInfo(null);
     } catch (err: any) {
       console.error('Drive files error:', err);
+      if (/401|expired|unauthorized/i.test(err?.message || '')) setGoogleSessionExpired(true);
       const errMsg = err?.message || 'Could not fetch Google Drive files.';
       if (err?.isServiceDisabled) {
         setDriveApiInfo({
@@ -1455,18 +1533,21 @@ export default function App() {
         }
       }
 
-      // 3. Intelligent Union Merge so all courses (KHTN, Ngữ Văn, etc.) are captured
+      // 3. Intelligent Union Merge so all courses (KHTN, Ngữ Văn, etc.) are captured.
+      // Malformed items are normalized, never allowed to throw and wipe the whole sync.
       const mergedMap = new Map<string, CanvasAssignment>();
+      const mergeKey = (item: any): string => String(item?.name ?? item?.title ?? 'Canvas Assignment').toLowerCase().trim();
 
       // Put feed items first
       for (const item of feedFetched) {
-        const key = item.name.toLowerCase().trim();
-        mergedMap.set(key, item);
+        if (!item) continue;
+        mergedMap.set(mergeKey(item), item);
       }
 
       // Merge API items, overlaying authentic live submission states & URLs
       for (const item of apiFetched) {
-        const key = item.name.toLowerCase().trim();
+        if (!item) continue;
+        const key = mergeKey(item);
         const existing = mergedMap.get(key);
         if (existing) {
           mergedMap.set(key, {
@@ -1493,12 +1574,12 @@ export default function App() {
       let updatedSheetCount = 0;
 
       const updatedAssignments = assignments.map((sheetItem) => {
-        const sName = sheetItem.assignmentName.toLowerCase().trim();
-        const sSub = sheetItem.subject.toLowerCase().trim();
+        const sName = String(sheetItem?.assignmentName ?? '').toLowerCase().trim();
+        const sSub = String(sheetItem?.subject ?? '').toLowerCase().trim();
 
         const matchingCanvas = crossRef.find((c) => {
-          const cName = c.name.toLowerCase().trim();
-          const cCourse = c.courseName.toLowerCase().trim();
+          const cName = String(c?.name ?? '').toLowerCase().trim();
+          const cCourse = String(c?.courseName ?? '').toLowerCase().trim();
 
           const exactName = sName === cName;
           const substringMatch =
@@ -1541,7 +1622,7 @@ export default function App() {
       console.error('Canvas load error:', err);
       const errMsg = err.message || 'Failed to fetch Canvas feed. Please verify the URL.';
       setCanvasError(errMsg);
-      setCanvasAssignments([]);
+      // Keep previously loaded assignments so the tab never goes blank on a transient failure
       if (!isSilent) {
         addToast({
           type: 'error',
@@ -1633,35 +1714,39 @@ export default function App() {
     };
   }, [debouncedSync]);
 
-  // Re-cross reference Canvas whenever assignments change
+  // Re-cross reference Canvas whenever assignments change.
+  // Hardened: crossReference never throws on malformed items, and the updater
+  // defensively sanitizes so a bad record can never unmount the app (white screen).
   useEffect(() => {
-    setCanvasAssignments((prev) => crossReferenceCanvasWithSheet(prev, assignments));
+    try {
+      setCanvasAssignments((prev) => crossReferenceCanvasWithSheet(sanitizeCanvasAssignments(prev), sanitizeAssignments(assignments)));
+    } catch (e) {
+      console.error('Re-cross-reference failed (non-fatal):', e);
+    }
   }, [assignments]);
 
-  // Proactive Google OAuth Token Expiry Warning
+  // Proactive Google OAuth Token Expiry Warning — fires once per expiry with a working Reconnect action
+  const expiryToastShownRef = useRef(false);
   useEffect(() => {
     const checkTokenExpiry = () => {
-      const token = getStoredGoogleToken();
-      if (!token) return;
-
-      const acquiredAtStr = sessionStorage.getItem('google_token_acquired_at');
-      if (!acquiredAtStr) return;
-
-      const acquiredAt = parseInt(acquiredAtStr, 10);
-      const age = Date.now() - acquiredAt;
-      const fiftyMins = 50 * 60 * 1000;
-
-      if (age > fiftyMins) {
-        addToast({
-          type: 'warning',
-          title: 'Google Session Expiring',
-          message: 'Your Google workspace token will expire soon. Reconnect to keep sync active.',
-          actionLabel: 'Reconnect',
-          actionUrl: '#reconnect-google',
-        });
+      if (!needsGoogleReconnect()) {
+        expiryToastShownRef.current = false;
+        return;
       }
+      setGoogleSessionExpired(true);
+      if (expiryToastShownRef.current) return;
+      expiryToastShownRef.current = true;
+      addToast({
+        type: 'warning',
+        title: 'Google Session Expiring',
+        message: 'Your Google sign-in is past its ~1 hour life. Reconnect to keep sync active — nothing is lost.',
+        retryLabel: 'Reconnect now',
+        persistent: true,
+        reconnectGoogle: true,
+      });
     };
 
+    checkTokenExpiry();
     const interval = setInterval(checkTokenExpiry, 60000); // Check every minute
     return () => clearInterval(interval);
   }, [addToast]);
@@ -1678,6 +1763,14 @@ export default function App() {
       setUser(result.user);
       setIsDemoMode(false);
       setOauthGuideModalOpen(false);
+      setGoogleSessionExpired(false);
+      expiryToastShownRef.current = false;
+      // Fresh sign-in: clear stale sync errors so reconnect visibly heals every tab
+      setCalendarError(null);
+      setEmailError(null);
+      setSheetError(null);
+      setDriveError(null);
+      setCanvasError(null);
 
       if (result.accessToken) {
         await runFullSync(false);
@@ -2098,12 +2191,14 @@ export default function App() {
         );
       }
 
-      // 4. Sync done status to Master Google Sheet tracker
-      const targetSheetItem = assignments.find(
-        (a) =>
-          a.assignmentName.toLowerCase().trim() === assignment.name.toLowerCase().trim() ||
-          assignment.name.toLowerCase().includes(a.assignmentName.toLowerCase().trim())
-      );
+      // 4. Sync done status to Master Google Sheet tracker (null-safe name match)
+      const targetName = String((assignment as any)?.name ?? '').toLowerCase().trim();
+      const targetSheetItem = targetName ? assignments.find(
+        (a) => {
+          const aName = String(a?.assignmentName ?? '').toLowerCase().trim();
+          return aName !== '' && (aName === targetName || targetName.includes(aName));
+        }
+      ) : undefined;
 
       if (targetSheetItem) {
         await handleUpdateStatus(targetSheetItem, 'Done');
@@ -2406,6 +2501,8 @@ export default function App() {
                     onSubmitAssignment={handleSubmitAssignment}
                     googleToken={getStoredGoogleToken() || undefined}
                     onConnectGoogle={() => handleGoogleSignIn(true)}
+                    sessionExpired={googleSessionExpired}
+                    onReconnectGoogle={() => handleGoogleSignIn(true)}
                   />
                 )}
 
@@ -3118,15 +3215,27 @@ export default function App() {
       </Suspense>
 
       {/* Toast Notification Container — pauseOnHover + undo (Feedback + PWA Install now live inside Settings → Help & Support) */}
-      <ToastContainer toasts={toasts} onDismiss={dismissToast} onUndo={(id:string)=>{
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} onRetry={(id:string)=>{
+        // Expiry toasts reconnect Google; others run their own retry handler
+        try {
+          const t = toasts.find((x) => x.id === id) as any;
+          if (t?.reconnectGoogle) {
+            dismissToast(id);
+            handleGoogleSignIn(true);
+            return;
+          }
+          if (typeof t?.onRetry === 'function') t.onRetry();
+        } catch {}
+        dismissToast(id);
+      }} onUndo={(id:string)=>{
         // undo delete-assignment: restore last deleted from localStorage stash
         try {
           const raw = localStorage.getItem('scc_last_deleted_assignment');
           if (raw) {
-            const a = JSON.parse(raw);
-            setAssignments(prev=> [...prev, a]);
+            const a = sanitizeAssignments([JSON.parse(raw)])[0];
+            if (a) setAssignments(prev=> [...prev, a]);
             localStorage.removeItem('scc_last_deleted_assignment');
-            addToast({ type:'success', title:'Restored', message: a.assignmentName });
+            addToast({ type:'success', title:'Restored', message: a?.assignmentName ?? 'Task' });
           }
         } catch {}
         dismissToast(id);
