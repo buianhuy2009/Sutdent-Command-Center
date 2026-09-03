@@ -29,5 +29,6 @@
     "noUnusedParameters": false,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*", "api/**/*", "server.ts"]
+  "include": ["src/**/*", "api/**/*", "server.ts"],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "node_modules", "dist"]
 }

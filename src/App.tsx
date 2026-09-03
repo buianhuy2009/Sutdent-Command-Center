@@ -39,6 +39,29 @@ const GroupProjectWorkspace = lazy(() => import('./components/workspaces/GroupPr
 const PeerQAWorkspace = lazy(() => import('./components/workspaces/PeerQAWorkspace').then(m => ({ default: m.PeerQAWorkspace })));
 const NotionImportWorkspace = lazy(() => import('./components/workspaces/NotionImportWorkspace').then(m => ({ default: m.NotionImportWorkspace })));
 const DeadlineGanttWorkspace = lazy(() => import('./components/workspaces/DeadlineGanttWorkspace').then(m => ({ default: m.DeadlineGanttWorkspace })));
+const GradeForecasterWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.GradeForecasterWorkspace })));
+const ExamModeWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.ExamModeWorkspace })));
+const InternshipTrackerWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.InternshipTrackerWorkspace })));
+const BudgetWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.BudgetWorkspace })));
+const HabitSleepWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.HabitSleepWorkspace })));
+const TimetableOptimizerWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.TimetableOptimizerWorkspace })));
+const CodeRunnerWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.CodeRunnerWorkspace })));
+const ResumeBuilderWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.ResumeBuilderWorkspace })));
+const PresentationCoachWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.PresentationCoachWorkspace })));
+const LabReportWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.LabReportWorkspace })));
+const EssayOutlinerWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.EssayOutlinerWorkspace })));
+const ImageOcclusionWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.ImageOcclusionWorkspace })));
+const FSRSSchedulerInfo = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.FSRSSchedulerInfo })));
+const VivaWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.VivaWorkspace })));
+const LanguageLabWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.LanguageLabWorkspace })));
+const ZoteroImportWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.ZoteroImportWorkspace })));
+const PaperChatWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.PaperChatWorkspace })));
+const DatasetFinderWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.DatasetFinderWorkspace })));
+const StudyRoomPanel = lazy(() => import('./components/collab').then(m => ({ default: m.StudyRoomPanel })));
+const TeacherShareView = lazy(() => import('./components/collab').then(m => ({ default: m.TeacherShareView })));
+const LectureCopilot = lazy(() => import('./components/collab').then(m => ({ default: m.LectureCopilot })));
+const ApiDocsPanel = lazy(() => import('./components/collab').then(m => ({ default: m.ApiDocsPanel })));
+const ExtensionHelper = lazy(() => import('./components/collab').then(m => ({ default: m.ExtensionHelper })));
 const WikipediaLookupModal = lazy(() => import('./components/WikipediaLookupModal').then(m => ({ default: m.WikipediaLookupModal })));
 const StudyCardModal = lazy(() => import('./components/StudyCardModal').then(m => ({ default: m.StudyCardModal })));
 const PortfolioExportModal = lazy(() => import('./components/PortfolioExportModal').then(m => ({ default: m.PortfolioExportModal })));
@@ -2531,21 +2554,118 @@ export default function App() {
 
                 {activeTab === 'grade-forecaster' && (
                   <Suspense fallback={<div className="p-6 text-xs">Loading Grade Forecaster…</div>}>
-                    <div className="max-w-xl mx-auto p-6 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-4">
-                      <h3 className="text-sm font-bold">Grade Forecaster — What-If Calculator</h3>
-                      <p className="text-xs text-[#6B6860]">Uses calculateGradePrediction — slide to see required final.</p>
-                      {/* Lazy import of forecaster UI via CanvasSyncTab already has sliders; duplicate minimal UI here */}
-                      <div className="text-xs p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border">Current 84% → Target 90% with 30% final → Need 96% (High Risk). Adjust in Canvas Sync tab.</div>
-                      <button onClick={()=>handleTabTransition('canvas')} className="px-4 py-2 bg-[#D97757] text-white rounded-xl text-xs font-bold">Open Canvas Grades</button>
-                    </div>
+                    <GradeForecasterWorkspace />
                   </Suspense>
                 )}
-                {['budget-tracker','code-runner','resume-builder'].includes(activeTab) && (
-                  <div className="max-w-2xl mx-auto p-6 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3">
-                    <h3 className="text-sm font-bold capitalize">{activeTab.replace('-',' ')}</h3>
-                    <p className="text-xs text-[#6B6860]">This workspace is local-first. New app added in v2.3 — use App Store to pin or explore.</p>
-                    {activeTab==='code-runner' && <div className="p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border text-xs font-mono">Pyodide loader pending — run Python via &lt;iframe src="https://pyodide.org"/&gt; placeholder.</div>}
-                  </div>
+                {activeTab === 'exam-mode' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading Exam Mode…</div>}>
+                    <ExamModeWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'internship-tracker' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <InternshipTrackerWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'budget-tracker' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <BudgetWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'habit-sleep' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <HabitSleepWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'timetable-optimizer' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <TimetableOptimizerWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'code-runner' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <CodeRunnerWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'resume-builder' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <ResumeBuilderWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'presentation-coach' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <PresentationCoachWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'lab-report' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <LabReportWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'essay-outliner' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <EssayOutlinerWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'image-occlusion' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <ImageOcclusionWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'fsrs' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <FSRSSchedulerInfo />
+                  </Suspense>
+                )}
+                {activeTab === 'viva-voice' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <VivaWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'language-lab' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <LanguageLabWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'zotero-import' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <ZoteroImportWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'paper-chat' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <PaperChatWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'dataset-finder' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <DatasetFinderWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'study-rooms' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <div className="max-w-2xl mx-auto"><StudyRoomPanel /></div>
+                  </Suspense>
+                )}
+                {activeTab === 'teacher-view' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <div className="max-w-2xl mx-auto"><TeacherShareView upcoming={assignments.slice(0,5).map((a:any)=>`${a.assignmentName} — due ${a.dueDate}`)} focusMin={120} streak={3} /></div>
+                  </Suspense>
+                )}
+                {activeTab === 'lecture-copilot' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <div className="max-w-2xl mx-auto"><LectureCopilot /></div>
+                  </Suspense>
+                )}
+                {activeTab === 'api-docs' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <div className="max-w-2xl mx-auto"><ApiDocsPanel /></div>
+                  </Suspense>
+                )}
+                {activeTab === 'extension' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading…</div>}>
+                    <div className="max-w-2xl mx-auto"><ExtensionHelper /></div>
+                  </Suspense>
                 )}
 
                 {activeTab === 'stem' && (

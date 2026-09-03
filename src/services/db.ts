@@ -15,6 +15,10 @@ export class StudentOSDatabase extends Dexie {
   assignments!: Table<StoredAssignment, string>;
   preferences!: Table<{ key: string; value: any }, string>;
   quota!: Table<{ id: string; date: string; count: number }, string>;
+  trash!: Table<{ id: string; kind: string; label: string; data: any; deletedAt: string; expiresAt: string }, string>;
+  prompts!: Table<{ id: string; title: string; category: string; body: string; shared?: boolean }, string>;
+  tokenUsage!: Table<{ id: string; date: string; model: string; tokens: number; task: string }, string>;
+  dashboard!: Table<{ id: string; order: string[]; hidden: string[]; sizes?: Record<string, string> }, string>;
 
   constructor() {
     super('StudentOSDatabase');
@@ -40,6 +44,20 @@ export class StudentOSDatabase extends Dexie {
       assignments: 'id, updatedAt',
       preferences: 'key',
       quota: 'id, date',
+    });
+    this.version(4).stores({
+      notes: 'id, subject, title, updatedAt',
+      srsCards: 'id, deckId, dueDate, easeFactor, repetitions',
+      briefs: 'id, subject, topic, createdAt',
+      assignmentsQueue: 'id, dueDate, status, sheetRowIndex',
+      bibliography: 'id, source, year',
+      assignments: 'id, updatedAt',
+      preferences: 'key',
+      quota: 'id, date',
+      trash: 'id, kind, deletedAt, expiresAt',
+      prompts: 'id, category',
+      tokenUsage: 'id, date, model',
+      dashboard: 'id',
     });
     // @ts-ignore extra table for BIB
     (this as any).bibliography = (this as any).table('bibliography');

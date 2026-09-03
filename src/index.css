@@ -357,10 +357,104 @@ html[data-theme="forest"].dark body {
 .hero-glow { /* will-change removed, add only during animation via .hero-glow--animate */ }
 .hero-glow--animate { will-change: transform; }
 
-/* lint: prefer .card-micro class; [data-card] kept as alias for legacy */
+/* === Centralized Design Tokens — single source of truth (v2.4) ===
+   Use var(--bg), var(--surface), var(--border), var(--accent) instead of one-off hexes.
+   Legacy hexes (#EFECE2, #D97757, #6B6860, #FAF9F5, #DFDACB) are aliased here so old
+   Tailwind arbitrary values keep working while new code uses tokens. */
+:root {
+  --bg: rgb(var(--color-background));
+  --surface: rgb(var(--color-panel));
+  --border: rgb(var(--color-border));
+  --accent: rgb(var(--color-accent));
+  --accent-text: #AA4F32; /* AA-safe terracotta for small text on white (4.6:1+). Bright #D97757 stays for fills/buttons only. */
+  --accent-soft: rgba(217, 119, 87, 0.12);
+  --ink: rgb(var(--color-text));
+  --muted: rgb(var(--color-muted));
+  --radius: var(--radius-card);
+  --radius-sm: 0.625rem;
+  --shadow: var(--shadow-card);
+  --shadow-lg: var(--shadow-card-hover);
+  /* compat aliases for scattered hexes */
+  --linen: #FAF9F5; --linen-deep: #EFECE2; --line: #DFDACB;
+  --terracotta: #D97757; --terracotta-dark: #AA4F32; --stone: #6B6860;
+}
+.dark, :root[data-theme="midnight"] {
+  --accent-text: #E8A07E; /* lighter terracotta passes on dark surfaces */
+  --accent-soft: rgba(217, 119, 87, 0.22);
+}
+/* Token utility classes — prefer these over arbitrary hexes */
+.bg-token { background-color: var(--bg); }
+.surface-token { background-color: var(--surface); }
+.border-token { border-color: var(--border); }
+.text-accent-safe { color: var(--accent-text); }
+.bg-accent-soft { background-color: var(--accent-soft); }
+
+/* === Font-scale system (S/M/L/XL) + dyslexia-friendly modes === */
+html[data-font-scale="S"] { font-size: 13.5px; }
+html[data-font-scale="M"] { font-size: 15px; }
+html[data-font-scale="L"] { font-size: 16.5px; }
+html[data-font-scale="XL"] { font-size: 18px; }
+html[data-font-scale="L"] body, html[data-font-scale="XL"] body { line-height: 1.7; letter-spacing: 0.01em; }
+html[data-dyslexia="opendyslexic"] body {
+  font-family: "OpenDyslexic", "Atkinson Hyperlegible", var(--font-sans);
+  line-height: 1.8; letter-spacing: 0.04em; word-spacing: 0.08em;
+}
+html[data-dyslexia="atkinson"] body {
+  font-family: "Atkinson Hyperlegible", var(--font-sans);
+  line-height: 1.75; letter-spacing: 0.02em;
+}
+html[data-dyslexia="opendyslexic"] p, html[data-dyslexia="atkinson"] p { max-width: 70ch; }
+
+/* === Skeleton shimmer (matches final layout, replaces spinners) === */
+@keyframes scc-shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+.scc-skeleton {
+  position: relative; overflow: hidden; border-radius: 0.75rem;
+  background: linear-gradient(90deg, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.02) 37%, rgba(0,0,0,0.06) 63%);
+  background-size: 800px 100%;
+  animation: scc-shimmer 1.4s ease-in-out infinite;
+  min-height: 1rem;
+}
+.dark .scc-skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.03) 37%, rgba(255,255,255,0.08) 63%);
+  background-size: 800px 100%;
+}
+@media (prefers-reduced-motion: reduce) { .scc-skeleton { animation: none; } }
+
+/* === Layout-animated tab transitions + count-up + drag spring === */
+@keyframes scc-tab-in { from { opacity: 0; transform: translateY(8px) scale(0.995); } to { opacity: 1; transform: none; } }
+.scc-tab-enter { animation: scc-tab-in 0.22s cubic-bezier(0.4, 0, 0.2, 1); }
+@media (prefers-reduced-motion: reduce) { .scc-tab-enter { animation: fadeIn 0.15s ease; } }
+.scc-drag-spring { transition: transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.2s ease; }
+.scc-count-up { font-variant-numeric: tabular-nums; }
+
+/* === Print stylesheets — clean rubrics / study guides / timetable / citations === */
+@media print {
+  .no-print, nav, aside, header, footer, .glass-panel, .scc-bottom-nav, .scc-fab,
+  #command-palette, .toast-stack, .floating-copilot { display: none !important; }
+  body { background: #fff !important; color: #000 !important; font-size: 11pt; }
+  .print-clean { box-shadow: none !important; border: 1px solid #ccc !important; border-radius: 0 !important; }
+  a { text-decoration: none !important; color: #000 !important; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8pt; color: #555; }
+  .print-avoid-break { break-inside: avoid; }
+  @page { margin: 1.5cm; }
+}
 
 /* Container queries applied helpers */
 .cq-card { container-type: inline-size; }
+
+/* One-off hex kill-switch: scattered Tailwind arbitrary hexes resolve to tokens.
+   Sidebar.tsx / Navbar.tsx / LandingPage.tsx keep working, but colors come from ONE place.
+   New code: use var(--bg), var(--surface), var(--border), var(--terracotta), var(--stone) directly. */
+.bg-\[\#FAF9F5\] { background-color: var(--linen) !important; }
+.bg-\[\#EFECE2\] { background-color: var(--linen-deep) !important; }
+.bg-\[\#D97757\] { background-color: var(--terracotta) !important; }
+.text-\[\#D97757\] { color: var(--accent-text) !important; }
+.text-\[\#6B6860\] { color: var(--stone) !important; }
+.border-\[\#DFDACB\] { border-color: var(--line) !important; }
+.hover\:bg-\[\#C86646\]:hover { background-color: var(--terracotta-dark) !important; }
+.hover\:bg-\[\#EFECE2\]:hover { background-color: var(--linen-deep) !important; }
+.focus\:ring-\[\#D97757\]:focus { --tw-ring-color: var(--terracotta) !important; }
+.border-\[\#D97757\] { border-color: var(--terracotta) !important; }
 
 /* iOS input zoom prevention — only on mobile and only when NOT compact + touch-action */
 @media (max-width: 768px) {

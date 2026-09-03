@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Award, Sparkles, BookOpen, Layers, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.3.1';
+export const CURRENT_VERSION = '2.4.0';
 
 interface VersionRelease {
   version: string;
@@ -13,6 +13,35 @@ interface VersionRelease {
 }
 
 const RELEASES: VersionRelease[] = [
+  {
+    version: '2.4.0',
+    date: 'September 03, 2026',
+    title: 'Study Smarter — Auto-Planner, Grade Simulator & 15 New Tools',
+    badge: 'Latest Update',
+    highlights: [
+      'New one-tap focus planner — it looks at your free gaps and pending work, then suggests study blocks you can accept or drag around',
+      'Grade simulator v2 — see what final-exam score you need, try “what if I drop my lowest quiz”, and plan your GPA across the semester',
+      'Exam mode — countdown, a 14/7/2-day study plan, formula sheet starter, and a night-before checklist you can print',
+      'Teacher follow-ups made easy — per-teacher cards show your last email and draft a polite follow-up in one tap',
+      'Talk instead of type — voice dictation for essays and viva practice, plus listen-back in English, Vietnamese, Spanish or French',
+      'Safer deletes — everything goes to a 30-day trash can, and your notes keep past versions you can restore',
+      '15 new mini-apps — job tracker, budget, sleep-vs-focus, code runner, resume builder, flashcards that hide diagram labels, citation importer, study rooms and more',
+      'Clearer privacy — tap any permission to see why we need it in plain words, revoke Google access, or wipe all data with one button',
+    ],
+    details: [
+      'The focus planner (Schedule tab) reads your pending assignments and open calendar gaps between 8am and 10pm, then proposes blocks with breaks. Nothing is booked until you accept — drag any block to move it.',
+      'Grade Forecaster now handles full courses: set your current score, target and final-exam weight to see the score you need, estimate GPA on the usual 4.0 scale, and simulate dropping your lowest quiz before you decide anything.',
+      'Exam Mode builds a reverse plan from your exam date: broad review at 14 days, timed past papers at 7 days, formula-sheet-only at 2 days, plus a packing-and-sleep checklist the night before. Print it from the app.',
+      'Teacher cards are built from your school email: last message, office-hours lines we spotted, and unread counts. The follow-up button drafts a short polite email you can edit before sending.',
+      'Voice uses your browser’s built-in speech tools (free, nothing uploaded by us). Dictate a Feynman explanation or viva answer, then hear it back at slow speed to practice shadowing in a new language.',
+      'Deletes are no longer permanent: assignments and notes sit in Trash for 30 days (Settings → Trash) and can be restored. Markdown notes also keep their last 20 versions automatically.',
+      'New apps live in the App Store under Plan, Create, Learn and Research: Internship Tracker, Budget, Habit + Sleep, Timetable Optimizer, Code Runner (Python + JavaScript, no server), Resume Builder, Presentation Coach, Lab Report Builder, Essay Outliner, Image Occlusion flashcards, FSRS smart scheduling, Viva voice defense, Language Lab, Zotero import, Paper Chat and Dataset Finder.',
+      'AI answers now show their sources (Canvas link, email, Drive file) under every reply, with a per-task model picker (light model for spam, strong model for essays), a token-usage meter, and optional Groq backup key for finals week. Add your own key in Settings → AI.',
+      'Search is now one box for everything: Canvas, Gmail, Drive, notes and flashcards with a preview pane and actions (open, pin, make a task from an email). Press / to jump to it, ? to see all shortcuts.',
+      'Getting started takes about a minute: connect Google, paste your Canvas feed (with a test button), pick up to 5 pinned apps. Sample data is now an explicit checkbox — we never mix demo data with your real work.',
+      'Small screens get a bottom tab bar (Home, Tasks, Schedule, AI, More) plus a + button for quick-add. Printouts for rubrics, timetables and citations are clean one-pagers. Vietnamese translation covers the main screens (more coming).',
+    ]
+  },
   {
     version: '2.3.1',
     date: 'September 02, 2026',

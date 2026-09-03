@@ -76,11 +76,15 @@ export default defineConfig(() => {
             vendor: ['react','react-dom','zustand'],
             firebase: ['firebase/app','firebase/auth'],
             ai: ['@google/genai'],
+            // Heavy deps split + lazy-loaded only on interaction (import() in components):
+            // mermaid (750k) → MermaidWorkspace only; katex fonts subset via CSS; editor/markdown chunk;
+            // canvas-confetti lazy via celebrateWin(); excalidraw deferred (no static import — iframe/lazy only).
             mermaid: ['mermaid'],
             katex: ['katex'],
             markdown: ['react-markdown'],
             dnd: ['@dnd-kit/core','@dnd-kit/sortable','@dnd-kit/utilities'],
             dexie: ['dexie']
+            // CI check: run `npx vite-bundle-visualizer` on PRs; warn at 600k (brotli) per build.chunkSizeWarningLimit
           }
         }
       },

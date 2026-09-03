@@ -17,6 +17,10 @@ export interface Assignment {
   updatedAt?: string; // ISO for conflict resolution
   repeats?: 'none' | 'daily' | 'weekly' | 'custom';
   rrule?: string; // RRULE string for custom repeats
+  subtasks?: AssignmentSubTask[];
+  attachments?: AssignmentAttachment[];
+  submission?: AssignmentSubmission;
+  trashedAt?: string | null;
 }
 
 export interface CalendarEvent {
@@ -150,7 +154,13 @@ export interface ToastNotification {
   message?: string;
   actionLabel?: string;
   actionUrl?: string;
-  duration?: number;
+  duration?: number; // ms; 0/undefined + persistent=true => sticky until dismissed
+  persistent?: boolean; // sticky error toasts that need a Retry button
+  retryLabel?: string;
+  onRetry?: () => void;
+  undoLabel?: string; // 5s undo for deletes
+  groupKey?: string; // toasts with same groupKey collapse into one
+  source?: { kind: 'canvas' | 'gmail' | 'drive' | 'ai' | 'system'; id?: string; url?: string };
 }
 
 export interface ConfirmationModalState {
@@ -237,6 +247,26 @@ export interface MarkdownNote {
   subject?: string;
   content: string;
   updatedAt: string;
+  history?: { content: string; savedAt: string; label?: string }[]; // version snapshots
+  trashedAt?: string | null;
+}
+
+export interface TrashedItem {
+  id: string;
+  kind: 'assignment' | 'note' | 'email-task' | 'file-ref' | 'other';
+  label: string;
+  data: any;
+  deletedAt: string; // ISO
+  expiresAt: string; // deletedAt + 30 days
+}
+
+export interface AssignmentAttachment { name: string; url: string; mimeType?: string; driveFileId?: string }
+export interface AssignmentSubmission {
+  submittedAt?: string;
+  receiptId?: string;
+  checklistDone?: boolean;
+  screenshotUrl?: string;
+  canvasUrl?: string;
 }
 
 // --- AI Deep Integration Interfaces ---
@@ -325,7 +355,7 @@ export interface RubricPreCheckResult {
   actionableRevisions: string[];
 }
 
-// --- Agent Action Dispatcher Interfaces ---
+// --- Agent Action Dispatcher Interfaces (expanded: 5 → 10) ---
 export type AgentAction =
   | {
       type: 'setWorkspaceLayout';
@@ -371,7 +401,12 @@ export type AgentAction =
         code: string;
         title: string;
       };
-    };
+    }
+  | { type: 'createQuizFromNotes'; payload: { noteId: string; count?: number; difficulty?: 'easy' | 'mixed' | 'exam' } }
+  | { type: 'summarizePdfToDeck'; payload: { fileName: string; cards?: number } }
+  | { type: 'draftEmailFromAssignment'; payload: { assignmentId: string; intent: 'extension' | 'question' | 'follow-up' } }
+  | { type: 'scheduleFocusWeek'; payload: { assignmentIds: string[]; minutesPerDay?: number } }
+  | { type: 'explainCanvasFeedback'; payload: { courseName: string; feedback: string } };
 
 export interface MathDebugResult {
   fullLatex: string[];
@@ -399,5 +434,41 @@ export interface DeployedSemesterResult {
   createdNotes: Array<{ title: string; subject: string }>;
   createdDeckTitle: string;
 }
+
+// --- v2.4 additions: citations, prompts, grades, scheduling, CRM, exams ---
+export interface AISource { kind: 'canvas' | 'gmail' | 'drive' | 'note' | 'web'; label: string; url?: string; id?: string }
+export interface AIAnswerWithSources { text: string; sources: AISource[]; model: string; tokensUsed?: number }
+
+export interface PromptTemplate { id: string; title: string; category: 'Email' | 'Essay' | 'Lab' | 'Study' | 'Other'; body: string; shared?: boolean }
+
+export interface CourseGrade {
+  courseName: string;
+  currentPercent: number;
+  targetPercent?: number;
+  finalWeightPercent: number;
+  categories?: { name: string; weightPercent: number; earned: number; possible: number; dropLowest?: number }[];
+  requiredFinal?: number;
+  projectedGPA?: number;
+}
+
+export interface FocusBlockProposal { title: string; date: string; startTime: string; endTime: string; assignmentId?: string; reason: string; accepted?: boolean }
+
+export interface TeacherCard {
+  name: string; email?: string; course?: string;
+  lastEmailDate?: string; lastSubject?: string;
+  responseTimeHours?: number; officeHours?: string;
+  pendingCount?: number;
+}
+
+export interface ExamPlan {
+  examName: string; course: string; examDate: string;
+  countdownDays: number;
+  reversePlan: { day14: string; day7: string; day2: string; nightBefore: string[] };
+  formulaSheet?: string[];
+  pastPapers?: { title: string; url: string }[];
+}
+
+export type FontScale = 'S' | 'M' | 'L' | 'XL';
+export type DyslexiaMode = 'off' | 'opendyslexic' | 'atkinson';
 
 
