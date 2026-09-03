@@ -52,17 +52,24 @@ if (typeof window !== 'undefined') {
 export const basicProvider = new GoogleAuthProvider();
 
 export const workspaceProvider = new GoogleAuthProvider();
+export const coreWorkspaceProvider = new GoogleAuthProvider();
 
 // Google Workspace Scopes
 export const WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
-  'https://www.googleapis.com/auth/calendar.readonly',
-  'https://www.googleapis.com/auth/gmail.readonly',
-  'https://www.googleapis.com/auth/gmail.compose',
   'https://www.googleapis.com/auth/spreadsheets',
-  'https://www.googleapis.com/auth/documents',
   'https://www.googleapis.com/auth/drive.file',
-  'https://www.googleapis.com/auth/drive.readonly',
+  'https://www.googleapis.com/auth/classroom.courses.readonly',
+  'https://www.googleapis.com/auth/classroom.coursework.me.readonly',
+  'https://www.googleapis.com/auth/classroom.announcements.readonly',
+  'https://www.googleapis.com/auth/classroom.student-submissions.me.readonly',
+  'https://www.googleapis.com/auth/gmail.readonly',
+];
+
+export const CORE_WORKSPACE_SCOPES = [
+  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/drive.file',
   'https://www.googleapis.com/auth/classroom.courses.readonly',
   'https://www.googleapis.com/auth/classroom.coursework.me.readonly',
   'https://www.googleapis.com/auth/classroom.announcements.readonly',
@@ -73,8 +80,16 @@ WORKSPACE_SCOPES.forEach((scope) => {
   workspaceProvider.addScope(scope);
 });
 
+CORE_WORKSPACE_SCOPES.forEach((scope) => {
+  coreWorkspaceProvider.addScope(scope);
+});
+
 // Prompt for consent to ensure all workspace scopes are included in the returned token
 workspaceProvider.setCustomParameters({
+  prompt: 'select_account consent',
+  access_type: 'offline',
+});
+coreWorkspaceProvider.setCustomParameters({
   prompt: 'select_account consent',
   access_type: 'offline',
 });
@@ -138,6 +153,20 @@ export const onAuthStateChangedListener = (callback: (user: User | null) => void
   return onAuthStateChanged(auth, callback);
 };
 
+export const setStoredGoogleToken = (token: string) => {
+  cachedAccessToken = token;
+  if (typeof window !== 'undefined') {
+    try {
+      sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+      sessionStorage.setItem('google_token_acquired_at', String(Date.now()));
+      localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      localStorage.setItem('google_token_acquired_at', String(Date.now()));
+      persistTokenToIDB(token);
+      import('./db').then(({ db }) => db.preferences.put({ key: 'google_token_acquired_at', value: String(Date.now()) }).catch(()=>{}));
+    } catch {}
+  }
+};
+
 export const clearStoredGoogleToken = () => {
   cachedAccessToken = null;
   if (typeof window !== 'undefined') {
@@ -170,40 +199,39 @@ export const signInWithGoogle = async (
       result = await signInWithPopup(auth, targetProvider);
     } catch (popupErr: any) {
       const code = popupErr?.code || '';
-      // Fallback to redirect if popup blocked/closed by browser
-      if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-        // Try redirect as fallback for popup-blocked; for user-closed, just return null
-        if (code === 'auth/popup-blocked') {
-          try {
-            await signInWithRedirect(auth, targetProvider);
-            return null; // redirect will reload page
-          } catch {}
+      const errMsg = popupErr?.message || '';
+      // If full workspace was blocked by unverified test user restriction, automatically try core workspace (Sheets + Calendar + Drive)
+      if (options.requestWorkspace && (code === 'auth/internal-error' || code === 'auth/admin-restricted-operation' || errMsg.includes('access_denied') || errMsg.includes('403'))) {
+        try {
+          console.info('Retrying with Core Google Workspace provider (Sheets, Calendar, Drive)...');
+          result = await signInWithPopup(auth, coreWorkspaceProvider);
+        } catch (coreErr: any) {
+          throw popupErr;
+        }
+      } else {
+        // Fallback to redirect if popup blocked/closed by browser
+        if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+          if (code === 'auth/popup-blocked') {
+            try {
+              await signInWithRedirect(auth, targetProvider);
+              return null; // redirect will reload page
+            } catch {}
+          }
+          throw popupErr;
         }
         throw popupErr;
       }
-      throw popupErr;
     }
     const credential = GoogleAuthProvider.credentialFromResult(result);
     
     // Store access token in memory, localStorage, sessionStorage & IndexedDB
     if (credential?.accessToken) {
-      cachedAccessToken = credential.accessToken;
-      if (typeof window !== 'undefined') {
-        try {
-          sessionStorage.setItem(TOKEN_STORAGE_KEY, credential.accessToken);
-          sessionStorage.setItem('google_token_acquired_at', String(Date.now()));
-          localStorage.setItem(TOKEN_STORAGE_KEY, credential.accessToken);
-          localStorage.setItem('google_token_acquired_at', String(Date.now()));
-          persistTokenToIDB(credential.accessToken);
-          // also persist acquiredAt to IDB
-          import('./db').then(({ db }) => db.preferences.put({ key: 'google_token_acquired_at', value: String(Date.now()) }).catch(()=>{}));
-        } catch {}
-      }
+      setStoredGoogleToken(credential.accessToken);
     } else {
       cachedAccessToken = '';
     }
     
-    return { user: result.user, accessToken: cachedAccessToken };
+    return { user: result.user, accessToken: cachedAccessToken || '' };
   } catch (error: any) {
     const errorCode = error?.code || '';
     const errorMsg = error?.message || '';

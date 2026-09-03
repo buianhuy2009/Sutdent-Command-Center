@@ -46,9 +46,9 @@ interface CanvasSyncTabProps {
 }
 
 export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
-  settings,
+  settings = { calendarFeedUrl: '', apiDomain: 'https://canvas.instructure.com', apiToken: '', autoSync: true },
   onSaveSettings,
-  canvasAssignments,
+  canvasAssignments = [],
   isLoading,
   errorMessage,
   lastSyncedAt,
@@ -61,10 +61,11 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   googleToken,
   onConnectGoogle,
 }) => {
-  const [feedUrl, setFeedUrl] = useState(settings.calendarFeedUrl || '');
-  const [apiDomain, setApiDomain] = useState(settings.apiDomain || 'https://canvas.instructure.com');
-  const [apiToken, setApiToken] = useState(settings.apiToken || '');
-  const [autoSync, setAutoSync] = useState(settings.autoSync ?? true);
+  const safeSettings = settings || { calendarFeedUrl: '', apiDomain: 'https://canvas.instructure.com', apiToken: '', autoSync: true };
+  const [feedUrl, setFeedUrl] = useState(safeSettings.calendarFeedUrl || '');
+  const [apiDomain, setApiDomain] = useState(safeSettings.apiDomain || 'https://canvas.instructure.com');
+  const [apiToken, setApiToken] = useState(safeSettings.apiToken || '');
+  const [autoSync, setAutoSync] = useState(safeSettings.autoSync ?? true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
@@ -163,34 +164,35 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
   // Course list
   const courses = useMemo(() => {
-    return Array.from(new Set(canvasAssignments.map((a) => a.courseName).filter(Boolean)));
+    return Array.from(new Set((canvasAssignments || []).map((a) => a?.courseName).filter(Boolean)));
   }, [canvasAssignments]);
 
   const unfinishedCount = useMemo(() => {
-    return canvasAssignments.filter((a) => !a.isCompleted && !completedIds.includes(a.id)).length;
+    return (canvasAssignments || []).filter((a) => a && !a.isCompleted && !(Array.isArray(completedIds) && completedIds.includes(a.id))).length;
   }, [canvasAssignments, completedIds]);
 
   const pendingSyncAssignments = useMemo(() => {
-    return canvasAssignments.filter((a) => !a.isSynced);
+    return (canvasAssignments || []).filter((a) => a && !a.isSynced);
   }, [canvasAssignments]);
 
   const filteredAssignments = useMemo(() => {
-    return canvasAssignments.filter((a) => {
-      const isCompleted = a.isCompleted || completedIds.includes(a.id);
+    return (canvasAssignments || []).filter((a) => {
+      if (!a) return false;
+      const isCompleted = a.isCompleted || (Array.isArray(completedIds) && completedIds.includes(a.id));
       if (activeTab === 'UNFINISHED' && isCompleted) return false;
       if (activeTab === 'FINISHED' && !isCompleted) return false;
       if (selectedCourse !== 'ALL' && a.courseName !== selectedCourse) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchName = a.name.toLowerCase().includes(q);
-        const matchCourse = a.courseName.toLowerCase().includes(q);
+        const matchName = (a.name || '').toLowerCase().includes(q);
+        const matchCourse = (a.courseName || '').toLowerCase().includes(q);
         if (!matchName && !matchCourse) return false;
       }
       return true;
     });
   }, [canvasAssignments, activeTab, selectedCourse, searchQuery, completedIds]);
 
-  const isConfigured = Boolean(settings.calendarFeedUrl || settings.apiToken);
+  const isConfigured = Boolean(safeSettings.calendarFeedUrl || safeSettings.apiToken);
 
   return (
     <div className="space-y-4">

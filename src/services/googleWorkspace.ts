@@ -6,7 +6,6 @@ import {
   SchoolFile,
   ApiEnablementInfo,
 } from '../types';
-import { clearStoredGoogleToken } from './firebase';
 
 export const DEFAULT_PROJECT_NUMBER = (() => {
   const env = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID) || (typeof process !== 'undefined' ? (process as any).env?.VITE_GOOGLE_PROJECT_ID : undefined);
@@ -120,8 +119,7 @@ export async function fetchTodayCalendarEvents(token: string): Promise<CalendarE
     });
 
     if (res.status === 401) {
-      clearStoredGoogleToken();
-      throw new Error('Google Calendar session expired (401). Please reconnect Google Account.');
+      throw new Error('Google Calendar session expired or scope missing (401).');
     }
 
     if (!res.ok) {
@@ -350,8 +348,7 @@ export async function fetchAcademicEmails(
     });
 
     if (listRes.status === 401) {
-      clearStoredGoogleToken();
-      throw new Error('Gmail session expired (401). Please reconnect Google Account.');
+      throw new Error('Gmail session expired or scope missing (401).');
     }
 
     if (!listRes.ok) {
@@ -458,34 +455,54 @@ export async function findOrCreateMasterSpreadsheet(
   token: string
 ): Promise<{ spreadsheetId: string; spreadsheetUrl: string; isNew: boolean }> {
   try {
-    const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
-      `name = '${MASTER_SHEET_TITLE}' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false`
-    )}&fields=files(id,name,webViewLink)`;
-
-    const searchRes = await fetch(searchUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (searchRes.status === 401) {
-      clearStoredGoogleToken();
-      throw new Error('Google Sheets session expired (401). Please reconnect Google Account.');
+    // 1. Check local cache first for instant sync without hitting Drive search
+    const cachedId = typeof window !== 'undefined' ? localStorage.getItem('scc_master_sheet_id') : null;
+    if (cachedId) {
+      try {
+        const checkRes = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${cachedId}?fields=spreadsheetId,spreadsheetUrl`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (checkRes.ok) {
+          const file = await checkRes.json();
+          return {
+            spreadsheetId: file.spreadsheetId,
+            spreadsheetUrl: file.spreadsheetUrl || `https://docs.google.com/spreadsheets/d/${file.spreadsheetId}/edit`,
+            isNew: false,
+          };
+        }
+      } catch {}
     }
 
-    if (searchRes.ok) {
-      const data = await searchRes.json();
-      if (data.files && data.files.length > 0) {
-        const file = data.files[0];
-        return {
-          spreadsheetId: file.id,
-          spreadsheetUrl: file.webViewLink || `https://docs.google.com/spreadsheets/d/${file.id}/edit`,
-          isNew: false,
-        };
+    // 2. Try Drive search if available
+    try {
+      const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
+        `name = '${MASTER_SHEET_TITLE}' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false`
+      )}&fields=files(id,name,webViewLink)`;
+
+      const searchRes = await fetch(searchUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (searchRes.ok) {
+        const data = await searchRes.json();
+        if (data.files && data.files.length > 0) {
+          const file = data.files[0];
+          if (typeof window !== 'undefined') {
+            try { localStorage.setItem('scc_master_sheet_id', file.id); } catch {}
+          }
+          return {
+            spreadsheetId: file.id,
+            spreadsheetUrl: file.webViewLink || `https://docs.google.com/spreadsheets/d/${file.id}/edit`,
+            isNew: false,
+          };
+        }
       }
-    } else if (searchRes.status === 403) {
-      const errBody = await searchRes.text();
-      throw parseGoogleApiResponseError(searchRes.status, errBody, 'Google Drive API', 'drive.googleapis.com');
+    } catch {
+      // Drive search may not be authorized; continue to direct Sheets creation
     }
 
+    // 3. Create fresh spreadsheet directly via Google Sheets API
     const createPayload = {
       properties: {
         title: MASTER_SHEET_TITLE,
@@ -514,8 +531,7 @@ export async function findOrCreateMasterSpreadsheet(
     });
 
     if (createRes.status === 401) {
-      clearStoredGoogleToken();
-      throw new Error('Google Sheets session expired (401). Please reconnect Google Account.');
+      throw new Error('Google Sheets session expired or scope missing (401).');
     }
 
     if (!createRes.ok) {
@@ -525,6 +541,9 @@ export async function findOrCreateMasterSpreadsheet(
 
     const createdSheet = await createRes.json();
     const spreadsheetId = createdSheet.spreadsheetId;
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem('scc_master_sheet_id', spreadsheetId); } catch {}
+    }
 
     const headerValues = [
       ['Subject', 'Assignment Name', 'Due Date', 'Priority', 'Status', 'Source', 'Doc Link', 'Notes'],
@@ -598,8 +617,7 @@ export async function readAssignmentsFromSheet(
     });
 
     if (res.status === 401) {
-      clearStoredGoogleToken();
-      throw new Error('Google Sheets session expired (401). Please reconnect Google Account.');
+      throw new Error('Google Sheets session expired or unauthorized (401).');
     }
 
     // Fallback to first sheet range if Assignments tab is named differently
@@ -669,8 +687,7 @@ export async function appendAssignmentToSheet(
   );
 
   if (res.status === 401) {
-    clearStoredGoogleToken();
-    throw new Error('Google Sheets session expired (401). Please reconnect Google Account.');
+    throw new Error('Google Sheets session expired or unauthorized (401).');
   }
 
   if (!res.ok) {
@@ -710,8 +727,7 @@ export async function updateAssignmentStatusInSheet(
   );
 
   if (res.status === 401) {
-    clearStoredGoogleToken();
-    throw new Error('Google Sheets session expired (401). Please reconnect Google Account.');
+    throw new Error('Google Sheets session expired or unauthorized (401).');
   }
 
   if (!res.ok) {
@@ -818,8 +834,7 @@ export async function fetchRecentSchoolFiles(
     });
 
     if (res.status === 401) {
-      clearStoredGoogleToken();
-      throw new Error('Google Workspace session expired (401). Please reconnect Google Account.');
+      throw new Error('Google Workspace session expired or unauthorized (401).');
     }
 
     // Fallback for personal accounts where supportsAllDrives can throw 400
@@ -872,8 +887,7 @@ export async function createFormattedAssignmentDoc(
     });
 
     if (createRes.status === 401) {
-      clearStoredGoogleToken();
-      throw new Error('Google Workspace session expired (401). Please reconnect Google Account.');
+      throw new Error('Google Docs session expired or unauthorized (401).');
     }
 
     if (!createRes.ok) {
@@ -1013,8 +1027,7 @@ export async function createNotebookLMSourceDoc(
     });
 
     if (createRes.status === 401) {
-      clearStoredGoogleToken();
-      throw new Error('Google Workspace session expired (401). Please reconnect Google Account.');
+      throw new Error('Google Docs session expired or unauthorized (401).');
     }
 
     if (!createRes.ok) {

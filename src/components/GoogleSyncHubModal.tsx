@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   X,
   RefreshCw,
@@ -13,9 +13,11 @@ import {
   Mail,
   Table,
   HardDrive,
-  GraduationCap
+  GraduationCap,
+  Key,
 } from "lucide-react";
 import { AppLogo } from "./AppLogo";
+import { setStoredGoogleToken } from "../services/firebase";
 
 interface GoogleSyncHubModalProps {
   isOpen: boolean;
@@ -50,7 +52,24 @@ export const GoogleSyncHubModal: React.FC<GoogleSyncHubModalProps> = ({
   onSyncSheet,
   isSyncingSheet = false,
 }) => {
+  const [showManualToken, setShowManualToken] = useState(false);
+  const [manualToken, setManualToken] = useState("");
+  const [isSavingManualToken, setIsSavingManualToken] = useState(false);
+
   if (!isOpen) return null;
+
+  const handleSaveManualToken = async () => {
+    if (!manualToken.trim()) return;
+    setIsSavingManualToken(true);
+    try {
+      setStoredGoogleToken(manualToken.trim());
+      await onSyncAll();
+      setShowManualToken(false);
+      setManualToken("");
+    } finally {
+      setIsSavingManualToken(false);
+    }
+  };
 
   const services = [
     {
@@ -250,6 +269,41 @@ export const GoogleSyncHubModal: React.FC<GoogleSyncHubModalProps> = ({
               </div>
             </div>
           ))}
+
+          {/* Manual Access Token / Power User Option */}
+          <div className="pt-2 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]/60">
+            <button
+              onClick={() => setShowManualToken(!showManualToken)}
+              className="text-[11px] font-semibold text-[#6B6860] hover:text-[#D97757] flex items-center gap-1.5 cursor-pointer"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>{showManualToken ? "Hide Manual Token Entry" : "Manual Token / Power User Setup"}</span>
+            </button>
+
+            {showManualToken && (
+              <div className="mt-2.5 p-3 rounded-xl bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] space-y-2 text-xs">
+                <p className="text-[11px] text-[#6B6860]">
+                  Paste a valid Google OAuth Bearer access token to connect or refresh sync instantly:
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={manualToken}
+                    onChange={(e) => setManualToken(e.target.value)}
+                    placeholder="ya29.a0AfH6..."
+                    className="flex-1 px-3 py-1.5 rounded-lg bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] font-mono text-xs outline-none focus:border-[#D97757]"
+                  />
+                  <button
+                    onClick={handleSaveManualToken}
+                    disabled={isSavingManualToken || !manualToken.trim()}
+                    className="px-3 py-1.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white font-bold rounded-lg text-xs cursor-pointer transition-colors"
+                  >
+                    {isSavingManualToken ? "Saving..." : "Save & Sync"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer */}

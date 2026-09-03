@@ -444,9 +444,13 @@ export default function App() {
     try { trackEvent('command_executed', { command: newTab }); } catch {}
 
     if (typeof document !== 'undefined' && (document as any).startViewTransition) {
-      (document as any).startViewTransition(() => {
+      try {
+        (document as any).startViewTransition(() => {
+          setActiveTab(newTab);
+        });
+      } catch {
         setActiveTab(newTab);
-      });
+      }
     } else {
       setActiveTab(newTab);
     }
@@ -647,65 +651,75 @@ export default function App() {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   interface NotificationItem { id: string; tier: 'urgent' | 'updates' | 'activity'; title: string; description: string; link: string; source: string; }
-  // Dynamic Aggregated Notification Center Model — strictly typed
+  // Dynamic Aggregated Notification Center Model — strictly typed & null safe
   const notifications: NotificationItem[] = React.useMemo(() => {
     const list: NotificationItem[] = [];
     const now = new Date();
 
     // 1. Urgent Tiers (Deadlines in 24h, Grades posted)
-    canvasAssignments.forEach((c) => {
+    (canvasAssignments || []).forEach((c) => {
+      if (!c) return;
       // Due in 24h
       if (c.dueAt && !c.isCompleted) {
-        const dueTime = new Date(c.dueAt + 'T23:59:59').getTime();
-        const diff = dueTime - now.getTime();
-        if (diff > 0 && diff < 86400000) {
-          list.push({
-            id: `urgent-due-${c.id}`,
-            tier: 'urgent',
-            title: `Deadline: ${c.name} is due soon!`,
-            description: `Subject: ${c.courseName} • Due in ${Math.round(diff / 3600000)} hours.`,
-            link: c.htmlUrl || '#',
-            source: 'Canvas',
-          });
-        }
+        try {
+          const dueIso = c.dueAt.includes('T') ? c.dueAt : `${c.dueAt}T23:59:59`;
+          const dueTime = new Date(dueIso).getTime();
+          if (!isNaN(dueTime)) {
+            const diff = dueTime - now.getTime();
+            if (diff > 0 && diff < 86400000) {
+              list.push({
+                id: `urgent-due-${c.id}`,
+                tier: 'urgent',
+                title: `Deadline: ${c.name || 'Assignment'} is due soon!`,
+                description: `Subject: ${c.courseName || 'Course'} • Due in ${Math.round(diff / 3600000)} hours.`,
+                link: c.htmlUrl || '#',
+                source: 'Canvas',
+              });
+            }
+          }
+        } catch {}
       }
 
       // Grade Posted Feedback mapping directly back to commented Google Doc anchor locations
-      const matchingSheet = assignments.find(
-        (s) => s.assignmentName.toLowerCase().trim() === c.name.toLowerCase().trim()
-      );
-      if (c.isCompleted && matchingSheet?.docUrl) {
-        list.push({
-          id: `urgent-grade-${c.id}`,
-          tier: 'urgent',
-          title: `Grade Posted: ${c.name}`,
-          description: `Score details parsed. Click to open and read feedback directly in your Google Doc.`,
-          link: matchingSheet.docUrl,
-          source: 'Google Doc',
-        });
+      const cName = (c.name || '').toLowerCase().trim();
+      if (cName) {
+        const matchingSheet = (assignments || []).find(
+          (s) => s && (s.assignmentName || '').toLowerCase().trim() === cName
+        );
+        if (c.isCompleted && matchingSheet?.docUrl) {
+          list.push({
+            id: `urgent-grade-${c.id}`,
+            tier: 'urgent',
+            title: `Grade Posted: ${c.name || 'Assignment'}`,
+            description: `Score details parsed. Click to open and read feedback directly in your Google Doc.`,
+            link: matchingSheet.docUrl,
+            source: 'Google Doc',
+          });
+        }
       }
     });
 
     // 2. Updates Tier (Announcements / Slide changes)
-    canvasAssignments.filter(c => c.isInformational).forEach((c) => {
+    (canvasAssignments || []).filter(c => c && c.isInformational).forEach((c) => {
       list.push({
         id: `update-announcement-${c.id}`,
         tier: 'updates',
-        title: `Announcement: ${c.name}`,
-        description: `Course post published in ${c.courseName}.`,
+        title: `Announcement: ${c.name || 'Course Update'}`,
+        description: `Course post published in ${c.courseName || 'Canvas'}.`,
         link: c.htmlUrl || '#',
         source: 'Canvas',
       });
     });
 
     // Google Drive files modified in last 24h
-    recentFiles.slice(0, 5).forEach((f) => {
+    (recentFiles || []).slice(0, 5).forEach((f) => {
+      if (!f) return;
       list.push({
         id: `update-file-${f.id}`,
         tier: 'updates',
-        title: `Updated File: ${f.name}`,
+        title: `Updated File: ${f.name || 'Drive File'}`,
         description: `Modified recently in your Google Drive.`,
-        link: f.webViewLink,
+        link: f.webViewLink || '#',
         source: 'Google Drive',
       });
     });
@@ -1712,6 +1726,21 @@ export default function App() {
     await handleGoogleSignIn(false);
   };
 
+  const handleDisconnectGoogle = useCallback(() => {
+    clearStoredGoogleToken();
+    setCalendarEvents([]);
+    setEmailAlerts([]);
+    setRawEmails([]);
+    setRecentFiles([]);
+    setMasterSheetId(undefined);
+    setMasterSheetUrl(undefined);
+    addToast({
+      type: 'info',
+      title: 'Google Workspace Disconnected',
+      message: 'Google Workspace token cleared. You can reconnect anytime.',
+    });
+  }, [addToast]);
+
   // Logout Handler
   const handleLogout = async () => {
     setConfirmationModal({
@@ -2268,8 +2297,9 @@ export default function App() {
 
         {/* Right Main Column with Top Header, Scrollable Content, and Bottom Status Bar */}
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#FAF9F5] dark:bg-[#141413]">
-          {/* Top Header — simplified */}
+          {/* Top Header — simplified & error-guarded */}
           {activeTab !== 'dashboard' && (
+            <ErrorBoundary fallback={<header className="h-12 bg-white dark:bg-[#141413] border-b border-[#DFDACB] dark:border-[#2C2B27] px-4 sm:px-6 flex items-center justify-between z-20 text-xs font-semibold text-[#6B6860]"><button onClick={() => window.dispatchEvent(new CustomEvent('scc-navigate', { detail: 'dashboard' }))} className="hover:text-[#D97757]">StudentOS / Dashboard</button></header>}>
             <Navbar
               activeTabLabel={
                 {
@@ -2326,6 +2356,7 @@ export default function App() {
                 setTimeout(()=>{ window.dispatchEvent(new CustomEvent('scc-highlight-tracker')); }, 300);
               }}
             />
+            </ErrorBoundary>
           )}
 
           {/* PWA Install Banner — simplified */}
@@ -2851,14 +2882,14 @@ export default function App() {
             onSyncAll={async () => {
               await runFullSync(false);
             }}
-            onConnectGoogle={handleConnectGoogle}
+            onConnectGoogle={() => handleGoogleSignIn(true)}
             onDisconnectGoogle={handleDisconnectGoogle}
             calendarEventsCount={calendarEvents.length}
             emailCount={rawEmails.length}
-            schoolFilesCount={schoolFiles.length}
-            sheetUrl={sheetUrl}
+            schoolFilesCount={recentFiles.length}
+            sheetUrl={masterSheetUrl}
             onSyncSheet={async () => {
-              await loadAssignments(false);
+              await loadSheetAssignments(false);
             }}
             isSyncingSheet={isLoadingAssignments}
           />
