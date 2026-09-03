@@ -65,7 +65,6 @@ export const WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/drive.readonly',
   'https://www.googleapis.com/auth/classroom.courses.readonly',
   'https://www.googleapis.com/auth/classroom.coursework.me.readonly',
-  'https://www.googleapis.com/auth/classroom.coursework.students.readonly',
   'https://www.googleapis.com/auth/classroom.announcements.readonly',
   'https://www.googleapis.com/auth/classroom.student-submissions.me.readonly',
 ];
@@ -99,12 +98,12 @@ export class OAuthTestUserRequiredError extends Error {
 const TOKEN_STORAGE_KEY = 'google_workspace_access_token';
 const TOKEN_IDB_KEY = 'google_workspace_access_token_v2';
 
-// In-memory cache backed by sessionStorage + IndexedDB hydrate
+// In-memory cache backed by sessionStorage, localStorage & IndexedDB
 let cachedAccessToken: string | null = null;
 if (typeof window !== 'undefined') {
   try {
-    cachedAccessToken = sessionStorage.getItem(TOKEN_STORAGE_KEY);
-    // hydrate from IndexedDB if sessionStorage empty (survives tab close)
+    cachedAccessToken = sessionStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(TOKEN_STORAGE_KEY);
+    // hydrate from IndexedDB if storage empty (survives tab close)
     if (!cachedAccessToken) {
       try {
         // async hydrate — will populate cache next tick
@@ -112,7 +111,10 @@ if (typeof window !== 'undefined') {
           db.preferences.get(TOKEN_IDB_KEY).then((row: any) => {
             if (row?.value) {
               cachedAccessToken = row.value;
-              try { sessionStorage.setItem(TOKEN_STORAGE_KEY, row.value); } catch {}
+              try {
+                sessionStorage.setItem(TOKEN_STORAGE_KEY, row.value);
+                localStorage.setItem(TOKEN_STORAGE_KEY, row.value);
+              } catch {}
             }
           }).catch(()=>{});
         });
@@ -141,6 +143,9 @@ export const clearStoredGoogleToken = () => {
   if (typeof window !== 'undefined') {
     try {
       sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+      sessionStorage.removeItem('google_token_acquired_at');
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem('google_token_acquired_at');
     } catch {}
     persistTokenToIDB(null);
   }
@@ -180,13 +185,15 @@ export const signInWithGoogle = async (
     }
     const credential = GoogleAuthProvider.credentialFromResult(result);
     
-    // Store access token in memory & sessionStorage + IndexedDB (survives tab close)
+    // Store access token in memory, localStorage, sessionStorage & IndexedDB
     if (credential?.accessToken) {
       cachedAccessToken = credential.accessToken;
       if (typeof window !== 'undefined') {
         try {
           sessionStorage.setItem(TOKEN_STORAGE_KEY, credential.accessToken);
           sessionStorage.setItem('google_token_acquired_at', String(Date.now()));
+          localStorage.setItem(TOKEN_STORAGE_KEY, credential.accessToken);
+          localStorage.setItem('google_token_acquired_at', String(Date.now()));
           persistTokenToIDB(credential.accessToken);
           // also persist acquiredAt to IDB
           import('./db').then(({ db }) => db.preferences.put({ key: 'google_token_acquired_at', value: String(Date.now()) }).catch(()=>{}));
@@ -285,6 +292,12 @@ export const getStoredGoogleToken = (): string | null => {
         cachedAccessToken = stored;
         return stored;
       }
+      const localStored = localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (localStored && localStored.length > 5) {
+        cachedAccessToken = localStored;
+        try { sessionStorage.setItem(TOKEN_STORAGE_KEY, localStored); } catch {}
+        return localStored;
+      }
     } catch {
       // ignore
     }
@@ -302,8 +315,10 @@ export const setCachedToken = (token: string | null) => {
     try {
       if (token) {
         sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+        localStorage.setItem(TOKEN_STORAGE_KEY, token);
       } else {
         sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
       }
       persistTokenToIDB(token);
     } catch {}

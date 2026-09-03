@@ -343,6 +343,29 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             </button>
           </div>
 
+          {/* Sync Sheet & Open Sheet */}
+          <button
+            onClick={onRefresh}
+            disabled={isLoading}
+            className="px-3 py-1.5 bg-[#FAF9F5] dark:bg-[#252422] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] text-[#141413] dark:text-[#FAF9F5] text-xs font-bold rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Sync with Google Sheet"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[#D97757] ${isLoading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{isLoading ? 'Syncing...' : 'Sync Sheet'}</span>
+          </button>
+          {sheetUrl && (
+            <a
+              href={sheetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1.5 bg-[#FAF9F5] dark:bg-[#252422] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] text-[#5C5A54] dark:text-[#B5B2A8] text-xs font-semibold rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] transition-all flex items-center gap-1 cursor-pointer"
+              title="Open Google Sheet in new tab"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-[#0F9D58]" />
+              <span className="hidden md:inline text-[11px]">Sheet</span>
+            </a>
+          )}
+
           {/* AI Ranker */}
           <button
             onClick={handleRunAIEstimates}

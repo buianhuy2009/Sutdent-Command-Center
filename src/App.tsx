@@ -96,6 +96,7 @@ const OAuthGuideModal = lazy(() => import('./components/OAuthGuideModal').then(m
 const ApiActivationModal = lazy(() => import('./components/ApiActivationModal').then(m => ({ default: m.ApiActivationModal })));
 const GeminiSettingsModal = lazy(() => import('./components/GeminiSettingsModal').then(m => ({ default: m.GeminiSettingsModal })));
 const AiAcademicSuiteModal = lazy(() => import('./components/AiAcademicSuiteModal').then(m => ({ default: m.AiAcademicSuiteModal })));
+const GoogleSyncHubModal = lazy(() => import('./components/GoogleSyncHubModal').then(m => ({ default: m.GoogleSyncHubModal })));
 import { ToastContainer } from './components/Toast';
 import confetti from 'canvas-confetti';
 import { WorkspaceId, AgentAction } from './types';
@@ -230,8 +231,8 @@ export default function App() {
       const saved = localStorage.getItem('scc_theme');
       if (saved) return saved === 'dark';
       const dataTheme = document.documentElement.getAttribute('data-theme');
-      if (['nord','dracula','catppuccin','cyberpunk','midnight','ocean','forest'].includes(dataTheme||'')) return true;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      // User requirement: Light is default when signing up
+      return false;
     } catch { return false; }
   });
 
@@ -748,6 +749,7 @@ export default function App() {
   const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
   const [deploymentModalOpen, setDeploymentModalOpen] = useState(false);
   const [oauthGuideModalOpen, setOauthGuideModalOpen] = useState(false);
+  const [googleSyncHubOpen, setGoogleSyncHubOpen] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
@@ -1228,7 +1230,36 @@ export default function App() {
       saveRawEmails(emails);
 
       if (emails.length > 0) {
-        const alerts = await summarizeEmailsWithGemini(emails);
+        let alerts: EmailAlert[] = [];
+        try {
+          alerts = await summarizeEmailsWithGemini(emails);
+        } catch (geminiErr) {
+          console.warn('Gemini email summarizer unavailable, using rule-based classification:', geminiErr);
+          alerts = emails.map((msg, idx) => {
+            const text = `${msg.subject} ${msg.snippet}`.toLowerCase();
+            const isExam = text.includes('exam') || text.includes('midterm') || text.includes('final') || text.includes('quiz') || text.includes('kiểm tra');
+            const isDue = text.includes('due') || text.includes('assignment') || text.includes('homework') || text.includes('submit') || text.includes('deadline') || text.includes('hạn');
+            const isSpam = text.includes('unsubscribe') || text.includes('newsletter') || text.includes('promo') || text.includes('discount');
+            const isUrgent = isExam || isDue || text.includes('urgent') || text.includes('important');
+
+            return {
+              id: `alert-${msg.id || idx}`,
+              messageId: msg.id,
+              sender: msg.sender,
+              subject: msg.subject,
+              summary: msg.snippet ? (msg.snippet.slice(0, 160) + (msg.snippet.length > 160 ? '...' : '')) : msg.subject,
+              urgency: isUrgent ? ('HIGH' as const) : ('MEDIUM' as const),
+              category: isExam ? ('EXAM' as const) : isDue ? ('ASSIGNMENT' as const) : isSpam ? ('ANNOUNCEMENT' as const) : ('GENERAL' as const),
+              actionRequired: isDue || isExam,
+              isSpam,
+              detectedAssignment: isDue || isExam ? {
+                title: msg.subject,
+                dueDate: msg.date || 'Upcoming',
+                subject: 'Coursework',
+              } : undefined,
+            };
+          });
+        }
         setEmailAlerts(alerts);
         saveEmailAlerts(alerts);
       } else {
@@ -1562,11 +1593,11 @@ export default function App() {
     }
   }, [runFullSync, addToast]);
 
-  // 1. Initial Auto-Sync on App Startup / Web Open (once)
+  // 1. Auto-Sync on App Startup and when User Auth resolves or changes
   useEffect(() => {
     runFullSync(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   // 2. Real-Time Background Auto-Sync (every 60s, debounced)
   useEffect(() => {
@@ -2282,6 +2313,9 @@ export default function App() {
               onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
               notifications={notifications}
               isAiChatOpen={aiChatOpen}
+              onOpenGoogleSync={() => setGoogleSyncHubOpen(true)}
+              isGoogleConnected={hasActiveGoogleWorkspaceToken()}
+              isSyncingGoogle={isRefreshingAll}
               onNotificationClick={(n)=>{
                 if (n.source==='Canvas' || n.title?.includes('Canvas') || n.title?.includes('Deadline')) handleTabTransition('canvas');
                 else if (n.source==='Google Drive') handleTabTransition('drive');
@@ -2804,6 +2838,32 @@ export default function App() {
         onSchedule={handleScheduleStudyBlock}
         isScheduling={isScheduling}
       />
+
+      {/* Google Workspace Sync Hub Modal */}
+      {googleSyncHubOpen && (
+        <Suspense fallback={null}>
+          <GoogleSyncHubModal
+            isOpen={googleSyncHubOpen}
+            onClose={() => setGoogleSyncHubOpen(false)}
+            user={user}
+            hasGoogleToken={hasActiveGoogleWorkspaceToken()}
+            isSyncing={isRefreshingAll}
+            onSyncAll={async () => {
+              await runFullSync(false);
+            }}
+            onConnectGoogle={handleConnectGoogle}
+            onDisconnectGoogle={handleDisconnectGoogle}
+            calendarEventsCount={calendarEvents.length}
+            emailCount={rawEmails.length}
+            schoolFilesCount={schoolFiles.length}
+            sheetUrl={sheetUrl}
+            onSyncSheet={async () => {
+              await loadAssignments(false);
+            }}
+            isSyncingSheet={isLoadingAssignments}
+          />
+        </Suspense>
+      )}
 
       {/* Global Confirmation Modal */}
       <ConfirmationModal

@@ -2,14 +2,18 @@ import { useEffect } from 'react';
 
 /** Extracted sync hooks (App.tsx slim-down): one hook per provider. */
 
+import { getStoredGoogleToken } from '../services/firebase';
+
 export function useCalendarSync(opts: { enabled: boolean; onEvents: (events: any[]) => void }) {
   useEffect(() => {
     if (!opts.enabled) return;
+    const token = getStoredGoogleToken();
+    if (!token) return;
     let cancelled = false;
     (async () => {
       try {
         const mod = await import('../services/googleWorkspace');
-        const events = await (mod as any).fetchTodayCalendarEvents?.().catch(() => []);
+        const events = await (mod as any).fetchTodayCalendarEvents?.(token).catch(() => []);
         if (!cancelled && events) opts.onEvents(events);
       } catch {}
     })();
@@ -21,11 +25,13 @@ export function useCalendarSync(opts: { enabled: boolean; onEvents: (events: any
 export function useGmailSync(opts: { enabled: boolean; onEmails: (emails: any[]) => void }) {
   useEffect(() => {
     if (!opts.enabled) return;
+    const token = getStoredGoogleToken();
+    if (!token) return;
     let cancelled = false;
     (async () => {
       try {
         const mod = await import('../services/googleWorkspace');
-        const emails = await (mod as any).fetchAcademicEmails?.({ maxResults: 25 }).catch(() => []);
+        const emails = await (mod as any).fetchAcademicEmails?.(token, { maxResults: 25 }).catch(() => []);
         if (!cancelled && emails) opts.onEmails(emails);
       } catch {}
     })();
@@ -53,11 +59,13 @@ export function useCanvasSync(opts: { enabled: boolean; feedUrl?: string; onAssi
 export function useDriveSync(opts: { enabled: boolean; onFiles: (f: any[]) => void }) {
   useEffect(() => {
     if (!opts.enabled) return;
+    const token = getStoredGoogleToken();
+    if (!token) return;
     let cancelled = false;
     (async () => {
       try {
         const mod = await import('../services/googleWorkspace');
-        const files = await (mod as any).fetchRecentSchoolFiles?.().catch(() => []);
+        const files = await (mod as any).fetchRecentSchoolFiles?.(token, 20).catch(() => []);
         if (!cancelled && files) opts.onFiles(files);
       } catch {}
     })();

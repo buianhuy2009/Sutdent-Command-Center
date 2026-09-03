@@ -793,14 +793,14 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
-                      { id: 'linen', name: 'Warm Parchment', color: 'bg-[#FAF9F5] text-[#141413] border-[#DFDACB]', accent:'bg-[#D97757]' },
-                      { id: 'midnight', name: 'Midnight Slate', color: 'bg-[#0A0A0C] text-white border-zinc-700', accent:'bg-[#6366F1]' },
-                      { id: 'ocean', name: 'Ocean Navy', color: 'bg-[#0B132B] text-white border-blue-800', accent:'bg-[#0EA5E9]' },
-                      { id: 'forest', name: 'Forest Calm', color: 'bg-[#061A14] text-white border-emerald-800', accent:'bg-[#10B981]' },
-                      { id: 'nord', name: 'Nord Frost', color: 'bg-[#2E3440] text-white border-slate-600', accent:'bg-[#88C0D0]' },
-                      { id: 'dracula', name: 'Dracula', color: 'bg-[#282A36] text-white border-[#6272A4]', accent:'bg-[#FF79C6]' },
-                      { id: 'catppuccin', name: 'Catppuccin', color: 'bg-[#1E1E2E] text-white border-[#45475A]', accent:'bg-[#CBA6F7]' },
-                      { id: 'cyberpunk', name: 'Cyberpunk', color: 'bg-[#0A0A12] text-[#00FFFF] border-[#581C66]', accent:'bg-[#00FFFF]' },
+                      { id: 'linen', name: 'Warm Cream (Light)', color: 'bg-[#FAF9F5] text-[#141413] border-[#DFDACB]', accent: 'bg-[#D97757]' },
+                      { id: 'midnight', name: 'Dark Charcoal (Dark)', color: 'bg-[#141413] text-[#FAF9F5] border-[#2C2B27]', accent: 'bg-[#D97757]' },
+                      { id: 'ocean', name: 'Ocean Depth', color: 'bg-[#0B132B] text-white border-blue-900', accent: 'bg-[#38BDF8]' },
+                      { id: 'forest', name: 'Forest Calm', color: 'bg-[#061A14] text-white border-emerald-900', accent: 'bg-[#10B981]' },
+                      { id: 'nord', name: 'Nord Frost', color: 'bg-[#242933] text-white border-slate-700', accent: 'bg-[#88C0D0]' },
+                      { id: 'dracula', name: 'Dracula Glow', color: 'bg-[#1E1F29] text-white border-[#6272A4]', accent: 'bg-[#FF79C6]' },
+                      { id: 'catppuccin', name: 'Catppuccin', color: 'bg-[#1E1E2E] text-white border-[#45475A]', accent: 'bg-[#CBA6F7]' },
+                      { id: 'cyberpunk', name: 'Cyberpunk', color: 'bg-[#09090E] text-[#00FFFF] border-[#581C66]', accent: 'bg-[#00FFFF]' },
                     ].map((t) => (
                       <button
                         key={t.id}

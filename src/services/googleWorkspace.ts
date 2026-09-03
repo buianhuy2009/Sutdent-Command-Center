@@ -593,14 +593,23 @@ export async function readAssignmentsFromSheet(
   spreadsheetId: string
 ): Promise<Assignment[]> {
   try {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Assignments!A2:H100`;
-    const res = await fetch(url, {
+    let res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Assignments!A2:H`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
     if (res.status === 401) {
       clearStoredGoogleToken();
       throw new Error('Google Sheets session expired (401). Please reconnect Google Account.');
+    }
+
+    // Fallback to first sheet range if Assignments tab is named differently
+    if (!res.ok && res.status === 400) {
+      const fallbackRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A2:H`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (fallbackRes.ok) {
+        res = fallbackRes;
+      }
     }
 
     if (!res.ok) {
@@ -742,16 +751,30 @@ export async function syncAllAssignmentsToSheet(
   ]);
 
   // 1. Clear existing range
-  await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Assignments!A2:H100:clear`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+  try {
+    const clearRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Assignments!A2:H:clear`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    if (!clearRes.ok) {
+      await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A2:H:clear`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      ).catch(() => {});
     }
-  );
+  } catch {}
 
   // 2. Write new rows
   if (rows.length > 0) {
@@ -786,17 +809,30 @@ export async function fetchRecentSchoolFiles(
   try {
     // Exclude folders and trashed items so that any document, spreadsheet, presentation, PDF, or text file appears
     const query = `trashed = false and mimeType != 'application/vnd.google-apps.folder'`;
-    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
+    const primaryUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
       query
     )}&orderBy=modifiedTime desc&pageSize=${limit}&fields=files(id,name,mimeType,modifiedTime,webViewLink,iconLink,size)&supportsAllDrives=true&includeItemsFromAllDrives=true`;
 
-    const res = await fetch(url, {
+    let res = await fetch(primaryUrl, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
     if (res.status === 401) {
       clearStoredGoogleToken();
       throw new Error('Google Workspace session expired (401). Please reconnect Google Account.');
+    }
+
+    // Fallback for personal accounts where supportsAllDrives can throw 400
+    if (!res.ok && res.status === 400) {
+      const fallbackUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
+        query
+      )}&orderBy=modifiedTime desc&pageSize=${limit}&fields=files(id,name,mimeType,modifiedTime,webViewLink,iconLink,size)`;
+      const fallbackRes = await fetch(fallbackUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (fallbackRes.ok) {
+        res = fallbackRes;
+      }
     }
 
     if (!res.ok) {

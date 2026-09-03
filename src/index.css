@@ -39,18 +39,21 @@
   --color-accent: 217 119 87;
   --color-text: 20 20 19;
 }
-:root[data-theme="midnight"] { --color-background: 10 10 12; --color-panel: 26 25 23; --color-border: 46 45 41; --color-accent: 217 119 87; --color-text: 250 249 245; }
-:root[data-theme="ocean"] { --color-background: 11 19 43; --color-panel: 18 30 62; --color-border: 38 58 107; --color-accent: 96 165 250; --color-text: 236 239 244; }
-:root[data-theme="forest"] { --color-background: 6 26 20; --color-panel: 14 42 32; --color-border: 36 71 58; --color-accent: 52 211 153; --color-text: 236 253 245; }
-/* extra branded themes — deprecated, kept for backward compat but not shown in picker (reduces token bloat). Keep terracotta CTA-only. */
-:root[data-theme="nord"], :root[data-theme="dracula"], :root[data-theme="catppuccin"], :root[data-theme="cyberpunk"] {
-  /* fallback to midnight to enforce 2-theme system (Light/Dark) + 1 accent */
-  --color-background: 10 10 12;
-  --color-panel: 26 25 23;
-  --color-border: 46 45 41;
-  --color-accent: 217 119 87;
-  --color-text: 250 249 245;
+:root[data-theme="midnight"],
+html.dark:not([data-theme="ocean"]):not([data-theme="forest"]):not([data-theme="nord"]):not([data-theme="dracula"]):not([data-theme="catppuccin"]):not([data-theme="cyberpunk"]) {
+  --color-background: 20 20 19; /* #141413 Dark Charcoal */
+  --color-panel: 26 25 23; /* #1A1917 Warm Card Surface */
+  --color-border: 44 43 39; /* #2C2B27 */
+  --color-accent: 217 119 87; /* #D97757 Terracotta Orange */
+  --color-text: 250 249 245; /* #FAF9F5 Warm Cream */
+  --color-muted: 181 178 168; /* #B5B2A8 */
 }
+:root[data-theme="ocean"] { --color-background: 11 19 43; --color-panel: 18 30 62; --color-border: 38 58 107; --color-accent: 56 189 248; --color-text: 236 239 244; }
+:root[data-theme="forest"] { --color-background: 6 26 20; --color-panel: 14 42 32; --color-border: 36 71 58; --color-accent: 16 185 129; --color-text: 236 253 245; }
+:root[data-theme="nord"] { --color-background: 36 41 51; --color-panel: 46 52 64; --color-border: 67 76 94; --color-accent: 136 192 208; --color-text: 236 239 244; }
+:root[data-theme="dracula"] { --color-background: 30 31 41; --color-panel: 40 42 54; --color-border: 68 71 90; --color-accent: 255 121 198; --color-text: 248 248 242; }
+:root[data-theme="catppuccin"] { --color-background: 30 30 46; --color-panel: 24 24 37; --color-border: 49 50 68; --color-accent: 203 166 247; --color-text: 205 214 244; }
+:root[data-theme="cyberpunk"] { --color-background: 9 9 14; --color-panel: 20 12 28; --color-border: 66 20 84; --color-accent: 0 255 255; --color-text: 0 255 255; }
 
 @layer base {
   html {
@@ -185,12 +188,12 @@
     -webkit-backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
   }
   .dark .glass-panel {
-    background-color: rgba(11, 17, 32, 0.88);
+    background-color: rgba(20, 20, 19, 0.90);
     backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
     -webkit-backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
   }
 }
-.dark .glass-panel { background-color: rgba(11, 17, 32, 0.88); }
+.dark .glass-panel { background-color: rgba(20, 20, 19, 0.90); }
 .glass-card {
   background-color: rgba(255, 255, 255, 0.9);
 }
@@ -201,12 +204,12 @@
     -webkit-backdrop-filter: blur(var(--blur-glass-card));
   }
   .dark .glass-card {
-    background-color: rgba(15, 23, 42, 0.7);
+    background-color: rgba(26, 25, 23, 0.85);
     backdrop-filter: blur(var(--blur-glass-card));
     -webkit-backdrop-filter: blur(var(--blur-glass-card));
   }
 }
-.dark .glass-card { background-color: rgba(15, 23, 42, 0.7); }
+.dark .glass-card { background-color: rgba(26, 25, 23, 0.85); }
 @media (max-width: 768px) {
   :root { --blur-glass-panel: 8px; --blur-glass-card: 6px; --saturate-glass: 130%; }
 }
@@ -326,10 +329,13 @@ html[data-density="spacious"] {
   --gap-4: 1.25rem;
 }
 
-/* Color Theme Palette Classes — legacy midnight/ocean/forest already defined above */
+/* Color Theme Palette Classes */
 html[data-theme="midnight"].dark,
-html[data-theme="midnight"].dark body {
-  background-color: #0A0A0C;
+html[data-theme="midnight"].dark body,
+html.dark:not([data-theme="ocean"]):not([data-theme="forest"]):not([data-theme="nord"]):not([data-theme="dracula"]):not([data-theme="catppuccin"]):not([data-theme="cyberpunk"]),
+html.dark:not([data-theme="ocean"]):not([data-theme="forest"]):not([data-theme="nord"]):not([data-theme="dracula"]):not([data-theme="catppuccin"]):not([data-theme="cyberpunk"]) body {
+  background-color: #141413;
+  color: #FAF9F5;
 }
 html[data-theme="ocean"].dark,
 html[data-theme="ocean"].dark body {

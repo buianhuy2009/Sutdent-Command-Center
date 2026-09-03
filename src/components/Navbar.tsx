@@ -3,6 +3,7 @@ import {
   Sparkles,
   Bell,
   Search,
+  RefreshCw,
 } from 'lucide-react';
 
 export interface NotificationItem {
@@ -21,6 +22,9 @@ interface NavbarProps {
   notifications?: NotificationItem[];
   isAiChatOpen?: boolean;
   onNotificationClick?: (n: NotificationItem) => void;
+  onOpenGoogleSync?: () => void;
+  isGoogleConnected?: boolean;
+  isSyncingGoogle?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -30,6 +34,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   notifications = [],
   isAiChatOpen = false,
   onNotificationClick,
+  onOpenGoogleSync,
+  isGoogleConnected = false,
+  isSyncingGoogle = false,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [hasDismissedBadge, setHasDismissedBadge] = useState(false);
@@ -84,8 +91,24 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
       </div>
 
-      {/* RIGHT: Only essentials - AI Coach + Notifications */}
+      {/* RIGHT: Only essentials - Google Sync + AI Coach + Notifications */}
       <div className="flex items-center gap-1.5 shrink-0">
+        {onOpenGoogleSync && (
+          <button
+            id="btn-nav-google-sync"
+            onClick={onOpenGoogleSync}
+            className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
+              isGoogleConnected
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:border-emerald-400'
+                : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] text-[#6B6860] dark:text-[#B5B2A8] border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]'
+            }`}
+            title="Google Workspace Sync Hub"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingGoogle ? 'animate-spin text-[#D97757]' : isGoogleConnected ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
+            <span className="hidden md:inline text-[11px]">{isSyncingGoogle ? 'Syncing...' : isGoogleConnected ? 'Google Sync' : 'Connect Google'}</span>
+          </button>
+        )}
+
         <button
           id="btn-nav-ai-coach"
           onClick={onToggleAiChat}
