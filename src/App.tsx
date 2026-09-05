@@ -119,7 +119,12 @@ import {
   needsGoogleReconnect,
   hasActiveGoogleWorkspaceToken,
   clearStoredGoogleToken,
+  classifySignInError,
+  diagnoseSignInEnvironment,
+  consumeRedirectResult,
+  signInWithRedirectFlow,
 } from './services/firebase';
+import type { SignInDiagnosis } from './services/firebase';
 import {
   fetchTodayCalendarEvents,
   insertCalendarEvent,
@@ -789,6 +794,7 @@ export default function App() {
   const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
   const [deploymentModalOpen, setDeploymentModalOpen] = useState(false);
   const [oauthGuideModalOpen, setOauthGuideModalOpen] = useState(false);
+  const [oauthDiagnosis, setOauthDiagnosis] = useState<SignInDiagnosis | null>(null);
   const [googleSyncHubOpen, setGoogleSyncHubOpen] = useState(false);
 
   // Toasts
@@ -1689,6 +1695,39 @@ export default function App() {
   // Debounced wrapper for visibility/focus storm protection
   const debouncedSync = useDebouncedCallback(() => { runFullSync(true); }, 1200);
 
+  // Finish a redirect sign-in when Google returns to the app (popup-blocked path).
+  // Without this, users came back signed-in but with no confirmation and no sync.
+  const redirectConsumedRef = useRef(false);
+  useEffect(() => {
+    if (redirectConsumedRef.current) return;
+    redirectConsumedRef.current = true;
+    (async () => {
+      try {
+        const resumed = await consumeRedirectResult();
+        if (!resumed) return;
+        setUser(resumed.user);
+        setIsDemoMode(false);
+        setOauthGuideModalOpen(false);
+        setGoogleSessionExpired(false);
+        if (resumed.accessToken) {
+          setGoogleToken(resumed.accessToken);
+          await runFullSync(false);
+          addToast({
+            type: 'success',
+            title: 'Google Workspace Connected',
+            message: `Signed in as ${resumed.user.displayName || resumed.user.email || 'User'}. Live Workspace data active.`,
+          });
+        } else {
+          addToast({
+            type: 'info',
+            title: 'Signed in with Google',
+            message: `Signed in as ${resumed.user.displayName || resumed.user.email || 'User'}.`,
+          });
+        }
+      } catch {}
+    })();
+  }, [runFullSync, addToast]);
+
   // Manual Refresh All Data Button
   const handleRefreshAll = useCallback(async () => {
     setIsRefreshingAll(true);
@@ -1784,6 +1823,51 @@ export default function App() {
   }, [addToast]);
 
   // Google Sign In Handler
+  // Every failure gets a plain-language diagnosis + the guide modal for blocking
+  // issues (test-user list, admin block, bad domain/key, missing token, timeout).
+  const handleSignInFailure = useCallback((err: any, context: 'workspace' | 'gmail') => {
+    console.error('Sign in error:', err);
+    const diagnosis = classifySignInError(err);
+    const legacyBlocked =
+      err instanceof OAuthTestUserRequiredError ||
+      err?.isOAuthBlocked ||
+      err?.message?.includes('OAuth Verification') ||
+      err?.message?.includes('Test users') ||
+      err?.message?.includes('verification process');
+    const openGuide =
+      legacyBlocked ||
+      ['test-user', 'admin-blocked', 'unauthorized-domain', 'api-key', 'token-missing', 'timeout'].includes(diagnosis.kind);
+    if (openGuide) {
+      setOauthDiagnosis(diagnosis);
+      setOauthGuideModalOpen(true);
+      addToast({
+        type: 'warning',
+        title: diagnosis.title,
+        message: diagnosis.fix,
+        duration: 9000,
+      });
+    } else {
+      addToast({
+        type: 'error',
+        title: context === 'gmail' ? 'Gmail Connection Failed' : 'Sign In Failed',
+        message: `${diagnosis.detail} ${diagnosis.fix}`,
+      });
+    }
+  }, [addToast]);
+
+  // Popup-hostile browsers: full-page redirect to Google and back (no popup needed)
+  const handleRedirectSignIn = useCallback(async (requestWorkspace = true) => {
+    setIsLoggingIn(true);
+    try {
+      addToast({ type: 'info', title: 'Redirecting to Google…', message: 'Grant access and you will come right back to the app.' });
+      await signInWithRedirectFlow({ requestWorkspace });
+    } catch (err: any) {
+      handleSignInFailure(err, 'workspace');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  }, [addToast, handleSignInFailure]);
+
   const handleGoogleSignIn = async (requestWorkspace = true) => {
     setIsLoggingIn(true);
     try {
@@ -1803,6 +1887,7 @@ export default function App() {
       setUser(result.user);
       setIsDemoMode(false);
       setOauthGuideModalOpen(false);
+      setOauthDiagnosis(null);
       setGoogleSessionExpired(false);
       expiryToastShownRef.current = false;
       // Fresh sign-in: clear stale sync errors so reconnect visibly heals every tab
@@ -1830,28 +1915,7 @@ export default function App() {
         });
       }
     } catch (err: any) {
-      console.error('Sign in error:', err);
-      if (
-        err instanceof OAuthTestUserRequiredError ||
-        err?.isOAuthBlocked ||
-        err?.message?.includes('OAuth Verification') ||
-        err?.message?.includes('Test users') ||
-        err?.message?.includes('verification process')
-      ) {
-        setOauthGuideModalOpen(true);
-        addToast({
-          type: 'warning',
-          title: 'Google Test User Setup Needed',
-          message: 'Google requires adding your email to "Test users" in Google Cloud Console for Workspace access.',
-          duration: 8000,
-        });
-      } else {
-        addToast({
-          type: 'error',
-          title: 'Sign In Failed',
-          message: err.message || 'Could not complete Google sign in.',
-        });
-      }
+      handleSignInFailure(err, 'workspace');
     } finally {
       setIsLoggingIn(false);
     }
@@ -1872,28 +1936,7 @@ export default function App() {
         });
       }
     } catch (err: any) {
-      console.error('Gmail connection error:', err);
-      if (
-        err instanceof OAuthTestUserRequiredError ||
-        err?.isOAuthBlocked ||
-        err?.message?.includes('OAuth Verification') ||
-        err?.message?.includes('Test users') ||
-        err?.message?.includes('verification process')
-      ) {
-        setOauthGuideModalOpen(true);
-        addToast({
-          type: 'warning',
-          title: 'Gmail Restricted Scope Setup',
-          message: 'Google Cloud requires adding your email to "Test users" to scan Gmail on unverified apps.',
-          duration: 8000,
-        });
-      } else {
-        addToast({
-          type: 'error',
-          title: 'Gmail Connection Failed',
-          message: err.message || 'Could not connect Gmail.',
-        });
-      }
+      handleSignInFailure(err, 'gmail');
     } finally {
       setIsLoggingIn(false);
     }
@@ -2382,12 +2425,15 @@ export default function App() {
         />
         <OAuthGuideModal
           isOpen={oauthGuideModalOpen}
-          onClose={() => setOauthGuideModalOpen(false)}
+          onClose={() => { setOauthGuideModalOpen(false); setOauthDiagnosis(null); }}
           onRetryWorkspaceSignIn={() => handleGoogleSignIn(true)}
           onBasicSignIn={() => handleGoogleSignIn(false)}
           isLoggingIn={isLoggingIn}
           projectId="studentcommandcenter-39cdc"
           userEmail="buianhuy2009@gmail.com"
+          diagnosis={oauthDiagnosis}
+          onRunDiagnostics={diagnoseSignInEnvironment}
+          onRedirectSignIn={() => handleRedirectSignIn(true)}
         />
         <ToastContainer
           toasts={toasts}
@@ -3181,12 +3227,15 @@ export default function App() {
       {/* Google OAuth & Test Users Setup Guide Modal */}
       <OAuthGuideModal
         isOpen={oauthGuideModalOpen}
-        onClose={() => setOauthGuideModalOpen(false)}
+        onClose={() => { setOauthGuideModalOpen(false); setOauthDiagnosis(null); }}
         onRetryWorkspaceSignIn={() => handleGoogleSignIn(true)}
         onBasicSignIn={handleBasicSignIn}
         isLoggingIn={isLoggingIn}
         projectId="studentcommandcenter-39cdc"
         userEmail="buianhuy2009@gmail.com"
+        diagnosis={oauthDiagnosis}
+        onRunDiagnostics={diagnoseSignInEnvironment}
+        onRedirectSignIn={() => handleRedirectSignIn(true)}
       />
 
       {/* Google Cloud API Enablement Modal */}

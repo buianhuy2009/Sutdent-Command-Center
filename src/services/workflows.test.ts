@@ -71,6 +71,21 @@ describe('google token expiry', () => {
     fb.clearStoredGoogleToken();
   });
 });
+describe('sign-in error classification', () => {
+  it('maps Google blocks to plain-language diagnoses', async () => {
+    const { classifySignInError } = await import('./firebase');
+    expect(classifySignInError({ code: 'auth/unauthorized-domain' }).kind).toBe('unauthorized-domain');
+    expect(classifySignInError({ code: 'auth/popup-blocked' }).kind).toBe('popup-blocked');
+    expect(classifySignInError({ code: 'auth/popup-closed-by-user' }).kind).toBe('popup-closed');
+    expect(classifySignInError(new Error('Error 403: access_denied')).kind).toBe('test-user');
+    expect(classifySignInError(new Error('Access blocked by your administrator')).kind).toBe('admin-blocked');
+    expect(classifySignInError({ code: 'auth/api-key-not-valid' }).kind).toBe('api-key');
+    const missing = classifySignInError({ code: 'auth/no-auth-token' });
+    expect(missing.kind).toBe('token-missing');
+    expect(missing.fix).toMatch(/Redirect/i);
+  });
+});
+
 describe('crossReferenceCanvasWithSheet (dedup logic)', () => {
   it('matches by normalized title + date', () => {
     const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Award, Sparkles, BookOpen, Layers, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.4.1';
+export const CURRENT_VERSION = '2.4.2';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,27 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.4.2',
+    date: 'September 05, 2026',
+    title: 'Fixed: Google Sign-In That Would Not Finish',
+    badge: 'Latest Update',
+    highlights: [
+      'Sign-in failures now tell you exactly what went wrong and how to fix it — no more silent dead ends',
+      'New redirect sign-in option for browsers that block popups — slower but almost always works',
+      'Coming back from Google now shows a proper welcome-back message and starts syncing right away',
+      'New one-tap connection check inside the help window shows what is blocking sign-in',
+    ],
+    details: [
+      'If Google blocked the login (school admin rules, unapproved website address, expired test access), the app used to fail quietly or show a confusing message. It now opens a help window naming the exact problem — for example “blocked by your admin, try a personal Gmail” — with the precise fix for each case.',
+      'Some browsers (strict popup or cookie blockers, in-app browsers) never let the Google popup answer. A new “Redirect sign-in instead” button takes you to Google and back in the same tab, which works where popups cannot. A 90-second safety timer also stops the loading spinner from hanging forever.',
+      'Previously, if the popup was blocked the app sent you to Google and back but never confirmed anything or started syncing, which felt broken. Returning from Google now shows a success message and runs a full sync immediately.',
+      'The sign-in help window has a “Run connection check” button that tests your Firebase setup, website address, popups and cookies, and tells you which one to fix. Also fixed the page security rules so Google’s login helpers are never blocked.',
+    ]
+  },
+  {
     version: '2.4.1',
     date: 'September 03, 2026',
     title: 'Fixed: Blank Canvas Page & Google Sign-In Going Stale',
-    badge: 'Latest Update',
     highlights: [
       'Fixed the blank page when opening Canvas — one bad item in your data can no longer crash the whole app',
       'Canvas failures now say what went wrong with a Try Again button, instead of looking empty',

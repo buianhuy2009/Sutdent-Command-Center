@@ -109,6 +109,116 @@ export class OAuthTestUserRequiredError extends Error {
   }
 }
 
+/** Granted sign-in but Google returned no workspace access token — retryable, never silent. */
+export class GoogleWorkspaceGrantMissingError extends Error {
+  isOAuthBlocked = false;
+  retryable = true;
+  constructor(message = 'Google signed you in but did not return a workspace access token. Please try again — if it repeats, use redirect sign-in.') {
+    super(message);
+    this.name = 'GoogleWorkspaceGrantMissingError';
+  }
+}
+
+export type SignInFailureKind =
+  | 'test-user' | 'admin-blocked' | 'unverified' | 'unauthorized-domain'
+  | 'api-key' | 'popup-blocked' | 'popup-closed' | 'timeout' | 'network'
+  | 'token-missing' | 'unknown';
+
+export interface SignInDiagnosis {
+  kind: SignInFailureKind;
+  title: string;
+  detail: string;
+  fix: string;
+}
+
+/** Map raw Firebase/Google errors to a plain-language diagnosis with a concrete fix. */
+export function classifySignInError(error: any): SignInDiagnosis {
+  const code = error?.code || '';
+  const msg = error?.message || '';
+  const all = `${code} ${msg} ${String(error || '')}`;
+  const host = typeof window !== 'undefined' ? window.location.hostname : 'your domain';
+
+  if (error instanceof GoogleWorkspaceGrantMissingError || code === 'auth/no-auth-token') {
+    return {
+      kind: 'token-missing',
+      title: 'Google sign-in finished without permissions',
+      detail: 'Google closed the loop but did not hand back a workspace token. Your account is fine — the handshake just dropped the token.',
+      fix: 'Tap “Retry Google Workspace Sign-In”. If it happens twice, use “Redirect sign-in instead” below — it is slower but far more reliable.',
+    };
+  }
+  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request' || code === 'auth/user-cancelled') {
+    return { kind: 'popup-closed', title: 'Sign-in window was closed', detail: 'The Google window closed before finishing.', fix: 'Tap sign-in again and keep the Google window open until it closes by itself.' };
+  }
+  if (code === 'auth/popup-blocked') {
+    return { kind: 'popup-blocked', title: 'Browser blocked the sign-in window', detail: 'Your browser stopped Google from opening its sign-in window.', fix: 'Allow popups for this site, then retry — or use “Redirect sign-in instead”, which needs no popup at all.' };
+  }
+  if (/admin|policy|disallowed|org_internal|access blocked by/i.test(all)) {
+    return {
+      kind: 'admin-blocked',
+      title: 'Blocked by your Google Workspace admin',
+      detail: 'School/work Google accounts are often locked down by an administrator so third-party study apps cannot be connected, even though you personally granted permission.',
+      fix: 'Use a personal Gmail account instead — it takes 30 seconds and unlocks Calendar, Gmail and Drive sync. Or ask your school admin to allow this app.',
+    };
+  }
+  if (code === 'auth/unauthorized-domain' || /unauthorized-domain/i.test(all)) {
+    return {
+      kind: 'unauthorized-domain',
+      title: 'This website address is not approved in Firebase',
+      detail: `Google refused the login because “${host}” is not listed under Authorized Domains. This is a one-time setup step, not a problem with your account.`,
+      fix: `In Firebase Console → Authentication → Settings → Authorized Domains, add “${host}”, then retry. Takes one minute.`,
+    };
+  }
+  if (code === 'auth/api-key-not-valid' || code === 'auth/invalid-api-key' || /api-key-not-valid/i.test(all)) {
+    return {
+      kind: 'api-key',
+      title: 'Firebase key rejected (often on preview links)',
+      detail: 'The Firebase browser key does not accept this website address — common on preview/deploy links when the key is locked to the main domain.',
+      fix: 'Open the main site address (not a preview link) and sign in there, or ask the app owner to add this address to the key’s allowed websites.',
+    };
+  }
+  if (/verification process|Test users|unverified|access_denied|403|admin-restricted|internal-error/i.test(all)) {
+    return {
+      kind: 'test-user',
+      title: 'Google needs your email on the access list',
+      detail: 'Because the app asks for Calendar/Gmail/Drive access, Google only lets listed test accounts through until verification finishes.',
+      fix: 'Follow the steps below (publish the app once, or add your email as a test user), then retry. Basic-profile sign-in below always works instantly.',
+    };
+  }
+  if (code === 'auth/network-request-failed' || /network/i.test(all)) {
+    return { kind: 'network', title: 'Network interrupted sign-in', detail: 'The request to Google never completed — usually Wi-Fi, VPN or an ad-blocker.', fix: 'Check your connection, pause ad-blockers for this site, then retry.' };
+  }
+  if (/timeout|timed out/i.test(all)) {
+    return { kind: 'timeout', title: 'Sign-in timed out', detail: 'Google took too long to answer (often strict popup/cookie blockers).', fix: 'Use “Redirect sign-in instead” — it survives popup and cookie blockers.' };
+  }
+  return { kind: 'unknown', title: 'Sign in failed', detail: msg || 'Google did not complete sign-in.', fix: 'Retry once. If it repeats, use redirect sign-in, or basic-profile sign-in to get in immediately.' };
+}
+
+/** Best-effort environment check shown alongside failures (config, host, cookies, popups). */
+export function diagnoseSignInEnvironment(): { label: string; ok: boolean; hint?: string }[] {
+  const out: { label: string; ok: boolean; hint?: string }[] = [];
+  const cfg = effectiveFirebaseConfig;
+  out.push({
+    label: 'Firebase config present',
+    ok: Boolean(cfg.apiKey && cfg.projectId && cfg.authDomain),
+    hint: !cfg.apiKey ? 'Missing API key — redeploy with VITE_FIREBASE_API_KEY set.' : undefined,
+  });
+  try {
+    out.push({ label: `This address: ${window.location.hostname}`, ok: true, hint: 'If sign-in says “unauthorized-domain”, add this exact address in Firebase → Authorized Domains.' });
+  } catch { out.push({ label: 'Page address', ok: false }); }
+  try {
+    const w = window.open('', '_blank', 'width=10,height=10');
+    if (w) { w.close(); out.push({ label: 'Popups allowed', ok: true }); }
+    else out.push({ label: 'Popups blocked', ok: false, hint: 'Allow popups for this site, or use redirect sign-in.' });
+  } catch { out.push({ label: 'Popups blocked', ok: false, hint: 'Allow popups for this site, or use redirect sign-in.' }); }
+  try {
+    document.cookie = 'scc_cookie_test=1; SameSite=Lax';
+    const ok = document.cookie.includes('scc_cookie_test=1');
+    document.cookie = 'scc_cookie_test=; Max-Age=0; SameSite=Lax';
+    out.push({ label: 'Cookies enabled', ok, hint: ok ? undefined : 'Enable cookies for this site — Google sign-in needs them.' });
+  } catch { out.push({ label: 'Cookies enabled', ok: false }); }
+  return out;
+}
+
 // Token Storage Key — now in IndexedDB (via Dexie) + sessionStorage mirror for sync access
 const TOKEN_STORAGE_KEY = 'google_workspace_access_token';
 const TOKEN_IDB_KEY = 'google_workspace_access_token_v2';
@@ -247,7 +357,13 @@ export const signInWithGoogle = async (
     try { await setPersistence(auth, browserLocalPersistence); } catch {}
     let result: any;
     try {
-      result = await signInWithPopup(auth, targetProvider);
+      // Watchdog: never spin forever if the popup hangs (strict blockers, lost postMessage).
+      // A late success still lands via onAuthStateChanged, so racing is safe.
+      const POPUP_TIMEOUT_MS = 90000;
+      result = await Promise.race([
+        signInWithPopup(auth, targetProvider),
+        new Promise((_res, rej) => setTimeout(() => rej(new Error('Google sign-in timed out after 90 seconds. The sign-in window may be blocked from answering — please use redirect sign-in instead.')), POPUP_TIMEOUT_MS)),
+      ]);
     } catch (popupErr: any) {
       const code = popupErr?.code || '';
       // Fallback to redirect if popup blocked by browser
@@ -268,6 +384,13 @@ export const signInWithGoogle = async (
     } else if (!options.requestWorkspace) {
       // Basic login: ensure stale workspace token is not falsely assumed active
       cachedAccessToken = null;
+    }
+
+    // Workspace was requested and granted, but no token arrived — never downgrade
+    // silently to "basic" (that dead-ends sync with zero explanation). Throw so the
+    // UI offers a real retry / redirect path.
+    if (options.requestWorkspace && !credential?.accessToken) {
+      throw new GoogleWorkspaceGrantMissingError();
     }
     
     return {
@@ -351,6 +474,40 @@ export const signInWithGoogleBasic = async (): Promise<{ user: User; accessToken
 
 export const signInWithGmail = async (): Promise<{ user: User; accessToken: string } | null> => {
   return signInWithGoogle({ requestWorkspace: true, includeGmail: true });
+};
+
+/**
+ * Popup-hostile browsers (blocked popups, strict cookie/COOP policies) need the
+ * redirect flow: Google takes over the whole tab, then returns. Nothing resolves
+ * here — call consumeRedirectResult() on the next load to finish the job.
+ */
+export const signInWithRedirectFlow = async (
+  options: { requestWorkspace?: boolean; includeGmail?: boolean } = { requestWorkspace: true }
+): Promise<void> => {
+  const targetProvider = !options.requestWorkspace
+    ? basicProvider
+    : options.includeGmail
+    ? workspaceProvider
+    : coreWorkspaceProvider;
+  try { await setPersistence(auth, browserLocalPersistence); } catch {}
+  await signInWithRedirect(auth, targetProvider);
+};
+
+/**
+ * Finish a redirect sign-in after Google returns to the app. Returns the user +
+ * workspace token (if granted) or null when this load was not a redirect return.
+ * Safe to call on every startup; resolves null immediately otherwise.
+ */
+export const consumeRedirectResult = async (): Promise<{ user: User; accessToken: string } | null> => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (!result?.user) return null;
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    if (credential?.accessToken) setStoredGoogleToken(credential.accessToken);
+    return { user: result.user, accessToken: credential?.accessToken || '' };
+  } catch {
+    return null;
+  }
 };
 
 export const googleSignIn = signInWithGoogle;

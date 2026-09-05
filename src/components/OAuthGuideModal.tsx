@@ -13,7 +13,10 @@ import {
   RefreshCw,
   Lock,
   Globe,
+  Wrench,
+  ArrowLeftRight,
 } from 'lucide-react';
+import type { SignInDiagnosis } from '../services/firebase';
 
 interface OAuthGuideModalProps {
   isOpen: boolean;
@@ -23,6 +26,9 @@ interface OAuthGuideModalProps {
   isLoggingIn?: boolean;
   projectId?: string;
   userEmail?: string;
+  diagnosis?: SignInDiagnosis | null;
+  onRunDiagnostics?: () => { label: string; ok: boolean; hint?: string }[];
+  onRedirectSignIn?: () => void;
 }
 
 export const OAuthGuideModal: React.FC<OAuthGuideModalProps> = ({
@@ -33,10 +39,14 @@ export const OAuthGuideModal: React.FC<OAuthGuideModalProps> = ({
   isLoggingIn = false,
   projectId = 'studentcommandcenter-39cdc',
   userEmail = 'buianhuy2009@gmail.com',
+  diagnosis = null,
+  onRunDiagnostics,
+  onRedirectSignIn,
 }) => {
   const [activeView, setActiveView] = useState<'all_users' | 'test_user'>('all_users');
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [envChecks, setEnvChecks] = useState<{ label: string; ok: boolean; hint?: string }[] | null>(null);
 
   if (!isOpen) return null;
 
@@ -78,6 +88,18 @@ export const OAuthGuideModal: React.FC<OAuthGuideModalProps> = ({
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* What actually went wrong (shown when sign-in just failed) */}
+        {diagnosis && (
+          <div className="mt-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-3.5 space-y-1.5" role="alert">
+            <div className="flex items-center gap-1.5 font-bold text-xs text-amber-900 dark:text-amber-200">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{diagnosis.title}</span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">{diagnosis.detail}</p>
+            <p className="text-[11px] leading-relaxed text-amber-900 dark:text-amber-200"><strong>Fix: </strong>{diagnosis.fix}</p>
+          </div>
+        )}
 
         {/* Tab Selector */}
         <div className="flex items-center gap-2 mt-4 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
@@ -212,20 +234,58 @@ export const OAuthGuideModal: React.FC<OAuthGuideModalProps> = ({
           <button
             onClick={onRetryWorkspaceSignIn}
             disabled={isLoggingIn}
-            className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoggingIn ? 'animate-spin' : ''}`} />
             <span>{isLoggingIn ? 'Connecting...' : 'Retry Google Workspace Sign-In'}</span>
           </button>
 
+          {onRedirectSignIn && (
+            <button
+              onClick={onRedirectSignIn}
+              disabled={isLoggingIn}
+              className="w-full py-2.5 px-4 bg-white dark:bg-slate-900 hover:bg-indigo-50 dark:hover:bg-slate-800 text-indigo-700 dark:text-indigo-300 text-xs font-bold rounded-xl border border-indigo-200 dark:border-indigo-800 transition-colors flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5" />
+              <span>Redirect sign-in instead (no popup needed)</span>
+            </button>
+          )}
+
           <button
             onClick={onBasicSignIn}
             disabled={isLoggingIn}
-            className="w-full py-2 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-2 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 transition-colors flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
           >
             <UserCheck className="w-3.5 h-3.5 text-indigo-500" />
             <span>Sign In with Basic Profile (Instant / No Extra Permissions)</span>
           </button>
+
+          {onRunDiagnostics && (
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <button
+                onClick={() => setEnvChecks(onRunDiagnostics())}
+                className="w-full py-2 px-4 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
+              >
+                <Wrench className="w-3.5 h-3.5" />
+                <span>Run connection check</span>
+              </button>
+              {envChecks && (
+                <ul className="px-4 pb-3 space-y-1.5">
+                  {envChecks.map((c, i) => (
+                    <li key={i} className="flex items-start gap-2 text-[11px]">
+                      {c.ok
+                        ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                        : <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />}
+                      <span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-200">{c.label}</span>
+                        {c.hint && <span className="block text-slate-500 dark:text-slate-400">{c.hint}</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
