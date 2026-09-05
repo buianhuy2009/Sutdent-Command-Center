@@ -37,6 +37,8 @@ interface GoogleSyncHubModalProps {
   isSyncingSheet?: boolean;
   onSyncClassroom?: () => Promise<void>;
   isSyncingClassroom?: boolean;
+  onConnectGmail?: () => Promise<void>;
+  isConnectingGmail?: boolean;
 }
 
 export const GoogleSyncHubModal: React.FC<GoogleSyncHubModalProps> = ({
@@ -57,6 +59,8 @@ export const GoogleSyncHubModal: React.FC<GoogleSyncHubModalProps> = ({
   isSyncingSheet = false,
   onSyncClassroom,
   isSyncingClassroom = false,
+  onConnectGmail,
+  isConnectingGmail = false,
 }) => {
   const [showManualToken, setShowManualToken] = useState(false);
   const [manualToken, setManualToken] = useState("");
@@ -106,8 +110,11 @@ export const GoogleSyncHubModal: React.FC<GoogleSyncHubModalProps> = ({
       name: "Gmail Academic",
       appId: "gmail",
       description: "Scans instructor announcements, due dates, quizzes, and grading notes.",
-      status: hasGoogleToken ? "Connected" : "Disconnected",
-      stat: hasGoogleToken ? `${emailCount} academic emails` : "Ready to link",
+      status: hasGoogleToken && emailCount > 0 ? "Connected" : hasGoogleToken ? "Permission Required" : "Disconnected",
+      stat: hasGoogleToken && emailCount > 0 ? `${emailCount} academic emails` : "Click to connect",
+      action: onConnectGmail,
+      isActionLoading: isConnectingGmail,
+      actionLabel: emailCount > 0 ? "Re-scan Gmail" : "Connect Gmail",
       externalUrl: "https://mail.google.com",
       externalLabel: "Open Gmail",
     },

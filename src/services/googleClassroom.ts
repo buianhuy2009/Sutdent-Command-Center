@@ -69,6 +69,10 @@ export async function fetchClassroomCourses(token: string): Promise<ClassroomCou
 
     if (!res.ok) {
       const errBody = await res.text();
+      if (res.status === 403 && (errBody.includes('insufficient') || errBody.includes('PERMISSION_DENIED') || errBody.includes('not a member'))) {
+        console.warn('Google Classroom access not available or no active courses for this account.');
+        return [];
+      }
       throw parseGoogleApiResponseError(res.status, errBody, 'Google Classroom API', 'classroom.googleapis.com');
     }
 

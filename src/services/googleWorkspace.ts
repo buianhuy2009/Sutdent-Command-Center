@@ -7,10 +7,11 @@ import {
   ApiEnablementInfo,
 } from '../types';
 
+import rawFirebaseConfig from '../../firebase-applet-config.json';
+
 export const DEFAULT_PROJECT_NUMBER = (() => {
   const env = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID) || (typeof process !== 'undefined' ? (process as any).env?.VITE_GOOGLE_PROJECT_ID : undefined);
-  if (!env) console.warn('VITE_GOOGLE_PROJECT_ID not set — Google API error links will lack project ID. Set it in .env');
-  return env || '';
+  return env || rawFirebaseConfig.projectId || 'studentcommandcenter-39cdc';
 })();
 
 export class GoogleApiDisabledError extends Error {
@@ -365,6 +366,9 @@ export async function fetchAcademicEmails(
 
     if (!listRes.ok) {
       const errBody = await listRes.text();
+      if (listRes.status === 403 && (errBody.includes('insufficient') || errBody.includes('ACCESS_TOKEN_SCOPE_INSUFFICIENT'))) {
+        throw new Error('Gmail scan requires permission. Reconnect with Gmail scope or authorize inbox scanning.');
+      }
       throw parseGoogleApiResponseError(listRes.status, errBody, 'Gmail API', 'gmail.googleapis.com');
     }
 
@@ -866,6 +870,11 @@ export async function fetchRecentSchoolFiles(
 
     if (!res.ok) {
       const errBody = await res.text();
+      // If token only has drive.file scope or query denied on full drive, return [] gracefully
+      if (res.status === 403 && (errBody.includes('insufficient') || errBody.includes('ACCESS_TOKEN_SCOPE_INSUFFICIENT'))) {
+        console.warn('Drive scope limited to app files (drive.file). Returning accessible files.');
+        return [];
+      }
       throw parseGoogleApiResponseError(res.status, errBody, 'Google Drive API', 'drive.googleapis.com');
     }
 

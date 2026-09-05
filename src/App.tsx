@@ -643,6 +643,8 @@ export default function App() {
   // Google gives web clients no refresh token, so sync must pause and ask for
   // a 1-click reconnect instead of firing 401s that look like "sync is broken".
   const [googleSessionExpired, setGoogleSessionExpired] = useState(false);
+  const [googleToken, setGoogleToken] = useState<string | null>(() => getStoredGoogleToken());
+  const isGoogleConnected = Boolean(googleToken && !isGoogleTokenExpired()) || isDemoMode;
 
   // API Disabled Info (for Google Cloud Console Enablement)
   const [driveApiInfo, setDriveApiInfo] = useState<ApiEnablementInfo | null>(null);
@@ -1166,13 +1168,10 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChangedListener((currentUser) => {
       setUser(currentUser);
-      if (currentUser && getStoredGoogleToken()) {
+      const curToken = getStoredGoogleToken();
+      setGoogleToken(curToken);
+      if (currentUser && curToken && !isGoogleTokenExpired()) {
         setIsDemoMode(false);
-        addToast({
-          type: 'success',
-          title: 'Google Workspace Connected',
-          message: `Signed in as ${currentUser.displayName || currentUser.email}`,
-        });
         // onboarding: if never seen, show tour after login
         try {
           const tourSeen = localStorage.getItem('scc_tour_seen_v2');
@@ -1186,7 +1185,21 @@ export default function App() {
       }
     });
     return () => unsubscribe();
-  }, [addToast]);
+  }, []);
+
+  // Listen to token updates across tabs/storage/login
+  useEffect(() => {
+    const handleTokenUpdated = (e: any) => {
+      const updated = e.detail?.token ?? getStoredGoogleToken();
+      setGoogleToken(updated);
+      if (updated && !isGoogleTokenExpired()) {
+        setGoogleSessionExpired(false);
+        runFullSync(false);
+      }
+    };
+    window.addEventListener('scc-google-token-updated', handleTokenUpdated);
+    return () => window.removeEventListener('scc-google-token-updated', handleTokenUpdated);
+  }, [runFullSync]);
 
   // Fetch Google Calendar Events
   const loadCalendarEvents = useCallback(async (isSilent = false) => {
@@ -1790,6 +1803,7 @@ export default function App() {
       setClassroomError(null);
 
       if (result.accessToken) {
+        setGoogleToken(result.accessToken);
         await runFullSync(false);
         addToast({
           type: 'success',
@@ -1832,12 +1846,55 @@ export default function App() {
     }
   };
 
+  const handleConnectGmail = async () => {
+    setIsLoggingIn(true);
+    try {
+      const result = await signInWithGoogle({ requestWorkspace: true, includeGmail: true });
+      if (result?.accessToken) {
+        setGoogleToken(result.accessToken);
+        setGoogleSessionExpired(false);
+        await loadEmailsAndAlerts(false);
+        addToast({
+          type: 'success',
+          title: 'Gmail Academic Connected',
+          message: 'Academic email scanning is now active.',
+        });
+      }
+    } catch (err: any) {
+      console.error('Gmail connection error:', err);
+      if (
+        err instanceof OAuthTestUserRequiredError ||
+        err?.isOAuthBlocked ||
+        err?.message?.includes('OAuth Verification') ||
+        err?.message?.includes('Test users') ||
+        err?.message?.includes('verification process')
+      ) {
+        setOauthGuideModalOpen(true);
+        addToast({
+          type: 'warning',
+          title: 'Gmail Restricted Scope Setup',
+          message: 'Google Cloud requires adding your email to "Test users" to scan Gmail on unverified apps.',
+          duration: 8000,
+        });
+      } else {
+        addToast({
+          type: 'error',
+          title: 'Gmail Connection Failed',
+          message: err.message || 'Could not connect Gmail.',
+        });
+      }
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
   const handleBasicSignIn = async () => {
     await handleGoogleSignIn(false);
   };
 
   const handleDisconnectGoogle = useCallback(() => {
     clearStoredGoogleToken();
+    setGoogleToken(null);
     setCalendarEvents([]);
     setEmailAlerts([]);
     setRawEmails([]);
@@ -2460,7 +2517,7 @@ export default function App() {
               notifications={notifications}
               isAiChatOpen={aiChatOpen}
               onOpenGoogleSync={() => setGoogleSyncHubOpen(true)}
-              isGoogleConnected={hasActiveGoogleWorkspaceToken()}
+              isGoogleConnected={isGoogleConnected}
               isSyncingGoogle={isRefreshingAll}
               onNotificationClick={(n)=>{
                 if (n.source==='Canvas' || n.title?.includes('Canvas') || n.title?.includes('Deadline')) handleTabTransition('canvas');
@@ -2503,6 +2560,37 @@ export default function App() {
               <ErrorBoundary fallback={<div className="p-6 rounded-2xl border border-rose-200 bg-rose-50 text-rose-900 text-sm">Workspace failed to load. Try refreshing or switching tabs.</div>}>
               <Suspense fallback={<div className="p-8 flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#D97757] border-t-transparent rounded-full animate-spin" /><span className="ml-2 text-xs text-[#8C897F]">Loading workspace…</span></div>}>
               <div className="max-w-7xl mx-auto space-y-6">
+                {/* Google Workspace Connection Banner: Surfaces clearly when user is signed in to Firebase but Google Workspace token is absent or expired */}
+                {user && !isGoogleConnected && !isDemoMode && (
+                  <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs animate-in fade-in">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[#D97757]/15 text-[#D97757] flex items-center justify-center shrink-0">
+                        <Sparkles className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-[#141413] dark:text-[#FAF9F5] text-sm">
+                          {googleSessionExpired ? 'Google Workspace Session Expired' : 'Google Workspace Sync Paused'}
+                        </p>
+                        <p className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8]">
+                          {googleSessionExpired
+                            ? 'Your Google Workspace session has expired (~1 hour life). One click reconnects Calendar, Sheets, Drive & Classroom.'
+                            : `Signed in as ${user.email}. Connect Google Workspace with one click to enable live sync across Calendar, Drive, Sheets & Classroom.`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                      <button
+                        onClick={() => handleGoogleSignIn(true)}
+                        disabled={isLoggingIn}
+                        className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isLoggingIn ? 'animate-spin' : ''}`} />
+                        <span>{isLoggingIn ? 'Connecting...' : googleSessionExpired ? 'Reconnect Workspace' : 'Connect Workspace'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {activeTab === 'canvas' && (
                   <CanvasSyncTab
                     settings={canvasSettings}
@@ -2518,9 +2606,9 @@ export default function App() {
                     onSyncToSheet={handleSyncCanvasToSheet}
                     onSyncAllPending={handleSyncAllPendingCanvas}
                     recentFiles={recentFiles}
-                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    isGoogleConnected={isGoogleConnected}
                     onSubmitAssignment={handleSubmitAssignment}
-                    googleToken={getStoredGoogleToken() || undefined}
+                    googleToken={googleToken || undefined}
                     onConnectGoogle={() => handleGoogleSignIn(true)}
                     sessionExpired={googleSessionExpired}
                     onReconnectGoogle={() => handleGoogleSignIn(true)}
@@ -2540,7 +2628,7 @@ export default function App() {
                     onNavigateToTab={handleTabTransition}
                     urgentCanvasItems={canvasAssignments.filter((c) => !c.isSynced).slice(0, 3)}
                     allCanvasAssignments={canvasAssignments}
-                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    isGoogleConnected={isGoogleConnected}
                     onConnectGoogle={() => handleGoogleSignIn(true)}
                     calendarError={calendarError}
                     calendarApiInfo={calendarApiInfo}
@@ -2565,7 +2653,7 @@ export default function App() {
                     }}
                     onParseNaturalText={handleParseNaturalText}
                     isParsingAI={isParsingAI}
-                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    isGoogleConnected={isGoogleConnected}
                     onConnectGoogle={() => handleGoogleSignIn(true)}
                     onClearCompleted={handleClearCompletedAssignments}
                     sheetError={sheetError}
@@ -2589,8 +2677,8 @@ export default function App() {
                       setQuickDraftModalOpen(true);
                     }}
                     onExtractAssignment={handleExtractAssignment}
-                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
-                    onConnectGoogle={() => handleGoogleSignIn(true)}
+                    isGoogleConnected={isGoogleConnected}
+                    onConnectGoogle={handleConnectGmail}
                     emailError={emailError}
                     gmailApiInfo={gmailApiInfo}
                   />
@@ -2601,18 +2689,18 @@ export default function App() {
                     recentFiles={recentFiles}
                     isLoadingFiles={isLoadingFiles}
                     onRefreshFiles={() => loadRecentFiles(false)}
-                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    isGoogleConnected={isGoogleConnected}
                     onConnectGoogle={() => handleGoogleSignIn(true)}
                     driveError={driveError}
                     driveApiInfo={driveApiInfo}
-                    googleToken={getStoredGoogleToken() || undefined}
+                    googleToken={googleToken || undefined}
                   />
                 )}
 
                 {activeTab === 'classroom' && (
                   <GoogleClassroomPanel
-                    googleToken={getStoredGoogleToken() || undefined}
-                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    googleToken={googleToken || undefined}
+                    isGoogleConnected={isGoogleConnected}
                     onConnectGoogle={() => handleGoogleSignIn(true)}
                     onSyncToSheet={handleSyncCanvasToSheet}
                     classroomAssignments={classroomAssignments}
@@ -2630,8 +2718,8 @@ export default function App() {
 
                 {activeTab === 'notebooklm' && (
                   <NotebookLMStudioTab
-                    googleToken={getStoredGoogleToken() || undefined}
-                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    googleToken={googleToken || undefined}
+                    isGoogleConnected={isGoogleConnected}
                   />
                 )}
 
@@ -2865,8 +2953,8 @@ export default function App() {
 
                 {(activeTab === 'viva' || activeTab === 'retention') && (
                   <RetentionVaultWorkspace
-                    googleToken={getStoredGoogleToken() || undefined}
-                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                    googleToken={googleToken || undefined}
+                    isGoogleConnected={isGoogleConnected}
                     onStartFocus={() => setZenFocusMode(true)}
                   />
                 )}
@@ -2876,8 +2964,8 @@ export default function App() {
                     recentFiles={recentFiles}
                     isLoadingFiles={isLoadingFiles}
                     onRefreshFiles={() => loadRecentFiles(false)}
-                    isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
-                    googleToken={getStoredGoogleToken() || undefined}
+                    isGoogleConnected={isGoogleConnected}
+                    googleToken={googleToken || undefined}
                   />
                 )}
 
@@ -2913,7 +3001,7 @@ export default function App() {
                       }}
                       onOpenAppStore={() => setAppStoreOpen(true)}
                       user={user}
-                      isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
+                      isGoogleConnected={isGoogleConnected}
                       onConnectGoogle={() => handleGoogleSignIn(true)}
                       onOpenStudyPlan={() => setIsStudyPlanOpen(true)}
                       calendarEvents={calendarEvents}
@@ -2999,13 +3087,15 @@ export default function App() {
             isOpen={googleSyncHubOpen}
             onClose={() => setGoogleSyncHubOpen(false)}
             user={user}
-            hasGoogleToken={hasActiveGoogleWorkspaceToken()}
+            hasGoogleToken={Boolean(googleToken && !isGoogleTokenExpired())}
             isSyncing={isRefreshingAll}
             onSyncAll={async () => {
               await runFullSync(false);
             }}
             onConnectGoogle={() => handleGoogleSignIn(true)}
             onDisconnectGoogle={handleDisconnectGoogle}
+            onConnectGmail={handleConnectGmail}
+            isConnectingGmail={isLoggingIn}
             calendarEventsCount={calendarEvents.length}
             emailCount={rawEmails.length}
             schoolFilesCount={recentFiles.length}

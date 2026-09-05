@@ -52,27 +52,12 @@ export const workspaceProvider = new GoogleAuthProvider();
 export const coreWorkspaceProvider = new GoogleAuthProvider();
 
 // Google Workspace Scopes
-export const WORKSPACE_SCOPES = [
-  'https://www.googleapis.com/auth/calendar.events',
-  'https://www.googleapis.com/auth/calendar.readonly',
-  'https://www.googleapis.com/auth/spreadsheets',
-  'https://www.googleapis.com/auth/drive.readonly',
-  'https://www.googleapis.com/auth/drive.file',
-  'https://www.googleapis.com/auth/documents',
-  'https://www.googleapis.com/auth/classroom.courses.readonly',
-  'https://www.googleapis.com/auth/classroom.coursework.me.readonly',
-  'https://www.googleapis.com/auth/classroom.announcements.readonly',
-  'https://www.googleapis.com/auth/classroom.student-submissions.me.readonly',
-  'https://www.googleapis.com/auth/classroom.rosters.readonly',
-  'https://www.googleapis.com/auth/gmail.readonly',
-  'https://www.googleapis.com/auth/gmail.compose',
-];
-
+// Core Workspace Scopes: non-restricted student scopes (Calendar, Sheets, Drive files created by app, Docs, Classroom).
+// Free of restricted scopes (gmail.* and drive.readonly) so Google OAuth will NOT block unverified apps!
 export const CORE_WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/spreadsheets',
-  'https://www.googleapis.com/auth/drive.readonly',
   'https://www.googleapis.com/auth/drive.file',
   'https://www.googleapis.com/auth/documents',
   'https://www.googleapis.com/auth/classroom.courses.readonly',
@@ -82,24 +67,32 @@ export const CORE_WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/classroom.rosters.readonly',
 ];
 
-WORKSPACE_SCOPES.forEach((scope) => {
-  workspaceProvider.addScope(scope);
-});
+// Full Workspace Scopes: Core plus restricted Gmail & Drive scopes (requires GCP Test Users or verification)
+export const WORKSPACE_SCOPES = [
+  ...CORE_WORKSPACE_SCOPES,
+  'https://www.googleapis.com/auth/drive.readonly',
+  'https://www.googleapis.com/auth/gmail.readonly',
+  'https://www.googleapis.com/auth/gmail.compose',
+];
 
 CORE_WORKSPACE_SCOPES.forEach((scope) => {
   coreWorkspaceProvider.addScope(scope);
 });
 
-// Prompt to select account seamlessly
-workspaceProvider.setCustomParameters({
-  prompt: 'select_account',
+WORKSPACE_SCOPES.forEach((scope) => {
+  workspaceProvider.addScope(scope);
 });
+
+// Prompt to select account seamlessly
 coreWorkspaceProvider.setCustomParameters({
   prompt: 'select_account',
 });
+workspaceProvider.setCustomParameters({
+  prompt: 'select_account',
+});
 
-// Default provider for backwards compatibility
-export const provider = workspaceProvider;
+// Default provider for backwards compatibility defaults to core student workspace
+export const provider = coreWorkspaceProvider;
 
 // Custom error for Google OAuth Test Users block
 export class OAuthTestUserRequiredError extends Error {
@@ -133,6 +126,7 @@ if (typeof window !== 'undefined') {
               try {
                 sessionStorage.setItem(TOKEN_STORAGE_KEY, row.value);
                 localStorage.setItem(TOKEN_STORAGE_KEY, row.value);
+                window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token: row.value } }));
               } catch {}
             }
           }).catch(()=>{});
@@ -167,6 +161,7 @@ export const setStoredGoogleToken = (token: string) => {
       localStorage.setItem('google_token_acquired_at', String(Date.now()));
       persistTokenToIDB(token);
       import('./db').then(({ db }) => db.preferences.put({ key: 'google_token_acquired_at', value: String(Date.now()) }).catch(()=>{}));
+      window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token } }));
     } catch {}
   }
 };
@@ -181,11 +176,14 @@ export const clearStoredGoogleToken = () => {
       localStorage.removeItem('google_token_acquired_at');
     } catch {}
     persistTokenToIDB(null);
+    try {
+      window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token: null } }));
+    } catch {}
   }
 };
 
 export const hasActiveGoogleWorkspaceToken = (): boolean => {
-  return Boolean(getStoredGoogleToken());
+  return Boolean(getValidGoogleToken());
 };
 
 /**
@@ -232,9 +230,13 @@ export function needsGoogleReconnect(): boolean {
 }
 
 export const signInWithGoogle = async (
-  options: { requestWorkspace?: boolean } = { requestWorkspace: true }
+  options: { requestWorkspace?: boolean; includeGmail?: boolean } = { requestWorkspace: true }
 ): Promise<{ user: User; accessToken: string } | null> => {
-  const targetProvider = options.requestWorkspace ? workspaceProvider : basicProvider;
+  const targetProvider = !options.requestWorkspace
+    ? basicProvider
+    : options.includeGmail
+    ? workspaceProvider
+    : coreWorkspaceProvider;
 
   try {
     isSigningIn = true;
@@ -337,6 +339,10 @@ export const signInWithGoogle = async (
 
 export const signInWithGoogleBasic = async (): Promise<{ user: User; accessToken: string } | null> => {
   return signInWithGoogle({ requestWorkspace: false });
+};
+
+export const signInWithGmail = async (): Promise<{ user: User; accessToken: string } | null> => {
+  return signInWithGoogle({ requestWorkspace: true, includeGmail: true });
 };
 
 export const googleSignIn = signInWithGoogle;
