@@ -63,6 +63,7 @@ describe('google token expiry', () => {
     expect(fb.getValidGoogleToken()).toBe('test-token-1234567890');
     // 2-hour-old stamp → expired
     const old = String(Date.now() - 2 * 60 * 60 * 1000);
+    fb.setStoredGoogleToken('test-token-1234567890', parseInt(old, 10));
     try { localStorage.setItem('google_token_acquired_at', old); } catch {}
     try { sessionStorage.setItem('google_token_acquired_at', old); } catch {}
     expect(fb.isGoogleTokenExpired()).toBe(true);
