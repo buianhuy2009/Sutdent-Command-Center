@@ -3,6 +3,8 @@ import { User } from 'firebase/auth';
 import {
   X,
   ArrowRight,
+  Sparkles,
+  RefreshCw,
 } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
@@ -113,6 +115,7 @@ import {
   onAuthStateChangedListener,
   getStoredGoogleToken,
   getValidGoogleToken,
+  isGoogleTokenExpired,
   needsGoogleReconnect,
   hasActiveGoogleWorkspaceToken,
   clearStoredGoogleToken,
@@ -1187,20 +1190,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Listen to token updates across tabs/storage/login
-  useEffect(() => {
-    const handleTokenUpdated = (e: any) => {
-      const updated = e.detail?.token ?? getStoredGoogleToken();
-      setGoogleToken(updated);
-      if (updated && !isGoogleTokenExpired()) {
-        setGoogleSessionExpired(false);
-        runFullSync(false);
-      }
-    };
-    window.addEventListener('scc-google-token-updated', handleTokenUpdated);
-    return () => window.removeEventListener('scc-google-token-updated', handleTokenUpdated);
-  }, [runFullSync]);
-
   // Fetch Google Calendar Events
   const loadCalendarEvents = useCallback(async (isSilent = false) => {
     const token = getStoredGoogleToken();
@@ -1722,6 +1711,20 @@ export default function App() {
     runFullSync(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // 1b. Real-Time Auto-Sync on Google Token Acquisition or Refresh
+  useEffect(() => {
+    const handleTokenUpdated = (e: any) => {
+      const updated = e.detail?.token ?? getStoredGoogleToken();
+      setGoogleToken(updated);
+      if (updated && !isGoogleTokenExpired()) {
+        setGoogleSessionExpired(false);
+        runFullSync(false);
+      }
+    };
+    window.addEventListener('scc-google-token-updated', handleTokenUpdated);
+    return () => window.removeEventListener('scc-google-token-updated', handleTokenUpdated);
+  }, [runFullSync]);
 
   // 2. Real-Time Background Auto-Sync (every 60s, debounced)
   useEffect(() => {
@@ -2717,10 +2720,7 @@ export default function App() {
                 )}
 
                 {activeTab === 'notebooklm' && (
-                  <NotebookLMStudioTab
-                    googleToken={googleToken || undefined}
-                    isGoogleConnected={isGoogleConnected}
-                  />
+                  <NotebookLMStudioTab />
                 )}
 
                 {(activeTab === 'flashcards' || activeTab === 'quizlet' || activeTab === 'anki') && (
@@ -3031,7 +3031,7 @@ export default function App() {
         setDarkMode={setDarkMode}
         onRefreshAll={handleRefreshAll}
         isRefreshing={isRefreshingAll}
-        sheetUrl={masterSheetUrl}
+        sheetUrl={masterSheetUrl || null}
         onOpenTour={() => setIsIntroTourOpen(true)}
         onOpenOAuthGuide={() => setOauthGuideModalOpen(true)}
         onOpenDeploymentGuide={() => setDeploymentModalOpen(true)}
