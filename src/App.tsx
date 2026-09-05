@@ -1190,13 +1190,27 @@ export default function App() {
 
   // Fetch Google Calendar Events
   const loadCalendarEvents = useCallback(async (isSilent = false) => {
-    const token = getValidGoogleToken();
+    const token = getStoredGoogleToken();
     if (!token) {
-      if (needsGoogleReconnect()) {
-        // Expired, not signed out: keep existing events, prompt reconnect
+      setCalendarEvents([]);
+      setCalendarError(null);
+      setCalendarApiInfo(null);
+      return;
+    }
+
+    if (!isSilent) setIsLoadingEvents(true);
+    try {
+      const items = await fetchTodayCalendarEvents(token);
+      setCalendarEvents(items);
+      setCalendarError(null);
+      setCalendarApiInfo(null);
+      setGoogleSessionExpired(false);
+    } catch (err: any) {
+      console.error('Calendar fetch error:', err);
+      const is401 = err?.status === 401 || /401|expired/i.test(err?.message || '');
+      if (is401) {
         setGoogleSessionExpired(true);
         setCalendarError('Google session expired. Reconnect to resume Calendar sync — your events are kept.');
-        setCalendarApiInfo(null);
         if (!isSilent) {
           addToast({
             type: 'warning',
@@ -1208,41 +1222,26 @@ export default function App() {
           } as any);
         }
       } else {
-        setCalendarEvents([]);
-        setCalendarError(null);
-        setCalendarApiInfo(null);
-      }
-      return;
-    }
-
-    if (!isSilent) setIsLoadingEvents(true);
-    try {
-      const items = await fetchTodayCalendarEvents(token);
-      setCalendarEvents(items);
-      setCalendarError(null);
-      setCalendarApiInfo(null);
-    } catch (err: any) {
-      console.error('Calendar fetch error:', err);
-      if (/401|expired|unauthorized/i.test(err?.message || '')) setGoogleSessionExpired(true);
-      if (err?.isServiceDisabled) {
-        setCalendarApiInfo({
-          serviceName: err.serviceName || 'Google Calendar API',
-          serviceId: err.serviceId || 'calendar-json.googleapis.com',
-          activationUrl: err.activationUrl,
-          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '',
-        });
-      } else {
-        setCalendarApiInfo(null);
-      }
-      setCalendarError(err.message || 'Could not fetch live Calendar events.');
-      if (!isSilent) {
-        addToast({
-          type: 'warning',
-          title: err?.isServiceDisabled ? 'Calendar API Disabled' : 'Google Calendar Sync',
-          message: err.message || 'Could not fetch live Calendar schedule.',
-          actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
-          actionUrl: err?.activationUrl,
-        });
+        if (err?.isServiceDisabled) {
+          setCalendarApiInfo({
+            serviceName: err.serviceName || 'Google Calendar API',
+            serviceId: err.serviceId || 'calendar-json.googleapis.com',
+            activationUrl: err.activationUrl,
+            projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '',
+          });
+        } else {
+          setCalendarApiInfo(null);
+        }
+        setCalendarError(err.message || 'Could not fetch live Calendar events.');
+        if (!isSilent) {
+          addToast({
+            type: 'warning',
+            title: err?.isServiceDisabled ? 'Calendar API Disabled' : 'Google Calendar Sync',
+            message: err.message || 'Could not fetch live Calendar schedule.',
+            actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
+            actionUrl: err?.activationUrl,
+          });
+        }
       }
     } finally {
       if (!isSilent) setIsLoadingEvents(false);
@@ -1251,25 +1250,12 @@ export default function App() {
 
   // Fetch Academic Emails & Summarize with Gemini
   const loadEmailsAndAlerts = useCallback(async (isSilent = false, forceResort = false, options?: FetchEmailOptions) => {
-    const token = getValidGoogleToken();
+    const token = getStoredGoogleToken();
     if (!token) {
-      if (needsGoogleReconnect()) {
-        setGoogleSessionExpired(true);
-        setEmailError('Google session expired. Reconnect to resume Gmail scanning — your inbox data is kept.');
-        setGmailApiInfo(null);
-        if (!isSilent) {
-          addToast({
-            type: 'warning', title: 'Google session expired',
-            message: 'Your sign-in expired after ~1 hour. One click reconnects — nothing is lost.',
-            retryLabel: 'Reconnect now', persistent: true, reconnectGoogle: true,
-          });
-        }
-      } else {
-        setRawEmails([]);
-        setEmailAlerts([]);
-        setEmailError(null);
-        setGmailApiInfo(null);
-      }
+      setRawEmails([]);
+      setEmailAlerts([]);
+      setEmailError(null);
+      setGmailApiInfo(null);
       return;
     }
 
@@ -1340,7 +1326,6 @@ export default function App() {
       }
     } catch (err: any) {
       console.error('Email fetch error:', err);
-      if (/401|expired|unauthorized/i.test(err?.message || '')) setGoogleSessionExpired(true);
       if (err?.isServiceDisabled) {
         setGmailApiInfo({
           serviceName: err.serviceName || 'Gmail API',
@@ -1368,23 +1353,10 @@ export default function App() {
 
   // Fetch Master Sheet Assignments
   const loadSheetAssignments = useCallback(async (isSilent = false) => {
-    const token = getValidGoogleToken();
+    const token = getStoredGoogleToken();
     if (!token) {
-      if (needsGoogleReconnect()) {
-        setGoogleSessionExpired(true);
-        setSheetError('Google session expired. Reconnect to resume Sheet sync — your tasks are kept.');
-        setSheetApiInfo(null);
-        if (!isSilent) {
-          addToast({
-            type: 'warning', title: 'Google session expired',
-            message: 'Your sign-in expired after ~1 hour. One click reconnects — nothing is lost.',
-            retryLabel: 'Reconnect now', persistent: true, reconnectGoogle: true,
-          });
-        }
-      } else {
-        setSheetError(null);
-        setSheetApiInfo(null);
-      }
+      setSheetError(null);
+      setSheetApiInfo(null);
       return;
     }
 
@@ -1424,28 +1396,34 @@ export default function App() {
       }
       setSheetError(null);
       setSheetApiInfo(null);
+      setGoogleSessionExpired(false);
     } catch (err: any) {
       console.error('Sheet fetch error:', err);
-      if (/401|expired|unauthorized/i.test(err?.message || '')) setGoogleSessionExpired(true);
-      if (err?.isServiceDisabled) {
-        setSheetApiInfo({
-          serviceName: err.serviceName || 'Google Sheets API',
-          serviceId: err.serviceId || 'sheets.googleapis.com',
-          activationUrl: err.activationUrl,
-          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '',
-        });
+      const is401 = err?.status === 401 || /401|expired/i.test(err?.message || '');
+      if (is401) {
+        setGoogleSessionExpired(true);
+        setSheetError('Google session expired. Reconnect to resume Sheet sync — your tasks are kept.');
       } else {
-        setSheetApiInfo(null);
-      }
-      setSheetError(err.message || 'Could not sync Master Sheet.');
-      if (!isSilent) {
-        addToast({
-          type: 'warning',
-          title: err?.isServiceDisabled ? 'Google Sheets API Disabled' : 'Google Sheet Sync',
-          message: err.message || 'Could not sync Master Google Sheet.',
-          actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
-          actionUrl: err?.activationUrl,
-        });
+        if (err?.isServiceDisabled) {
+          setSheetApiInfo({
+            serviceName: err.serviceName || 'Google Sheets API',
+            serviceId: err.serviceId || 'sheets.googleapis.com',
+            activationUrl: err.activationUrl,
+            projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '',
+          });
+        } else {
+          setSheetApiInfo(null);
+        }
+        setSheetError(err.message || 'Could not sync Master Sheet.');
+        if (!isSilent) {
+          addToast({
+            type: 'warning',
+            title: err?.isServiceDisabled ? 'Google Sheets API Disabled' : 'Google Sheet Sync',
+            message: err.message || 'Could not sync Master Google Sheet.',
+            actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
+            actionUrl: err?.activationUrl,
+          });
+        }
       }
     } finally {
       if (!isSilent) setIsLoadingAssignments(false);
@@ -1454,24 +1432,11 @@ export default function App() {
 
   // Fetch Recent Files
   const loadRecentFiles = useCallback(async (isSilent = false) => {
-    const token = getValidGoogleToken();
+    const token = getStoredGoogleToken();
     if (!token) {
-      if (needsGoogleReconnect()) {
-        setGoogleSessionExpired(true);
-        setDriveError('Google session expired. Reconnect to resume Drive sync — your files list is kept.');
-        setDriveApiInfo(null);
-        if (!isSilent) {
-          addToast({
-            type: 'warning', title: 'Google session expired',
-            message: 'Your sign-in expired after ~1 hour. One click reconnects — nothing is lost.',
-            retryLabel: 'Reconnect now', persistent: true, reconnectGoogle: true,
-          });
-        }
-      } else {
-        setRecentFiles([]);
-        setDriveError(null);
-        setDriveApiInfo(null);
-      }
+      setRecentFiles([]);
+      setDriveError(null);
+      setDriveApiInfo(null);
       return;
     }
 
@@ -1481,29 +1446,35 @@ export default function App() {
       setRecentFiles(files);
       setDriveError(null);
       setDriveApiInfo(null);
+      setGoogleSessionExpired(false);
     } catch (err: any) {
       console.error('Drive files error:', err);
-      if (/401|expired|unauthorized/i.test(err?.message || '')) setGoogleSessionExpired(true);
-      const errMsg = err?.message || 'Could not fetch Google Drive files.';
-      if (err?.isServiceDisabled) {
-        setDriveApiInfo({
-          serviceName: err.serviceName || 'Google Drive API',
-          serviceId: err.serviceId || 'drive.googleapis.com',
-          activationUrl: err.activationUrl,
-          projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '',
-        });
+      const is401 = err?.status === 401 || /401|expired/i.test(err?.message || '');
+      if (is401) {
+        setGoogleSessionExpired(true);
+        setDriveError('Google session expired. Reconnect to resume Drive sync — your files list is kept.');
       } else {
-        setDriveApiInfo(null);
-      }
-      setDriveError(errMsg);
-      if (!isSilent) {
-        addToast({
-          type: 'warning',
-          title: err?.isServiceDisabled ? 'Google Drive API Disabled' : 'Google Drive Sync Failed',
-          message: errMsg,
-          actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
-          actionUrl: err?.activationUrl,
-        });
+        const errMsg = err?.message || 'Could not fetch Google Drive files.';
+        if (err?.isServiceDisabled) {
+          setDriveApiInfo({
+            serviceName: err.serviceName || 'Google Drive API',
+            serviceId: err.serviceId || 'drive.googleapis.com',
+            activationUrl: err.activationUrl,
+            projectId: err.projectId || (import.meta as any).env?.VITE_GOOGLE_PROJECT_ID || '',
+          });
+        } else {
+          setDriveApiInfo(null);
+        }
+        setDriveError(errMsg);
+        if (!isSilent) {
+          addToast({
+            type: 'warning',
+            title: err?.isServiceDisabled ? 'Google Drive API Disabled' : 'Google Drive Sync Failed',
+            message: errMsg,
+            actionLabel: err?.activationUrl ? 'Enable in Cloud' : undefined,
+            actionUrl: err?.activationUrl,
+          });
+        }
       }
     } finally {
       if (!isSilent) setIsLoadingFiles(false);
@@ -1512,14 +1483,9 @@ export default function App() {
 
   // Fetch Google Classroom coursework
   const loadClassroomData = useCallback(async (isSilent = false) => {
-    const token = getValidGoogleToken();
+    const token = getStoredGoogleToken();
     if (!token) {
-      if (needsGoogleReconnect()) {
-        setGoogleSessionExpired(true);
-        setClassroomError('Google session expired. Reconnect to resume Classroom sync.');
-      } else {
-        setClassroomError(null);
-      }
+      setClassroomError(null);
       return;
     }
 
@@ -1533,7 +1499,6 @@ export default function App() {
       } catch {}
     } catch (err: any) {
       console.error('Classroom fetch error:', err);
-      if (/401|expired|unauthorized/i.test(err?.message || '')) setGoogleSessionExpired(true);
       const errMsg = err?.message || 'Could not fetch Google Classroom coursework.';
       setClassroomError(errMsg);
       if (!isSilent) {

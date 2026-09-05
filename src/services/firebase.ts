@@ -90,14 +90,12 @@ CORE_WORKSPACE_SCOPES.forEach((scope) => {
   coreWorkspaceProvider.addScope(scope);
 });
 
-// Prompt for consent to ensure all workspace scopes are included in the returned token
+// Prompt to select account seamlessly
 workspaceProvider.setCustomParameters({
-  prompt: 'select_account consent',
-  access_type: 'offline',
+  prompt: 'select_account',
 });
 coreWorkspaceProvider.setCustomParameters({
-  prompt: 'select_account consent',
-  access_type: 'offline',
+  prompt: 'select_account',
 });
 
 // Default provider for backwards compatibility
@@ -187,7 +185,7 @@ export const clearStoredGoogleToken = () => {
 };
 
 export const hasActiveGoogleWorkspaceToken = (): boolean => {
-  return getValidGoogleToken() !== null;
+  return Boolean(getStoredGoogleToken());
 };
 
 /**
@@ -247,28 +245,14 @@ export const signInWithGoogle = async (
       result = await signInWithPopup(auth, targetProvider);
     } catch (popupErr: any) {
       const code = popupErr?.code || '';
-      const errMsg = popupErr?.message || '';
-      // If full workspace was blocked by unverified test user restriction, automatically try core workspace (Sheets + Calendar + Drive)
-      if (options.requestWorkspace && (code === 'auth/internal-error' || code === 'auth/admin-restricted-operation' || errMsg.includes('access_denied') || errMsg.includes('403'))) {
+      // Fallback to redirect if popup blocked by browser
+      if (code === 'auth/popup-blocked') {
         try {
-          console.info('Retrying with Core Google Workspace provider (Sheets, Calendar, Drive)...');
-          result = await signInWithPopup(auth, coreWorkspaceProvider);
-        } catch (coreErr: any) {
-          throw popupErr;
-        }
-      } else {
-        // Fallback to redirect if popup blocked/closed by browser
-        if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-          if (code === 'auth/popup-blocked') {
-            try {
-              await signInWithRedirect(auth, targetProvider);
-              return null; // redirect will reload page
-            } catch {}
-          }
-          throw popupErr;
-        }
-        throw popupErr;
+          await signInWithRedirect(auth, targetProvider);
+          return null; // redirect will reload page
+        } catch {}
       }
+      throw popupErr;
     }
     const credential = GoogleAuthProvider.credentialFromResult(result);
     
