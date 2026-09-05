@@ -35,15 +35,6 @@ export const auth = getAuth(app);
 // Ensure local persistence survives reloads and tab closes
 if (typeof window !== 'undefined') {
   setPersistence(auth, browserLocalPersistence).catch(() => {});
-  // Handle redirect result (fallback for popup-blocked browsers)
-  getRedirectResult(auth).then((result) => {
-    if (result?.user) {
-      const cred = GoogleAuthProvider.credentialFromResult(result);
-      if (cred?.accessToken) {
-        setStoredGoogleToken(cred.accessToken);
-      }
-    }
-  }).catch(() => {});
 }
 
 export const basicProvider = new GoogleAuthProvider();
@@ -225,6 +216,7 @@ const TOKEN_IDB_KEY = 'google_workspace_access_token_v2';
 
 // In-memory cache backed by sessionStorage, localStorage & IndexedDB
 let cachedAccessToken: string | null = null;
+let cachedTokenAcquiredAt: number | null = null;
 if (typeof window !== 'undefined') {
   try {
     cachedAccessToken = sessionStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -264,16 +256,18 @@ export const onAuthStateChangedListener = (callback: (user: User | null) => void
   return onAuthStateChanged(auth, callback);
 };
 
-export const setStoredGoogleToken = (token: string) => {
+export const setStoredGoogleToken = (token: string, acquiredAtTimestamp?: number) => {
   cachedAccessToken = token;
+  const timestamp = acquiredAtTimestamp ?? Date.now();
+  cachedTokenAcquiredAt = timestamp;
   if (typeof window !== 'undefined') {
     try {
       sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
-      sessionStorage.setItem('google_token_acquired_at', String(Date.now()));
+      sessionStorage.setItem('google_token_acquired_at', String(timestamp));
       localStorage.setItem(TOKEN_STORAGE_KEY, token);
-      localStorage.setItem('google_token_acquired_at', String(Date.now()));
+      localStorage.setItem('google_token_acquired_at', String(timestamp));
       persistTokenToIDB(token);
-      import('./db').then(({ db }) => db.preferences.put({ key: 'google_token_acquired_at', value: String(Date.now()) }).catch(()=>{}));
+      import('./db').then(({ db }) => db.preferences.put({ key: 'google_token_acquired_at', value: String(timestamp) }).catch(()=>{}));
       window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token } }));
     } catch {}
   }
@@ -281,6 +275,7 @@ export const setStoredGoogleToken = (token: string) => {
 
 export const clearStoredGoogleToken = () => {
   cachedAccessToken = null;
+  cachedTokenAcquiredAt = null;
   if (typeof window !== 'undefined') {
     try {
       sessionStorage.removeItem(TOKEN_STORAGE_KEY);
@@ -309,16 +304,20 @@ export const GOOGLE_TOKEN_TTL_MS = 55 * 60 * 1000; // refresh 5 min before the r
 const TOKEN_ACQUIRED_AT_KEY = 'google_token_acquired_at';
 
 export function getGoogleTokenAgeMs(): number | null {
-  if (typeof window === 'undefined') return null;
   try {
     const raw =
-      sessionStorage.getItem(TOKEN_ACQUIRED_AT_KEY) ||
-      localStorage.getItem(TOKEN_ACQUIRED_AT_KEY);
-    if (!raw) return null; // signed in before timestamps existed → unknown, treat as fresh
-    const age = Date.now() - parseInt(raw, 10);
-    return Number.isFinite(age) && age >= 0 ? age : null;
-  } catch {
+      (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(TOKEN_ACQUIRED_AT_KEY) : null) ||
+      (typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_ACQUIRED_AT_KEY) : null);
+    if (raw) {
+      const age = Date.now() - parseInt(raw, 10);
+      if (Number.isFinite(age) && age >= 0) return age;
+    }
+    if (cachedTokenAcquiredAt !== null) {
+      return Date.now() - cachedTokenAcquiredAt;
+    }
     return null;
+  } catch {
+    return cachedTokenAcquiredAt !== null ? Date.now() - cachedTokenAcquiredAt : null;
   }
 }
 
