@@ -40,10 +40,7 @@ if (typeof window !== 'undefined') {
     if (result?.user) {
       const cred = GoogleAuthProvider.credentialFromResult(result);
       if (cred?.accessToken) {
-        try {
-          sessionStorage.setItem('google_workspace_access_token', cred.accessToken);
-          sessionStorage.setItem('google_token_acquired_at', String(Date.now()));
-        } catch {}
+        setStoredGoogleToken(cred.accessToken);
       }
     }
   }).catch(() => {});
@@ -57,23 +54,32 @@ export const coreWorkspaceProvider = new GoogleAuthProvider();
 // Google Workspace Scopes
 export const WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/drive.readonly',
   'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/documents',
   'https://www.googleapis.com/auth/classroom.courses.readonly',
   'https://www.googleapis.com/auth/classroom.coursework.me.readonly',
   'https://www.googleapis.com/auth/classroom.announcements.readonly',
   'https://www.googleapis.com/auth/classroom.student-submissions.me.readonly',
+  'https://www.googleapis.com/auth/classroom.rosters.readonly',
   'https://www.googleapis.com/auth/gmail.readonly',
+  'https://www.googleapis.com/auth/gmail.compose',
 ];
 
 export const CORE_WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/drive.readonly',
   'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/documents',
   'https://www.googleapis.com/auth/classroom.courses.readonly',
   'https://www.googleapis.com/auth/classroom.coursework.me.readonly',
   'https://www.googleapis.com/auth/classroom.announcements.readonly',
   'https://www.googleapis.com/auth/classroom.student-submissions.me.readonly',
+  'https://www.googleapis.com/auth/classroom.rosters.readonly',
 ];
 
 WORKSPACE_SCOPES.forEach((scope) => {

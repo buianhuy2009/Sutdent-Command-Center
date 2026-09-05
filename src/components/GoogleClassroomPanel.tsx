@@ -17,6 +17,10 @@ interface GoogleClassroomPanelProps {
   isGoogleConnected?: boolean;
   onConnectGoogle?: () => void;
   onSyncToSheet: (assignment: CanvasAssignment) => Promise<void>;
+  classroomAssignments?: CanvasAssignment[];
+  isLoading?: boolean;
+  errorMessage?: string | null;
+  onRefresh?: () => void;
 }
 
 const MOCK_CLASSROOM_ASSIGNMENTS: CanvasAssignment[] = [
@@ -63,8 +67,12 @@ export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
   isGoogleConnected,
   onConnectGoogle,
   onSyncToSheet,
+  classroomAssignments,
+  isLoading: externalLoading,
+  errorMessage: externalError,
+  onRefresh: externalRefresh,
 }) => {
-  const [assignments, setAssignments] = useState<CanvasAssignment[]>(() => {
+  const [internalAssignments, setInternalAssignments] = useState<CanvasAssignment[]>(() => {
     try {
       const saved = localStorage.getItem('scc_cached_classroom_assignments');
       return saved ? JSON.parse(saved) : [];
@@ -72,17 +80,26 @@ export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
       return [];
     }
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [internalLoading, setInternalLoading] = useState(false);
+  const [internalError, setInternalError] = useState<string | null>(null);
   const [syncedIds, setSyncedIds] = useState<Set<string>>(new Set());
 
+  const assignments = classroomAssignments !== undefined ? classroomAssignments : internalAssignments;
+  const isLoading = externalLoading !== undefined ? externalLoading : internalLoading;
+  const error = externalError !== undefined ? externalError : internalError;
+
   const loadAssignments = async () => {
+    if (externalRefresh) {
+      externalRefresh();
+      return;
+    }
+
     if (!googleToken && !isGoogleConnected) {
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    setInternalLoading(true);
+    setInternalError(null);
     try {
       let data: CanvasAssignment[] = [];
       if (googleToken) {
@@ -91,27 +108,27 @@ export const GoogleClassroomPanel: React.FC<GoogleClassroomPanelProps> = ({
         // Fallback to mock data in demo mode
         data = MOCK_CLASSROOM_ASSIGNMENTS;
       }
-      setAssignments(data);
+      setInternalAssignments(data);
       try {
         localStorage.setItem('scc_cached_classroom_assignments', JSON.stringify(data));
       } catch {}
     } catch (err: any) {
       console.warn('Classroom API call failed:', err);
-      setError(
+      setInternalError(
         err?.message ||
           'Could not connect to Google Classroom API. Please verify Google Classroom API is enabled on your Google Cloud Console.'
       );
-      setAssignments([]);
+      setInternalAssignments([]);
     } finally {
-      setIsLoading(false);
+      setInternalLoading(false);
     }
   };
 
   useEffect(() => {
-    if ((googleToken || isGoogleConnected) && assignments.length === 0) {
+    if (classroomAssignments === undefined && (googleToken || isGoogleConnected) && internalAssignments.length === 0) {
       loadAssignments();
     }
-  }, [googleToken, isGoogleConnected]);
+  }, [googleToken, isGoogleConnected, classroomAssignments]);
 
   const handleSyncItem = async (assignment: CanvasAssignment) => {
     await onSyncToSheet(assignment);

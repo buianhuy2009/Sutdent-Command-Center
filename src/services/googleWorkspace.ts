@@ -92,6 +92,18 @@ export function parseGoogleApiResponseError(
       );
     }
 
+    // Detect insufficient OAuth scopes
+    const isScopeError =
+      status === 403 &&
+      (msg.includes('insufficient') ||
+        msg.includes('ACCESS_TOKEN_SCOPE_INSUFFICIENT') ||
+        msg.includes('insufficientPermissions') ||
+        msg.includes('insufficient authentication scopes'));
+
+    if (isScopeError) {
+      return new Error(`${defaultServiceName} requires permission: please reconnect your Google account to grant access.`);
+    }
+
     return new Error(`${defaultServiceName} error (${status}): ${msg}`);
   } catch {
     return new Error(`${defaultServiceName} error (${status}): ${bodyText || 'Unknown error'}`);
@@ -837,17 +849,19 @@ export async function fetchRecentSchoolFiles(
       throw new Error('Google Workspace session expired or unauthorized (401).');
     }
 
-    // Fallback for personal accounts where supportsAllDrives can throw 400
-    if (!res.ok && res.status === 400) {
+    // Fallback for personal accounts where supportsAllDrives can throw 400, 403 or 404
+    if (!res.ok && (res.status === 400 || res.status === 403 || res.status === 404)) {
       const fallbackUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
         query
       )}&orderBy=modifiedTime desc&pageSize=${limit}&fields=files(id,name,mimeType,modifiedTime,webViewLink,iconLink,size)`;
-      const fallbackRes = await fetch(fallbackUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (fallbackRes.ok) {
-        res = fallbackRes;
-      }
+      try {
+        const fallbackRes = await fetch(fallbackUrl, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (fallbackRes.ok) {
+          res = fallbackRes;
+        }
+      } catch {}
     }
 
     if (!res.ok) {
@@ -856,15 +870,27 @@ export async function fetchRecentSchoolFiles(
     }
 
     const data = await res.json();
-    return (data.files || []).map((f: any) => ({
-      id: f.id,
-      name: f.name,
-      mimeType: f.mimeType,
-      modifiedTime: f.modifiedTime,
-      webViewLink: f.webViewLink || `https://docs.google.com/document/d/${f.id}/edit`,
-      iconLink: f.iconLink,
-      size: f.size,
-    }));
+    return (data.files || []).map((f: any) => {
+      let webViewLink = f.webViewLink;
+      if (!webViewLink && f.id) {
+        if (f.mimeType?.includes('spreadsheet')) {
+          webViewLink = `https://docs.google.com/spreadsheets/d/${f.id}/edit`;
+        } else if (f.mimeType?.includes('presentation')) {
+          webViewLink = `https://docs.google.com/presentation/d/${f.id}/edit`;
+        } else {
+          webViewLink = `https://docs.google.com/document/d/${f.id}/edit`;
+        }
+      }
+      return {
+        id: f.id,
+        name: f.name || 'Untitled Document',
+        mimeType: f.mimeType || 'application/octet-stream',
+        modifiedTime: f.modifiedTime || new Date().toISOString(),
+        webViewLink: webViewLink || `https://drive.google.com`,
+        iconLink: f.iconLink,
+        size: f.size,
+      };
+    });
   } catch (error) {
     console.error('Error fetching recent Drive files:', error);
     throw error;

@@ -44,9 +44,28 @@ export interface ClassroomAnnouncement {
  */
 export async function fetchClassroomCourses(token: string): Promise<ClassroomCourse[]> {
   try {
-    const res = await fetch('https://classroom.googleapis.com/v1/courses?courseStates=ACTIVE', {
+    // 1. First try student-specific query (standard for student accounts in school domains)
+    let res = await fetch('https://classroom.googleapis.com/v1/courses?studentId=me&courseStates=ACTIVE', {
       headers: { Authorization: `Bearer ${token}` },
     });
+
+    // 2. Fallback to general active courses query
+    if (!res.ok && (res.status === 400 || res.status === 403 || res.status === 404)) {
+      res = await fetch('https://classroom.googleapis.com/v1/courses?courseStates=ACTIVE', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+
+    // 3. Fallback to base courses query
+    if (!res.ok && (res.status === 400 || res.status === 403)) {
+      res = await fetch('https://classroom.googleapis.com/v1/courses', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+
+    if (res.status === 401) {
+      throw new Error('Google Classroom session expired or unauthorized (401).');
+    }
 
     if (!res.ok) {
       const errBody = await res.text();
@@ -66,12 +85,22 @@ export async function fetchClassroomCourses(token: string): Promise<ClassroomCou
  */
 export async function fetchCourseWork(token: string, courseId: string): Promise<ClassroomCourseWork[]> {
   try {
-    const res = await fetch(
+    let res = await fetch(
       `https://classroom.googleapis.com/v1/courses/${courseId}/courseWork?courseWorkStates=PUBLISHED`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }
     );
+
+    // Fallback if courseWorkStates is restricted for non-teacher roles
+    if (!res.ok && (res.status === 400 || res.status === 403)) {
+      res = await fetch(
+        `https://classroom.googleapis.com/v1/courses/${courseId}/courseWork`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+    }
 
     if (!res.ok) {
       const errBody = await res.text();

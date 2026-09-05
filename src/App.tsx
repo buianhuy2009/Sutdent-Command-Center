@@ -131,6 +131,7 @@ import {
   fetchRecentSchoolFiles,
   shareGoogleDriveFile,
 } from './services/googleWorkspace';
+import { fetchAllClassroomAssignments } from './services/googleClassroom';
 import {
   loadCanvasSettings,
   saveCanvasSettings,
@@ -482,6 +483,16 @@ export default function App() {
   const [assignments, setAssignments] = useState<Assignment[]>(loadSavedAssignments());
   const [recentFiles, setRecentFiles] = useState<SchoolFile[]>([]);
   const [canvasAssignments, setCanvasAssignments] = useState<CanvasAssignment[]>([]);
+  const [classroomAssignments, setClassroomAssignments] = useState<CanvasAssignment[]>(() => {
+    try {
+      const saved = localStorage.getItem('scc_cached_classroom_assignments');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isLoadingClassroom, setIsLoadingClassroom] = useState(false);
+  const [classroomError, setClassroomError] = useState<string | null>(null);
   const [canvasSettings, setCanvasSettings] = useState<CanvasSettings>(loadCanvasSettings());
 
   // Sidebar expanded / collapsed state (persisted in localStorage)
@@ -1499,6 +1510,44 @@ export default function App() {
     }
   }, [addToast]);
 
+  // Fetch Google Classroom coursework
+  const loadClassroomData = useCallback(async (isSilent = false) => {
+    const token = getValidGoogleToken();
+    if (!token) {
+      if (needsGoogleReconnect()) {
+        setGoogleSessionExpired(true);
+        setClassroomError('Google session expired. Reconnect to resume Classroom sync.');
+      } else {
+        setClassroomError(null);
+      }
+      return;
+    }
+
+    if (!isSilent) setIsLoadingClassroom(true);
+    try {
+      const list = await fetchAllClassroomAssignments(token);
+      setClassroomAssignments(list);
+      setClassroomError(null);
+      try {
+        localStorage.setItem('scc_cached_classroom_assignments', JSON.stringify(list));
+      } catch {}
+    } catch (err: any) {
+      console.error('Classroom fetch error:', err);
+      if (/401|expired|unauthorized/i.test(err?.message || '')) setGoogleSessionExpired(true);
+      const errMsg = err?.message || 'Could not fetch Google Classroom coursework.';
+      setClassroomError(errMsg);
+      if (!isSilent) {
+        addToast({
+          type: 'warning',
+          title: 'Google Classroom Sync',
+          message: errMsg,
+        });
+      }
+    } finally {
+      if (!isSilent) setIsLoadingClassroom(false);
+    }
+  }, [addToast]);
+
   // Fetch Canvas assignments (Zero fake data)
   const loadCanvasData = useCallback(async (isSilent = false) => {
     if (!canvasSettings.calendarFeedUrl && !canvasSettings.apiToken) {
@@ -1652,6 +1701,7 @@ export default function App() {
           loadEmailsAndAlerts(isSilent),
           loadSheetAssignments(isSilent),
           loadRecentFiles(isSilent),
+          loadClassroomData(isSilent),
         ]);
         if (!signal?.aborted) setLastSyncedAt(new Date());
       } finally {
@@ -1665,6 +1715,7 @@ export default function App() {
       loadEmailsAndAlerts,
       loadSheetAssignments,
       loadRecentFiles,
+      loadClassroomData,
     ]
   );
 
@@ -1771,6 +1822,7 @@ export default function App() {
       setSheetError(null);
       setDriveError(null);
       setCanvasError(null);
+      setClassroomError(null);
 
       if (result.accessToken) {
         await runFullSync(false);
@@ -1825,6 +1877,8 @@ export default function App() {
     setEmailAlerts([]);
     setRawEmails([]);
     setRecentFiles([]);
+    setClassroomAssignments([]);
+    setClassroomError(null);
     setMasterSheetId(undefined);
     setMasterSheetUrl(undefined);
     addToast({
@@ -1850,6 +1904,8 @@ export default function App() {
         setEmailAlerts([]);
         setRawEmails([]);
         setRecentFiles([]);
+        setClassroomAssignments([]);
+        setClassroomError(null);
         setMasterSheetId(undefined);
         setMasterSheetUrl(undefined);
         addToast({
@@ -2594,6 +2650,10 @@ export default function App() {
                     isGoogleConnected={Boolean(getStoredGoogleToken()) || isDemoMode}
                     onConnectGoogle={() => handleGoogleSignIn(true)}
                     onSyncToSheet={handleSyncCanvasToSheet}
+                    classroomAssignments={classroomAssignments}
+                    isLoading={isLoadingClassroom}
+                    errorMessage={classroomError}
+                    onRefresh={() => loadClassroomData(false)}
                   />
                 )}
 
@@ -2984,11 +3044,16 @@ export default function App() {
             calendarEventsCount={calendarEvents.length}
             emailCount={rawEmails.length}
             schoolFilesCount={recentFiles.length}
+            classroomCount={classroomAssignments.length}
             sheetUrl={masterSheetUrl}
             onSyncSheet={async () => {
               await loadSheetAssignments(false);
             }}
             isSyncingSheet={isLoadingAssignments}
+            onSyncClassroom={async () => {
+              await loadClassroomData(false);
+            }}
+            isSyncingClassroom={isLoadingClassroom}
           />
         </Suspense>
       )}

@@ -31,9 +31,12 @@ interface GoogleSyncHubModalProps {
   calendarEventsCount?: number;
   emailCount?: number;
   schoolFilesCount?: number;
+  classroomCount?: number;
   sheetUrl?: string;
   onSyncSheet?: () => Promise<void>;
   isSyncingSheet?: boolean;
+  onSyncClassroom?: () => Promise<void>;
+  isSyncingClassroom?: boolean;
 }
 
 export const GoogleSyncHubModal: React.FC<GoogleSyncHubModalProps> = ({
@@ -48,9 +51,12 @@ export const GoogleSyncHubModal: React.FC<GoogleSyncHubModalProps> = ({
   calendarEventsCount = 0,
   emailCount = 0,
   schoolFilesCount = 0,
+  classroomCount = 0,
   sheetUrl,
   onSyncSheet,
   isSyncingSheet = false,
+  onSyncClassroom,
+  isSyncingClassroom = false,
 }) => {
   const [showManualToken, setShowManualToken] = useState(false);
   const [manualToken, setManualToken] = useState("");
@@ -121,7 +127,10 @@ export const GoogleSyncHubModal: React.FC<GoogleSyncHubModalProps> = ({
       appId: "classroom",
       description: "Enrolled courses, active student coursework, and teacher posts.",
       status: hasGoogleToken ? "Connected" : "Disconnected",
-      stat: hasGoogleToken ? "Coursework synced" : "Ready to link",
+      stat: hasGoogleToken ? (classroomCount > 0 ? `${classroomCount} assignments synced` : "Coursework linked") : "Ready to link",
+      action: onSyncClassroom,
+      isActionLoading: isSyncingClassroom,
+      actionLabel: "Sync Classroom",
       externalUrl: "https://classroom.google.com",
       externalLabel: "Open Classroom",
     },
