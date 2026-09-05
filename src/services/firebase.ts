@@ -47,6 +47,9 @@ if (typeof window !== 'undefined') {
 }
 
 export const basicProvider = new GoogleAuthProvider();
+basicProvider.setCustomParameters({
+  prompt: 'select_account',
+});
 
 export const workspaceProvider = new GoogleAuthProvider();
 export const coreWorkspaceProvider = new GoogleAuthProvider();
@@ -259,13 +262,18 @@ export const signInWithGoogle = async (
     const credential = GoogleAuthProvider.credentialFromResult(result);
     
     // Store access token in memory, localStorage, sessionStorage & IndexedDB
-    if (credential?.accessToken) {
+    // ONLY when workspace access was explicitly requested!
+    if (options.requestWorkspace && credential?.accessToken) {
       setStoredGoogleToken(credential.accessToken);
-    } else {
-      cachedAccessToken = '';
+    } else if (!options.requestWorkspace) {
+      // Basic login: ensure stale workspace token is not falsely assumed active
+      cachedAccessToken = null;
     }
     
-    return { user: result.user, accessToken: cachedAccessToken || '' };
+    return {
+      user: result.user,
+      accessToken: options.requestWorkspace ? (credential?.accessToken || '') : '',
+    };
   } catch (error: any) {
     const errorCode = error?.code || '';
     const errorMsg = error?.message || '';

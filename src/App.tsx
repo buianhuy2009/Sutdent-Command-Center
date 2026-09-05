@@ -1790,6 +1790,14 @@ export default function App() {
       const result = await signInWithGoogle({ requestWorkspace });
       if (!result) {
         // User closed or dismissed the popup - clean exit
+        if (requestWorkspace) {
+          addToast({
+            type: 'info',
+            title: 'Sign-In Cancelled',
+            message: 'If Google displayed "Access blocked", your account must be in Test Users in Google Cloud Console, or use Basic Sign-In.',
+            duration: 6000,
+          });
+        }
         return;
       }
       setUser(result.user);
@@ -1811,13 +1819,13 @@ export default function App() {
         addToast({
           type: 'success',
           title: 'Google Workspace Connected',
-          message: `Signed in as ${result.user.displayName || result.user.email || 'User'}.`,
+          message: `Signed in as ${result.user.displayName || result.user.email || 'User'}. Live Workspace data active.`,
         });
       } else {
         addToast({
           type: 'info',
-          title: 'Signed in (Basic Profile)',
-          message: `Signed in as ${result.user.displayName || result.user.email || 'User'}. Follow the OAuth setup to enable live Sheets & Drive sync.`,
+          title: 'Signed in with Google',
+          message: `Signed in as ${result.user.displayName || result.user.email || 'User'}. Connect Google Workspace inside to sync Calendar & Drive.`,
           duration: 6000,
         });
       }
@@ -2363,13 +2371,33 @@ export default function App() {
 
   if (!user && !isDemoMode) {
     return (
-      <LandingPage
-        onSignIn={() => handleGoogleSignIn(true)}
-        onExploreDemo={() => setIsDemoMode(true)}
-        isLoggingIn={isLoggingIn}
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
-      />
+      <>
+        <LandingPage
+          onSignIn={() => handleGoogleSignIn(false)}
+          onSignInWorkspace={() => handleGoogleSignIn(true)}
+          onExploreDemo={() => setIsDemoMode(true)}
+          isLoggingIn={isLoggingIn}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+        />
+        <OAuthGuideModal
+          isOpen={oauthGuideModalOpen}
+          onClose={() => setOauthGuideModalOpen(false)}
+          onRetryWorkspaceSignIn={() => handleGoogleSignIn(true)}
+          onBasicSignIn={() => handleGoogleSignIn(false)}
+          isLoggingIn={isLoggingIn}
+          projectId="studentcommandcenter-39cdc"
+          userEmail="buianhuy2009@gmail.com"
+        />
+        <ToastContainer
+          toasts={toasts}
+          onDismiss={dismissToast}
+          onRetry={(id: string) => {
+            const t = toasts.find((x) => x.id === id);
+            if (t?.reconnectGoogle) handleGoogleSignIn(true);
+          }}
+        />
+      </>
     );
   }
 
@@ -2386,7 +2414,7 @@ export default function App() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => handleGoogleSignIn(true)}
+              onClick={() => handleGoogleSignIn(false)}
               disabled={isLoggingIn}
               className="px-3 py-1 bg-white text-indigo-700 hover:bg-indigo-50 rounded-lg text-xs font-bold transition-colors cursor-pointer"
             >
@@ -2418,7 +2446,7 @@ export default function App() {
               isExpanded={isSidebarExpanded}
               onToggleExpand={toggleSidebar}
               user={user}
-              onSignIn={() => handleGoogleSignIn()}
+              onSignIn={() => handleGoogleSignIn(false)}
               onSignOut={handleLogout}
               onOpenSettings={() => setAccountSettingsOpen(true)}
               onOpenAppStore={() => setAppStoreOpen(true)}
@@ -2448,7 +2476,7 @@ export default function App() {
                 isExpanded={true}
                 onToggleExpand={()=>setMobileNavOpen(false)}
                 user={user}
-                onSignIn={() => handleGoogleSignIn()}
+                onSignIn={() => handleGoogleSignIn(false)}
                 onSignOut={handleLogout}
                 onOpenSettings={() => setAccountSettingsOpen(true)}
                 onOpenAppStore={() => setAppStoreOpen(true)}

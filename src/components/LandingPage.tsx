@@ -21,6 +21,7 @@ import { GoogleIcon } from './GoogleIcon';
 
 interface LandingPageProps {
   onSignIn: () => void;
+  onSignInWorkspace?: () => void;
   onExploreDemo: () => void;
   isLoggingIn: boolean;
   darkMode: boolean;
@@ -35,6 +36,7 @@ const TESTIMONIALS = [
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onSignIn,
+  onSignInWorkspace,
   onExploreDemo,
   isLoggingIn,
   darkMode,
@@ -139,6 +141,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span>Explore Live Demo Mode</span>
               </button>
             </div>
+
+            {onSignInWorkspace && (
+              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                Need immediate Calendar & Drive sync at login?{' '}
+                <button
+                  type="button"
+                  onClick={onSignInWorkspace}
+                  disabled={isLoggingIn}
+                  className="text-[#D97757] hover:underline font-semibold cursor-pointer underline-offset-2"
+                >
+                  Sign in with Google Workspace
+                </button>
+              </p>
+            )}
 
             {/* LCP hero image preload — dashboard screenshot */}
             <div className="mt-8 max-w-3xl mx-auto">
