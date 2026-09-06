@@ -53,7 +53,6 @@ const RELEASES: VersionRelease[] = [
     version: '2.4.2',
     date: 'September 05, 2026',
     title: 'Fixed: Google Sign-In That Would Not Finish',
-    badge: 'Latest Update',
     highlights: [
       'Sign-in failures now tell you exactly what went wrong and how to fix it — no more silent dead ends',
       'New redirect sign-in option for browsers that block popups — slower but almost always works',

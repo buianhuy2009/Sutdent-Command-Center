@@ -8,6 +8,8 @@ import { saveEvidence } from '../../services/evidence';
 type TabId = 'team' | 'dossier' | 'promptlog' | 'videos' | 'testing' | 'checklist';
 
 const STORE_KEY = 'scc_dossier_v1';
+// Sec 8 canonical draft key (Appendix B): new writes mirror here; legacy scc_dossier_v1 still read for backward compat.
+const DRAFT_KEY = 'scc_dossier_draft_v1';
 
 const SECTION_TITLES = [
   '1. Vấn đề cần giải quyết (Problem)',
@@ -33,7 +35,8 @@ const DEFAULT_SECTIONS = [
 
 function loadStore(): any {
   try {
-    const raw = localStorage.getItem(STORE_KEY);
+    // Prefer canonical draft key, fall back to legacy key so existing teams keep their work.
+    const raw = localStorage.getItem(DRAFT_KEY) || localStorage.getItem(STORE_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
   return {
@@ -63,7 +66,10 @@ export const CompetitionDossierWorkspace: React.FC = () => {
 
   const save = (next: any) => {
     setStore(next);
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(next)); } catch {}
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(next));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(next));
+    } catch {}
   };
   const set = (patch: any) => save({ ...store, ...patch });
 
@@ -243,7 +249,7 @@ export const CompetitionDossierWorkspace: React.FC = () => {
                 <span className="font-mono w-10 text-right">{store.honesty[k]}%</span>
               </label>
             ))}
-            <p className="text-[11px] text-[#6B6860]">List every tool, model, dataset, library, API. AI use is allowed if declared and you can explain, verify, edit and take responsibility.</p>
+            <p className="text-[11px] text-[#6B6860]">List every tool, model, dataset, library, API. AI use is allowed if declared and you can explain, verify, edit and take responsibility. Tổng phải = 100%{(() => { const s = (store.honesty.self || 0) + (store.honesty.ai || 0) + (store.honesty.oss || 0); return s !== 100 ? ` — hiện ${s}%, hãy chỉnh cho đủ 100%` : ' — đã đủ 100%.'; })()}</p>
           </div>
           <ul className="space-y-2 max-h-96 overflow-y-auto">
             {getPromptLogs().slice(0, 50).map(e => (

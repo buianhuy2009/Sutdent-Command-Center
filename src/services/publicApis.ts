@@ -165,11 +165,14 @@ export interface NasaApod {
   hdurl?: string;
   mediaType: string;
   copyright?: string;
+  thumbnailUrl?: string;
 }
 
 export const NASA_APOD_CACHE_KEY = 'scc_nasa_apod_cache';
 export const NASA_APOD_ENABLED_KEY = 'scc_enable_nasa_apod';
 export const NASA_APOD_TOGGLE_EVENT = 'scc:apod-toggle';
+// Sec 5.2 Step 3: last successful fetch timestamp (Appendix B new key, documented).
+export const APOD_LAST_FETCH_KEY = 'scc_apod_last_fetch';
 
 function getNasaApiKey(): string {
   try {
@@ -199,7 +202,10 @@ export function getApodCache(): { date: string; data: NasaApod } | null {
 }
 
 export function setApodCache(data: NasaApod): void {
-  try { localStorage.setItem(NASA_APOD_CACHE_KEY, JSON.stringify({ date: todayDateStr(), data })); } catch {}
+  try {
+    localStorage.setItem(NASA_APOD_CACHE_KEY, JSON.stringify({ date: todayDateStr(), data }));
+    localStorage.setItem(APOD_LAST_FETCH_KEY, new Date().toISOString());
+  } catch {}
 }
 
 export function clearApodCache(): void {
@@ -218,12 +224,13 @@ const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 /**
  * Robust APOD fetch v2: env-overridable key, 8s timeout, exponential backoff
- * (1s/2s/4s) on 429/5xx, supports video media_type, falls back to cached
+ * (1s/2s/4s) on 429/5xx, supports video media_type via thumbs=true, falls back to cached
  * yesterday image (handled by caller) — returns null only when all retries fail.
+ * DEMO_KEY rate-limits quickly; caller shows stale cache + Retry affordance.
  */
 export async function fetchNasaApodV2(): Promise<NasaApod | null> {
   const key = getNasaApiKey();
-  const url = `https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(key)}`;
+  const url = `https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(key)}&thumbs=true`;
   const delays = [0, 1000, 2000, 4000];
   let lastStatus = 0;
   for (let attempt = 0; attempt < delays.length; attempt++) {
@@ -241,6 +248,7 @@ export async function fetchNasaApodV2(): Promise<NasaApod | null> {
           hdurl: data.hdurl,
           mediaType: data.media_type || 'image',
           copyright: data.copyright,
+          thumbnailUrl: data.thumbnail_url,
         };
       }
       // Retry only on rate-limit / server errors; 4xx client errors (except 429) break early

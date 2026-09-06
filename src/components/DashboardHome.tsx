@@ -487,22 +487,22 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             <div className="flex items-center justify-between gap-2">
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6860]">NASA Image of the Day</h4>
               <div className="flex items-center gap-1 text-[10px] font-bold" role="group" aria-label="APOD display mode">
-                <button type="button" onClick={() => handleApodMode('card')} aria-pressed={apodMode === 'card'} className={`px-2 py-1 rounded-lg min-h-[32px] cursor-pointer ${apodMode === 'card' ? 'bg-[#D97757] text-white' : 'text-[#6B6860] hover:text-[#D97757]'}`}>Card</button>
-                <button type="button" onClick={() => handleApodMode('wallpaper')} aria-pressed={apodMode === 'wallpaper'} className={`px-2 py-1 rounded-lg min-h-[32px] cursor-pointer ${apodMode === 'wallpaper' ? 'bg-[#D97757] text-white' : 'text-[#6B6860] hover:text-[#D97757]'}`}>Wallpaper</button>
+                <button type="button" onClick={() => handleApodMode('card')} aria-pressed={apodMode === 'card'} className={`px-2 py-1 rounded-lg min-h-[44px] min-w-[44px] cursor-pointer ${apodMode === 'card' ? 'bg-[#D97757] text-white' : 'text-[#6B6860] hover:text-[#D97757]'}`}>Card</button>
+                <button type="button" onClick={() => handleApodMode('wallpaper')} aria-pressed={apodMode === 'wallpaper'} className={`px-2 py-1 rounded-lg min-h-[44px] min-w-[44px] cursor-pointer ${apodMode === 'wallpaper' ? 'bg-[#D97757] text-white' : 'text-[#6B6860] hover:text-[#D97757]'}`}>Wallpaper</button>
               </div>
             </div>
             {apodLoading && !nasaApod && (
-              <div className="animate-pulse space-y-2" aria-label="Loading NASA image">
+              <div className="animate-pulse space-y-2" role="status" aria-live="polite" aria-label="Loading NASA image">
                 <div className="h-40 bg-[#EFECE2] dark:bg-[#252422] rounded-xl" />
                 <div className="h-3 bg-[#EFECE2] dark:bg-[#252422] rounded w-2/3" />
                 <div className="h-3 bg-[#EFECE2] dark:bg-[#252422] rounded w-1/2" />
               </div>
             )}
             {apodError && !nasaApod && (
-              <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-950 via-[#1A1917] to-[#D97757]/20 border border-[#DFDACB] dark:border-[#2C2B27] text-xs space-y-2">
-                <p className="font-bold text-[#141413] dark:text-[#FAF9F5]">Couldn&apos;t reach NASA right now</p>
+              <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-950 via-[#1A1917] to-[#D97757]/20 border border-[#DFDACB] dark:border-[#2C2B27] text-xs space-y-2" role="status" aria-live="polite">
+                <p className="font-bold text-[#141413] dark:text-[#FAF9F5]">NASA giới hạn hoặc mất mạng. Đang hiện ảnh dự phòng — bấm Thử lại.</p>
                 <p className="text-[#6B6860]">{apodError}</p>
-                <button type="button" onClick={reloadApod} className="px-3 py-2 bg-[#D97757] text-white rounded-xl text-xs font-bold min-h-[44px] cursor-pointer">Retry</button>
+                <button type="button" onClick={reloadApod} className="px-3 py-2 bg-[#D97757] text-white rounded-xl text-xs font-bold min-h-[44px] cursor-pointer">Thử lại • Retry</button>
               </div>
             )}
             {nasaApod && (
@@ -513,8 +513,11 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                   )
                 ) : (
                   <div className="p-3 rounded-xl bg-indigo-950 text-white text-xs space-y-2">
-                    <p className="font-bold">Today&apos;s NASA pick is a video</p>
-                    <a href={nasaApod.url} target="_blank" rel="noreferrer" className="underline underline-offset-4 font-bold">Watch video on NASA</a>
+                    {nasaApod.thumbnailUrl && (
+                      <img src={nasaApod.thumbnailUrl} alt={nasaApod.title || 'NASA video thumbnail'} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="w-full max-h-72 object-cover rounded-xl border border-white/20" />
+                    )}
+                    <p className="font-bold">Hôm nay NASA chọn video — Today&apos;s NASA pick is a video</p>
+                    <a href={nasaApod.url} target="_blank" rel="noreferrer" className="underline underline-offset-4 font-bold inline-block min-h-[44px] py-2">Xem video trên NASA • Watch video on NASA</a>
                   </div>
                 )}
                 <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">{nasaApod.title} <span className="font-mono font-medium text-[10px] text-[#6B6860]">{nasaApod.date}</span></p>
@@ -532,7 +535,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                   <span>Image credit: NASA APOD{nasaApod.copyright ? ` • © ${nasaApod.copyright}` : ''}</span>
                   {nasaApod.hdurl && <a href={nasaApod.hdurl} target="_blank" rel="noreferrer" className="font-bold text-[#D97757] hover:underline underline-offset-4 shrink-0">Open HD</a>}
                 </div>
-                {apodError && <p className="text-[10px] text-amber-700">{apodError} <button type="button" onClick={reloadApod} className="font-bold underline underline-offset-4 cursor-pointer">Retry</button></p>}
+                {apodError && <p className="text-[10px] text-amber-700" role="status">NASA giới hạn hoặc mất mạng. Hiện ảnh cũ — bấm Thử lại. <button type="button" onClick={reloadApod} className="font-bold underline underline-offset-4 cursor-pointer min-h-[44px] px-2">Thử lại • Retry</button></p>}
               </div>
             )}
           </div>
@@ -542,7 +545,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
 
       {/* Bottom Section: Command Center Label */}
       <div className="text-[10px] text-[#8C897F] font-mono select-none uppercase tracking-wider shrink-0">
-        Student Command Center • Version 2.3.1
+        Student Command Center • Version 2.4.2
       </div>
 
     </div>

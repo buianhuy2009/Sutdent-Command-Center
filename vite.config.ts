@@ -49,7 +49,8 @@ export default defineConfig(() => {
           { urlPattern: /^https:\/\/gmail\.googleapis\.com\/.*/i, handler: 'NetworkFirst', options: { cacheName: 'gmail-api', networkTimeoutSeconds: 8, expiration: { maxEntries: 50, maxAgeSeconds: 300 } } },
           { urlPattern: /^https:\/\/www\.googleapis\.com\/drive\/.*/i, handler: 'NetworkFirst', options: { cacheName: 'drive-api', networkTimeoutSeconds: 8, expiration: { maxEntries: 50, maxAgeSeconds: 300 } } },
           { urlPattern: /^https:\/\/export\.arxiv\.org\/.*/i, handler: 'StaleWhileRevalidate', options: { cacheName: 'arxiv-cache', expiration: { maxEntries: 50, maxAgeSeconds: 86400 } } },
-          { urlPattern: /^https:\/\/openlibrary\.org\/.*/i, handler: 'StaleWhileRevalidate', options: { cacheName: 'openlib-cache', expiration: { maxEntries: 50, maxAgeSeconds: 86400 } } }
+          { urlPattern: /^https:\/\/openlibrary\.org\/.*/i, handler: 'StaleWhileRevalidate', options: { cacheName: 'openlib-cache', expiration: { maxEntries: 50, maxAgeSeconds: 86400 } } },
+          { urlPattern: /^https:\/\/api\.nasa\.gov\/.*/i, handler: 'StaleWhileRevalidate', options: { cacheName: 'nasa-apod-cache', expiration: { maxEntries: 20, maxAgeSeconds: 86400 } } }
         ]
       }
     })],

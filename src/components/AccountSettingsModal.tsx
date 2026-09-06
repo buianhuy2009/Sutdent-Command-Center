@@ -50,7 +50,7 @@ import {
 } from '../services/gemini';
 import { setTheme } from '../services/theme';
 import { setNasaApodEnabled } from '../hooks/useNasaApod';
-import { fetchNasaApodV2, NASA_APOD_CACHE_KEY } from '../services/publicApis';
+import { fetchNasaApodV2, NASA_APOD_CACHE_KEY, NASA_APOD_TOGGLE_EVENT } from '../services/publicApis';
 
 export interface ShortcutSettings {
   masterEnabled: boolean;
@@ -174,6 +174,23 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   });
   const [nasaTestState, setNasaTestState] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
   const [nasaPreview, setNasaPreview] = useState<{ title: string; url: string; mediaType: string } | null>(null);
+  const [apodModeSetting, setApodModeSetting] = useState<'card' | 'wallpaper'>(() => {
+    try { return (localStorage.getItem('scc_nasa_apod_mode') as 'card' | 'wallpaper') || 'card'; } catch { return 'card'; }
+  });
+  const handleApodModeSetting = (m: 'card' | 'wallpaper') => {
+    setApodModeSetting(m);
+    try { localStorage.setItem('scc_nasa_apod_mode', m); } catch {}
+    try { window.dispatchEvent(new CustomEvent(NASA_APOD_TOGGLE_EVENT, { detail: { mode: m } })); } catch {}
+  };
+  // Sec 5.2 Step 4: Clear cache + reset preview + notify Home instantly so it clears without reload.
+  const handleClearNasaCache = () => {
+    try { localStorage.removeItem(NASA_APOD_CACHE_KEY); } catch {}
+    try { localStorage.removeItem('scc_apod_last_fetch'); } catch {}
+    setNasaPreview(null);
+    setNasaTestState('idle');
+    try { window.dispatchEvent(new CustomEvent(NASA_APOD_TOGGLE_EVENT, { detail: { cleared: true } })); } catch {}
+    try { window.dispatchEvent(new Event('storage')); } catch {}
+  };
   const [showSemesterResetModal, setShowSemesterResetModal] = useState(false);
 
   const handleSelectAvatar = (url: string) => {
@@ -936,31 +953,44 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                   <div className="flex items-center justify-between gap-2">
                   <div>
                     <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                      NASA Astronomy Picture of the Day
+                      Ảnh thiên văn NASA mỗi ngày (APOD)
                     </div>
                     <div className="text-[11px] text-[#8C897F]">
-                      Display the daily deep-space astrophotography wallpaper on your Home Dashboard.
+                      Xem ảnh vũ trụ kèm giải thích. Cần mạng. Giới hạn miễn phí. • Display the daily deep-space photo on Home.
                     </div>
+                    <div className="text-[10px] text-[#8C897F]">Ảnh: NASA APOD</div>
                   </div>
                   <input
                     type="checkbox"
                     checked={enableNasaApod}
                     onChange={(e) => handleToggleNasaApod(e.target.checked)}
-                    aria-label="Toggle NASA Astronomy Picture of the Day"
-                    className="w-4 h-4 rounded text-[#D97757] focus:ring-[#D97757] cursor-pointer"
+                    aria-label="Ảnh thiên văn NASA mỗi ngày (APOD) — Toggle NASA Astronomy Picture of the Day"
+                    className="w-6 h-6 min-w-[44px] min-h-[44px] rounded text-[#D97757] focus:ring-[#D97757] cursor-pointer"
                   />
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
                       onClick={handleTestNasa}
                       disabled={nasaTestState === 'testing'}
                       className="px-3 py-2 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[11px] font-bold text-[#141413] dark:text-[#FAF9F5] hover:border-[#D97757] min-h-[44px] cursor-pointer disabled:opacity-60"
                     >
-                      {nasaTestState === 'testing' ? 'Testing…' : 'Test NASA connection'}
+                      {nasaTestState === 'testing' ? 'Đang kiểm tra…' : 'Kiểm tra kết nối • Test'}
                     </button>
-                    {nasaTestState === 'ok' && <span className="text-[11px] font-bold text-emerald-600" role="status">Connected — image loads.</span>}
-                    {nasaTestState === 'fail' && <span className="text-[11px] font-bold text-rose-600" role="status">Rate-limited or offline — cached image will show.</span>}
+                    <button
+                      type="button"
+                      onClick={handleClearNasaCache}
+                      className="px-3 py-2 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[11px] font-bold text-[#141413] dark:text-[#FAF9F5] hover:border-[#D97757] min-h-[44px] cursor-pointer"
+                    >
+                      Xóa ảnh đã lưu • Clear cache
+                    </button>
+                    {nasaTestState === 'ok' && <span className="text-[11px] font-bold text-emerald-600" role="status">Đã kết nối — ảnh tải được. • Connected.</span>}
+                    {nasaTestState === 'fail' && <span className="text-[11px] font-bold text-rose-600" role="status">NASA giới hạn hoặc mất mạng. Hiện ảnh cũ — bấm Thử lại.</span>}
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] font-bold" role="group" aria-label="APOD display mode">
+                    <span className="text-[#8C897F] font-medium">Hiển thị:</span>
+                    <button type="button" onClick={() => handleApodModeSetting('card')} aria-pressed={apodModeSetting === 'card'} className={`px-3 py-2 rounded-xl min-h-[44px] cursor-pointer ${apodModeSetting === 'card' ? 'bg-[#D97757] text-white' : 'bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27]'}`}>Thẻ • Card</button>
+                    <button type="button" onClick={() => handleApodModeSetting('wallpaper')} aria-pressed={apodModeSetting === 'wallpaper'} className={`px-3 py-2 rounded-xl min-h-[44px] cursor-pointer ${apodModeSetting === 'wallpaper' ? 'bg-[#D97757] text-white' : 'bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27]'}`}>Nền • Wallpaper</button>
                   </div>
                   {enableNasaApod && nasaPreview && nasaPreview.mediaType === 'image' && (
                     <img src={nasaPreview.url} alt={nasaPreview.title || 'NASA preview'} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="w-full h-24 object-cover rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]" />

@@ -227,6 +227,11 @@ export const ModelTrainingWorkspace: React.FC = () => {
         <p className="text-xs text-[#6B6860]">Train a <strong>tiny</strong> classifier in your browser. No server, photos stay on your device.</p>
       </div>
       <WhyChip text="Judges want to see you describe Input → AI processing → Output and show test iterations. This lab produces both." />
+      <p className="text-[11px] leading-relaxed text-[#6B6860]">Mô hình nhỏ luyện trên máy (không phải LLM lớn như Gemini). Máy học bằng ví dụ — càng nhiều ảnh đúng, máy đoán càng giỏi. Dữ liệu đầu vào → AI xử lý → Kết quả đầu ra.</p>
+      <label className="flex items-start gap-2 text-[11px] font-medium text-[#6B6860] bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl p-3 cursor-pointer">
+        <input type="checkbox" required aria-label="Consent to use my photos for tiny-model training" className="w-5 h-5 mt-0.5 accent-[#D97757] shrink-0" />
+        <span>Tôi đồng ý dùng ảnh của mình để luyện mô hình nhỏ này. Không tải lên ảnh của bạn khác khi chưa được đồng ý.</span>
+      </label>
       <InputAIOutput input="Your examples (texts / photos)" process="Tiny local model learns patterns" output="Prediction + confidence %" />
 
       <div className="flex gap-2 flex-wrap" role="tablist" aria-label="Project type">

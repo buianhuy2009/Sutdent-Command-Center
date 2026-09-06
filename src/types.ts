@@ -410,7 +410,10 @@ export type AgentAction =
   | { type: 'explainCanvasFeedback'; payload: { courseName: string; feedback: string } }
   // Division A safe additions (student-approved previews only — never auto-delete/submit/send)
   | { type: 'createStudyFlashcardsPreview'; payload: { topic: string; count?: number } }
-  | { type: 'draftPresentationOutline'; payload: { topic: string; minutes?: 5 | 10 } };
+  | { type: 'draftPresentationOutline'; payload: { topic: string; minutes?: 5 | 10 } }
+  // Division A Track 4 (Sec 6.4, collab.tsx previews): reversible dossier helpers — src/types.ts:414-415
+  | { type: 'createTestingChecklist'; payload: { feature: string } }
+  | { type: 'draftPromptLogSummary'; payload: { feature: string } };
 
 export interface MathDebugResult {
   fullLatex: string[];
