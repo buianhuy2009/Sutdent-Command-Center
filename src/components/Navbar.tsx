@@ -78,6 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex items-center justify-center flex-1 max-w-md px-4">
         <button
           onClick={onOpenCommandPalette}
+          aria-label="Search or jump to command palette"
           className="w-full bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]/30 rounded-xl py-1.5 px-3 text-xs flex items-center justify-between text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-2">
@@ -97,6 +98,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             id="btn-nav-google-sync"
             onClick={onOpenGoogleSync}
+            aria-label="Google Workspace Sync Hub"
             className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
               isGoogleConnected
                 ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:border-emerald-400'
@@ -112,6 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           id="btn-nav-ai-coach"
           onClick={onToggleAiChat}
+          aria-label="AI Study Coach"
           className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
             isAiChatOpen
               ? 'bg-[#D97757] border-[#D97757] text-white shadow-xs'
