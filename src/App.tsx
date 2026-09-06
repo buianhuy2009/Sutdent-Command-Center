@@ -2558,6 +2558,7 @@ export default function App() {
           darkMode={darkMode}
           setDarkMode={applyDarkMode}
         />
+        {oauthGuideModalOpen && (
         <OAuthGuideModal
           isOpen={oauthGuideModalOpen}
           onClose={() => { setOauthGuideModalOpen(false); setOauthDiagnosis(null); }}
@@ -2570,6 +2571,7 @@ export default function App() {
           onRunDiagnostics={diagnoseSignInEnvironment}
           onRedirectSignIn={() => handleRedirectSignIn(true)}
         />
+        )}
         <ToastContainer
           toasts={toasts}
           onDismiss={dismissToast}
@@ -3242,7 +3244,8 @@ export default function App() {
         </div>
       </div>
 
-      {/* Unified 2-Column Account & Settings Modal — lazy wrapped in Suspense */}
+      {/* Unified 2-Column Account & Settings Modal — gated so its chunk only loads when opened */}
+      {accountSettingsOpen && (
       <Suspense fallback={null}>
       <AccountSettingsModal
         isOpen={accountSettingsOpen}
@@ -3273,8 +3276,11 @@ export default function App() {
         onInstallPwa={handleInstallPwa}
         onDismissPwa={handleDismissPwa}
       />
-
-      {/* Quick Draft Modal */}
+      </Suspense>
+      )}
+      {/* Remaining lazy modals share one Suspense (closed at the end of the stack) */}
+      <Suspense fallback={null}>
+      {/* Quick Draft Modal — intentionally always mounted to preserve in-progress drafts */}
       <QuickDraftModal
         isOpen={quickDraftModalOpen}
         onClose={() => {
@@ -3290,7 +3296,8 @@ export default function App() {
         recentFiles={recentFiles}
       />
 
-      {/* Schedule Study Session Modal */}
+      {/* Schedule Study Session Modal — gated so its chunk only loads when opened */}
+      {scheduleModalOpen && (
       <ScheduleStudyModal
         isOpen={scheduleModalOpen}
         onClose={() => {
@@ -3303,6 +3310,7 @@ export default function App() {
         onSchedule={handleScheduleStudyBlock}
         isScheduling={isScheduling}
       />
+      )}
 
       {/* Google Workspace Sync Hub Modal */}
       {googleSyncHubOpen && (
@@ -3337,13 +3345,16 @@ export default function App() {
         </Suspense>
       )}
 
-      {/* Global Confirmation Modal */}
+      {/* Global Confirmation Modal — gated so its chunk only loads when opened */}
+      {confirmationModal.isOpen && (
       <ConfirmationModal
         modal={confirmationModal}
         onClose={() => setConfirmationModal((prev) => ({ ...prev, isOpen: false }))}
       />
+      )}
 
-      {/* Command Palette */}
+      {/* Command Palette — gated so its chunk only loads when opened */}
+      {commandPaletteOpen && (
       <CommandPalette
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
@@ -3361,20 +3372,26 @@ export default function App() {
         assignments={assignments}
         sheetUrl={masterSheetUrl}
       />
+      )}
 
-      {/* Keyboard Shortcuts Cheat-sheet Modal */}
+      {/* Keyboard Shortcuts Cheat-sheet Modal — gated so its chunk only loads when opened */}
+      {shortcutsModalOpen && (
       <ShortcutsModal
         isOpen={shortcutsModalOpen}
         onClose={() => setShortcutsModalOpen(false)}
       />
+      )}
 
-      {/* Vercel Deployment & Integrations Guide Modal */}
+      {/* Vercel Deployment & Integrations Guide Modal — gated so its chunk only loads when opened */}
+      {deploymentModalOpen && (
       <DeploymentModal
         isOpen={deploymentModalOpen}
         onClose={() => setDeploymentModalOpen(false)}
       />
+      )}
 
-      {/* Google OAuth & Test Users Setup Guide Modal */}
+      {/* Google OAuth & Test Users Setup Guide Modal — gated so its chunk only loads when opened */}
+      {oauthGuideModalOpen && (
       <OAuthGuideModal
         isOpen={oauthGuideModalOpen}
         onClose={() => { setOauthGuideModalOpen(false); setOauthDiagnosis(null); }}
@@ -3387,8 +3404,10 @@ export default function App() {
         onRunDiagnostics={diagnoseSignInEnvironment}
         onRedirectSignIn={() => handleRedirectSignIn(true)}
       />
+      )}
 
-      {/* Google Cloud API Enablement Modal */}
+      {/* Google Cloud API Enablement Modal — gated so its chunk only loads when opened */}
+      {apiActivationModalOpen && (
       <ApiActivationModal
         isOpen={apiActivationModalOpen}
         onClose={() => setApiActivationModalOpen(false)}
@@ -3398,6 +3417,7 @@ export default function App() {
           handleRefreshAll();
         }}
       />
+      )}
 
       {/* App Store & Tool Catalog Modal */}
       <AppStoreModal
@@ -3408,7 +3428,8 @@ export default function App() {
         onTogglePinApp={handleTogglePinApp}
       />
 
-      {/* AI Academic Suite Modal (Planner, Quiz, Syllabus, Grades) */}
+      {/* AI Academic Suite Modal (Planner, Quiz, Syllabus, Grades) — gated so its chunk only loads when opened */}
+      {aiSuiteOpen && (
       <AiAcademicSuiteModal
         isOpen={aiSuiteOpen}
         onClose={() => setAiSuiteOpen(false)}
@@ -3427,12 +3448,15 @@ export default function App() {
         }}
         defaultTab={aiSuiteTab}
       />
+      )}
 
-      {/* Persistent Gemini & Groq AI Settings Modal */}
+      {/* Persistent Gemini & Groq AI Settings Modal — gated so its chunk only loads when opened */}
+      {geminiSettingsOpen && (
       <GeminiSettingsModal
         isOpen={geminiSettingsOpen}
         onClose={() => setGeminiSettingsOpen(false)}
       />
+      )}
 
       {/* Declarative Native <dialog> Onboarding Tour */}
       <dialog
@@ -3504,44 +3528,55 @@ export default function App() {
         </div>
       </dialog>
 
-      {/* Wikipedia Quick Look Modal */}
+      {/* Wikipedia Quick Look Modal — gated so its chunk only loads when opened */}
+      {isWikipediaModalOpen && (
       <WikipediaLookupModal
         isOpen={isWikipediaModalOpen}
         onClose={() => setIsWikipediaModalOpen(false)}
         initialQuery={wikipediaInitialQuery}
       />
+      )}
 
-      {/* Study Card Modal */}
+      {/* Study Card Modal — gated so its chunk only loads when opened */}
+      {isStudyCardOpen && (
       <StudyCardModal
         isOpen={isStudyCardOpen}
         onClose={() => setIsStudyCardOpen(false)}
         userName={user?.displayName || 'Student'}
         completedTasksCount={assignments.filter((a) => a.status === 'Done').length}
       />
+      )}
 
-      {/* 1-Page Academic Portfolio Export Modal */}
+      {/* 1-Page Academic Portfolio Export Modal — gated so its chunk only loads when opened */}
+      {isPortfolioExportOpen && (
       <PortfolioExportModal
         isOpen={isPortfolioExportOpen}
         onClose={() => setIsPortfolioExportOpen(false)}
         userName={user?.displayName || 'Student'}
         completedAssignments={assignments.filter((a) => a.status === 'Done')}
       />
+      )}
 
-      {/* Daily Morning Check-in Modal */}
+      {/* Daily Morning Check-in Modal — gated so its chunk only loads when opened */}
+      {isMorningCheckInOpen && (
       <MorningCheckInModal
         isOpen={isMorningCheckInOpen}
         onClose={() => setIsMorningCheckInOpen(false)}
         userName={user?.displayName || 'Student'}
         onSaveIntention={handleSaveMorningIntention}
       />
+      )}
 
-      {/* Changelog Releases Modal */}
+      {/* Changelog Releases Modal — gated so its chunk only loads when opened */}
+      {isChangelogOpen && (
       <ChangelogModal
         isOpen={isChangelogOpen}
         onClose={() => setIsChangelogOpen(false)}
       />
+      )}
 
-      {/* AI Daily Study Plan Generator Modal */}
+      {/* AI Daily Study Plan Generator Modal — gated so its chunk only loads when opened */}
+      {isStudyPlanOpen && (
       <StudyPlanGeneratorModal
         isOpen={isStudyPlanOpen}
         onClose={() => setIsStudyPlanOpen(false)}
@@ -3552,12 +3587,15 @@ export default function App() {
           setZenFocusMode(true);
         }}
       />
+      )}
 
-      {/* Interactive Step-by-Step Introduction Tour Modal */}
+      {/* Interactive Step-by-Step Introduction Tour Modal — gated so its chunk only loads when opened */}
+      {isIntroTourOpen && (
       <InteractiveIntroModal
         isOpen={isIntroTourOpen}
         onClose={() => setIsIntroTourOpen(false)}
       />
+      )}
 
       </Suspense>
 
