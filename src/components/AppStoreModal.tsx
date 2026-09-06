@@ -737,8 +737,10 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
                   <p className="text-xs text-[#8C897F]">
                     {viewingApp.developer} • {viewingApp.category}
                   </p>
-                  <div className="flex items-center gap-1 text-xs font-bold text-[#6B6860] pt-0.5">
-                    <span className="text-[11px] font-medium flex items-center gap-1"><Star className="w-3 h-3 text-amber-500" /> GitHub stars • Open Source • MIT</span>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#6B6860] pt-0.5">
+                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                    <span className="text-[#141413] dark:text-[#FAF9F5]">{viewingApp.rating.toFixed(1)}</span>
+                    <span className="text-[11px] font-medium">• {viewingApp.category} • {viewingApp.developer}</span>
                   </div>
                 </div>
               </div>
@@ -993,64 +995,67 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
       <div
         key={app.id}
         onClick={() => setViewingApp(app)}
-        style={{ contentVisibility: 'auto' as any, containIntrinsicSize: '220px' } as any}
-        className={`bg-white dark:bg-[#1A1917] rounded-2xl border p-5 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group space-y-4 ${
+        style={{ contentVisibility: 'auto' as any, containIntrinsicSize: '96px' } as any}
+        className={`bg-white dark:bg-[#1A1917] rounded-2xl border p-3.5 shadow-xs hover:shadow-md transition-all cursor-pointer group flex items-center gap-3.5 ${
           isHighlighted
             ? 'border-[#D97757]/40 hover:border-[#D97757]'
             : 'border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]/60'
         }`}
       >
-        <div className="space-y-3">
-          {/* Top Row: App Logo & Badges */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <AppLogo id={app.id} size="md" />
-              <div>
-                <h3 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] group-hover:text-[#D97757] transition-colors leading-tight">
-                  {app.name}
-                </h3>
-                <span className="text-[10px] text-[#8C897F] font-semibold">
-                  {app.category}
-                </span>
-              </div>
-            </div>
+        {/* Store-style icon */}
+        <AppLogo id={app.id} size="md" className="shrink-0" />
 
+        {/* Store-style middle: name / subtitle / rating */}
+        <div className="flex-1 min-w-0 text-left">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h3 className="text-[13px] font-bold text-[#141413] dark:text-[#FAF9F5] group-hover:text-[#D97757] transition-colors truncate leading-tight">
+              {app.name}
+            </h3>
             {app.badge && (
-              <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-[#D97757]/15 text-[#D97757] shrink-0">
+              <span className="px-1.5 py-px rounded-md text-[9px] font-bold bg-[#D97757]/15 text-[#D97757] shrink-0 whitespace-nowrap">
                 {app.badge}
               </span>
             )}
           </div>
-
-          {/* Simple, Short, Demonstrative Description */}
-          <p className="text-xs text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed line-clamp-2">
-            {app.description}
+          <p className="text-[11px] text-[#8C897F] truncate mt-0.5">
+            {app.category} • {app.developer}
           </p>
+          <div className="flex items-center gap-1 mt-1">
+            <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+            <span className="text-[11px] font-bold text-[#141413] dark:text-[#FAF9F5]">{app.rating.toFixed(1)}</span>
+            <span className="text-[11px] text-[#8C897F] truncate">— {app.description}</span>
+          </div>
         </div>
 
-        {/* Card Action Row */}
-        <div className="pt-3 border-t border-[#DFDACB]/40 dark:border-[#2C2B27]/40 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
+        {/* Store-style GET / OPEN pill */}
+        <div className="flex flex-col items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+          {isPinned ? (
+            <button
+              onClick={() => {
+                onLaunchApp(app.id);
+                onClose();
+              }}
+              className="px-5 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-full text-xs font-extrabold tracking-wide transition-all shadow-xs cursor-pointer min-w-[72px]"
+            >
+              OPEN
+            </button>
+          ) : (
+            <button
+              onClick={() => onTogglePinApp(app.id)}
+              className="px-5 py-1.5 bg-[#D97757]/15 hover:bg-[#D97757]/25 text-[#D97757] rounded-full text-xs font-extrabold tracking-wide transition-all cursor-pointer min-w-[72px]"
+            >
+              GET
+            </button>
+          )}
           <button
-            onClick={() => onTogglePinApp(app.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 border ${
-              isPinned
-                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
-                : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]'
-            }`}
+            onClick={() => (isPinned ? (onLaunchApp(app.id), onClose()) : onTogglePinApp(app.id))}
+            className="text-[10px] font-semibold text-[#8C897F] hover:text-[#D97757] transition-colors cursor-pointer flex items-center gap-0.5"
           >
-            {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
-            <span>{isPinned ? 'Installed' : 'Install'}</span>
-          </button>
-
-          <button
-            onClick={() => {
-              onLaunchApp(app.id);
-              onClose();
-            }}
-            className="px-3.5 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1"
-          >
-            <span>Open</span>
-            <ExternalLink className="w-3 h-3" />
+            {isPinned ? (
+              <><CheckCircle2 className="w-3 h-3 text-emerald-600" /> Installed</>
+            ) : (
+              <><Pin className="w-3 h-3" /> Install</>
+            )}
           </button>
         </div>
       </div>

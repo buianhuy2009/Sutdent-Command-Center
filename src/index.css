@@ -156,9 +156,12 @@ html.dark {
   }
 }
 
-/* WCAG contrast fix: globally map legacy #8C897F to AA compliant #6B6860 */
-.text-\[\#8C897F\] { color: rgb(var(--color-muted)) !important; }
-.text-slate-500 { color: rgb(var(--color-muted)) !important; }
+/* WCAG contrast fix: map legacy #8C897F to AA compliant muted (dark-aware var).
+   Layered without !important so explicit dark:text-* utilities still win. */
+@layer base {
+  .text-\[\#8C897F\] { color: rgb(var(--color-muted)); }
+  .text-slate-500 { color: rgb(var(--color-muted)); }
+}
 
 /* Native View Transitions API Styling */
 ::view-transition-old(root),
@@ -475,19 +478,28 @@ html[data-dyslexia="opendyslexic"] p, html[data-dyslexia="atkinson"] p { max-wid
 /* Container queries applied helpers */
 .cq-card { container-type: inline-size; }
 
-/* One-off hex kill-switch: scattered Tailwind arbitrary hexes resolve to tokens.
-   Sidebar.tsx / Navbar.tsx / LandingPage.tsx keep working, but colors come from ONE place.
-   New code: use var(--bg), var(--surface), var(--border), var(--terracotta), var(--stone) directly. */
-.bg-\[\#FAF9F5\] { background-color: var(--linen) !important; }
-.bg-\[\#EFECE2\] { background-color: var(--linen-deep) !important; }
-.bg-\[\#D97757\] { background-color: var(--terracotta) !important; }
-.text-\[\#D97757\] { color: var(--accent-text) !important; }
-.text-\[\#6B6860\] { color: var(--stone) !important; }
-.border-\[\#DFDACB\] { border-color: var(--line) !important; }
-.hover\:bg-\[\#C86646\]:hover { background-color: var(--terracotta-dark) !important; }
-.hover\:bg-\[\#EFECE2\]:hover { background-color: var(--linen-deep) !important; }
-.focus\:ring-\[\#D97757\]:focus { --tw-ring-color: var(--terracotta) !important; }
-.border-\[\#D97757\] { border-color: var(--terracotta) !important; }
+/* Token aliases — layered (no !important) so Tailwind `dark:` variants always win.
+   Root cause of mixed dark mode was unlayered `!important` forcing #FAF9F5/#EFECE2
+   even when `.dark` was active. Now: light maps to linen, dark falls back to
+   warm charcoal panel unless a `dark:bg-*` utility overrides (utilities beat base). */
+@layer base {
+  .bg-\[\#FAF9F5\] { background-color: var(--linen); }
+  html.dark .bg-\[\#FAF9F5\] { background-color: #1A1917; }
+  .bg-\[\#EFECE2\] { background-color: var(--linen-deep); }
+  html.dark .bg-\[\#EFECE2\] { background-color: #1A1917; }
+  .bg-\[\#D97757\] { background-color: var(--terracotta); }
+  .text-\[\#D97757\] { color: var(--accent-text); }
+  html.dark .text-\[\#D97757\] { color: #E8A07E; }
+  .text-\[\#6B6860\] { color: var(--stone); }
+  html.dark .text-\[\#6B6860\] { color: #B5B2A8; }
+  .border-\[\#DFDACB\] { border-color: var(--line); }
+  html.dark .border-\[\#DFDACB\] { border-color: #2C2B27; }
+  .hover\:bg-\[\#C86646\]:hover { background-color: var(--terracotta-dark); }
+  .hover\:bg-\[\#EFECE2\]:hover { background-color: var(--linen-deep); }
+  html.dark .hover\:bg-\[\#EFECE2\]:hover { background-color: #252422; }
+  .focus\:ring-\[\#D97757\]:focus { --tw-ring-color: var(--terracotta); }
+  .border-\[\#D97757\] { border-color: var(--terracotta); }
+}
 
 /* iOS input zoom prevention — only on mobile and only when NOT compact + touch-action */
 @media (max-width: 768px) {

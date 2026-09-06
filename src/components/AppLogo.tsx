@@ -70,12 +70,13 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
   }[size];
 
   // Cohesive icon system: identical shape + border + shadow for every app.
-  // Light: white tile + warm border. Dark: #252422 tile + #2C2B27 border.
-  // Gradient tiles keep brand color but gain the same border + shadow so
-  // Drive/Gmail/Classroom no longer look pasted-on.
+  // Brand tiles (Drive/Gmail/Python/Notion) stay crisp white in BOTH modes —
+  // like iOS: authentic Google artwork never goes muddy-black on dark cards.
+  // Gradient tiles keep brand color with the same border width + shadow so
+  // everything reads as one set.
   const tileBase = 'flex items-center justify-center shrink-0 border shadow-sm';
-  const tileLight = 'bg-white dark:bg-[#252422] border-[#E3DDCC] dark:border-[#2C2B27]';
-  const tileGradientBorder = 'border-black/10 dark:border-white/10 shadow-sm';
+  const tileLight = 'bg-white border-[#E3DDCC]';
+  const tileGradientBorder = 'border-black/10 shadow-sm';
 
   switch (id) {
     // 1. Google Drive — official triangle on unified tile
@@ -94,17 +95,17 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
         </div>
       );
 
-    // 2. Gmail — clean official M envelope on unified tile
+    // 2. Gmail — bold flat envelope, readable at 16px (brand colors, no muddy overlaps)
     case 'gmail':
     case 'google-mail':
       return (
         <div aria-label="Gmail" className={`${sizeClasses} ${tileBase} ${tileLight} ${className}`}>
           <svg className={iconSizes} viewBox="0 0 24 24" aria-hidden="true">
-            <path fill="#4285F4" d="M23.5 18.19a1.5 1.5 0 0 1-1.5 1.5H2a1.5 1.5 0 0 1-1.5-1.5V7.06L12 15.5l11.5-8.44v11.13Z" />
-            <path fill="#EA4335" d="M12 13.31 1.13 5.27c-.4-.3-.63-.77-.63-1.27 0-1 .81-1.81 1.81-1.81h19.38c1 0 1.81.81 1.81 1.81 0 .5-.23.97-.63 1.27L12 13.31Z" />
-            <path fill="#FBBC05" d="M2.31 2.19 12 9.44l9.69-7.25c.35-.26.82-.22 1.12.1.3.32.3.82-.02 1.12L12.7 13.06a.75.75 0 0 1-1.02.06L1.24 3.47a.75.75 0 0 1 .07-1.06c.26-.22.68-.3 1-.22Z" opacity=".35" />
-            <path fill="#34A853" d="M21.5 6.5h1a1 1 0 0 1 1 1v10.69a1.5 1.5 0 0 1-1.5 1.5h-1.35V8.1l.85-.62v-.98Z" opacity=".9" />
-            <path fill="#188038" d="M2.5 6.5h-1a1 1 0 0 0-1 1v10.69A1.5 1.5 0 0 0 2 19.69h1.35V8.1l-.85-.62v-.98Z" opacity=".55" />
+            <rect x="2" y="4.5" width="20" height="15" rx="2.5" fill="#4285F4" />
+            <path d="M2.8 6.2 12 13l9.2-6.8c-.2-.9-1-1.7-2-1.7H4.8c-1 0-1.8.8-2 1.7z" fill="#EA4335" />
+            <path d="M2.8 6.2 12 13l9.2-6.8" stroke="#fff" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M18.5 9.5v7.2l3.5 1.6V8.1l-3.5 1.4z" fill="#34A853" />
+            <path d="M5.5 9.5v7.2L2 18.3V8.1l3.5 1.4z" fill="#188038" opacity=".8" />
           </svg>
         </div>
       );
@@ -113,7 +114,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'classroom':
     case 'google-classroom':
       return (
-        <div aria-label="Google Classroom" className={`${sizeClasses} ${tileBase} bg-[#137333] border-[#0E5A28] dark:border-[#2C2B27] ${className}`}>
+        <div aria-label="Google Classroom" className={`${sizeClasses} ${tileBase} bg-[#137333] border-[#0E5A28] ${className}`}>
           <svg className={iconSizes} viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="8.5" r="2.2" fill="#FFFFFF" />
             <path d="M8 15c0-2.2 1.8-4 4-4s4 1.8 4 4H8z" fill="#FFFFFF" />
@@ -146,7 +147,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 5. Moodle LMS — Authentic Orange Mortarboard Cap + 'm'
     case 'moodle':
       return (
-        <div aria-label="Moodle LMS" className={`${sizeClasses} bg-gradient-to-br from-[#F98012] to-[#E06000] text-white flex flex-col items-center justify-center font-bold shadow-md shadow-orange-500/20 shrink-0 relative ${className}`}>
+        <div aria-label="Moodle LMS" className={`${sizeClasses} ${tileBase} ${tileGradientBorder} bg-gradient-to-br from-[#F98012] to-[#E06000] text-white flex-col font-bold relative ${className}`}>
           <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z" />
             <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" opacity="0.8" />
@@ -158,7 +159,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 6. Google NotebookLM — Stylized Dark Notebook + Gemini Star
     case 'notebooklm':
       return (
-        <div aria-label="Google NotebookLM" className={`${sizeClasses} bg-gradient-to-br from-[#1E1B2E] via-[#2A2542] to-[#161426] border border-violet-500/30 text-white flex items-center justify-center font-bold shadow-md shadow-violet-500/20 shrink-0 ${className}`}>
+        <div aria-label="Google NotebookLM" className={`${sizeClasses} bg-gradient-to-br from-[#1E1B2E] via-[#2A2542] to-[#161426] border border-violet-500/30 text-white flex items-center justify-center font-bold shadow-sm shadow-violet-500/20 shrink-0 ${className}`}>
           <svg className={iconSizes} viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <rect x="4" y="3" width="16" height="18" rx="2.5" stroke="#A78BFA" strokeWidth="1.8" />
             <line x1="8" y1="3" x2="8" y2="21" stroke="#A78BFA" strokeWidth="1.5" strokeDasharray="2 2" />
@@ -170,7 +171,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 7. Canva — Authentic Turquoise Gradient with script 'C'
     case 'canva':
       return (
-        <div aria-label="Canva" className={`${sizeClasses} bg-gradient-to-br from-[#00C4CC] via-[#5C52E5] to-[#7D2AE8] text-white flex items-center justify-center font-bold shadow-md shadow-cyan-500/20 shrink-0 ${className}`}>
+        <div aria-label="Canva" className={`${sizeClasses} bg-gradient-to-br from-[#00C4CC] via-[#5C52E5] to-[#7D2AE8] text-white flex items-center justify-center font-bold shadow-sm shadow-cyan-500/20 shrink-0 ${className}`}>
           <span className="font-serif italic font-black text-lg select-none leading-none">C</span>
         </div>
       );
@@ -178,7 +179,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 8. Desmos 2D Graphing — Authentic Desmos Green with 'd'
     case 'desmos-graphing':
       return (
-        <div aria-label="Desmos Graphing" className={`${sizeClasses} bg-[#0b864a] text-white flex items-center justify-center font-bold shadow-md shadow-emerald-700/20 shrink-0 ${className}`}>
+        <div aria-label="Desmos Graphing" className={`${sizeClasses} bg-[#0b864a] text-white flex items-center justify-center font-bold shadow-sm shadow-emerald-700/20 shrink-0 ${className}`}>
           <span className="font-serif italic font-black text-lg lowercase select-none leading-none">d</span>
         </div>
       );
@@ -186,7 +187,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 9. Desmos Scientific Calculator
     case 'desmos-scientific':
       return (
-        <div aria-label="Desmos Scientific" className={`${sizeClasses} bg-gradient-to-br from-[#1B5E20] to-[#004D40] text-white flex items-center justify-center font-bold shadow-md shadow-teal-900/20 shrink-0 ${className}`}>
+        <div aria-label="Desmos Scientific" className={`${sizeClasses} bg-gradient-to-br from-[#1B5E20] to-[#004D40] text-white flex items-center justify-center font-bold shadow-sm shadow-teal-900/20 shrink-0 ${className}`}>
           <Calculator className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -195,7 +196,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'wolfram':
     case 'wolfram-symbolab':
       return (
-        <div aria-label="Wolfram Alpha" className={`${sizeClasses} bg-gradient-to-br from-[#DD1100] to-[#B30000] text-white flex items-center justify-center font-bold shadow-md shadow-red-600/20 shrink-0 ${className}`}>
+        <div aria-label="Wolfram Alpha" className={`${sizeClasses} bg-gradient-to-br from-[#DD1100] to-[#B30000] text-white flex items-center justify-center font-bold shadow-sm shadow-red-600/20 shrink-0 ${className}`}>
           <svg className={iconSizes} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M12 2l2.4 4.8 5.3.8-3.8 3.7.9 5.3-4.8-2.5-4.8 2.5.9-5.3-3.8-3.7 5.3-.8L12 2z" />
             <circle cx="12" cy="12" r="3.2" fill="#FFE57F" />
@@ -206,7 +207,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 11. GeoGebra Math Suite — Authentic 5-Circle Orbit
     case 'geogebra':
       return (
-        <div aria-label="GeoGebra" className={`${sizeClasses} bg-gradient-to-br from-[#1565C0] to-[#0D47A1] text-white flex items-center justify-center font-bold shadow-md shadow-blue-600/20 shrink-0 ${className}`}>
+        <div aria-label="GeoGebra" className={`${sizeClasses} bg-gradient-to-br from-[#1565C0] to-[#0D47A1] text-white flex items-center justify-center font-bold shadow-sm shadow-blue-600/20 shrink-0 ${className}`}>
           <svg className={iconSizes} viewBox="0 0 24 24" aria-hidden="true">
             <ellipse cx="12" cy="12" rx="8.5" ry="5.5" stroke="white" strokeWidth="1.8" fill="none" transform="rotate(-25 12 12)" />
             <circle cx="7" cy="8" r="2" fill="white" />
@@ -220,7 +221,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 12. PhET Interactive Simulations — Authentic Atom Orbit
     case 'phet':
       return (
-        <div aria-label="PhET" className={`${sizeClasses} bg-[#1E398B] text-white flex items-center justify-center font-bold shadow-md shadow-blue-900/20 shrink-0 ${className}`}>
+        <div aria-label="PhET" className={`${sizeClasses} bg-[#1E398B] text-white flex items-center justify-center font-bold shadow-sm shadow-blue-900/20 shrink-0 ${className}`}>
           <svg className={iconSizes} viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <ellipse cx="12" cy="12" rx="9" ry="3.5" stroke="#EE7321" strokeWidth="1.8" transform="rotate(30 12 12)" />
             <ellipse cx="12" cy="12" rx="9" ry="3.5" stroke="#4FC3F7" strokeWidth="1.8" transform="rotate(-30 12 12)" />
@@ -254,14 +255,14 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'flashcards':
     case 'quizlet':
       return (
-        <div aria-label="Quizlet" className={`${sizeClasses} bg-gradient-to-br from-[#4257B2] to-[#2E3E85] text-white flex items-center justify-center font-bold shadow-md shadow-blue-700/20 shrink-0 ${className}`}>
+        <div aria-label="Quizlet" className={`${sizeClasses} bg-gradient-to-br from-[#4257B2] to-[#2E3E85] text-white flex items-center justify-center font-bold shadow-sm shadow-blue-700/20 shrink-0 ${className}`}>
           <span className="font-sans font-black text-base tracking-tight select-none">Q</span>
         </div>
       );
 
     case 'anki':
       return (
-        <div aria-label="Anki" className={`${sizeClasses} bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Anki" className={`${sizeClasses} bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Layers className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -269,7 +270,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 16. Excalidraw Whiteboard
     case 'excalidraw':
       return (
-        <div aria-label="Excalidraw" className={`${sizeClasses} bg-gradient-to-br from-[#6965DB] to-[#5046E5] text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/20 shrink-0 ${className}`}>
+        <div aria-label="Excalidraw" className={`${sizeClasses} bg-gradient-to-br from-[#6965DB] to-[#5046E5] text-white flex items-center justify-center font-bold shadow-sm shadow-indigo-500/20 shrink-0 ${className}`}>
           <PenTool className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -277,7 +278,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 17. Mermaid Flowcharts
     case 'mermaid':
       return (
-        <div aria-label="Mermaid" className={`${sizeClasses} bg-gradient-to-br from-[#EC4899] to-[#BE185D] text-white flex items-center justify-center font-bold shadow-md shadow-pink-500/20 shrink-0 ${className}`}>
+        <div aria-label="Mermaid" className={`${sizeClasses} bg-gradient-to-br from-[#EC4899] to-[#BE185D] text-white flex items-center justify-center font-bold shadow-sm shadow-pink-500/20 shrink-0 ${className}`}>
           <Network className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -302,7 +303,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'timetable':
     case 'timetable-optimizer':
       return (
-        <div aria-label="Weekly Timetable" className={`${sizeClasses} bg-gradient-to-br from-[#0EA5E9] to-[#0284C7] text-white flex items-center justify-center font-bold shadow-md shadow-sky-500/20 shrink-0 ${className}`}>
+        <div aria-label="Weekly Timetable" className={`${sizeClasses} bg-gradient-to-br from-[#0EA5E9] to-[#0284C7] text-white flex items-center justify-center font-bold shadow-sm shadow-sky-500/20 shrink-0 ${className}`}>
           <Calendar className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -314,7 +315,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'scholar':
     case 'google-scholar':
       return (
-        <div aria-label="Citation Vault" className={`${sizeClasses} bg-gradient-to-br from-[#D97757] to-[#B85638] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Citation Vault" className={`${sizeClasses} bg-gradient-to-br from-[#D97757] to-[#B85638] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Quote className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -323,7 +324,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'scholarship-tracker':
     case 'internship-tracker':
       return (
-        <div aria-label="Scholarship Tracker" className={`${sizeClasses} bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-white flex items-center justify-center font-bold shadow-md shadow-amber-500/20 shrink-0 ${className}`}>
+        <div aria-label="Scholarship Tracker" className={`${sizeClasses} bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-white flex items-center justify-center font-bold shadow-sm shadow-amber-500/20 shrink-0 ${className}`}>
           <Award className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -331,7 +332,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 23. Group Project Hub
     case 'group-project':
       return (
-        <div aria-label="Group Project Hub" className={`${sizeClasses} bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] text-white flex items-center justify-center font-bold shadow-md shadow-purple-500/20 shrink-0 ${className}`}>
+        <div aria-label="Group Project Hub" className={`${sizeClasses} bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] text-white flex items-center justify-center font-bold shadow-sm shadow-purple-500/20 shrink-0 ${className}`}>
           <Users className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -339,7 +340,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 24. Peer Q&A
     case 'peer-qa':
       return (
-        <div aria-label="Peer Q&A" className={`${sizeClasses} bg-gradient-to-br from-[#14B8A6] to-[#0F766E] text-white flex items-center justify-center font-bold shadow-md shadow-teal-500/20 shrink-0 ${className}`}>
+        <div aria-label="Peer Q&A" className={`${sizeClasses} bg-gradient-to-br from-[#14B8A6] to-[#0F766E] text-white flex items-center justify-center font-bold shadow-sm shadow-teal-500/20 shrink-0 ${className}`}>
           <MessageSquare className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -347,7 +348,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 25. Deadline Gantt
     case 'deadline-gantt':
       return (
-        <div aria-label="Deadline Gantt" className={`${sizeClasses} bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20 shrink-0 ${className}`}>
+        <div aria-label="Deadline Gantt" className={`${sizeClasses} bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] text-white flex items-center justify-center font-bold shadow-sm shadow-blue-500/20 shrink-0 ${className}`}>
           <BarChart3 className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -355,7 +356,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 26. Grade Forecaster
     case 'grade-forecaster':
       return (
-        <div aria-label="Grade Forecaster" className={`${sizeClasses} bg-gradient-to-br from-[#10B981] to-[#047857] text-white flex items-center justify-center font-bold shadow-md shadow-emerald-500/20 shrink-0 ${className}`}>
+        <div aria-label="Grade Forecaster" className={`${sizeClasses} bg-gradient-to-br from-[#10B981] to-[#047857] text-white flex items-center justify-center font-bold shadow-sm shadow-emerald-500/20 shrink-0 ${className}`}>
           <TrendingUp className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -363,7 +364,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 27. Budget Tracker
     case 'budget-tracker':
       return (
-        <div aria-label="Budget Tracker" className={`${sizeClasses} bg-gradient-to-br from-[#059669] to-[#065F46] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Budget Tracker" className={`${sizeClasses} bg-gradient-to-br from-[#059669] to-[#065F46] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <DollarSign className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -371,7 +372,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 28. Resume Builder
     case 'resume-builder':
       return (
-        <div aria-label="Resume Builder" className={`${sizeClasses} bg-gradient-to-br from-[#475569] to-[#334155] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Resume Builder" className={`${sizeClasses} bg-gradient-to-br from-[#475569] to-[#334155] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Briefcase className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -387,7 +388,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 30. Photo Math OCR
     case 'scribble-latex':
       return (
-        <div aria-label="Photo Math OCR" className={`${sizeClasses} bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Photo Math OCR" className={`${sizeClasses} bg-gradient-to-br from-[#F59E0B] to-[#D97706] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Zap className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -395,7 +396,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 31. Periodic Table
     case 'periodic-table':
       return (
-        <div aria-label="Periodic Table" className={`${sizeClasses} bg-gradient-to-br from-[#06B6D4] to-[#0891B2] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Periodic Table" className={`${sizeClasses} bg-gradient-to-br from-[#06B6D4] to-[#0891B2] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Atom className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -403,7 +404,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 32. Scientific Unit Converter
     case 'unit-converter':
       return (
-        <div aria-label="Unit Converter" className={`${sizeClasses} bg-gradient-to-br from-[#10B981] to-[#0D9488] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Unit Converter" className={`${sizeClasses} bg-gradient-to-br from-[#10B981] to-[#0D9488] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <ArrowRightLeft className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -411,7 +412,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 33. arXiv Papers
     case 'arxiv':
       return (
-        <div aria-label="arXiv Papers" className={`${sizeClasses} bg-gradient-to-br from-[#B91C1C] to-[#991B1B] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="arXiv Papers" className={`${sizeClasses} bg-gradient-to-br from-[#B91C1C] to-[#991B1B] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <BookOpen className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -419,7 +420,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 34. Open Library
     case 'open-library':
       return (
-        <div aria-label="Open Library" className={`${sizeClasses} bg-gradient-to-br from-[#1E40AF] to-[#1E3A8A] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Open Library" className={`${sizeClasses} bg-gradient-to-br from-[#1E40AF] to-[#1E3A8A] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Bookmark className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -427,7 +428,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 35. Dual Split Screen
     case 'splitscreen':
       return (
-        <div aria-label="Split Screen" className={`${sizeClasses} bg-gradient-to-br from-[#475569] to-[#1E293B] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Split Screen" className={`${sizeClasses} bg-gradient-to-br from-[#475569] to-[#1E293B] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Columns2 className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -436,7 +437,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'viva':
     case 'viva-voice':
       return (
-        <div aria-label="Viva Exam" className={`${sizeClasses} bg-gradient-to-br from-[#D946EF] to-[#A21CAF] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Viva Exam" className={`${sizeClasses} bg-gradient-to-br from-[#D946EF] to-[#A21CAF] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Mic className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -445,7 +446,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'notes-markdown':
     case 'essay-outliner':
       return (
-        <div aria-label="Markdown Notes" className={`${sizeClasses} bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Markdown Notes" className={`${sizeClasses} bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <FileText className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -455,7 +456,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'turnitin':
     case 'gradescope':
       return (
-        <div aria-label="Rubric Checker" className={`${sizeClasses} bg-gradient-to-br from-[#D97757] to-[#9A3412] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Rubric Checker" className={`${sizeClasses} bg-gradient-to-br from-[#D97757] to-[#9A3412] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <ShieldCheck className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -464,7 +465,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'feynman':
     case 'ai-suite':
       return (
-        <div aria-label="Feynman AI" className={`${sizeClasses} bg-gradient-to-br from-[#E11D48] to-[#9F1239] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Feynman AI" className={`${sizeClasses} bg-gradient-to-br from-[#E11D48] to-[#9F1239] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Sparkles className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -472,7 +473,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 40. PDF Reader
     case 'pdf-reader':
       return (
-        <div aria-label="PDF Reader" className={`${sizeClasses} bg-gradient-to-br from-[#DC2626] to-[#991B1B] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="PDF Reader" className={`${sizeClasses} bg-gradient-to-br from-[#DC2626] to-[#991B1B] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <FileText className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -480,7 +481,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 41. Quiz Generator
     case 'quiz-generator':
       return (
-        <div aria-label="Quiz Generator" className={`${sizeClasses} bg-gradient-to-br from-[#7C3AED] to-[#5B21B6] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Quiz Generator" className={`${sizeClasses} bg-gradient-to-br from-[#7C3AED] to-[#5B21B6] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <CheckSquare className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -488,7 +489,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 42. Habit & Sleep
     case 'habit-sleep':
       return (
-        <div aria-label="Habit & Sleep" className={`${sizeClasses} bg-gradient-to-br from-[#312E81] to-[#1E1B4B] text-indigo-200 flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Habit & Sleep" className={`${sizeClasses} bg-gradient-to-br from-[#312E81] to-[#1E1B4B] text-indigo-200 flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Moon className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -496,7 +497,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 43. Lab Report
     case 'lab-report':
       return (
-        <div aria-label="Lab Report" className={`${sizeClasses} bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Lab Report" className={`${sizeClasses} bg-gradient-to-br from-[#0284C7] to-[#0369A1] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <FlaskConical className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -504,7 +505,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 44. Image Occlusion
     case 'image-occlusion':
       return (
-        <div aria-label="Image Occlusion" className={`${sizeClasses} bg-gradient-to-br from-[#64748B] to-[#334155] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Image Occlusion" className={`${sizeClasses} bg-gradient-to-br from-[#64748B] to-[#334155] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Eye className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -512,7 +513,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 45. FSRS Scheduler
     case 'fsrs':
       return (
-        <div aria-label="FSRS Algorithm" className={`${sizeClasses} bg-gradient-to-br from-[#0D9488] to-[#115E59] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="FSRS Algorithm" className={`${sizeClasses} bg-gradient-to-br from-[#0D9488] to-[#115E59] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Activity className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -520,7 +521,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 46. Language Lab
     case 'language-lab':
       return (
-        <div aria-label="Language Lab" className={`${sizeClasses} bg-gradient-to-br from-[#2563EB] to-[#1E40AF] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Language Lab" className={`${sizeClasses} bg-gradient-to-br from-[#2563EB] to-[#1E40AF] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Globe className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -528,7 +529,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 47. Dataset Finder
     case 'dataset-finder':
       return (
-        <div aria-label="Dataset Finder" className={`${sizeClasses} bg-gradient-to-br from-[#4F46E5] to-[#3730A3] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Dataset Finder" className={`${sizeClasses} bg-gradient-to-br from-[#4F46E5] to-[#3730A3] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Database className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -536,7 +537,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 48. Extension Helper
     case 'extension':
       return (
-        <div aria-label="Extension" className={`${sizeClasses} bg-gradient-to-br from-[#EA580C] to-[#C2410C] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Extension" className={`${sizeClasses} bg-gradient-to-br from-[#EA580C] to-[#C2410C] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Puzzle className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -544,7 +545,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 49. API Docs
     case 'api-docs':
       return (
-        <div aria-label="API Docs" className={`${sizeClasses} bg-gradient-to-br from-[#334155] to-[#1E293B] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="API Docs" className={`${sizeClasses} bg-gradient-to-br from-[#334155] to-[#1E293B] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Code2 className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -552,7 +553,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 50. Dashboard Home — distinct glyph so it never duplicates the fallback
     case 'dashboard':
       return (
-        <div aria-label="Dashboard Home" className={`${sizeClasses} bg-gradient-to-br from-[#D97757] to-[#B85638] text-white flex items-center justify-center font-bold shadow-md shadow-[#D97757]/20 shrink-0 ${className}`}>
+        <div aria-label="Dashboard Home" className={`${sizeClasses} bg-gradient-to-br from-[#D97757] to-[#B85638] text-white flex items-center justify-center font-bold shadow-sm shadow-[#D97757]/20 shrink-0 ${className}`}>
           <LayoutDashboard className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -560,28 +561,28 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 51. Workspace groups (routable via sidebar Recent)
     case 'stem':
       return (
-        <div aria-label="STEM Lab" className={`${sizeClasses} bg-gradient-to-br from-[#10B981] to-[#047857] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="STEM Lab" className={`${sizeClasses} bg-gradient-to-br from-[#10B981] to-[#047857] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Atom className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'creation':
       return (
-        <div aria-label="Creation Studio" className={`${sizeClasses} bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Creation Studio" className={`${sizeClasses} bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Palette className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'retention':
       return (
-        <div aria-label="Retention Vault" className={`${sizeClasses} bg-gradient-to-br from-[#0D9488] to-[#0F766E] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Retention Vault" className={`${sizeClasses} bg-gradient-to-br from-[#0D9488] to-[#0F766E] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <History className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'documents':
       return (
-        <div aria-label="Documents" className={`${sizeClasses} bg-gradient-to-br from-[#0284C7] to-[#075985] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Documents" className={`${sizeClasses} bg-gradient-to-br from-[#0284C7] to-[#075985] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <FolderOpen className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -589,21 +590,21 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 52. Division A labs — each gets a unique glyph (previously all fell into the identical fallback)
     case 'model-training':
       return (
-        <div aria-label="Train My Model Lab" className={`${sizeClasses} bg-gradient-to-br from-[#D97757] to-[#7C3AED] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Train My Model Lab" className={`${sizeClasses} bg-gradient-to-br from-[#D97757] to-[#7C3AED] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Brain className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'few-shot-lab':
       return (
-        <div aria-label="Few-Shot Calibration Lab" className={`${sizeClasses} bg-gradient-to-br from-[#06B6D4] to-[#0E7490] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Few-Shot Calibration Lab" className={`${sizeClasses} bg-gradient-to-br from-[#06B6D4] to-[#0E7490] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <FlaskConical className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'competition-dossier':
       return (
-        <div aria-label="Competition Dossier" className={`${sizeClasses} bg-gradient-to-br from-[#EAB308] to-[#A16207] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Competition Dossier" className={`${sizeClasses} bg-gradient-to-br from-[#EAB308] to-[#A16207] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Trophy className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -611,42 +612,42 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 53. Remaining routable apps
     case 'paper-chat':
       return (
-        <div aria-label="Paper Chat" className={`${sizeClasses} bg-gradient-to-br from-[#2563EB] to-[#1E40AF] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Paper Chat" className={`${sizeClasses} bg-gradient-to-br from-[#2563EB] to-[#1E40AF] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <MessageSquare className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'study-rooms':
       return (
-        <div aria-label="Study Rooms" className={`${sizeClasses} bg-gradient-to-br from-[#10B981] to-[#065F46] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Study Rooms" className={`${sizeClasses} bg-gradient-to-br from-[#10B981] to-[#065F46] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Users className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'teacher-view':
       return (
-        <div aria-label="Teacher View" className={`${sizeClasses} bg-gradient-to-br from-[#F43F5E] to-[#BE123C] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Teacher View" className={`${sizeClasses} bg-gradient-to-br from-[#F43F5E] to-[#BE123C] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <GraduationCap className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'lecture-copilot':
       return (
-        <div aria-label="Lecture Copilot" className={`${sizeClasses} bg-gradient-to-br from-[#0EA5E9] to-[#1D4ED8] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Lecture Copilot" className={`${sizeClasses} bg-gradient-to-br from-[#0EA5E9] to-[#1D4ED8] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Presentation className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'presentation-coach':
       return (
-        <div aria-label="Presentation Coach" className={`${sizeClasses} bg-gradient-to-br from-[#7C3AED] to-[#4C1D95] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Presentation Coach" className={`${sizeClasses} bg-gradient-to-br from-[#7C3AED] to-[#4C1D95] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <ClipboardList className={iconSizes} aria-hidden="true" />
         </div>
       );
 
     case 'exam-mode':
       return (
-        <div aria-label="Exam Mode" className={`${sizeClasses} bg-gradient-to-br from-[#6366F1] to-[#4338CA] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+        <div aria-label="Exam Mode" className={`${sizeClasses} bg-gradient-to-br from-[#6366F1] to-[#4338CA] text-white flex items-center justify-center font-bold shadow-sm shrink-0 ${className}`}>
           <Timer className={iconSizes} aria-hidden="true" />
         </div>
       );
