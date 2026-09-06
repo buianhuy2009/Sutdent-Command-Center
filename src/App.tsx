@@ -139,6 +139,9 @@ import {
   onAuthStateChangedListener,
   getStoredGoogleToken,
   getValidGoogleToken,
+  getGoogleTokenStatus,
+  setActiveGoogleUid,
+  hydrateGoogleTokenForUser,
   classifySignInError,
   diagnoseSignInEnvironment,
   consumeRedirectResult,
@@ -172,6 +175,8 @@ import { fetchAllClassroomAssignments } from './services/googleClassroom';
 import {
   loadCanvasSettings,
   saveCanvasSettings,
+  hydrateCanvasSettingsForUser,
+  setActiveCanvasUid,
   fetchCanvasAssignmentsFromFeed,
   fetchCanvasAssignmentsFromApi,
   crossReferenceCanvasWithSheet,
@@ -690,7 +695,10 @@ export default function App() {
   // tokens renew silently — there is no expiring "session" to warn about.
   // Connected = usable access now, or a refresh grant that can mint one.
   const [googleToken, setGoogleToken] = useState<string | null>(() => getStoredGoogleToken());
-  const isGoogleConnected = Boolean(getValidGoogleToken() || hasRefreshToken() || googleToken) || isDemoMode;
+  // Connected = a FRESH access token or a permanent offline grant. A raw
+  // (possibly expired) token string alone must NOT count — otherwise the
+  // expired state could never surface its one-click Reconnect banner.
+  const isGoogleConnected = Boolean(getValidGoogleToken() || hasRefreshToken()) || isDemoMode;
 
   // API Disabled Info (for Google Cloud Console Enablement)
   const [driveApiInfo, setDriveApiInfo] = useState<ApiEnablementInfo | null>(null);
@@ -1248,21 +1256,46 @@ export default function App() {
     }
   }, [isDemoMode, user]);
 
-  // Listen to Auth State + onboarding post-login trigger (fixes onboarding not triggered after login)
+  // Listen to Auth State + restore this account's connection bundle.
+  // Token/Canvas settings live in per-uid vaults: relogin restores them,
+  // switching accounts swaps bundles instead of mixing them.
+  const authUidRef = useRef<string | null>(null);
   useEffect(() => {
     const unsubscribe = onAuthStateChangedListener((currentUser) => {
       setUser(currentUser);
-      const curToken = getStoredGoogleToken();
-      setGoogleToken(curToken);
-      if (currentUser) {
-        // Cross-device: pull a stored offline grant, then mint silently.
-        hydrateRefreshGrant(currentUser.uid).then(async (has) => {
-          if (has && !getValidGoogleToken()) {
-            const t = await ensureFreshGoogleToken();
-            if (t) setGoogleToken(t);
+      const uid = currentUser?.uid || null;
+      const uidChanged = authUidRef.current !== uid;
+      authUidRef.current = uid;
+      if (uid) {
+        setActiveGoogleUid(uid);
+        // Swap Canvas to this account's bundle immediately (sync layer).
+        if (uidChanged) {
+          try {
+            setCanvasSettings(hydrateCanvasSettingsForUser(uid));
+          } catch {}
+        }
+        // Restore this account's Google token bundle, then cross-device grant.
+        hydrateGoogleTokenForUser(uid).then(async (restored) => {
+          const cur = restored ?? getStoredGoogleToken();
+          setGoogleToken(cur);
+          if (!getValidGoogleToken()) {
+            try {
+              const has = await hydrateRefreshGrant(uid);
+              if (has) {
+                const t = await ensureFreshGoogleToken();
+                if (t) setGoogleToken(t);
+              }
+            } catch {}
           }
-        }).catch(() => {});
+        }).catch(() => {
+          setGoogleToken(getStoredGoogleToken());
+        });
+      } else {
+        setActiveGoogleUid(null);
+        setActiveCanvasUid(null);
+        setGoogleToken(null);
       }
+      const curToken = getStoredGoogleToken();
       if (currentUser && (getValidGoogleToken() || hasRefreshToken() || curToken)) {
         setIsDemoMode(false);
         // onboarding: if never seen, show tour after login
@@ -2080,7 +2113,9 @@ export default function App() {
   };
 
   const handleDisconnectGoogle = useCallback(async () => {
-    await clearGoogleGrant();
+    // Explicit disconnect: forget THIS account's grant + token vault entirely.
+    // (Unlike logout, the next sign-in starts blank for this account.)
+    await clearGoogleGrant(user?.uid || null);
     setGoogleToken(null);
     setCalendarEvents([]);
     setEmailAlerts([]);
@@ -2095,20 +2130,21 @@ export default function App() {
       title: 'Google Workspace Disconnected',
       message: 'Google Workspace token cleared. You can reconnect anytime.',
     });
-  }, [addToast]);
+  }, [addToast, user?.uid]);
 
-  // Logout Handler
+  // Logout Handler — sign out but KEEP this account's connection bundle
+  // (Canvas settings + Google token vault + offline grant). The next login
+  // with the same account restores everything instantly, no re-connect needed.
   const handleLogout = async () => {
     setConfirmationModal({
       isOpen: true,
-      title: 'Disconnect Google Workspace?',
+      title: 'Sign out?',
       description:
-        'This will sign you out of Google Workspace features (Sheets, Drive, Gmail, Calendar). Your local tracker and Canvas feed remain active.',
-      isDestructive: true,
-      confirmLabel: 'Disconnect',
+        'This signs you out. Your Canvas connection and Google Workspace grant stay saved for this account, so signing back in restores everything instantly. Use Disconnect inside the Google tabs to fully forget an account.',
+      isDestructive: false,
+      confirmLabel: 'Sign out',
       onConfirm: async () => {
         await signOutUser();
-        try { await clearGoogleGrant(); } catch {}
         setGoogleToken(null);
         setUser(null);
         setCalendarEvents([]);
@@ -2121,8 +2157,8 @@ export default function App() {
         setMasterSheetUrl(undefined);
         addToast({
           type: 'info',
-          title: 'Disconnected',
-          message: 'Google Workspace disconnected.',
+          title: 'Signed out',
+          message: 'Connections stay saved for this account — sign back in to restore instantly.',
         });
       },
     });
@@ -2774,9 +2810,10 @@ export default function App() {
               <ErrorBoundary fallback={<div className="p-6 rounded-2xl border border-rose-200 bg-rose-50 text-rose-900 text-sm">Workspace failed to load. Try refreshing or switching tabs.</div>}>
               <Suspense fallback={<div className="p-8 flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#D97757] border-t-transparent rounded-full animate-spin" /><span className="ml-2 text-xs text-[#8C897F]">Loading workspace…</span></div>}>
               <div className="max-w-7xl mx-auto space-y-6">
-                {/* Google Workspace Connection Banner: only when no usable grant exists.
-                    Access tokens renew silently via the offline grant, so expiry
-                    is never surfaced — this is purely the not-connected state. */}
+                {/* Google Workspace Connection Banner: missing grant vs expired
+                    hourly token (no permanent grant yet). Expired keeps every
+                    setting — reconnect is one click (popup, redirect fallback),
+                    Canvas data untouched. */}
                 {user && !isGoogleConnected && !isDemoMode && (
                   <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs animate-in fade-in">
                     <div className="flex items-center gap-3">
@@ -2785,10 +2822,12 @@ export default function App() {
                       </div>
                       <div>
                         <p className="font-bold text-[#141413] dark:text-[#FAF9F5] text-sm">
-                          Google Workspace Sync Paused
+                          {getGoogleTokenStatus() === 'expired' ? 'Google session expired — one-click reconnect' : 'Google Workspace Sync Paused'}
                         </p>
                         <p className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8]">
-                          {`Signed in as ${user.email}. Connect Google Workspace with one click to enable live sync across Calendar, Drive, Sheets & Classroom — it stays connected automatically.`}
+                          {getGoogleTokenStatus() === 'expired'
+                            ? `Signed in as ${user.email}. Your hourly sign-in expired — reconnect once to resume Calendar, Drive, Sheets & Classroom. Canvas settings and all data are kept.`
+                            : `Signed in as ${user.email}. Connect Google Workspace with one click to enable live sync across Calendar, Drive, Sheets & Classroom — it stays connected automatically.`}
                         </p>
                       </div>
                     </div>
@@ -2799,7 +2838,7 @@ export default function App() {
                         className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                       >
                         <RefreshCw className={`w-3.5 h-3.5 ${isLoggingIn ? 'animate-spin' : ''}`} />
-                        <span>{isLoggingIn ? 'Connecting...' : 'Connect Workspace'}</span>
+                        <span>{isLoggingIn ? 'Connecting...' : getGoogleTokenStatus() === 'expired' ? 'Reconnect now' : 'Connect Workspace'}</span>
                       </button>
                     </div>
                   </div>
@@ -2810,7 +2849,7 @@ export default function App() {
                     settings={canvasSettings}
                     onSaveSettings={(newSettings) => {
                       setCanvasSettings(newSettings);
-                      saveCanvasSettings(newSettings);
+                      saveCanvasSettings(newSettings, user?.uid || null);
                     }}
                     canvasAssignments={canvasAssignments}
                     isLoading={isLoadingCanvas}

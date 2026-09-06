@@ -40,7 +40,9 @@ if (typeof window !== 'undefined') {
     if (result?.user) {
       const cred = GoogleAuthProvider.credentialFromResult(result);
       if (cred?.accessToken) {
-        setStoredGoogleToken(cred.accessToken);
+        const uid = result.user?.uid || auth.currentUser?.uid || null;
+        if (uid) setActiveGoogleUid(uid);
+        setStoredGoogleToken(cred.accessToken, uid);
       }
     }
   }).catch(() => {});
@@ -219,9 +221,59 @@ export function diagnoseSignInEnvironment(): { label: string; ok: boolean; hint?
   return out;
 }
 
-// Token Storage Key — now in IndexedDB (via Dexie) + sessionStorage mirror for sync access
+// Token Storage — global mirror (active session, sync access) + per-uid vault
+// (localStorage + IndexedDB) so connections survive logout/relogin and never
+// leak across Google accounts. Logout clears only the mirror; the vault is
+// wiped solely by an explicit per-account disconnect.
 const TOKEN_STORAGE_KEY = 'google_workspace_access_token';
 const TOKEN_IDB_KEY = 'google_workspace_access_token_v2';
+const TOKEN_ACQUIRED_AT_KEY = 'google_token_acquired_at';
+const TOKEN_OWNER_KEY = 'google_workspace_token_owner';
+
+// Firebase uid that owns the current session (set on sign-in / auth change).
+let activeGoogleUid: string | null = null;
+export function getActiveGoogleUid(): string | null {
+  return activeGoogleUid;
+}
+export function setActiveGoogleUid(uid: string | null) {
+  activeGoogleUid = uid || null;
+}
+
+const tokenKeyFor = (uid?: string | null) =>
+  uid ? `${TOKEN_STORAGE_KEY}__${uid}` : TOKEN_STORAGE_KEY;
+const tokenIdbKeyFor = (uid?: string | null) =>
+  uid ? `${TOKEN_IDB_KEY}__${uid}` : TOKEN_IDB_KEY;
+const acquiredAtKeyFor = (uid?: string | null) =>
+  uid ? `${TOKEN_ACQUIRED_AT_KEY}__${uid}` : TOKEN_ACQUIRED_AT_KEY;
+
+function getTokenOwnerUid(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(TOKEN_OWNER_KEY);
+  } catch {
+    return null;
+  }
+}
+function setTokenOwnerUid(uid: string | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (uid) localStorage.setItem(TOKEN_OWNER_KEY, uid);
+    else localStorage.removeItem(TOKEN_OWNER_KEY);
+  } catch {}
+}
+
+/** Clear only the active-session mirror (memory + session + global local copy).
+ *  Per-uid vaults in localStorage/IndexedDB are preserved for relogin restore. */
+function clearActiveMirrorOnly() {
+  cachedAccessToken = null;
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    sessionStorage.removeItem(TOKEN_ACQUIRED_AT_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_ACQUIRED_AT_KEY);
+  } catch {}
+}
 
 // In-memory cache backed by sessionStorage, localStorage & IndexedDB
 let cachedAccessToken: string | null = null;
@@ -250,11 +302,19 @@ if (typeof window !== 'undefined') {
     cachedAccessToken = null;
   }
 }
-async function persistTokenToIDB(token: string | null) {
+async function persistTokenToIDB(token: string | null, uid?: string | null) {
   try {
     const { db } = await import('./db');
-    if (token) await db.preferences.put({ key: TOKEN_IDB_KEY, value: token });
-    else await db.preferences.delete(TOKEN_IDB_KEY);
+    if (token) await db.preferences.put({ key: tokenIdbKeyFor(uid), value: token });
+    else await db.preferences.delete(tokenIdbKeyFor(uid));
+  } catch {}
+}
+
+async function persistAcquiredAtToIDB(uid?: string | null) {
+  try {
+    const now = String(Date.now());
+    const { db } = await import('./db');
+    await db.preferences.put({ key: acquiredAtKeyFor(uid), value: now }).catch(() => {});
   } catch {}
 }
 
@@ -264,14 +324,29 @@ export const onAuthStateChangedListener = (callback: (user: User | null) => void
   return onAuthStateChanged(auth, callback);
 };
 
-export const setStoredGoogleToken = (token: string) => {
+export const setStoredGoogleToken = (token: string, uid?: string | null) => {
+  const owner = uid ?? activeGoogleUid;
   cachedAccessToken = token;
   if (typeof window !== 'undefined') {
     try {
+      const now = String(Date.now());
+      // Global mirror (sync access for existing callers)
       sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
-      sessionStorage.setItem('google_token_acquired_at', String(Date.now()));
+      sessionStorage.setItem(TOKEN_ACQUIRED_AT_KEY, now);
       localStorage.setItem(TOKEN_STORAGE_KEY, token);
-      localStorage.setItem('google_token_acquired_at', String(Date.now()));
+      localStorage.setItem(TOKEN_ACQUIRED_AT_KEY, now);
+      // Per-uid vault (survives logout; isolated per account)
+      if (owner) {
+        try {
+          sessionStorage.setItem(tokenKeyFor(owner), token);
+          sessionStorage.setItem(acquiredAtKeyFor(owner), now);
+          localStorage.setItem(tokenKeyFor(owner), token);
+          localStorage.setItem(acquiredAtKeyFor(owner), now);
+        } catch {}
+        setTokenOwnerUid(owner);
+        persistTokenToIDB(token, owner);
+        persistAcquiredAtToIDB(owner);
+      }
       persistTokenToIDB(token);
       import('./db').then(({ db }) => db.preferences.put({ key: 'google_token_acquired_at', value: String(Date.now()) }).catch(()=>{}));
       window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token } }));
@@ -279,21 +354,123 @@ export const setStoredGoogleToken = (token: string) => {
   }
 };
 
-export const clearStoredGoogleToken = () => {
-  cachedAccessToken = null;
-  if (typeof window !== 'undefined') {
+/**
+ * Explicit per-account disconnect: wipes the mirror AND that account's vault
+ * (localStorage + IndexedDB). Logout (signOutUser) must NOT call this.
+ */
+export const clearStoredGoogleToken = (uid?: string | null) => {
+  const owner = uid ?? activeGoogleUid;
+  clearActiveMirrorOnly();
+  if (typeof window !== 'undefined' && owner) {
     try {
-      sessionStorage.removeItem(TOKEN_STORAGE_KEY);
-      sessionStorage.removeItem('google_token_acquired_at');
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
-      localStorage.removeItem('google_token_acquired_at');
+      sessionStorage.removeItem(tokenKeyFor(owner));
+      sessionStorage.removeItem(acquiredAtKeyFor(owner));
+      localStorage.removeItem(tokenKeyFor(owner));
+      localStorage.removeItem(acquiredAtKeyFor(owner));
     } catch {}
+    persistTokenToIDB(null, owner);
+    try {
+      import('./db').then(({ db }) => db.preferences.delete(acquiredAtKeyFor(owner)).catch(() => {}));
+    } catch {}
+    if (getTokenOwnerUid() === owner) setTokenOwnerUid(null);
+  } else if (typeof window !== 'undefined' && !owner) {
+    // No uid context (legacy path): clear the global copies as before.
     persistTokenToIDB(null);
+    try {
+      window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token: null } }));
+    } catch {}
+    return;
+  }
+  if (typeof window !== 'undefined') {
     try {
       window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token: null } }));
     } catch {}
   }
 };
+
+/**
+ * Restore the token bundle for `uid` after reload/relogin/account switch.
+ * Reads the per-uid vault (IndexedDB → localStorage), falls back to the
+ * legacy global copies and adopts them into the vault (one-time migration).
+ * When the vault is empty AND the mirror belongs to another account, the
+ * mirror is cleared so accounts never share tokens.
+ * Resolves the restored token, or null when this account has none.
+ */
+export async function hydrateGoogleTokenForUser(uid: string): Promise<string | null> {
+  setActiveGoogleUid(uid);
+  if (typeof window === 'undefined') return null;
+  // Collect every copy (IndexedDB vault, localStorage vault, legacy global
+  // mirrors) with its timestamp and keep the NEWEST — a save followed by an
+  // instant reload must never restore a stale copy.
+  const candidates: { token: string; at: number }[] = [];
+  const consider = (token: any, at: any) => {
+    const t = typeof token === 'string' ? token : null;
+    if (!t || t.length <= 5) return;
+    let stamp = typeof at === 'string' || typeof at === 'number' ? parseInt(String(at), 10) : NaN;
+    if (!Number.isFinite(stamp)) stamp = 0;
+    candidates.push({ token: t, at: stamp });
+  };
+  // The shared/global mirror may hold ANOTHER account's token (e.g. account
+  // switch without logout). Only trust it when unattributed (legacy data) or
+  // owned by this same account — otherwise ignore it completely.
+  const mirrorOwner = getTokenOwnerUid();
+  const mirrorEligible = !mirrorOwner || mirrorOwner === uid;
+  try {
+    const { db } = await import('./db');
+    try {
+      const rows: [string, string][] = [
+        [tokenIdbKeyFor(uid), acquiredAtKeyFor(uid)],
+        [TOKEN_IDB_KEY, TOKEN_ACQUIRED_AT_KEY],
+      ];
+      for (const [tk, ak] of rows) {
+        const isGlobalRow = tk === TOKEN_IDB_KEY;
+        if (isGlobalRow && !mirrorEligible) continue; // another account's mirror
+        try {
+          const [tRow, aRow]: any[] = await Promise.all([
+            db.preferences.get(tk).catch(() => null),
+            db.preferences.get(ak).catch(() => null),
+          ]);
+          consider(tRow?.value, aRow?.value);
+        } catch {}
+      }
+    } catch {}
+    try {
+      consider(localStorage.getItem(tokenKeyFor(uid)), localStorage.getItem(acquiredAtKeyFor(uid)));
+      consider(sessionStorage.getItem(tokenKeyFor(uid)), sessionStorage.getItem(acquiredAtKeyFor(uid)));
+      if (mirrorEligible) {
+        consider(localStorage.getItem(TOKEN_STORAGE_KEY), localStorage.getItem(TOKEN_ACQUIRED_AT_KEY));
+        consider(sessionStorage.getItem(TOKEN_STORAGE_KEY), sessionStorage.getItem(TOKEN_ACQUIRED_AT_KEY));
+      }
+    } catch {}
+  } catch {
+    // storage unavailable — no candidates
+  }
+  candidates.sort((a, b) => b.at - a.at);
+  const best = candidates[0] || null;
+  if (best) {
+    // Adopt the winner into the mirror + vault (migrates legacy copies forward).
+    setStoredGoogleToken(best.token, uid);
+    if (best.at > 0) {
+      const stamp = String(best.at);
+      try {
+        sessionStorage.setItem(TOKEN_ACQUIRED_AT_KEY, stamp);
+        localStorage.setItem(TOKEN_ACQUIRED_AT_KEY, stamp);
+        sessionStorage.setItem(acquiredAtKeyFor(uid), stamp);
+        localStorage.setItem(acquiredAtKeyFor(uid), stamp);
+      } catch {}
+    }
+    return best.token;
+  }
+  const owner = getTokenOwnerUid();
+  if (owner && owner !== uid) {
+    // Mirror belongs to another account — never reuse it here.
+    clearActiveMirrorOnly();
+    try {
+      window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token: null } }));
+    } catch {}
+  }
+  return null;
+}
 
 export const hasActiveGoogleWorkspaceToken = (): boolean => {
   return Boolean(getValidGoogleToken());
@@ -306,12 +483,14 @@ export const hasActiveGoogleWorkspaceToken = (): boolean => {
  * user-facing expiry banner). Kept semantics-stable for existing callers.
  */
 export const GOOGLE_TOKEN_TTL_MS = 55 * 60 * 1000; // refresh 5 min before the real ~60 min expiry
-const TOKEN_ACQUIRED_AT_KEY = 'google_token_acquired_at';
 
 export function getGoogleTokenAgeMs(): number | null {
   if (typeof window === 'undefined') return null;
   try {
+    const uid = activeGoogleUid;
     const raw =
+      (uid ? sessionStorage.getItem(acquiredAtKeyFor(uid)) : null) ||
+      (uid ? localStorage.getItem(acquiredAtKeyFor(uid)) : null) ||
       sessionStorage.getItem(TOKEN_ACQUIRED_AT_KEY) ||
       localStorage.getItem(TOKEN_ACQUIRED_AT_KEY);
     if (!raw) return null; // signed in before timestamps existed → unknown, treat as fresh
@@ -340,6 +519,18 @@ export function getValidGoogleToken(): string | null {
 /** True when a token exists but is past its TTL — i.e. user must reconnect. */
 export function needsGoogleReconnect(): boolean {
   return getStoredGoogleToken() !== null && isGoogleTokenExpired();
+}
+
+export type GoogleTokenStatus = 'connected' | 'expired' | 'missing';
+/**
+ * Distinguish the three connection states explicitly so UI can show:
+ * connected (fresh token) vs expired (1-click reconnect, keep settings)
+ * vs missing (never granted — show full connect flow).
+ */
+export function getGoogleTokenStatus(): GoogleTokenStatus {
+  const token = getStoredGoogleToken();
+  if (!token) return 'missing';
+  return isGoogleTokenExpired() ? 'expired' : 'connected';
 }
 
 export const signInWithGoogle = async (
@@ -376,14 +567,21 @@ export const signInWithGoogle = async (
       throw popupErr;
     }
     const credential = GoogleAuthProvider.credentialFromResult(result);
-    
+    const signedInUid: string | null = result?.user?.uid || null;
+    if (signedInUid) setActiveGoogleUid(signedInUid);
+
     // Store access token in memory, localStorage, sessionStorage & IndexedDB
     // ONLY when workspace access was explicitly requested!
     if (options.requestWorkspace && credential?.accessToken) {
-      setStoredGoogleToken(credential.accessToken);
+      setStoredGoogleToken(credential.accessToken, signedInUid);
     } else if (!options.requestWorkspace) {
-      // Basic login: ensure stale workspace token is not falsely assumed active
-      cachedAccessToken = null;
+      // Basic profile login must NEVER destroy a stored Workspace grant.
+      // Only drop the active mirror when switching to a *different* account,
+      // so a stale token is never mistaken for the new account's session.
+      // Per-uid vaults are always preserved for instant restore on relogin.
+      if (signedInUid && getTokenOwnerUid() && getTokenOwnerUid() !== signedInUid) {
+        clearActiveMirrorOnly();
+      }
     }
 
     // Workspace was requested and granted, but no token arrived — never downgrade
@@ -503,7 +701,9 @@ export const consumeRedirectResult = async (): Promise<{ user: User; accessToken
     const result = await getRedirectResult(auth);
     if (!result?.user) return null;
     const credential = GoogleAuthProvider.credentialFromResult(result);
-    if (credential?.accessToken) setStoredGoogleToken(credential.accessToken);
+    const uid: string | null = result.user?.uid || null;
+    if (uid) setActiveGoogleUid(uid);
+    if (credential?.accessToken) setStoredGoogleToken(credential.accessToken, uid);
     return { user: result.user, accessToken: credential?.accessToken || '' };
   } catch {
     return null;
@@ -529,6 +729,22 @@ export const getStoredGoogleToken = (): string | null => {
         try { sessionStorage.setItem(TOKEN_STORAGE_KEY, localStored); } catch {}
         return localStored;
       }
+      // Per-uid vault fallback (sync layers only; IndexedDB restores async
+      // via hydrateGoogleTokenForUser on auth change).
+      const uid = activeGoogleUid || auth.currentUser?.uid;
+      if (uid) {
+        const vault =
+          sessionStorage.getItem(tokenKeyFor(uid)) ||
+          localStorage.getItem(tokenKeyFor(uid));
+        if (vault && vault.length > 5) {
+          cachedAccessToken = vault;
+          try {
+            sessionStorage.setItem(TOKEN_STORAGE_KEY, vault);
+            localStorage.setItem(TOKEN_STORAGE_KEY, vault);
+          } catch {}
+          return vault;
+        }
+      }
     } catch {
       // ignore
     }
@@ -539,6 +755,11 @@ export const getStoredGoogleToken = (): string | null => {
 export const getAccessToken = async (): Promise<string | null> => {
   return getStoredGoogleToken();
 };
+
+/** @internal Test-only: drop the in-memory token so tests can simulate reload. */
+export function __resetTokenMemoryForTests() {
+  cachedAccessToken = null;
+}
 
 export const setCachedToken = (token: string | null) => {
   cachedAccessToken = token;
@@ -557,7 +778,17 @@ export const setCachedToken = (token: string | null) => {
 };
 
 export const signOutUser = async () => {
-  clearStoredGoogleToken();
+  // Logout clears the session (memory + sessionStorage + global mirror) but
+  // KEEPS every account's per-uid vault (localStorage + IndexedDB) so the
+  // next login restores Canvas/Google connections instantly. Use
+  // clearStoredGoogleToken(uid) only for an explicit per-account disconnect.
+  clearActiveMirrorOnly();
+  setActiveGoogleUid(null);
+  try {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token: null } }));
+    }
+  } catch {}
   await signOut(auth);
 };
 

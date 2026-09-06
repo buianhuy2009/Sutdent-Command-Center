@@ -119,6 +119,32 @@ export async function migrateLocalStorageToDexie(): Promise<void> {
         if (v !== null) await db.preferences.put({ key: k, value: JSON.parse(v) }).catch(async ()=> { await db.preferences.put({ key: k, value: v }); });
       } catch {}
     }
+    // Migrate per-account vaults + token mirrors (any key with these prefixes)
+    // so relogin restore works even if localStorage was partially cleared.
+    try {
+      const vaultPrefixes = [
+        'scc_canvas_settings_v1__',
+        'google_workspace_access_token',
+        'google_token_acquired_at',
+        'scc_google_refresh',
+      ];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (!k || prefKeys.includes(k)) continue;
+        if (!vaultPrefixes.some((p) => k === p || k.startsWith(p))) continue;
+        try {
+          const v = localStorage.getItem(k);
+          if (v === null) continue;
+          const existing = await db.preferences.get(k).catch(() => null);
+          if (existing) continue; // Dexie copy already authoritative — never overwrite
+          try {
+            await db.preferences.put({ key: k, value: JSON.parse(v) });
+          } catch {
+            await db.preferences.put({ key: k, value: v });
+          }
+        } catch {}
+      }
+    } catch {}
     // Migrate quota to Dexie quota table
     try {
       const quotaRaw = localStorage.getItem('scc_gemini_daily_quota_v1');

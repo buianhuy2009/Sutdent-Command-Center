@@ -404,6 +404,9 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
               <p className="mt-1 text-[11px] text-[#8C897F] leading-snug">
                 Live REST sync needs <span className="font-semibold">both</span> the URL above and this token.
               </p>
+              <p className="mt-1 text-[11px] text-[#8C897F] leading-snug">
+                Saved only in this browser for your signed-in account — it survives sign-out and reload, and is never shared with other accounts on this device. Treat it like a password.
+              </p>
             </div>
 
             <div>
