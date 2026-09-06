@@ -105,6 +105,22 @@ export interface CanvasAssignment {
   submissionTypes?: string[];
 }
 
+export interface CanvasTodoItem {
+  id?: number | string;
+  type?: string;
+  assignment?: {
+    id?: number | string;
+    name?: string;
+    [key: string]: unknown;
+  };
+  quiz?: {
+    id?: number | string;
+    title?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 export interface CanvasSettings {
   calendarFeedUrl: string;
   apiDomain: string;
