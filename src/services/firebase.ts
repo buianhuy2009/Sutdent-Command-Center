@@ -266,33 +266,39 @@ export const onAuthStateChangedListener = (callback: (user: User | null) => void
 
 export const setStoredGoogleToken = (token: string) => {
   cachedAccessToken = token;
-  if (typeof window !== 'undefined') {
-    try {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
       sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
       sessionStorage.setItem('google_token_acquired_at', String(Date.now()));
+    }
+    if (typeof localStorage !== 'undefined') {
       localStorage.setItem(TOKEN_STORAGE_KEY, token);
       localStorage.setItem('google_token_acquired_at', String(Date.now()));
+    }
+    if (typeof window !== 'undefined') {
       persistTokenToIDB(token);
       import('./db').then(({ db }) => db.preferences.put({ key: 'google_token_acquired_at', value: String(Date.now()) }).catch(()=>{}));
       window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token } }));
-    } catch {}
-  }
+    }
+  } catch {}
 };
 
 export const clearStoredGoogleToken = () => {
   cachedAccessToken = null;
-  if (typeof window !== 'undefined') {
-    try {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
       sessionStorage.removeItem(TOKEN_STORAGE_KEY);
       sessionStorage.removeItem('google_token_acquired_at');
+    }
+    if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem('google_token_acquired_at');
-    } catch {}
-    persistTokenToIDB(null);
-    try {
+    }
+    if (typeof window !== 'undefined') {
+      persistTokenToIDB(null);
       window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token: null } }));
-    } catch {}
-  }
+    }
+  } catch {}
 };
 
 export const hasActiveGoogleWorkspaceToken = (): boolean => {
@@ -309,11 +315,10 @@ export const GOOGLE_TOKEN_TTL_MS = 55 * 60 * 1000; // refresh 5 min before the r
 const TOKEN_ACQUIRED_AT_KEY = 'google_token_acquired_at';
 
 export function getGoogleTokenAgeMs(): number | null {
-  if (typeof window === 'undefined') return null;
   try {
     const raw =
-      sessionStorage.getItem(TOKEN_ACQUIRED_AT_KEY) ||
-      localStorage.getItem(TOKEN_ACQUIRED_AT_KEY);
+      (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(TOKEN_ACQUIRED_AT_KEY)) ||
+      (typeof localStorage !== 'undefined' && localStorage.getItem(TOKEN_ACQUIRED_AT_KEY));
     if (!raw) return null; // signed in before timestamps existed → unknown, treat as fresh
     const age = Date.now() - parseInt(raw, 10);
     return Number.isFinite(age) && age >= 0 ? age : null;

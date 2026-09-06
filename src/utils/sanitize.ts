@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import type { Assignment, CanvasAssignment, EmailAlert, EmailMessage } from '../types';
 
 /**
@@ -12,6 +13,24 @@ const safeStr = (v: any, fallback = ''): string =>
 
 export function normKey(v: any): string {
   return safeStr(v).toLowerCase().trim();
+}
+
+/**
+ * Sanitizes untrusted HTML strings (such as Canvas LMS descriptions) to prevent XSS attacks.
+ * Uses DOMPurify in browser environments, with fallback in non-DOM environments.
+ */
+export function sanitizeHtml(html: string): string {
+  if (!html || typeof html !== 'string') return '';
+  if (typeof window !== 'undefined' && DOMPurify && typeof DOMPurify.sanitize === 'function') {
+    return DOMPurify.sanitize(html);
+  }
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
+    .replace(/\s*on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/(href|src|data)\s*=\s*["']?\s*(?:javascript|vbscript|data:text\/html):[^"'\s>]+/gi, '$1=""');
 }
 
 export function sanitizeAssignment(a: any, index = 0): Assignment | null {
@@ -57,7 +76,7 @@ export function sanitizeCanvasAssignment(c: any, index = 0): CanvasAssignment | 
     dueAt: safeStr(c.dueAt || c.due_at, ''),
     pointsPossible: typeof c.pointsPossible === 'number' ? c.pointsPossible : undefined,
     htmlUrl: c.htmlUrl,
-    description: c.description,
+    description: c.description ? sanitizeHtml(c.description) : undefined,
     isSynced: Boolean(c.isSynced),
     isCompleted: Boolean(c.isCompleted),
     isInformational: c.isInformational,

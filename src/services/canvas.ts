@@ -524,6 +524,7 @@ const LOCAL_STORAGE_CANVAS_COMPLETED_KEY = 'scc_canvas_completed_ids_v1';
 
 export function loadCompletedCanvasIds(): string[] {
   try {
+    if (typeof localStorage === 'undefined') return [];
     const saved = localStorage.getItem(LOCAL_STORAGE_CANVAS_COMPLETED_KEY);
     if (saved) return JSON.parse(saved);
   } catch (e) {
