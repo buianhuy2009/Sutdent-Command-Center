@@ -42,7 +42,7 @@ export const ScholarshipTrackerWorkspace: React.FC = () => {
                   <div className="font-bold truncate">{i.title}</div>
                   <div className="flex gap-1 flex-wrap">
                     {STAGES.map(s=> s!==stage && <button key={s} onClick={()=>move(i.id,s)} className="px-1.5 py-0.5 text-[10px] bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg hover:border-[#D97757]">{s}</button>)}
-                    <button onClick={()=>remove(i.id)} className="ml-auto p-1 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded"><Trash2 className="w-3 h-3" /></button>
+                    <button onClick={()=>remove(i.id)} aria-label="Remove item" className="ml-auto p-1 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded"><Trash2 className="w-3 h-3" /></button>
                   </div>
                 </div>
               ))}

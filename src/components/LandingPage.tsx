@@ -403,7 +403,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="bg-white dark:bg-[#1A1917] rounded-3xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold flex items-center gap-2"><Play className="w-5 h-5 text-[#D97757]" /> 60s Demo — Student Command Center</h3>
-              <button onClick={()=>setDemoOpen(false)} className="p-2 hover:bg-[#FAF9F5] dark:hover:bg-[#252422] rounded-xl"><X className="w-4 h-4" /></button>
+              <button onClick={()=>setDemoOpen(false)} aria-label="Close demo" className="p-2 hover:bg-[#FAF9F5] dark:hover:bg-[#252422] rounded-xl"><X className="w-4 h-4" /></button>
             </div>
             <div className="aspect-video bg-black rounded-2xl overflow-hidden border border-[#DFDACB] dark:border-[#2C2B27] relative">
               <video src="/demo.mp4" poster="/screenshot-dashboard.png" controls autoPlay muted playsInline className="w-full h-full object-cover" onError={(e)=>{ (e.currentTarget as HTMLVideoElement).style.display='none'; const fb=document.getElementById('demo-fallback'); if(fb) fb.style.display='flex'; }}>

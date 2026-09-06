@@ -1166,7 +1166,7 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                 <button onClick={()=>{
                   const blob=new Blob([toBibTeX(bibEntries)], {type:'text/plain'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='bibliography.bib'; a.click(); URL.revokeObjectURL(url);
                 }} className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl flex items-center gap-1"><Download className="w-3.5 h-3.5" /><span>Export .bib</span></button>
-                <button onClick={()=>{ if(confirm('Clear bibliography?')){ setBibEntries([]); saveBibliography([]); } }} className="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button onClick={()=>{ if(confirm('Clear bibliography?')){ setBibEntries([]); saveBibliography([]); } }} aria-label="Clear bibliography" className="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             </div>
             <div className="mt-4 space-y-3 max-h-[520px] overflow-y-auto">
