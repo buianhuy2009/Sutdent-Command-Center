@@ -1,5 +1,6 @@
 import { db } from './db';
 import type { AISource, PromptTemplate } from '../types';
+import { getClientGeminiApiKey, getClientGroqApiKey } from './gemini';
 
 /* ---------- BYOK + provider routing (Gemini primary, Groq fallback) ---------- */
 
@@ -22,11 +23,11 @@ export function pickModelForTask(task: AITaskKind, override?: AIModelId): AIMode
 }
 
 export function getGeminiKey(): string {
-  try { return localStorage.getItem('scc_gemini_api_key') || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''; }
+  try { return getClientGeminiApiKey() || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''; }
   catch { return ''; }
 }
 export function getGroqKey(): string {
-  try { return localStorage.getItem('scc_groq_api_key') || (import.meta as any).env?.GROQ_API_KEY || (import.meta as any).env?.VITE_GROQ_API_KEY || ''; }
+  try { return getClientGroqApiKey() || (import.meta as any).env?.GROQ_API_KEY || (import.meta as any).env?.VITE_GROQ_API_KEY || ''; }
   catch { return ''; }
 }
 export function hasAnyAIKey(): boolean { return Boolean(getGeminiKey() || getGroqKey()); }

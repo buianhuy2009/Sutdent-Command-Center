@@ -24,42 +24,12 @@ import {
   MarkdownNote,
 } from '../types';
 
-// --- Client-Side API Key Management — plaintext warning + sessionStorage option ---
-const GEMINI_KEY_STORAGE_KEY = 'scc_gemini_api_key';
-const GEMINI_KEY_SESSION_KEY = 'scc_gemini_api_key_session';
-
-export function getClientGeminiApiKey(): string {
-  try {
-    // sessionStorage takes precedence if user opted for session-only
-    const sess = sessionStorage.getItem(GEMINI_KEY_SESSION_KEY);
-    if (sess) return sess;
-    return localStorage.getItem(GEMINI_KEY_STORAGE_KEY) || '';
-  } catch {
-    return '';
-  }
-}
-
-export function setClientGeminiApiKey(key: string, opts?: { sessionOnly?: boolean }): void {
-  try {
-    const trimmed = key.trim();
-    if (!trimmed) {
-      localStorage.removeItem(GEMINI_KEY_STORAGE_KEY);
-      sessionStorage.removeItem(GEMINI_KEY_SESSION_KEY);
-      return;
-    }
-    if (opts?.sessionOnly) {
-      sessionStorage.setItem(GEMINI_KEY_SESSION_KEY, trimmed);
-      localStorage.removeItem(GEMINI_KEY_STORAGE_KEY);
-      console.warn('Gemini key stored in sessionStorage (cleared on tab close). More secure against persistent XSS, but will be lost on close.');
-    } else {
-      localStorage.setItem(GEMINI_KEY_STORAGE_KEY, trimmed);
-      sessionStorage.removeItem(GEMINI_KEY_SESSION_KEY);
-      console.warn('Gemini key stored in localStorage plaintext — visible to any script on this origin. Consider using Vault PIN or sessionStorage option for better security.');
-    }
-  } catch (e) {
-    console.error('Error storing Gemini API key:', e);
-  }
-}
+export {
+  getClientGeminiApiKey,
+  setClientGeminiApiKey,
+  getClientGroqApiKey,
+  setClientGroqApiKey,
+} from './gemini/providers';
 
 export async function testGeminiApiKey(key: string): Promise<boolean> {
   try {
@@ -252,19 +222,6 @@ export function repairJsonString<T = any>(raw: string): T {
   }
 }
 
-export function getClientGroqApiKey(): string {
-  try {
-    return localStorage.getItem('scc_groq_api_key') || '';
-  } catch {
-    return '';
-  }
-}
-
-export function setClientGroqApiKey(key: string): void {
-  try {
-    localStorage.setItem('scc_groq_api_key', key.trim());
-  } catch {}
-}
 
 export async function callGroqDirect(promptText: string, jsonMode: boolean = false): Promise<string> {
   const groqKey = getClientGroqApiKey();

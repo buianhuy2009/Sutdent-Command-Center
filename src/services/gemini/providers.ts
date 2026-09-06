@@ -1,20 +1,84 @@
+const ENCRYPT_PREFIX = 'scc_enc_v1:';
+
+export function obfuscateKey(plaintext: string): string {
+  if (!plaintext) return '';
+  if (plaintext.startsWith(ENCRYPT_PREFIX)) return plaintext;
+  const salt = 'scc-secure-storage-key-v1';
+  let result = '';
+  for (let i = 0; i < plaintext.length; i++) {
+    const charCode = plaintext.charCodeAt(i) ^ salt.charCodeAt(i % salt.length);
+    result += String.fromCharCode(charCode);
+  }
+  return ENCRYPT_PREFIX + btoa(result);
+}
+
+export function deobfuscateKey(stored: string): string {
+  if (!stored) return '';
+  if (!stored.startsWith(ENCRYPT_PREFIX)) {
+    // Legacy plaintext key in localStorage
+    return stored;
+  }
+  try {
+    const raw = atob(stored.slice(ENCRYPT_PREFIX.length));
+    const salt = 'scc-secure-storage-key-v1';
+    let result = '';
+    for (let i = 0; i < raw.length; i++) {
+      const charCode = raw.charCodeAt(i) ^ salt.charCodeAt(i % salt.length);
+      result += String.fromCharCode(charCode);
+    }
+    return result;
+  } catch {
+    return '';
+  }
+}
+
 export function getClientGeminiApiKey(): string {
   try {
     const sess = sessionStorage.getItem('scc_gemini_api_key_session');
     if (sess) return sess;
-    return localStorage.getItem('scc_gemini_api_key') || '';
+    const stored = localStorage.getItem('scc_gemini_api_key');
+    if (!stored) return '';
+    const raw = deobfuscateKey(stored);
+    if (stored && !stored.startsWith(ENCRYPT_PREFIX) && raw) {
+      try { localStorage.setItem('scc_gemini_api_key', obfuscateKey(raw)); } catch {}
+    }
+    return raw;
   } catch { return ''; }
 }
+
 export function setClientGeminiApiKey(key: string, opts?: { sessionOnly?: boolean }): void {
   try {
     const trimmed = key.trim();
     if (!trimmed) { localStorage.removeItem('scc_gemini_api_key'); sessionStorage.removeItem('scc_gemini_api_key_session'); return; }
-    if (opts?.sessionOnly) { sessionStorage.setItem('scc_gemini_api_key_session', trimmed); localStorage.removeItem('scc_gemini_api_key'); }
-    else { localStorage.setItem('scc_gemini_api_key', trimmed); sessionStorage.removeItem('scc_gemini_api_key_session'); }
+    if (opts?.sessionOnly) {
+      sessionStorage.setItem('scc_gemini_api_key_session', trimmed);
+      localStorage.removeItem('scc_gemini_api_key');
+    } else {
+      localStorage.setItem('scc_gemini_api_key', obfuscateKey(trimmed));
+      sessionStorage.removeItem('scc_gemini_api_key_session');
+    }
   } catch {}
 }
-export function getClientGroqApiKey(): string { try { return localStorage.getItem('scc_groq_api_key')||''; } catch { return ''; } }
-export function setClientGroqApiKey(key: string): void { try { localStorage.setItem('scc_groq_api_key', key.trim()); } catch {} }
+
+export function getClientGroqApiKey(): string {
+  try {
+    const stored = localStorage.getItem('scc_groq_api_key');
+    if (!stored) return '';
+    const raw = deobfuscateKey(stored);
+    if (stored && !stored.startsWith(ENCRYPT_PREFIX) && raw) {
+      try { localStorage.setItem('scc_groq_api_key', obfuscateKey(raw)); } catch {}
+    }
+    return raw;
+  } catch { return ''; }
+}
+
+export function setClientGroqApiKey(key: string): void {
+  try {
+    const trimmed = key.trim();
+    if (!trimmed) { localStorage.removeItem('scc_groq_api_key'); return; }
+    localStorage.setItem('scc_groq_api_key', obfuscateKey(trimmed));
+  } catch {}
+}
 
 export async function callGroqDirect(promptText: string, jsonMode: boolean=false): Promise<string> {
   const groqKey = getClientGroqApiKey();
