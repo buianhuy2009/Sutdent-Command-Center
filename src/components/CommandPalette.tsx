@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Search,
   CheckSquare,
@@ -36,6 +36,55 @@ interface CommandPaletteProps {
   sheetUrl?: string;
 }
 
+// ⚡ Bolt Optimization: Move static evaluator and matcher helpers outside render to prevent recreation on every keystroke
+function safeEval(expr: string): number | null {
+  try {
+    const tokens: string[] = [];
+    let i = 0;
+    while (i < expr.length) {
+      const c = expr[i];
+      if (/\s/.test(c)) { i++; continue; }
+      if (/[0-9.]/.test(c)) { let n = ''; while (i < expr.length && /[0-9.]/.test(expr[i])) n += expr[i++]; tokens.push(n); continue; }
+      if ('+-*/()%^'.includes(c)) { tokens.push(c); i++; continue; }
+      return null;
+    }
+    // shunting-yard to RPN
+    const prec: Record<string, number> = { '+': 1, '-': 1, '*': 2, '/': 2, '%': 2, '^': 3 };
+    const output: string[] = []; const ops: string[] = [];
+    for (const t of tokens) {
+      if (!isNaN(parseFloat(t))) output.push(t);
+      else if (t === '(') ops.push(t);
+      else if (t === ')') { while (ops.length && ops[ops.length - 1] !== '(') output.push(ops.pop()!); ops.pop(); }
+      else { while (ops.length && ops[ops.length - 1] !== '(' && (prec[ops[ops.length - 1]] || 0) >= (prec[t] || 0)) output.push(ops.pop()!); ops.push(t); }
+    }
+    while (ops.length) output.push(ops.pop()!);
+    const stack: number[] = [];
+    for (const t of output) {
+      if (!isNaN(parseFloat(t))) stack.push(parseFloat(t));
+      else {
+        const b = stack.pop()!, a = stack.pop()!;
+        if (a === undefined || b === undefined) return null;
+        if (t === '+') stack.push(a + b);
+        else if (t === '-') stack.push(a - b);
+        else if (t === '*') stack.push(a * b);
+        else if (t === '/') stack.push(b !== 0 ? a / b : NaN);
+        else if (t === '%') stack.push(a % b);
+        else if (t === '^') stack.push(Math.pow(a, b));
+      }
+    }
+    return stack.length === 1 && isFinite(stack[0]) ? stack[0] : null;
+  } catch { return null; }
+}
+
+function fuzzyMatch(hay: string, needle: string): boolean {
+  if (!needle) return true;
+  const h = hay.toLowerCase(); const n = needle.toLowerCase();
+  if (h.includes(n)) return true;
+  // subsequence: all chars of needle appear in order in hay
+  let i = 0; for (const c of h) { if (c === n[i]) i++; if (i === n.length) return true; }
+  return false;
+}
+
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isOpen,
   onClose,
@@ -61,55 +110,24 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  // ⚡ Bolt Optimization: Read localStorage only once when palette opens rather than on every keystroke render
+  const recentIds: string[] = useMemo(() => {
+    if (!isOpen) return [];
+    try { return JSON.parse(localStorage.getItem('scc_recent_palette_v1') || '[]'); } catch { return []; }
+  }, [isOpen]);
 
-  // Safe math evaluator — CSP-safe shunting-yard parser, no Function()
-  function safeEval(expr: string): number | null {
-    try {
-      const tokens: string[] = [];
-      let i=0;
-      while(i<expr.length){
-        const c=expr[i];
-        if(/\s/.test(c)){i++;continue;}
-        if(/[0-9.]/.test(c)){ let n=''; while(i<expr.length && /[0-9.]/.test(expr[i])) n+=expr[i++]; tokens.push(n); continue; }
-        if('+-*/()%^'.includes(c)){ tokens.push(c); i++; continue; }
-        return null;
-      }
-      // shunting-yard to RPN
-      const prec: Record<string,number> = {'+':1,'-':1,'*':2,'/':2,'%':2,'^':3};
-      const output:string[]=[]; const ops:string[]=[];
-      for(const t of tokens){
-        if(!isNaN(parseFloat(t))) output.push(t);
-        else if(t==='(') ops.push(t);
-        else if(t===')'){ while(ops.length && ops[ops.length-1]!=='(') output.push(ops.pop()!); ops.pop(); }
-        else { while(ops.length && ops[ops.length-1]!=='(' && (prec[ops[ops.length-1]]||0) >= (prec[t]||0)) output.push(ops.pop()!); ops.push(t); }
-      }
-      while(ops.length) output.push(ops.pop()!);
-      const stack:number[]=[];
-      for(const t of output){
-        if(!isNaN(parseFloat(t))) stack.push(parseFloat(t));
-        else {
-          const b=stack.pop()!, a=stack.pop()!;
-          if(a===undefined||b===undefined) return null;
-          if(t==='+') stack.push(a+b);
-          else if(t==='-') stack.push(a-b);
-          else if(t==='*') stack.push(a*b);
-          else if(t==='/') stack.push(b!==0?a/b:NaN);
-          else if(t==='%') stack.push(a%b);
-          else if(t==='^') stack.push(Math.pow(a,b));
-        }
-      }
-      return stack.length===1 && isFinite(stack[0]) ? stack[0] : null;
-    } catch { return null; }
-  }
-  let mathResult: string | null = null;
-  const qTrim = query.trim();
-  if (/^[0-9+\-*/().\s^%]+$/.test(qTrim) && /[0-9]/.test(qTrim) && /[+\-*/^%]/.test(qTrim) && qTrim.length < 80) {
-    const val = safeEval(qTrim.replace(/\^/g,'^'));
-    if (val !== null && !isNaN(val)) mathResult = `${qTrim} = ${val}`;
-  }
+  // ⚡ Bolt Optimization: Memoize math calculation result
+  const mathResult: string | null = useMemo(() => {
+    const qTrim = query.trim();
+    if (/^[0-9+\-*/().\s^%]+$/.test(qTrim) && /[0-9]/.test(qTrim) && /[+\-*/^%]/.test(qTrim) && qTrim.length < 80) {
+      const val = safeEval(qTrim.replace(/\^/g, '^'));
+      if (val !== null && !isNaN(val)) return `${qTrim} = ${val}`;
+    }
+    return null;
+  }, [query]);
 
-  const actions = [
+  // ⚡ Bolt Optimization: Memoize static workspace actions array to avoid allocating 18 objects on every keystroke
+  const actions = useMemo(() => [
     // Workspaces
     {
       id: 'ws-dashboard',
@@ -307,10 +325,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         onClose();
       },
     },
-  ];
+  ], [onSelectWorkspace, onClose, onOpenNewAssignment, onOpenQuickDraft, onToggleAiChat, onToggleDarkMode]);
 
   // --- Action Launcher: t / note / pomo commands ---
-  const commandAction = (() => {
+  const commandAction = useMemo(() => {
     const q = query.trim();
     if (q.toLowerCase().startsWith('t ')) {
       const title = q.slice(2).trim();
@@ -324,7 +342,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           try {
             const raw = localStorage.getItem('scc_user_assignments_v2');
             const arr = raw ? JSON.parse(raw) : [];
-            const newTask = { id: `assign-${Date.now()}`, assignmentName: title, subject: 'General', dueDate: new Date(Date.now()+86400000*3).toISOString().split('T')[0], priority: 'Med', status: 'Not Started', source: 'Manual' as const };
+            const newTask = { id: `assign-${Date.now()}`, assignmentName: title, subject: 'General', dueDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0], priority: 'Med', status: 'Not Started', source: 'Manual' as const };
             localStorage.setItem('scc_user_assignments_v2', JSON.stringify([...arr, newTask]));
           } catch {}
           onSelectWorkspace('dashboard');
@@ -355,7 +373,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     }
     if (q.toLowerCase().startsWith('pomo ')) {
       const minsStr = q.slice(5).trim();
-      const mins = parseInt(minsStr,10);
+      const mins = parseInt(minsStr, 10);
       if (!mins || mins < 1 || mins > 120) return null;
       return {
         id: 'cmd-pomo',
@@ -370,31 +388,27 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       };
     }
     return null;
-  })();
+  }, [query, onSelectWorkspace, onClose]);
 
-  // Fuzzy matcher (simple typo tolerance: allow 1-char edit distance via includes + subsequence)
-  function fuzzyMatch(hay: string, needle: string): boolean {
-    if (!needle) return true;
-    const h = hay.toLowerCase(); const n = needle.toLowerCase();
-    if (h.includes(n)) return true;
-    // subsequence: all chars of needle appear in order in hay (handles calender -> calendar)
-    let i=0; for (const c of h){ if(c===n[i]) i++; if(i===n.length) return true; }
-    return false;
-  }
-  const recentIds: string[] = (()=>{ try{ return JSON.parse(localStorage.getItem('scc_recent_palette_v1')||'[]'); }catch{ return []; }})();
-  const filteredActions = actions.filter(
-    (a) => fuzzyMatch(a.title, query) || fuzzyMatch(a.category, query)
-  ).sort((a,b)=>{
-    const ar = recentIds.indexOf(a.id); const br = recentIds.indexOf(b.id);
-    if (ar!==-1 || br!==-1) return (ar===-1? 999: ar) - (br===-1? 999: br);
-    return 0;
-  });
+  // ⚡ Bolt Optimization: Memoize filtering and sorting of actions to eliminate recalculation on unrelated renders
+  const filteredActions = useMemo(() => {
+    return actions.filter(
+      (a) => fuzzyMatch(a.title, query) || fuzzyMatch(a.category, query)
+    ).sort((a, b) => {
+      const ar = recentIds.indexOf(a.id); const br = recentIds.indexOf(b.id);
+      if (ar !== -1 || br !== -1) return (ar === -1 ? 999 : ar) - (br === -1 ? 999 : br);
+      return 0;
+    });
+  }, [actions, query, recentIds]);
 
-  const matchedAssignments = assignments
-    .filter(
-      (a) => fuzzyMatch(a.assignmentName, query) || fuzzyMatch(a.subject, query)
-    )
-    .slice(0, 4);
+  // ⚡ Bolt Optimization: Memoize assignment search filtering
+  const matchedAssignments = useMemo(() => {
+    return assignments
+      .filter(
+        (a) => fuzzyMatch(a.assignmentName, query) || fuzzyMatch(a.subject, query)
+      )
+      .slice(0, 4);
+  }, [assignments, query]);
 
   // focus trap for Tab cycle
   const dialogRef = React.useRef<HTMLDivElement>(null);
@@ -416,6 +430,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     input?.focus();
     return () => root.removeEventListener('keydown', onKey as any);
   }, [isOpen]);
+
+  if (!isOpen) return null;
 
   return (
     <div
