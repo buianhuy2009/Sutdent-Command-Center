@@ -34,3 +34,27 @@ describe('calculateGradePrediction', () => {
     expect(r.status).toBeDefined();
   });
 });
+
+import { runOfflineAiBenchmark, buildFewShotNlpTaskPrompt, buildFewShotEmailClassifierPrompt } from './aiTrainingPipeline';
+
+describe('AI Training & Evaluation Benchmark Pipeline', () => {
+  it('builds few-shot prompts correctly', () => {
+    const prompt = buildFewShotNlpTaskPrompt('Làm bài tập Lý ngày mai');
+    expect(prompt).toContain('FEW-SHOT EXAMPLES');
+    expect(prompt).toContain('Làm bài tập Lý ngày mai');
+  });
+
+  it('builds email classifier prompt correctly', () => {
+    const prompt = buildFewShotEmailClassifierPrompt('Học phí', 'Thông báo nộp học phí');
+    expect(prompt).toContain('VÍ DỤ HUẤN LUYỆN');
+    expect(prompt).toContain('Học phí');
+  });
+
+  it('runs offline benchmark and achieves expected score', () => {
+    const report = runOfflineAiBenchmark();
+    expect(report.overallScore).toBeGreaterThanOrEqual(90);
+    expect(report.tasks.emailClassification.accuracy).toBeGreaterThanOrEqual(90);
+    expect(report.tasks.vietnameseNlpExtraction.accuracy).toBeGreaterThanOrEqual(90);
+  });
+});
+
