@@ -79,10 +79,21 @@ export async function flushOfflineQueue(process: (item: any) => Promise<void>): 
   try {
     const { db } = await import('../services/db');
     const queued = await db.assignmentsQueue.toArray().catch(() => []);
+    if (!queued.length) return 0;
     let done = 0;
-    for (const q of queued as any[]) {
-      try { await process(q); await db.assignmentsQueue.delete(q.id).catch(() => {}); done++; }
-      catch { /* keep for next retry with backoff */ }
+    const chunkSize = 5;
+    for (let i = 0; i < queued.length; i += chunkSize) {
+      const chunk = queued.slice(i, i + chunkSize);
+      const results = await Promise.allSettled(
+        chunk.map(async (q: any) => {
+          await process(q);
+          await db.assignmentsQueue.delete(q.id).catch(() => {});
+          return q;
+        })
+      );
+      for (const res of results) {
+        if (res.status === 'fulfilled') done++;
+      }
     }
     return done;
   } catch { return 0; }

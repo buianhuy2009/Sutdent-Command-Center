@@ -910,19 +910,25 @@ export default function App() {
         if (!queued.length) return;
         const token = await ensureFreshGoogleToken();
         if (!token || !masterSheetId) return;
-        for (const item of queued) {
-          try {
-            const anyItem: any = item;
-            if (anyItem._op === 'update' && anyItem.sheetRowIndex) {
-              await updateAssignmentInSheet(token, masterSheetId, anyItem.sheetRowIndex, anyItem);
-            } else if (anyItem._op === 'delete' && anyItem.sheetRowIndex) {
-              // delete not yet implemented on server — fallback to syncAll
-              await syncAllAssignmentsToSheet(token, masterSheetId, assignments);
-            } else {
-              await appendAssignmentToSheet(token, masterSheetId, item);
-            }
-            await db.assignmentsQueue.delete(item.id);
-          } catch (e) { console.warn('Queue retry failed', e); }
+        const chunkSize = 5;
+        for (let i = 0; i < queued.length; i += chunkSize) {
+          const chunk = queued.slice(i, i + chunkSize);
+          await Promise.allSettled(
+            chunk.map(async (item) => {
+              try {
+                const anyItem: any = item;
+                if (anyItem._op === 'update' && anyItem.sheetRowIndex) {
+                  await updateAssignmentInSheet(token, masterSheetId, anyItem.sheetRowIndex, anyItem);
+                } else if (anyItem._op === 'delete' && anyItem.sheetRowIndex) {
+                  // delete not yet implemented on server — fallback to syncAll
+                  await syncAllAssignmentsToSheet(token, masterSheetId, assignments);
+                } else {
+                  await appendAssignmentToSheet(token, masterSheetId, item);
+                }
+                await db.assignmentsQueue.delete(item.id);
+              } catch (e) { console.warn('Queue retry failed', e); }
+            })
+          );
         }
       } catch {}
     };
