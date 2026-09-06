@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       "User-Agent": "StudentCommandCenter/1.0",
     };
 
-    const canvasToken = req.headers["x-canvas-token"];
+    const canvasToken = req.body?.canvasToken || req.headers["x-canvas-token"];
     if (canvasToken) {
       headers["Authorization"] = `Bearer ${canvasToken}`;
     }
