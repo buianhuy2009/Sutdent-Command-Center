@@ -139,7 +139,6 @@ import {
   onAuthStateChangedListener,
   getStoredGoogleToken,
   getValidGoogleToken,
-  getGoogleTokenStatus,
   setActiveGoogleUid,
   hydrateGoogleTokenForUser,
   classifySignInError,
@@ -2810,10 +2809,10 @@ export default function App() {
               <ErrorBoundary fallback={<div className="p-6 rounded-2xl border border-rose-200 bg-rose-50 text-rose-900 text-sm">Workspace failed to load. Try refreshing or switching tabs.</div>}>
               <Suspense fallback={<div className="p-8 flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#D97757] border-t-transparent rounded-full animate-spin" /><span className="ml-2 text-xs text-[#8C897F]">Loading workspace…</span></div>}>
               <div className="max-w-7xl mx-auto space-y-6">
-                {/* Google Workspace Connection Banner: missing grant vs expired
-                    hourly token (no permanent grant yet). Expired keeps every
-                    setting — reconnect is one click (popup, redirect fallback),
-                    Canvas data untouched. */}
+                {/* Google Workspace Connection Banner: only when no usable grant
+                    exists. Access renews silently via the offline grant, so no
+                    expiry state is ever surfaced — reconnecting once upgrades
+                    legacy hourly tokens to permanent automatically. */}
                 {user && !isGoogleConnected && !isDemoMode && (
                   <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs animate-in fade-in">
                     <div className="flex items-center gap-3">
@@ -2822,12 +2821,10 @@ export default function App() {
                       </div>
                       <div>
                         <p className="font-bold text-[#141413] dark:text-[#FAF9F5] text-sm">
-                          {getGoogleTokenStatus() === 'expired' ? 'Google session expired — one-click reconnect' : 'Google Workspace Sync Paused'}
+                          Google Workspace Sync Paused
                         </p>
                         <p className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8]">
-                          {getGoogleTokenStatus() === 'expired'
-                            ? `Signed in as ${user.email}. Your hourly sign-in expired — reconnect once to resume Calendar, Drive, Sheets & Classroom. Canvas settings and all data are kept.`
-                            : `Signed in as ${user.email}. Connect Google Workspace with one click to enable live sync across Calendar, Drive, Sheets & Classroom — it stays connected automatically.`}
+                          {`Signed in as ${user.email}. Connect Google Workspace with one click to enable live sync across Calendar, Drive, Sheets & Classroom — it stays connected automatically.`}
                         </p>
                       </div>
                     </div>
@@ -2838,7 +2835,7 @@ export default function App() {
                         className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                       >
                         <RefreshCw className={`w-3.5 h-3.5 ${isLoggingIn ? 'animate-spin' : ''}`} />
-                        <span>{isLoggingIn ? 'Connecting...' : getGoogleTokenStatus() === 'expired' ? 'Reconnect now' : 'Connect Workspace'}</span>
+                        <span>{isLoggingIn ? 'Connecting...' : 'Connect Workspace'}</span>
                       </button>
                     </div>
                   </div>
