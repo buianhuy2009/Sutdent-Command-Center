@@ -1,15 +1,21 @@
-import handleHealth from "./health.js";
-import handleCanvasProxy from "./canvas/proxy.js";
-import handleAssistant from "./gemini/assistant.js";
-import handleParseAssignment from "./gemini/parse-assignment.js";
-import handleSummarizeEmails from "./gemini/summarize-emails.js";
-import handleQuickDraft from "./gemini/quick-draft.js";
-import handleExtractSubtasks from "./gemini/extract-subtasks.js";
-import handleEstimateEffort from "./gemini/estimate-effort.js";
-import handleSuggestStudySlots from "./gemini/suggest-study-slots.js";
-import handleGenerate from "./gemini/generate.js";
-import handleGoogleExchange from "./auth/google/exchange.js";
-import handleGoogleRefresh from "./auth/google/refresh.js";
+// Single-function API router (api/index.js is the ONLY file under api/ by design).
+// Vercel Hobby allows max 12 Serverless Functions per deployment; 13 file-routed
+// handlers failed every deploy at "Deploying outputs..." with no build error
+// (see dpl_29g1j9oUm, 2026-09-06). Handler implementations live in
+// src/server/api-handlers/* (bundled into this one function via nft) so the
+// route table below stays identical and no client URL changes.
+import handleHealth from "../src/server/api-handlers/health.js";
+import handleCanvasProxy from "../src/server/api-handlers/canvas/proxy.js";
+import handleAssistant from "../src/server/api-handlers/gemini/assistant.js";
+import handleParseAssignment from "../src/server/api-handlers/gemini/parse-assignment.js";
+import handleSummarizeEmails from "../src/server/api-handlers/gemini/summarize-emails.js";
+import handleQuickDraft from "../src/server/api-handlers/gemini/quick-draft.js";
+import handleExtractSubtasks from "../src/server/api-handlers/gemini/extract-subtasks.js";
+import handleEstimateEffort from "../src/server/api-handlers/gemini/estimate-effort.js";
+import handleSuggestStudySlots from "../src/server/api-handlers/gemini/suggest-study-slots.js";
+import handleGenerate from "../src/server/api-handlers/gemini/generate.js";
+import handleGoogleExchange from "../src/server/api-handlers/auth/google/exchange.js";
+import handleGoogleRefresh from "../src/server/api-handlers/auth/google/refresh.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
