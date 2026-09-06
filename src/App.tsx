@@ -2448,9 +2448,7 @@ export default function App() {
     const pending = canvasAssignments.filter((a) => !a.isSynced);
     if (pending.length === 0) return;
 
-    for (const item of pending) {
-      await handleSyncCanvasToSheet(item);
-    }
+    await Promise.all(pending.map((item) => handleSyncCanvasToSheet(item)));
 
     addToast({
       type: 'success',
