@@ -18,7 +18,38 @@ export function createApiApp(): express.Express {
 
   // CORS middleware for API endpoints
   app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    const origin = req.headers.origin;
+    const envOrigins = [
+      process.env.APP_URL,
+      process.env.VITE_APP_URL,
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+      process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined,
+      ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",").map(s => s.trim()) : []),
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:5173"
+    ].filter(Boolean) as string[];
+
+    let allowed: string | null = null;
+    if (origin) {
+      if (envOrigins.includes(origin)) {
+        allowed = origin;
+      } else {
+        try {
+          const url = new URL(origin);
+          if (url.protocol === "https:" && (url.hostname === "vercel.app" || url.hostname.endsWith(".vercel.app"))) {
+            allowed = origin;
+          }
+        } catch {}
+      }
+    }
+
+    if (allowed) {
+      res.setHeader("Access-Control-Allow-Origin", allowed);
+      res.setHeader("Vary", "Origin");
+    }
+
     res.setHeader(
       "Access-Control-Allow-Methods",
       "GET, POST, PUT, DELETE, OPTIONS, PATCH"
