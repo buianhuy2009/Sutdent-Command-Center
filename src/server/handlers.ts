@@ -107,7 +107,7 @@ export async function handleCanvasProxy(req: any, res: any) {
     // Only allow Canvas-like domains to prevent open proxy abuse
     try {
       const u = new URL(targetUrl);
-      const allowedCanvas = (process.env.CANVAS_ALLOWED_HOSTS || "instructure.com,canvaslms.com").split(",").map(s=>s.trim());
+      const allowedCanvas = (process.env.CANVAS_ALLOWED_HOSTS || "instructure.com,canvaslms.com").split(",").map(s=>s.trim()).filter(Boolean);
       const isCanvasHost = allowedCanvas.some(h => u.hostname === h || u.hostname.endsWith("."+h));
       if (!isCanvasHost) {
         return res.status(400).json({ error: `Host not allowlisted for Canvas proxy: ${u.hostname}. Allowed: ${allowedCanvas.join(', ')}` });
