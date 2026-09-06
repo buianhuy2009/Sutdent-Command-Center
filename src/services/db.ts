@@ -113,11 +113,23 @@ export async function migrateLocalStorageToDexie(): Promise<void> {
     } catch {}
     // Migrate preferences (15 keys) to Dexie preferences table
     const prefKeys = ['scc_user_preferred_name','scc_user_daily_intention','scc_user_selected_vibe','scc_user_sprint_goal','scc_canvas_settings_v1','scc_gemini_daily_quota_v1','scc_pinned_apps_v2','scc_recent_tabs_v1','scc_app_usage_v1','scc_sidebar_expanded','scc_theme','scc_color_theme_v1','scc_ui_density_v1','scc_shortcut_settings','scc_dashboard_personalize_open'];
+    const prefItems: { key: string; value: any }[] = [];
     for (const k of prefKeys) {
       try {
         const v = localStorage.getItem(k);
-        if (v !== null) await db.preferences.put({ key: k, value: JSON.parse(v) }).catch(async ()=> { await db.preferences.put({ key: k, value: v }); });
+        if (v !== null) {
+          let parsed: any;
+          try {
+            parsed = JSON.parse(v);
+          } catch {
+            parsed = v;
+          }
+          prefItems.push({ key: k, value: parsed });
+        }
       } catch {}
+    }
+    if (prefItems.length > 0) {
+      await db.preferences.bulkPut(prefItems).catch(() => {});
     }
     // Migrate per-account vaults + token mirrors (any key with these prefixes)
     // so relogin restore works even if localStorage was partially cleared.
