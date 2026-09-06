@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle2, Circle, ArrowRight, ChevronDown } from 'lucide-react';
+import { getValidGoogleToken } from '../services/firebase';
+import { hasAnyCanvasSettings } from '../services/canvas';
+import { hasRefreshToken } from '../services/googleAuth';
 
 export type OnboardingChecks = { canvas: boolean; google: boolean; task: boolean; pomodoro: boolean };
 
@@ -47,10 +50,16 @@ export const OnboardingChecklist: React.FC<{ onConnectCanvas: ()=>void; onConnec
     setDismissedToday(true);
     setCollapsed(true);
   };
-  // auto-detect
+  // auto-detect (uses the real connection state: fresh Workspace token or
+  // permanent offline grant; Canvas legacy key or any per-account vault)
   useEffect(()=>{
-    const hasCanvas = Boolean(localStorage.getItem('scc_canvas_settings_v1'));
-    const hasGoogle = Boolean(localStorage.getItem('google_access_token') || localStorage.getItem('scc_gemini_api_key'));
+    const hasCanvas = hasAnyCanvasSettings();
+    let hasGoogle = false;
+    try {
+      hasGoogle = Boolean(getValidGoogleToken() || hasRefreshToken() || localStorage.getItem('scc_gemini_api_key'));
+    } catch {
+      hasGoogle = false;
+    }
     const hasTask = (()=>{ try{ const r=localStorage.getItem('scc_user_assignments_v2'); return r && JSON.parse(r).length>0; } catch{return false; }})();
     const hasPomo = (()=>{ try{ return Boolean(localStorage.getItem('scc_pomo_completed_v1')); } catch{return false; }})();
     const next = { canvas: hasCanvas||checks.canvas, google: hasGoogle||checks.google, task: hasTask||checks.task, pomodoro: hasPomo||checks.pomodoro };

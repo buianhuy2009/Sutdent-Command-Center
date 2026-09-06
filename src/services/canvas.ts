@@ -10,6 +10,40 @@ export const DEFAULT_CANVAS_SETTINGS: CanvasSettings = {
 
 const LOCAL_STORAGE_CANVAS_KEY = 'scc_canvas_settings_v1';
 
+// Firebase uid that owns the current Canvas bundle (set on sign-in / auth change).
+let activeCanvasUid: string | null = null;
+export function getActiveCanvasUid(): string | null {
+  return activeCanvasUid;
+}
+export function setActiveCanvasUid(uid: string | null) {
+  activeCanvasUid = uid || null;
+}
+export function canvasKeyFor(uid?: string | null): string {
+  return uid ? `${LOCAL_STORAGE_CANVAS_KEY}__${uid}` : LOCAL_STORAGE_CANVAS_KEY;
+}
+// Tracks which account wrote the legacy global mirror, so a *different*
+// account signing in later never inherits it (no cross-account mixing).
+const CANVAS_OWNER_KEY = 'scc_canvas_settings_owner';
+function getCanvasMirrorOwner(): string | null {
+  try {
+    return localStorage.getItem(CANVAS_OWNER_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** True when any Canvas settings exist (legacy global or any per-uid vault). */
+export function hasAnyCanvasSettings(): boolean {
+  try {
+    if (localStorage.getItem(LOCAL_STORAGE_CANVAS_KEY)) return true;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(`${LOCAL_STORAGE_CANVAS_KEY}__`)) return true;
+    }
+  } catch {}
+  return false;
+}
+
 /**
  * Normalize a user-pasted Canvas instance URL to `https://<host>`.
  * Accepts full login URLs (e.g. `https://4015.instructure.com/login/`),
@@ -82,33 +116,75 @@ export function resolveCanvasUrl(
   return `${baseDomain}`;
 }
 
-export function loadCanvasSettings(): CanvasSettings {
+function normalizeSettingsShape(parsed: any): CanvasSettings {
+  return {
+    ...DEFAULT_CANVAS_SETTINGS,
+    ...parsed,
+    // Migrate legacy stored values like `https://xxx.instructure.com/login/`
+    apiDomain: normalizeCanvasDomain(
+      parsed.apiDomain || DEFAULT_CANVAS_SETTINGS.apiDomain,
+      DEFAULT_CANVAS_SETTINGS.apiDomain
+    ),
+  };
+}
+
+function readCanvasKey(key: string): CanvasSettings | null {
   try {
-    const saved = localStorage.getItem(LOCAL_STORAGE_CANVAS_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return {
-        ...DEFAULT_CANVAS_SETTINGS,
-        ...parsed,
-        // Migrate legacy stored values like `https://xxx.instructure.com/login/`
-        apiDomain: normalizeCanvasDomain(
-          parsed.apiDomain || DEFAULT_CANVAS_SETTINGS.apiDomain,
-          DEFAULT_CANVAS_SETTINGS.apiDomain
-        ),
-      };
-    }
+    const saved = localStorage.getItem(key);
+    if (saved) return normalizeSettingsShape(JSON.parse(saved));
   } catch (e) {
     console.error('Error loading Canvas settings:', e);
+  }
+  return null;
+}
+
+export function loadCanvasSettings(uid?: string | null): CanvasSettings {
+  const owner = uid ?? activeCanvasUid;
+  // Per-uid vault first — accounts never share Canvas connections.
+  if (owner) {
+    const scoped = readCanvasKey(canvasKeyFor(owner));
+    if (scoped) return scoped;
+    // No vault yet: only adopt the legacy mirror when it is unattributed
+    // (pre-upgrade data) or was written by this same account. Otherwise this
+    // is another account's leftover — start blank instead of mixing.
+    const mirrorOwner = getCanvasMirrorOwner();
+    if (mirrorOwner && mirrorOwner !== owner) return { ...DEFAULT_CANVAS_SETTINGS };
+  }
+  // Legacy global copy (written by older versions): adopt into the vault once.
+  const legacy = readCanvasKey(LOCAL_STORAGE_CANVAS_KEY);
+  if (legacy) {
+    if (owner) {
+      try {
+        localStorage.setItem(canvasKeyFor(owner), JSON.stringify(legacy));
+        localStorage.setItem(CANVAS_OWNER_KEY, owner);
+      } catch {}
+    }
+    return legacy;
   }
   return DEFAULT_CANVAS_SETTINGS;
 }
 
-export function saveCanvasSettings(settings: CanvasSettings) {
+/** Switch the active Canvas bundle to `uid` and return its settings. */
+export function hydrateCanvasSettingsForUser(uid: string): CanvasSettings {
+  setActiveCanvasUid(uid);
+  return loadCanvasSettings(uid);
+}
+
+export function saveCanvasSettings(settings: CanvasSettings, uid?: string | null) {
   try {
     const normalized = {
       ...settings,
       apiDomain: normalizeCanvasDomain(settings.apiDomain, DEFAULT_CANVAS_SETTINGS.apiDomain),
     };
+    const owner = uid ?? activeCanvasUid;
+    // Per-uid vault (survives logout/relogin, isolated per account).
+    if (owner) {
+      try {
+        localStorage.setItem(canvasKeyFor(owner), JSON.stringify(normalized));
+        localStorage.setItem(CANVAS_OWNER_KEY, owner);
+      } catch {}
+    }
+    // Legacy global mirror (backwards compatible with older reads).
     localStorage.setItem(LOCAL_STORAGE_CANVAS_KEY, JSON.stringify(normalized));
   } catch (e) {
     console.error('Error saving Canvas settings:', e);

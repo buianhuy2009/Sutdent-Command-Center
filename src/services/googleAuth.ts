@@ -19,12 +19,43 @@ import {
   setStoredGoogleToken,
   getValidGoogleToken,
   getGoogleTokenAgeMs,
+  getActiveGoogleUid,
   CORE_WORKSPACE_SCOPES,
   WORKSPACE_SCOPES,
 } from './firebase';
 
 const REFRESH_LS_KEY = 'scc_google_refresh_v1';
 const REFRESH_IDB_KEY = 'google_refresh_grant_v1';
+// Which account wrote the legacy (pre-per-uid) grant mirror — a different
+// account must never inherit it.
+const REFRESH_OWNER_KEY = 'scc_google_refresh_owner';
+const refreshLsKeyFor = (uid?: string | null) =>
+  uid ? `${REFRESH_LS_KEY}__${uid}` : REFRESH_LS_KEY;
+const refreshIdbKeyFor = (uid?: string | null) =>
+  uid ? `${REFRESH_IDB_KEY}__${uid}` : REFRESH_IDB_KEY;
+
+/** Resolve the account in scope: explicit uid → active session → null (legacy). */
+function resolveGrantUid(explicit?: string | null): string | null {
+  if (explicit) return explicit;
+  try {
+    return getActiveGoogleUid() || null;
+  } catch {
+    return null;
+  }
+}
+function getRefreshOwner(): string | null {
+  try {
+    return localStorage.getItem(REFRESH_OWNER_KEY);
+  } catch {
+    return null;
+  }
+}
+function setRefreshOwner(uid: string | null) {
+  try {
+    if (uid) localStorage.setItem(REFRESH_OWNER_KEY, uid);
+    else localStorage.removeItem(REFRESH_OWNER_KEY);
+  } catch {}
+}
 // Real Google access-token lifetime is 3,600s; start renewing 5 min early.
 const REFRESH_EARLY_MS = 55 * 60 * 1000;
 const GIS_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
@@ -82,30 +113,85 @@ interface RefreshGrant {
   scope: string;
 }
 
-let cachedGrant: RefreshGrant | null | undefined; // undefined = not yet read
+let grantCache: Record<string, RefreshGrant | null> = {};
 
-function readGrantSync(): RefreshGrant | null {
-  if (cachedGrant !== undefined) return cachedGrant;
+/** @internal Test-only: drop cached grants so tests can simulate reload. */
+export function __resetGrantCacheForTests() {
+  grantCache = {};
+}
+
+function parseGrant(raw: string | null): RefreshGrant | null {
+  if (!raw) return null;
   try {
-    const raw = localStorage.getItem(REFRESH_LS_KEY);
-    cachedGrant = raw ? (JSON.parse(raw) as RefreshGrant) : null;
-    if (cachedGrant && typeof cachedGrant.rt !== 'string') cachedGrant = null;
+    const parsed = JSON.parse(raw) as RefreshGrant;
+    return parsed && typeof parsed.rt === 'string' ? parsed : null;
   } catch {
-    cachedGrant = null;
+    return null;
   }
-  return cachedGrant;
+}
+
+function readGrantSync(uid?: string | null): RefreshGrant | null {
+  const resolved = resolveGrantUid(uid);
+  const key = refreshLsKeyFor(resolved);
+  if (grantCache[key] !== undefined) return grantCache[key];
+  try {
+    let grant = parseGrant(localStorage.getItem(key));
+    if (!grant && resolved) {
+      // One-time adoption of the legacy mirror — only when unattributed or
+      // owned by this same account. Never borrow another account's grant.
+      const owner = getRefreshOwner();
+      if (!owner || owner === resolved) {
+        grant = parseGrant(localStorage.getItem(REFRESH_LS_KEY));
+        if (grant) {
+          try {
+            localStorage.setItem(key, JSON.stringify(grant));
+            setRefreshOwner(resolved);
+          } catch {}
+        }
+      }
+    }
+    grantCache[key] = grant;
+    return grant;
+  } catch {
+    grantCache[key] = null;
+    return null;
+  }
 }
 
 async function persistGrant(grant: RefreshGrant | null, uid?: string | null): Promise<void> {
-  cachedGrant = grant;
+  const resolved = resolveGrantUid(uid);
+  const lsKey = refreshLsKeyFor(resolved);
+  const idbKey = refreshIdbKeyFor(resolved);
+  grantCache[lsKey] = grant;
   try {
-    if (grant) localStorage.setItem(REFRESH_LS_KEY, JSON.stringify(grant));
-    else localStorage.removeItem(REFRESH_LS_KEY);
+    if (grant) {
+      localStorage.setItem(lsKey, JSON.stringify(grant));
+      // Legacy global mirror (backwards compatible); guarded by owner on read.
+      localStorage.setItem(REFRESH_LS_KEY, JSON.stringify(grant));
+      if (resolved) setRefreshOwner(resolved);
+    } else {
+      localStorage.removeItem(lsKey);
+      // Only clear the shared mirror when it belongs to this account (or to
+      // nobody) — never delete another account's grant.
+      const owner = getRefreshOwner();
+      if (!resolved || !owner || owner === resolved) {
+        localStorage.removeItem(REFRESH_LS_KEY);
+        if (resolved && owner === resolved) setRefreshOwner(null);
+      }
+    }
   } catch {}
   try {
     const { db } = await import('./db');
-    if (grant) await db.preferences.put({ key: REFRESH_IDB_KEY, value: JSON.stringify(grant) });
-    else await db.preferences.delete(REFRESH_IDB_KEY);
+    if (grant) {
+      await db.preferences.put({ key: idbKey, value: JSON.stringify(grant) });
+      await db.preferences.put({ key: REFRESH_IDB_KEY, value: JSON.stringify(grant) }).catch(() => {});
+    } else {
+      await db.preferences.delete(idbKey);
+      const owner = getRefreshOwner();
+      if (!resolved || !owner || owner === resolved) {
+        await db.preferences.delete(REFRESH_IDB_KEY).catch(() => {});
+      }
+    }
   } catch {}
   // Cross-device home for the grant: owner-only Firestore doc (best effort —
   // offline or restrictive rules fall back to the local mirror silently).
@@ -132,14 +218,15 @@ async function persistGrant(grant: RefreshGrant | null, uid?: string | null): Pr
 
 /** Pull a cross-device grant down (e.g. fresh login on a second laptop). */
 export async function hydrateRefreshGrant(uid?: string | null): Promise<boolean> {
-  if (readGrantSync()) return true;
+  const resolved = resolveGrantUid(uid);
+  if (readGrantSync(resolved)) return true;
   try {
     const [{ getFirestore, doc, getDoc }, { getApps }] = await Promise.all([
       import('firebase/firestore'),
       import('firebase/app'),
     ]);
     const apps = getApps();
-    const id = uid || (await import('./firebase')).auth?.currentUser?.uid;
+    const id = resolved || (await import('./firebase')).auth?.currentUser?.uid;
     if (!apps.length || !id) return false;
     const snap = await getDoc(doc(getFirestore(apps[0]), 'users', id, 'integrations', 'google'));
     const rt = snap.exists() ? (snap.data() as any)?.refresh_token : null;
@@ -151,13 +238,27 @@ export async function hydrateRefreshGrant(uid?: string | null): Promise<boolean>
   // IndexedDB mirror (survives localStorage clears within the same browser profile)
   try {
     const { db } = await import('./db');
-    const row: any = await db.preferences.get(REFRESH_IDB_KEY);
-    if (row?.value) {
-      const parsed = JSON.parse(row.value) as RefreshGrant;
-      if (parsed?.rt) {
-        cachedGrant = parsed;
-        try { localStorage.setItem(REFRESH_LS_KEY, row.value); } catch {}
-        return true;
+    const keys = resolved
+      ? [refreshIdbKeyFor(resolved), REFRESH_IDB_KEY]
+      : [REFRESH_IDB_KEY];
+    for (const k of keys) {
+      const row: any = await db.preferences.get(k).catch(() => null);
+      if (row?.value) {
+        const parsed = parseGrant(typeof row.value === 'string' ? row.value : JSON.stringify(row.value));
+        if (parsed?.rt) {
+          // Guard the legacy mirror the same way as the localStorage path:
+          // never adopt another account's grant.
+          if (k === REFRESH_IDB_KEY && resolved) {
+            const owner = getRefreshOwner();
+            if (owner && owner !== resolved) continue;
+          }
+          grantCache[refreshLsKeyFor(resolved)] = parsed;
+          try {
+            localStorage.setItem(refreshLsKeyFor(resolved), JSON.stringify(parsed));
+            if (resolved) setRefreshOwner(resolved);
+          } catch {}
+          return true;
+        }
       }
     }
   } catch {}
@@ -165,16 +266,17 @@ export async function hydrateRefreshGrant(uid?: string | null): Promise<boolean>
 }
 
 /** Synchronous: is there a stored offline grant that can mint access tokens? */
-export function hasRefreshToken(): boolean {
-  const g = readGrantSync();
+export function hasRefreshToken(uid?: string | null): boolean {
+  const g = readGrantSync(uid);
   return Boolean(g && typeof g.rt === 'string' && g.rt.length > 10);
 }
 
 /** Forget the offline grant everywhere (revoked, or user disconnected). */
 export async function clearRefreshGrant(uid?: string | null): Promise<void> {
-  await persistGrant(null);
+  const resolved = resolveGrantUid(uid);
+  await persistGrant(null, resolved);
   try {
-    const id = uid || (await import('./firebase')).auth?.currentUser?.uid;
+    const id = resolved || (await import('./firebase')).auth?.currentUser?.uid;
     if (id) {
       const [{ getFirestore, doc, deleteDoc }, { getApps }] = await Promise.all([
         import('firebase/firestore'),
@@ -336,11 +438,12 @@ export async function requestOfflineGrant(opts: { gmail?: boolean } = {}): Promi
   return data.access_token as string;
 }
 
-/** Forget everything Google-related on this device (plus server doc). */
-export async function clearGoogleGrant(): Promise<void> {
+/** Forget everything Google-related for one account (plus server doc). */
+export async function clearGoogleGrant(uid?: string | null): Promise<void> {
+  const resolved = resolveGrantUid(uid);
   try {
     const { clearStoredGoogleToken } = await import('./firebase');
-    clearStoredGoogleToken();
+    clearStoredGoogleToken(resolved);
   } catch {}
-  await clearRefreshGrant();
+  await clearRefreshGrant(resolved);
 }

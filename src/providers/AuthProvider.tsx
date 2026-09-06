@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User } from 'firebase/auth';
-import { signInWithGoogle, signOutUser, onAuthStateChangedListener, getStoredGoogleToken } from '../services/firebase';
+import { signInWithGoogle, signOutUser, onAuthStateChangedListener, getStoredGoogleToken, setActiveGoogleUid, hydrateGoogleTokenForUser } from '../services/firebase';
+import { setActiveCanvasUid } from '../services/canvas';
 
 interface AuthContextValue {
   user: User | null;
@@ -22,9 +23,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const unsub = onAuthStateChangedListener((u) => {
       setUser(u);
-      const curToken = getStoredGoogleToken();
-      setToken(curToken);
-      if (u && curToken) setIsDemoMode(false);
+      if (u?.uid) {
+        // Restore this account's token bundle (per-uid vault → mirror).
+        setActiveGoogleUid(u.uid);
+        hydrateGoogleTokenForUser(u.uid).then((restored) => {
+          setToken(restored ?? getStoredGoogleToken());
+          if (restored) setIsDemoMode(false);
+        }).catch(() => {
+          const curToken = getStoredGoogleToken();
+          setToken(curToken);
+          if (u && curToken) setIsDemoMode(false);
+        });
+        try {
+          // Point Canvas at this account's bundle too.
+          setActiveCanvasUid(u.uid);
+        } catch {}
+      } else {
+        setActiveGoogleUid(null);
+        setToken(null);
+      }
     });
     return () => unsub();
   }, []);
@@ -51,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = useCallback(async () => {
     await signOutUser();
+    setActiveCanvasUid(null);
     setUser(null);
     setToken(null);
   }, []);
