@@ -36,6 +36,16 @@ import {
   Database,
   Puzzle,
   Code2,
+  Brain,
+  Trophy,
+  LayoutDashboard,
+  GraduationCap,
+  History,
+  FolderOpen,
+  Presentation,
+  ClipboardList,
+  Palette,
+  Atom,
 } from 'lucide-react';
 
 interface AppLogoProps {
@@ -530,6 +540,108 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
       return (
         <div aria-label="API Docs" className={`${sizeClasses} bg-gradient-to-br from-[#334155] to-[#1E293B] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
           <Code2 className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    // 50. Dashboard Home — distinct glyph so it never duplicates the fallback
+    case 'dashboard':
+      return (
+        <div aria-label="Dashboard Home" className={`${sizeClasses} bg-gradient-to-br from-[#D97757] to-[#B85638] text-white flex items-center justify-center font-bold shadow-md shadow-[#D97757]/20 shrink-0 ${className}`}>
+          <LayoutDashboard className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    // 51. Workspace groups (routable via sidebar Recent)
+    case 'stem':
+      return (
+        <div aria-label="STEM Lab" className={`${sizeClasses} bg-gradient-to-br from-[#10B981] to-[#047857] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+          <Atom className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    case 'creation':
+      return (
+        <div aria-label="Creation Studio" className={`${sizeClasses} bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+          <Palette className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    case 'retention':
+      return (
+        <div aria-label="Retention Vault" className={`${sizeClasses} bg-gradient-to-br from-[#0D9488] to-[#0F766E] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+          <History className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    case 'documents':
+      return (
+        <div aria-label="Documents" className={`${sizeClasses} bg-gradient-to-br from-[#0284C7] to-[#075985] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+          <FolderOpen className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    // 52. Division A labs — each gets a unique glyph (previously all fell into the identical fallback)
+    case 'model-training':
+      return (
+        <div aria-label="Train My Model Lab" className={`${sizeClasses} bg-gradient-to-br from-[#D97757] to-[#7C3AED] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+          <Brain className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    case 'few-shot-lab':
+      return (
+        <div aria-label="Few-Shot Calibration Lab" className={`${sizeClasses} bg-gradient-to-br from-[#06B6D4] to-[#0E7490] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+          <FlaskConical className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    case 'competition-dossier':
+      return (
+        <div aria-label="Competition Dossier" className={`${sizeClasses} bg-gradient-to-br from-[#EAB308] to-[#A16207] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+          <Trophy className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    // 53. Remaining routable apps
+    case 'paper-chat':
+      return (
+        <div aria-label="Paper Chat" className={`${sizeClasses} bg-gradient-to-br from-[#2563EB] to-[#1E40AF] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+          <MessageSquare className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    case 'study-rooms':
+      return (
+        <div aria-label="Study Rooms" className={`${sizeClasses} bg-gradient-to-br from-[#10B981] to-[#065F46] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+          <Users className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    case 'teacher-view':
+      return (
+        <div aria-label="Teacher View" className={`${sizeClasses} bg-gradient-to-br from-[#F43F5E] to-[#BE123C] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+          <GraduationCap className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    case 'lecture-copilot':
+      return (
+        <div aria-label="Lecture Copilot" className={`${sizeClasses} bg-gradient-to-br from-[#0EA5E9] to-[#1D4ED8] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+          <Presentation className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    case 'presentation-coach':
+      return (
+        <div aria-label="Presentation Coach" className={`${sizeClasses} bg-gradient-to-br from-[#7C3AED] to-[#4C1D95] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+          <ClipboardList className={iconSizes} aria-hidden="true" />
+        </div>
+      );
+
+    case 'exam-mode':
+      return (
+        <div aria-label="Exam Mode" className={`${sizeClasses} bg-gradient-to-br from-[#6366F1] to-[#4338CA] text-white flex items-center justify-center font-bold shadow-md shrink-0 ${className}`}>
+          <Timer className={iconSizes} aria-hidden="true" />
         </div>
       );
 

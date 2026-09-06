@@ -168,7 +168,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               const hasBadge = badgeCount > 0;
               const isActive = activeTab === app.id;
               const badgeColor = app.id==='canvas' ? 'bg-violet-600' : app.id==='gmail' ? 'bg-amber-500' : app.id==='tracker' ? 'bg-emerald-600' : 'bg-rose-500';
-              const key = meta.key;
               return (
                 <div key={app.id} className="relative group/item flex items-center">
                   <button
@@ -201,11 +200,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             {badgeCount > 99 ? '99+' : badgeCount}
                           </span>
                         )}
-                        {key && (
-                          <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${isActive ? 'bg-white/20 text-white' : 'bg-black/5 dark:bg-black/20 text-[#6B6860]'}`} title={`Press ? for shortcuts, ⌘${key}`}>
-                            ⌘{key}
-                          </span>
-                        )}
                       </div>
                     ) : (
                       <>
@@ -213,7 +207,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#EFECE2] dark:ring-[#1A1917] ${badgeColor}`} />
                         )}
                         <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]" role="tooltip">
-                          {meta.label || app.name} {key ? `— ⌘${key}` : ''}
+                          {meta.label || app.name}
                         </span>
                       </>
                     )}

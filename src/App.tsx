@@ -258,7 +258,7 @@ export default function App() {
   useEffect(() => {
     // unified via theme service
     syncDarkToTheme(darkMode);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', darkMode ? '#1A1917' : '#D97757');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', darkMode ? '#141413' : '#FAF9F5');
     try {
       const cur = localStorage.getItem('scc_color_theme_v1');
       if (!cur || cur==='parchment') {

@@ -92,7 +92,8 @@ html.dark:not([data-theme="ocean"]):not([data-theme="forest"]):not([data-theme="
   .dark {
     --tw-border-opacity: 1;
   }
-  [data-theme] .dark .bg-slate-900,
+  [data-theme].dark .bg-slate-900,
+  html.dark .bg-slate-900,
   html.dark body .bg-white {
     background-color: #1A1917;
   }

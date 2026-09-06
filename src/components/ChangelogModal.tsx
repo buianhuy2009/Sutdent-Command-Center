@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Award, Sparkles, BookOpen, Layers, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.5.0';
+export const CURRENT_VERSION = '2.5.1';
 
 interface VersionRelease {
   version: string;
@@ -13,6 +13,24 @@ interface VersionRelease {
 }
 
 const RELEASES: VersionRelease[] = [
+  {
+    version: '2.5.1',
+    date: 'September 06, 2026',
+    title: 'True Two-Mode Theme, Calmer Home & Fixed App Icons',
+    badge: 'Latest Update',
+    highlights: [
+      'Dark mode is now exactly dark charcoal with cream text — no more off-color blue or pink tints',
+      'Home screen is simpler — the Academic Overview block is gone, Today Plan and streaks stay',
+      'Sidebar is cleaner — the ⌘1–⌘5 number pills next to pinned apps are removed (shortcuts still work)',
+      'Every app icon is now unique — no more identical orange squares for different apps',
+    ],
+    details: [
+      'The old 8-palette theme picker fought with the Dark/Light toggle and could leave the app in tinted or half-dark states. There are now exactly two modes: Warm Cream light (#FAF9F5 / #141413) and Dark Charcoal dark (#141413 / #FAF9F5), both with the terracotta accent. Any old tinted setting migrates automatically.',
+      'The Real-Time Academic Overview card (Coursework / Schedule / Inbox columns) is removed from the home screen. Your Today Plan, habit streak, quote and NASA card are untouched.',
+      'The ⌘1 to ⌘5 chips next to Canvas, Schedule, Tracker, Gmail and Drive are removed from the sidebar and its hover tooltips. Press ? to see shortcuts — single-key shortcuts still work when enabled.',
+      'Fourteen apps (new AI labs, Dossier, Dashboard, STEM/Creation/Retention/Documents groups, Paper Chat, Study Rooms, Teacher View, Lecture Copilot, Presentation Coach, Exam Mode) previously shared one generic orange icon. Each now has its own glyph and gradient in the sidebar, App Store and search.',
+    ]
+  },
   {
     version: '2.5.0',
     date: 'September 06, 2026',

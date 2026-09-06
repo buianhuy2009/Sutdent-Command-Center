@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Quote,
   ArrowRight,
@@ -7,9 +7,6 @@ import {
   Shuffle,
   Clock,
   Sparkles,
-  Calendar,
-  BookOpen,
-  Mail,
   Timer,
   ChevronUp,
   ChevronDown,
@@ -19,7 +16,7 @@ import { Assignment, CalendarEvent, EmailAlert } from '../types';
 import { getTodayQuote, QUOTE_BANK, DailyQuote } from '../data/quotes';
 import { useNasaApod } from '../hooks/useNasaApod';
 import { usePomodoroStore } from '../stores/pomodoroStore';
-import { EmptyTodayEvents, EmptyAssignments } from './EmptyState';
+import { EmptyAssignments } from './EmptyState';
 
 const LOCAL_STORAGE_NAME_KEY = 'scc_user_preferred_name';
 const LOCAL_STORAGE_INTENTION_KEY = 'scc_user_daily_intention';
@@ -139,29 +136,10 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     setQuote(QUOTE_BANK[randomIndex]);
   };
 
-  // Real Counts & Overviews (No Spoofing)
+  // Real Counts (No Spoofing) — Today Plan grouping
   const pendingAssignments = useMemo(() => {
     return assignments.filter((a) => a.status !== 'Done');
   }, [assignments]);
-
-  const nextUrgentAssignment = useMemo(() => {
-    if (pendingAssignments.length === 0) return null;
-    return [...pendingAssignments].sort((a, b) => {
-      const dateA = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-      const dateB = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-      return dateA - dateB;
-    })[0];
-  }, [pendingAssignments]);
-
-  const todayEvents = useMemo(() => {
-    if (!isGoogleConnected) return [];
-    return calendarEvents;
-  }, [calendarEvents, isGoogleConnected]);
-
-  const academicAlertsCount = useMemo(() => {
-    if (!isGoogleConnected) return 0;
-    return emailAlerts.filter((e) => !e.isSpam).length;
-  }, [emailAlerts, isGoogleConnected]);
 
   // todayFormattedDate kept for potential use but not shown above fold (moved to navbar)
   const todayFormattedDate = useMemo(() => {
@@ -431,115 +409,6 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
           </div>
         </details>
-
-        {/* Real-time Academic Overview Block — with empty illustrations + container query */}
-        <div className="cq-container bg-white/60 dark:bg-[#1C1B19]/50 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 sm:p-6 text-left space-y-4 card-micro">
-          <div className="flex items-center justify-between pb-2 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#6B6860] flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-[#D97757]" strokeWidth={1.75} />
-              <span>Real-Time Academic Overview</span>
-            </h3>
-            <span className="text-[10px] text-[#6B6860] font-mono">
-              Live State Metrics
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-medium">
-            {/* Column 1: Deadlines */}
-            <div className="space-y-2 p-3 bg-[#FAF9F5]/80 dark:bg-[#1A1917]/80 rounded-2xl border border-[#DFDACB]/40">
-              <div className="flex items-center gap-1.5 font-bold text-[#6B6860]">
-                <BookOpen className="w-3.5 h-3.5 text-rose-500" strokeWidth={1.75} />
-                <span>Coursework</span>
-              </div>
-              {pendingAssignments.length === 0 ? (
-                <EmptyAssignments />
-              ) : (
-                <>
-                  <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                    {pendingAssignments.length} deadlines pending
-                  </p>
-                  {nextUrgentAssignment && (
-                    <p className="text-[11px] text-[#6B6860] truncate">
-                      Next: {nextUrgentAssignment.assignmentName}
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Column 2: Scheduled Events */}
-            <div className="space-y-2 p-3 bg-[#FAF9F5]/80 dark:bg-[#1A1917]/80 rounded-2xl border border-[#DFDACB]/40 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 font-bold text-[#6B6860]">
-                  <Calendar className="w-3.5 h-3.5 text-blue-500" strokeWidth={1.75} />
-                  <span>Today&apos;s Schedule</span>
-                </div>
-                {isLoadingEvents ? (
-                  <div className="space-y-2 animate-pulse"><div className="h-3 bg-[#EFECE2] dark:bg-[#252422] rounded w-3/4" /><div className="h-3 bg-[#EFECE2] dark:bg-[#252422] rounded w-1/2" /></div>
-                ) : isGoogleConnected ? (
-                  todayEvents.length === 0 ? <EmptyTodayEvents /> : (
-                    <>
-                      <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                        {todayEvents.length} events scheduled
-                      </p>
-                      <p className="text-[11px] text-[#6B6860] truncate">
-                        Next: {todayEvents[0].summary}
-                      </p>
-                    </>
-                  )
-                ) : (
-                  <>
-                    <p className="text-xs font-bold text-rose-600 dark:text-rose-400">
-                      Google disconnected
-                    </p>
-                    <button
-                      onClick={onConnectGoogle}
-                      className="w-full mt-1.5 py-1.5 bg-[#D97757]/10 hover:bg-[#D97757]/20 text-[#D97757] hover:text-[#C86646] rounded-xl text-[11px] font-bold transition-all cursor-pointer text-center min-h-[44px]"
-                    >
-                      Connect Calendar
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Column 3: Email alerts */}
-            <div className="space-y-2 p-3 bg-[#FAF9F5]/80 dark:bg-[#1A1917]/80 rounded-2xl border border-[#DFDACB]/40 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 font-bold text-[#6B6860]">
-                  <Mail className="w-3.5 h-3.5 text-amber-500" strokeWidth={1.75} />
-                  <span>Inbox Scanner</span>
-                </div>
-                {isGoogleConnected ? (
-                  academicAlertsCount === 0 ? (
-                    <p className="text-[11px] text-[#6B6860] italic">No academic notices — inbox clear</p>
-                  ) : (
-                    <>
-                      <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                        {academicAlertsCount} academic notices
-                      </p>
-                      <p className="text-[11px] text-[#6B6860]">
-                        All analyzed by local AI
-                      </p>
-                    </>
-                  )
-                ) : (
-                  <>
-                    <p className="text-xs font-bold text-rose-600 dark:text-rose-400">
-                      Google disconnected
-                    </p>
-                    <button
-                      onClick={onConnectGoogle}
-                      className="w-full mt-1.5 py-1.5 bg-[#D97757]/10 hover:bg-[#D97757]/20 text-[#D97757] hover:text-[#C86646] rounded-xl text-[11px] font-bold transition-all cursor-pointer text-center min-h-[44px]"
-                    >
-                      Re-sync Gmail/Drive
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Habit Streak — memoized via streakMap (single JSON.parse) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

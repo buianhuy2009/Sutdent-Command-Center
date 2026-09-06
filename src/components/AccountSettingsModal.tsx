@@ -152,12 +152,13 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   const [geminiTestStatus, setGeminiTestStatus] = useState<'idle' | 'success' | 'failed'>('idle');
   const [geminiStatusMsg, setGeminiStatusMsg] = useState('');
 
-  // UI Density & Themes — expose all 8 themes with preview swatches
+  // UI Density & Themes — strict two-mode palette: Warm Cream light / Dark Charcoal dark
   const [density, setDensity] = useState<'compact' | 'comfortable' | 'spacious'>(() => {
     return (localStorage.getItem('scc_ui_density_v1') as any) || 'comfortable';
   });
   const [colorTheme, setColorTheme] = useState<string>(() => {
-    return (localStorage.getItem('scc_color_theme_v1') as any) || 'linen';
+    const raw = localStorage.getItem('scc_color_theme_v1');
+    return raw === 'midnight' ? 'midnight' : 'linen';
   });
   const [autoSystemTheme, setAutoSystemTheme] = useState<boolean>(() => {
     return localStorage.getItem('scc_auto_system_theme_v1') === 'true';
@@ -226,8 +227,11 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   };
 
   const handleThemeChange = (newTheme: string) => {
-    setColorTheme(newTheme);
-    setTheme(newTheme as any);
+    const next = newTheme === 'midnight' ? 'midnight' : 'linen';
+    setColorTheme(next);
+    setTheme(next as any);
+    // Keep the Dark/Light toggle in sync — single source of truth
+    setDarkMode(next === 'midnight');
   };
 
   const handleAutoSystemThemeChange = (val: boolean) => {
@@ -800,7 +804,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                   </div>
                 </div>
 
-                {/* Color Theme Palette Selector */}
+                {/* Color Theme Palette Selector — strict two-mode palette */}
                 <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
@@ -808,7 +812,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                         Atmospheric Color Palette
                       </div>
                       <div className="text-[11px] text-[#8C897F]">
-                        Curated low-strain palettes for extended study sessions.
+                        Warm cream for day, dark charcoal for night. Terracotta accent in both.
                       </div>
                     </div>
                     <span className="text-[10px] font-mono font-bold text-[#D97757] uppercase">
@@ -816,16 +820,10 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     {[
                       { id: 'linen', name: 'Warm Cream (Light)', color: 'bg-[#FAF9F5] text-[#141413] border-[#DFDACB]', accent: 'bg-[#D97757]' },
                       { id: 'midnight', name: 'Dark Charcoal (Dark)', color: 'bg-[#141413] text-[#FAF9F5] border-[#2C2B27]', accent: 'bg-[#D97757]' },
-                      { id: 'ocean', name: 'Ocean Depth', color: 'bg-[#0B132B] text-white border-blue-900', accent: 'bg-[#38BDF8]' },
-                      { id: 'forest', name: 'Forest Calm', color: 'bg-[#061A14] text-white border-emerald-900', accent: 'bg-[#10B981]' },
-                      { id: 'nord', name: 'Nord Frost', color: 'bg-[#242933] text-white border-slate-700', accent: 'bg-[#88C0D0]' },
-                      { id: 'dracula', name: 'Dracula Glow', color: 'bg-[#1E1F29] text-white border-[#6272A4]', accent: 'bg-[#FF79C6]' },
-                      { id: 'catppuccin', name: 'Catppuccin', color: 'bg-[#1E1E2E] text-white border-[#45475A]', accent: 'bg-[#CBA6F7]' },
-                      { id: 'cyberpunk', name: 'Cyberpunk', color: 'bg-[#09090E] text-[#00FFFF] border-[#581C66]', accent: 'bg-[#00FFFF]' },
                     ].map((t) => (
                       <button
                         key={t.id}
