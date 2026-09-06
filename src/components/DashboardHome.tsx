@@ -17,7 +17,7 @@ import {
 import { User } from 'firebase/auth';
 import { Assignment, CalendarEvent, EmailAlert } from '../types';
 import { getTodayQuote, QUOTE_BANK, DailyQuote } from '../data/quotes';
-import { fetchNasaApod, NasaApod } from '../services/publicApis';
+import { useNasaApod } from '../hooks/useNasaApod';
 import { usePomodoroStore } from '../stores/pomodoroStore';
 import { EmptyTodayEvents, EmptyAssignments } from './EmptyState';
 
@@ -194,48 +194,25 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     recharge: 'text-emerald-600 dark:text-emerald-400',
   }[selectedVibe];
 
-  const [nasaApod, setNasaApod] = useState<NasaApod | null>(null);
-  const apodRef = React.useRef<HTMLImageElement>(null);
-
-  useEffect(() => {
-    const isApodEnabled = localStorage.getItem('scc_enable_nasa_apod') === 'true';
-    if (!isApodEnabled) return;
-    const cacheKey='scc_nasa_apod_cache';
-    const cached = (()=>{ try{ const raw=localStorage.getItem(cacheKey); if(raw){ const d=JSON.parse(raw); if(d.date===new Date().toISOString().slice(0,10)) return d.data; } }catch{} return null; })();
-    if (cached && cached.mediaType==='image') { setNasaApod(cached); return; }
-    const observer = new IntersectionObserver((entries)=>{
-      if(entries[0].isIntersecting){
-        fetchNasaApod().then((data) => {
-          if (data && data.mediaType === 'image') {
-            setNasaApod(data);
-            try{ localStorage.setItem(cacheKey, JSON.stringify({date:new Date().toISOString().slice(0,10), data})); }catch{}
-          }
-        });
-        observer.disconnect();
-      }
-    }, {rootMargin:'200px'});
-    if (apodRef.current) observer.observe(apodRef.current);
-    else {
-      // fallback immediate fetch if ref not yet
-      fetchNasaApod().then((data) => {
-        if (data && data.mediaType === 'image') {
-          setNasaApod(data);
-          try{ localStorage.setItem(cacheKey, JSON.stringify({date:new Date().toISOString().slice(0,10), data})); }catch{}
-        }
-      });
-    }
-    return ()=> observer.disconnect();
-  }, []);
+  const { enabled: apodEnabled, apod: nasaApod, loading: apodLoading, error: apodError, reload: reloadApod } = useNasaApod();
+  const [apodExpanded, setApodExpanded] = useState(false);
+  const [apodMode, setApodMode] = useState<'card' | 'wallpaper'>(() => {
+    try { return (localStorage.getItem('scc_nasa_apod_mode') as 'card' | 'wallpaper') || 'card'; } catch { return 'card'; }
+  });
+  const handleApodMode = (m: 'card' | 'wallpaper') => {
+    setApodMode(m);
+    try { localStorage.setItem('scc_nasa_apod_mode', m); } catch {}
+  };
 
   return (
     <div className="min-h-screen w-full flex flex-col justify-between items-center bg-[#FAF9F5] dark:bg-[#141413] px-6 py-12 text-center animate-in fade-in duration-300 select-none relative overflow-y-auto">
       
-      {/* NASA APOD — lazy IntersectionObserver, cached DEMO_KEY */}
-      <div ref={apodRef as any} className="absolute inset-0 pointer-events-none" aria-hidden="true" />
-      {nasaApod && (
+      {/* NASA APOD — reactive hook (Settings toggle updates instantly, no reload) */}
+      {apodEnabled && nasaApod && nasaApod.mediaType === 'image' && (
         <img
           src={nasaApod.url}
-          alt={nasaApod.title || 'NASA Astronomy Picture of the Day'}
+          alt=""
+          aria-hidden="true"
           loading="lazy"
           decoding="async"
           fetchPriority="low"
@@ -634,6 +611,63 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             — {quote.author} <span className="text-[10px] font-mono text-[#8C897F]/75">({quote.field})</span>
           </cite>
         </div>
+
+        {/* NASA Astronomy Picture of the Day — visible educational card (toggle in Settings → Appearance) */}
+        {apodEnabled && (
+          <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-card text-left space-y-3" aria-label="NASA Astronomy Picture of the Day">
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6860]">NASA Image of the Day</h4>
+              <div className="flex items-center gap-1 text-[10px] font-bold" role="group" aria-label="APOD display mode">
+                <button type="button" onClick={() => handleApodMode('card')} aria-pressed={apodMode === 'card'} className={`px-2 py-1 rounded-lg min-h-[32px] cursor-pointer ${apodMode === 'card' ? 'bg-[#D97757] text-white' : 'text-[#6B6860] hover:text-[#D97757]'}`}>Card</button>
+                <button type="button" onClick={() => handleApodMode('wallpaper')} aria-pressed={apodMode === 'wallpaper'} className={`px-2 py-1 rounded-lg min-h-[32px] cursor-pointer ${apodMode === 'wallpaper' ? 'bg-[#D97757] text-white' : 'text-[#6B6860] hover:text-[#D97757]'}`}>Wallpaper</button>
+              </div>
+            </div>
+            {apodLoading && !nasaApod && (
+              <div className="animate-pulse space-y-2" aria-label="Loading NASA image">
+                <div className="h-40 bg-[#EFECE2] dark:bg-[#252422] rounded-xl" />
+                <div className="h-3 bg-[#EFECE2] dark:bg-[#252422] rounded w-2/3" />
+                <div className="h-3 bg-[#EFECE2] dark:bg-[#252422] rounded w-1/2" />
+              </div>
+            )}
+            {apodError && !nasaApod && (
+              <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-950 via-[#1A1917] to-[#D97757]/20 border border-[#DFDACB] dark:border-[#2C2B27] text-xs space-y-2">
+                <p className="font-bold text-[#141413] dark:text-[#FAF9F5]">Couldn&apos;t reach NASA right now</p>
+                <p className="text-[#6B6860]">{apodError}</p>
+                <button type="button" onClick={reloadApod} className="px-3 py-2 bg-[#D97757] text-white rounded-xl text-xs font-bold min-h-[44px] cursor-pointer">Retry</button>
+              </div>
+            )}
+            {nasaApod && (
+              <div className="space-y-2">
+                {nasaApod.mediaType === 'image' ? (
+                  apodMode === 'card' && (
+                    <img src={nasaApod.url} alt={nasaApod.title || 'NASA Astronomy Picture of the Day'} loading="lazy" decoding="async" fetchPriority="low" referrerPolicy="no-referrer" className="w-full max-h-72 object-cover rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]" />
+                  )
+                ) : (
+                  <div className="p-3 rounded-xl bg-indigo-950 text-white text-xs space-y-2">
+                    <p className="font-bold">Today&apos;s NASA pick is a video</p>
+                    <a href={nasaApod.url} target="_blank" rel="noreferrer" className="underline underline-offset-4 font-bold">Watch video on NASA</a>
+                  </div>
+                )}
+                <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">{nasaApod.title} <span className="font-mono font-medium text-[10px] text-[#6B6860]">{nasaApod.date}</span></p>
+                {nasaApod.explanation && (
+                  <p className="text-[11px] leading-relaxed text-[#5C5A54] dark:text-[#B5B2A8]">
+                    {apodExpanded || nasaApod.explanation.length <= 280 ? nasaApod.explanation : `${nasaApod.explanation.slice(0, 280)}… `}
+                    {nasaApod.explanation.length > 280 && (
+                      <button type="button" onClick={() => setApodExpanded(!apodExpanded)} className="font-bold text-[#D97757] hover:underline underline-offset-4 ml-1 cursor-pointer" aria-expanded={apodExpanded}>
+                        {apodExpanded ? 'Show less' : 'Read more'}
+                      </button>
+                    )}
+                  </p>
+                )}
+                <div className="flex items-center justify-between gap-2 text-[10px] text-[#6B6860]">
+                  <span>Image credit: NASA APOD{nasaApod.copyright ? ` • © ${nasaApod.copyright}` : ''}</span>
+                  {nasaApod.hdurl && <a href={nasaApod.hdurl} target="_blank" rel="noreferrer" className="font-bold text-[#D97757] hover:underline underline-offset-4 shrink-0">Open HD</a>}
+                </div>
+                {apodError && <p className="text-[10px] text-amber-700">{apodError} <button type="button" onClick={reloadApod} className="font-bold underline underline-offset-4 cursor-pointer">Retry</button></p>}
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
 

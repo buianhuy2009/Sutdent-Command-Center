@@ -59,6 +59,24 @@ export class StudentOSDatabase extends Dexie {
       tokenUsage: 'id, date, model',
       dashboard: 'id',
     });
+    this.version(5).stores({
+      notes: 'id, subject, title, updatedAt',
+      srsCards: 'id, deckId, dueDate, easeFactor, repetitions',
+      briefs: 'id, subject, topic, createdAt',
+      assignmentsQueue: 'id, dueDate, status, sheetRowIndex',
+      bibliography: 'id, source, year',
+      assignments: 'id, updatedAt',
+      preferences: 'key',
+      quota: 'id, date',
+      trash: 'id, kind, deletedAt, expiresAt',
+      prompts: 'id, category',
+      tokenUsage: 'id, date, model',
+      dashboard: 'id',
+      promptLogs: 'id, feature, timestamp',
+      evidenceSnapshots: 'id, feature, timestamp',
+      trainedModels: 'id, type, savedAt',
+      vaultIndex: 'docId, title',
+    });
     // @ts-ignore extra table for BIB
     (this as any).bibliography = (this as any).table('bibliography');
   }

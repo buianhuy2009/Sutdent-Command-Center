@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { sendStudyAssistantMessage } from '../services/gemini';
+import { queryVault, getVaultStats, VaultChunk } from '../services/ragVault';
 import { Assignment, CalendarEvent, EmailAlert } from '../types';
 
 interface Message {
@@ -57,6 +58,16 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
+  // RAG Study Vault (Division A): grounded answers over local notes, offline keyword fallback
+  const [useVault, setUseVault] = useState<boolean>(() => {
+    try { return localStorage.getItem('scc_rag_vault_enabled') === 'true'; } catch { return false; }
+  });
+  const [vaultSources, setVaultSources] = useState<VaultChunk[]>([]);
+  const toggleVault = (v: boolean) => {
+    setUseVault(v);
+    try { localStorage.setItem('scc_rag_vault_enabled', String(v)); } catch {}
+    if (!v) setVaultSources([]);
+  };
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // Persist to Dexie + localStorage via useEffect
   useEffect(() => {
@@ -90,6 +101,19 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
     setStreamingContent('');
 
     try {
+      // RAG vault: retrieve top-3 local chunks (offline, truncated snippets — no raw PII leaves browser)
+      let ragContext = '';
+      let ragSources: VaultChunk[] = [];
+      if (useVault) {
+        try {
+          ragSources = await queryVault(text.slice(0, 300));
+          setVaultSources(ragSources);
+          if (ragSources.length > 0) {
+            ragContext = '\n\n[MY VAULT —answer using these notes first, cite file names]:\n' +
+              ragSources.map((c, i) => `(${i + 1}) ${c.title}: ${c.snippet.slice(0, 300)}`).join('\n');
+          }
+        } catch { /* vault is best-effort; answer without it */ }
+      }
       // Cap context to 3k tokens ~ 12k chars
       const cappedAssignments = assignments.slice(0, 30).map(a => ({ ...a, notes: (a.notes||'').slice(0,300) }));
       const cappedAlerts = alerts.slice(0, 15).map(a => ({ ...a, oneLineSummary: a.oneLineSummary.slice(0,300) }));
@@ -101,7 +125,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
         const streamRes = await fetch('/api/gemini/assistant-stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: [...messages, userMessage], context: { assignments: cappedAssignments, events: cappedEvents, alerts: cappedAlerts, sources: cappedAssignments.map(a=>({type:'canvas', id:a.id})) } }),
+          body: JSON.stringify({ messages: [...messages, { ...userMessage, content: userMessage.content + ragContext }], context: { assignments: cappedAssignments, events: cappedEvents, alerts: cappedAlerts, sources: cappedAssignments.map(a=>({type:'canvas', id:a.id})) } }),
         });
         if (streamRes.ok && streamRes.body) {
           const reader = streamRes.body.getReader();
@@ -122,7 +146,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
         }
       } catch {
         response = await sendStudyAssistantMessage(
-          [...messages, userMessage],
+          [...messages, { ...userMessage, content: userMessage.content + ragContext }],
           { assignments: cappedAssignments, events: cappedEvents, alerts: cappedAlerts, sources: cappedAssignments.map(a=>({type:'canvas', id:a.id})) }
         );
         // simulate typewriter incremental markdown
@@ -135,7 +159,9 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
 
       const assistantMessage: Message = {
         role: 'assistant',
-        content: response,
+        content: ragSources.length > 0
+          ? `${response}\n\n**Sources (my vault):**\n${ragSources.map((c, i) => `- ${c.title} — “${c.snippet.slice(0, 120)}…”`).join('\n')}`
+          : response,
       };
       setMessages((prev) => [...prev, assistantMessage]);
       setStreamingContent('');
@@ -265,6 +291,18 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
             )}
 
             <div ref={messagesEndRef} />
+          </div>
+        </div>
+
+        {/* RAG vault toggle + index stats (Division A grounded answers) */}
+        <div className="px-4 sm:px-6 py-2 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-white/50 dark:bg-[#1A1917]/50">
+          <div className="max-w-3xl mx-auto flex items-center gap-2 text-[11px] text-[#6B6860]">
+            <label className="flex items-center gap-1.5 cursor-pointer font-bold">
+              <input type="checkbox" checked={useVault} onChange={(e) => toggleVault(e.target.checked)} className="w-3.5 h-3.5 accent-[#D97757]" />
+              Use my vault for answers
+            </label>
+            {(() => { const s = getVaultStats(); return s ? <span className="font-mono">· {s.docs} notes · {s.chunks} chunks</span> : <span>· local notes, offline</span>; })()}
+            {vaultSources.length > 0 && <span className="font-bold text-[#D97757]">· {vaultSources.length} sources cited</span>}
           </div>
         </div>
 

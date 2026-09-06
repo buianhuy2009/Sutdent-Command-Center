@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Award, Sparkles, BookOpen, Layers, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.4.2';
+export const CURRENT_VERSION = '2.5.0';
 
 interface VersionRelease {
   version: string;
@@ -13,6 +13,24 @@ interface VersionRelease {
 }
 
 const RELEASES: VersionRelease[] = [
+  {
+    version: '2.5.0',
+    date: 'September 06, 2026',
+    title: 'Division A Kit: Home Fix, NASA Repair, AI Labs & Dossier',
+    badge: 'Latest Update',
+    highlights: [
+      'Home is calm again — the setup checklist moved below your Today Plan and can be dismissed for the day',
+      'NASA Image of the Day finally works — turn it on in Settings and it appears instantly with a Retry button',
+      'New Train My Model Lab — teach a tiny text/image sorter in your browser, fully offline',
+      'New Few-Shot Lab and Competition Dossier — prompt history, video scripts, testing log and PDF export for Bảng A',
+    ],
+    details: [
+      'The onboarding checklist no longer pushes your greeting and Today Plan down. It lives below the dashboard as a collapsible “Getting started” card with progress, a Dismiss-for-today button, and it hides forever at 4/4.',
+      'NASA toggle is now reactive (no reload needed), survives rate limits with retries and cached images, supports video days with a Watch link, and has a Test button plus preview in Settings.',
+      'Train My Model Lab runs 100% on-device (no photos leave your browser), reports hold-out accuracy, exports model.json, and snapshots evidence. Few-Shot Lab previews calibrated prompts over Vietnamese datasets and logs every run.',
+      'Competition Dossier covers the Mẫu 1 eight sections with page estimator and print-to-PDF, global Prompt Log export (JSON/Markdown), 5/3/10-minute video scripts with per-member lines, testing log, 48-hour stability monitor, anonymization default, and license + honesty checks. AI Coach can now answer from your vault with cited sources, and the Agent previews every action with Apply/Undo.',
+    ]
+  },
   {
     version: '2.4.2',
     date: 'September 05, 2026',

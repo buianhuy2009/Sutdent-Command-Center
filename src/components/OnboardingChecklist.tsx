@@ -1,11 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, Circle, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Circle, ArrowRight, ChevronDown } from 'lucide-react';
+
+export type OnboardingChecks = { canvas: boolean; google: boolean; task: boolean; pomodoro: boolean };
+
+export const ONBOARDING_COLLAPSED_KEY = 'scc_onboarding_collapsed_v1';
+export const ONBOARDING_DISMISSED_KEY = 'scc_onboarding_dismissed_date_v1';
+
+/** Pure helper — count completed checks (exported for Vitest). */
+export function getOnboardingProgress(checks: OnboardingChecks): number {
+  return (Object.values(checks) as boolean[]).filter(Boolean).length;
+}
+
+/** Pure helper — true when the checklist was dismissed today (exported for Vitest). */
+export function isDismissedToday(todayStr: string, dismissedStr: string | null): boolean {
+  return dismissedStr === todayStr;
+}
+
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export const OnboardingChecklist: React.FC<{ onConnectCanvas: ()=>void; onConnectGoogle: ()=>void; onCreateTask: ()=>void; onStartPomodoro: ()=>void }> = ({ onConnectCanvas, onConnectGoogle, onCreateTask, onStartPomodoro }) => {
-  const [checks, setChecks] = useState(() => {
+  const [checks, setChecks] = useState<OnboardingChecks>(() => {
     try { const raw = localStorage.getItem('scc_onboarding_checks_v1'); return raw ? JSON.parse(raw) : { canvas:false, google:false, task:false, pomodoro:false }; } catch { return { canvas:false, google:false, task:false, pomodoro:false }; }
   });
+  // Collapsed by default after first visit; persisted in scc_onboarding_collapsed_v1.
+  // First-time visitors (no stored value) see it expanded once; afterwards it stays collapsed.
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      const v = localStorage.getItem(ONBOARDING_COLLAPSED_KEY);
+      if (v !== null) return v === 'true';
+      return false;
+    } catch { return false; }
+  });
+  const [dismissedToday, setDismissedToday] = useState<boolean>(() => {
+    try { return isDismissedToday(todayStr(), localStorage.getItem(ONBOARDING_DISMISSED_KEY)); } catch { return false; }
+  });
   const save = (next: any) => { setChecks(next); try { localStorage.setItem('scc_onboarding_checks_v1', JSON.stringify(next)); } catch {} };
+  const setCollapsedPersist = (v: boolean) => {
+    setCollapsed(v);
+    try { localStorage.setItem(ONBOARDING_COLLAPSED_KEY, String(v)); } catch {}
+  };
+  const handleDismissToday = () => {
+    try { localStorage.setItem(ONBOARDING_DISMISSED_KEY, todayStr()); } catch {}
+    try { localStorage.setItem(ONBOARDING_COLLAPSED_KEY, 'true'); } catch {}
+    setDismissedToday(true);
+    setCollapsed(true);
+  };
   // auto-detect
   useEffect(()=>{
     const hasCanvas = Boolean(localStorage.getItem('scc_canvas_settings_v1'));
@@ -15,15 +56,30 @@ export const OnboardingChecklist: React.FC<{ onConnectCanvas: ()=>void; onConnec
     const next = { canvas: hasCanvas||checks.canvas, google: hasGoogle||checks.google, task: hasTask||checks.task, pomodoro: hasPomo||checks.pomodoro };
     if (JSON.stringify(next)!==JSON.stringify(checks)) save(next);
   }, []);
-  const progress = Object.values(checks).filter(Boolean).length;
+  const progress = getOnboardingProgress(checks);
   if (progress===4) return null;
+  if (dismissedToday) return null;
   return (
     <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-card space-y-3">
-      <div className="flex items-center justify-between">
-        <h4 className="text-xs font-bold uppercase tracking-wider">Onboarding Checklist</h4>
-        <span className="text-[11px] font-mono text-[#6B6860]">{progress}/4 completed</span>
-      </div>
-      <div className="h-1.5 bg-[#EFECE2] dark:bg-[#252422] rounded-full overflow-hidden"><div className="h-full bg-[#D97757]" style={{width: `${(progress/4)*100}%`}} /></div>
+      <button
+        type="button"
+        onClick={() => setCollapsedPersist(!collapsed)}
+        aria-expanded={!collapsed}
+        aria-controls="onboarding-checklist-body"
+        className="w-full flex items-center justify-between text-left cursor-pointer rounded-lg focus-visible:outline-2 focus-visible:outline-[#D97757] min-h-[44px]"
+      >
+        <span className="flex items-center gap-2">
+          <h4 className="text-xs font-bold uppercase tracking-wider">Getting started</h4>
+          <span className="text-[10px] font-medium normal-case tracking-normal text-[#6B6860] hidden sm:inline">Setup checklist</span>
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="text-[11px] font-mono text-[#6B6860]">{progress}/4 completed</span>
+          <ChevronDown className={`w-4 h-4 text-[#6B6860] transition-transform ${collapsed ? '' : 'rotate-180'}`} />
+        </span>
+      </button>
+      <div className="h-1.5 bg-[#EFECE2] dark:bg-[#252422] rounded-full overflow-hidden" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={4} aria-label="Onboarding progress"><div className="h-full bg-[#D97757]" style={{width: `${(progress/4)*100}%`}} /></div>
+      {!collapsed && (
+      <div id="onboarding-checklist-body">
       <div className="space-y-2">
         {([
           { key:'canvas', label:'Connect Canvas', done: checks.canvas, action: onConnectCanvas },
@@ -31,12 +87,21 @@ export const OnboardingChecklist: React.FC<{ onConnectCanvas: ()=>void; onConnec
           { key:'task', label:'Create 1 task', done: checks.task, action: onCreateTask },
           { key:'pomodoro', label:'Start Pomodoro', done: checks.pomodoro, action: onStartPomodoro },
         ] as const).map(item=>(
-          <button key={item.key} onClick={()=>{ if (!item.done) item.action(); }} className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold text-left ${item.done ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300' : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]'}`}>
+          <button key={item.key} onClick={()=>{ if (!item.done) item.action(); }} className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold text-left min-h-[44px] ${item.done ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300' : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]'}`}>
             <span className="flex items-center gap-2">{item.done? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Circle className="w-4 h-4 text-[#6B6860]" />} {item.label}</span>
             {!item.done && <ArrowRight className="w-3.5 h-3.5" />}
           </button>
         ))}
       </div>
+      <button
+        type="button"
+        onClick={handleDismissToday}
+        className="w-full text-center text-[11px] font-semibold text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] underline underline-offset-4 py-2 min-h-[44px] cursor-pointer"
+      >
+        Dismiss for today
+      </button>
+      </div>
+      )}
     </div>
   );
 };

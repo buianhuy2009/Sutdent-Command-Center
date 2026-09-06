@@ -69,6 +69,9 @@ const StudyCardModal = lazy(() => import('./components/StudyCardModal').then(m =
 const PortfolioExportModal = lazy(() => import('./components/PortfolioExportModal').then(m => ({ default: m.PortfolioExportModal })));
 const MorningCheckInModal = lazy(() => import('./components/MorningCheckInModal').then(m => ({ default: m.MorningCheckInModal })));
 const OnboardingChecklist = lazy(() => import('./components/OnboardingChecklist').then(m => ({ default: m.OnboardingChecklist })));
+const ModelTrainingWorkspace = lazy(() => import('./components/workspaces/ModelTrainingWorkspace').then(m => ({ default: m.ModelTrainingWorkspace })));
+const FewShotLabWorkspace = lazy(() => import('./components/workspaces/FewShotLabWorkspace').then(m => ({ default: m.FewShotLabWorkspace })));
+const CompetitionDossierWorkspace = lazy(() => import('./components/workspaces/CompetitionDossierWorkspace').then(m => ({ default: m.CompetitionDossierWorkspace })));
 const SplitScreenStudio = lazy(() => import('./components/SplitScreenStudio').then(m => ({ default: m.SplitScreenStudio })));
 const DailyRadarTab = lazy(() => import('./components/DailyRadarTab').then(m => ({ default: m.DailyRadarTab })));
 const GmailRadarTab = lazy(() => import('./components/GmailRadarTab').then(m => ({ default: m.GmailRadarTab })));
@@ -972,6 +975,43 @@ export default function App() {
           type: 'info',
           title: 'Diagram Synthesized',
           message: `Rendered "${action.payload.title}" in Visual Studio!`,
+        });
+        break;
+      }
+
+      // Division A safe previews (student-approved only — never auto-delete/submit/send)
+      case 'createStudyFlashcardsPreview': {
+        const currentDecks = loadSRSDecks();
+        const count = action.payload.count || 5;
+        const newDeck: SRSDeck = {
+          id: `deck-${Date.now()}`,
+          title: `Preview: ${action.payload.topic}`,
+          subject: 'General',
+          createdAt: new Date().toLocaleDateString(),
+          updatedAt: new Date().toLocaleDateString(),
+          cards: Array.from({ length: Math.min(8, Math.max(3, count)) }).map((_, i) =>
+            createNewSRSCard({ front: `${action.payload.topic} — key idea ${i + 1}`, back: `Explain in your own words (edit me).`, tags: ['agent-preview'] })
+          ),
+        };
+        saveSRSDecks([newDeck, ...currentDecks]);
+        handleWorkspaceTransition('retention');
+        addToast({
+          type: 'success',
+          title: 'Flashcard Preview Ready',
+          message: `Preview deck for "${action.payload.topic}" — edit before studying!`,
+        });
+        break;
+      }
+
+      case 'draftPresentationOutline': {
+        try {
+          localStorage.setItem('scc_agent_outline_v1', JSON.stringify({ topic: action.payload.topic, minutes: action.payload.minutes || 5, at: new Date().toISOString() }));
+        } catch {}
+        handleWorkspaceTransition('creation');
+        addToast({
+          type: 'info',
+          title: 'Outline Drafted',
+          message: `A ${action.payload.minutes || 5}-minute outline for "${action.payload.topic}" is ready to edit!`,
         });
         break;
       }
@@ -3049,6 +3089,21 @@ export default function App() {
                     <div className="max-w-2xl mx-auto"><ExtensionHelper /></div>
                   </Suspense>
                 )}
+                {activeTab === 'model-training' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading Model Lab…</div>}>
+                    <ModelTrainingWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'few-shot-lab' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading Few-Shot Lab…</div>}>
+                    <FewShotLabWorkspace />
+                  </Suspense>
+                )}
+                {activeTab === 'competition-dossier' && (
+                  <Suspense fallback={<div className="p-6 text-xs">Loading Dossier…</div>}>
+                    <CompetitionDossierWorkspace />
+                  </Suspense>
+                )}
 
                 {activeTab === 'stem' && (
                   <StemLabWorkspace />
@@ -3082,12 +3137,7 @@ export default function App() {
 
                 {activeTab === 'dashboard' && (
                   <div className="space-y-6">
-                    <OnboardingChecklist
-                      onConnectCanvas={()=>handleTabTransition('canvas')}
-                      onConnectGoogle={()=>handleGoogleSignIn(true)}
-                      onCreateTask={()=>handleTabTransition('tracker')}
-                      onStartPomodoro={()=>{ handleTabTransition('pomodoro'); setZenFocusMode(true); }}
-                    />
+                    {/* Home hierarchy fix (v2.5.0): greeting + Today Plan stay above the fold — checklist demoted below DashboardHome */}
                     <DashboardHome
                       assignments={assignments}
                       onToggleAssignment={handleToggleAssignmentById}
@@ -3114,6 +3164,13 @@ export default function App() {
                       calendarEvents={calendarEvents}
                       emailAlerts={emailAlerts}
                       isLoadingEvents={isLoadingEvents}
+                    />
+                    {/* Demoted secondary card: collapsible + dismissible, never blocks greeting/Today Plan */}
+                    <OnboardingChecklist
+                      onConnectCanvas={()=>handleTabTransition('canvas')}
+                      onConnectGoogle={()=>handleGoogleSignIn(true)}
+                      onCreateTask={()=>handleTabTransition('tracker')}
+                      onStartPomodoro={()=>{ handleTabTransition('pomodoro'); setZenFocusMode(true); }}
                     />
                   </div>
                 )}

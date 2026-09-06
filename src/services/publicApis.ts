@@ -167,22 +167,95 @@ export interface NasaApod {
   copyright?: string;
 }
 
-export async function fetchNasaApod(): Promise<NasaApod | null> {
+export const NASA_APOD_CACHE_KEY = 'scc_nasa_apod_cache';
+export const NASA_APOD_ENABLED_KEY = 'scc_enable_nasa_apod';
+export const NASA_APOD_TOGGLE_EVENT = 'scc:apod-toggle';
+
+function getNasaApiKey(): string {
   try {
-    const res = await fetch('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY');
-    if (!res.ok) return null;
-    const data = await res.json();
-    return {
-      title: data.title,
-      date: data.date,
-      explanation: data.explanation,
-      url: data.url,
-      hdurl: data.hdurl,
-      mediaType: data.media_type,
-      copyright: data.copyright,
-    };
-  } catch (err) {
-    console.error('NASA APOD API error:', err);
+    const envKey = (import.meta as any)?.env?.VITE_NASA_API_KEY;
+    if (envKey && String(envKey).trim()) return String(envKey).trim();
+  } catch {}
+  return 'DEMO_KEY';
+}
+
+export function todayDateStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Pure helper — true when cached entry is for today (exported for Vitest). */
+export function isApodCacheFresh(cachedDate: string | undefined | null, today = todayDateStr()): boolean {
+  return cachedDate === today;
+}
+
+export function getApodCache(): { date: string; data: NasaApod } | null {
+  try {
+    const raw = localStorage.getItem(NASA_APOD_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.date && parsed.data) return parsed;
     return null;
+  } catch { return null; }
+}
+
+export function setApodCache(data: NasaApod): void {
+  try { localStorage.setItem(NASA_APOD_CACHE_KEY, JSON.stringify({ date: todayDateStr(), data })); } catch {}
+}
+
+export function clearApodCache(): void {
+  try { localStorage.removeItem(NASA_APOD_CACHE_KEY); } catch {}
+}
+
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, { signal: ctrl.signal });
+  } finally { clearTimeout(t); }
+}
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+/**
+ * Robust APOD fetch v2: env-overridable key, 8s timeout, exponential backoff
+ * (1s/2s/4s) on 429/5xx, supports video media_type, falls back to cached
+ * yesterday image (handled by caller) — returns null only when all retries fail.
+ */
+export async function fetchNasaApodV2(): Promise<NasaApod | null> {
+  const key = getNasaApiKey();
+  const url = `https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(key)}`;
+  const delays = [0, 1000, 2000, 4000];
+  let lastStatus = 0;
+  for (let attempt = 0; attempt < delays.length; attempt++) {
+    if (delays[attempt] > 0) await sleep(delays[attempt]);
+    try {
+      const res = await fetchWithTimeout(url, 8000);
+      lastStatus = res.status;
+      if (res.ok) {
+        const data = await res.json();
+        return {
+          title: data.title || 'NASA Astronomy Picture of the Day',
+          date: data.date || todayDateStr(),
+          explanation: data.explanation || '',
+          url: data.url || '',
+          hdurl: data.hdurl,
+          mediaType: data.media_type || 'image',
+          copyright: data.copyright,
+        };
+      }
+      // Retry only on rate-limit / server errors; 4xx client errors (except 429) break early
+      if (res.status !== 429 && res.status < 500) break;
+      console.warn(`[NASA APOD] attempt ${attempt + 1} failed with HTTP ${res.status}, retrying…`);
+    } catch (err: any) {
+      const isAbort = err?.name === 'AbortError';
+      console.warn(`[NASA APOD] attempt ${attempt + 1} ${isAbort ? 'timed out after 8s' : 'network error'}, retrying…`);
+    }
   }
+  console.warn(`[NASA APOD] all retries failed (last HTTP ${lastStatus}). Using cached image if available.`);
+  return null;
+}
+
+export async function fetchNasaApod(): Promise<NasaApod | null> {
+  // Backwards-compatible wrapper: fresh-cache check lives in the hook; keep simple fetch here.
+  return fetchNasaApodV2();
 }

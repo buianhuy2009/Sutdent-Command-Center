@@ -49,6 +49,8 @@ import {
   setClientGroqApiKey,
 } from '../services/gemini';
 import { setTheme } from '../services/theme';
+import { setNasaApodEnabled } from '../hooks/useNasaApod';
+import { fetchNasaApodV2, NASA_APOD_CACHE_KEY } from '../services/publicApis';
 
 export interface ShortcutSettings {
   masterEnabled: boolean;
@@ -169,6 +171,8 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   const [enableNasaApod, setEnableNasaApod] = useState<boolean>(() => {
     return localStorage.getItem('scc_enable_nasa_apod') === 'true';
   });
+  const [nasaTestState, setNasaTestState] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+  const [nasaPreview, setNasaPreview] = useState<{ title: string; url: string; mediaType: string } | null>(null);
   const [showSemesterResetModal, setShowSemesterResetModal] = useState(false);
 
   const handleSelectAvatar = (url: string) => {
@@ -179,8 +183,28 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
 
   const handleToggleNasaApod = (val: boolean) => {
     setEnableNasaApod(val);
-    localStorage.setItem('scc_enable_nasa_apod', String(val));
-    window.dispatchEvent(new Event('storage'));
+    // Reactive wiring: persists + clears stale cache when off + notifies Dashboard instantly
+    setNasaApodEnabled(val);
+    if (val) {
+      // Prefetch preview thumbnail so Settings shows instant feedback
+      fetchNasaApodV2().then((d) => {
+        if (d && d.url) setNasaPreview({ title: d.title, url: d.url, mediaType: d.mediaType });
+      }).catch(() => {});
+    } else {
+      setNasaPreview(null);
+      setNasaTestState('idle');
+    }
+  };
+
+  const handleTestNasa = async () => {
+    setNasaTestState('testing');
+    const d = await fetchNasaApodV2();
+    if (d && d.url) {
+      setNasaTestState('ok');
+      if (d.mediaType === 'image') setNasaPreview({ title: d.title, url: d.url, mediaType: d.mediaType });
+    } else {
+      setNasaTestState('fail');
+    }
   };
 
   const handleExecuteSemesterReset = () => {
@@ -189,6 +213,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
     localStorage.removeItem('scc_study_streak_v1');
     localStorage.removeItem('scc_total_focus_minutes_v1');
     localStorage.removeItem('scc_emails_cache_v3');
+    localStorage.removeItem(NASA_APOD_CACHE_KEY);
     setShowSemesterResetModal(false);
     alert('Semester reset complete. Local records have been cleared for the new term.');
     window.location.reload();
@@ -907,7 +932,8 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 </div>
 
                 {/* NASA APOD Atmospheric Wallpaper */}
-                <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between">
+                <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3">
+                  <div className="flex items-center justify-between gap-2">
                   <div>
                     <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
                       NASA Astronomy Picture of the Day
@@ -920,8 +946,25 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                     type="checkbox"
                     checked={enableNasaApod}
                     onChange={(e) => handleToggleNasaApod(e.target.checked)}
+                    aria-label="Toggle NASA Astronomy Picture of the Day"
                     className="w-4 h-4 rounded text-[#D97757] focus:ring-[#D97757] cursor-pointer"
                   />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleTestNasa}
+                      disabled={nasaTestState === 'testing'}
+                      className="px-3 py-2 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[11px] font-bold text-[#141413] dark:text-[#FAF9F5] hover:border-[#D97757] min-h-[44px] cursor-pointer disabled:opacity-60"
+                    >
+                      {nasaTestState === 'testing' ? 'Testing…' : 'Test NASA connection'}
+                    </button>
+                    {nasaTestState === 'ok' && <span className="text-[11px] font-bold text-emerald-600" role="status">Connected — image loads.</span>}
+                    {nasaTestState === 'fail' && <span className="text-[11px] font-bold text-rose-600" role="status">Rate-limited or offline — cached image will show.</span>}
+                  </div>
+                  {enableNasaApod && nasaPreview && nasaPreview.mediaType === 'image' && (
+                    <img src={nasaPreview.url} alt={nasaPreview.title || 'NASA preview'} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="w-full h-24 object-cover rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]" />
+                  )}
                 </div>
               </div>
             )}

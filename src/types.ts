@@ -407,7 +407,10 @@ export type AgentAction =
   | { type: 'summarizePdfToDeck'; payload: { fileName: string; cards?: number } }
   | { type: 'draftEmailFromAssignment'; payload: { assignmentId: string; intent: 'extension' | 'question' | 'follow-up' } }
   | { type: 'scheduleFocusWeek'; payload: { assignmentIds: string[]; minutesPerDay?: number } }
-  | { type: 'explainCanvasFeedback'; payload: { courseName: string; feedback: string } };
+  | { type: 'explainCanvasFeedback'; payload: { courseName: string; feedback: string } }
+  // Division A safe additions (student-approved previews only — never auto-delete/submit/send)
+  | { type: 'createStudyFlashcardsPreview'; payload: { topic: string; count?: number } }
+  | { type: 'draftPresentationOutline'; payload: { topic: string; minutes?: 5 | 10 } };
 
 export interface MathDebugResult {
   fullLatex: string[];

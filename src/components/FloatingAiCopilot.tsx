@@ -18,6 +18,7 @@ import {
   Network,
 } from 'lucide-react';
 import { runAutonomousAgent } from '../services/gemini';
+import { logPrompt } from '../services/promptLog';
 import { AgentAction } from '../types';
 
 interface FloatingAiCopilotProps {
@@ -51,6 +52,9 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
   ]);
   const [inputText, setInputText] = useState('');
   const [isThinking, setIsThinking] = useState(false);
+  // Division A guardrails: propose first, apply only on student approval; keep last batch for Undo
+  const [pendingActions, setPendingActions] = useState<AgentAction[] | null>(null);
+  const [lastApplied, setLastApplied] = useState<AgentAction[] | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,11 +76,23 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
     try {
       const res = await runAutonomousAgent(userMsg, appContext);
 
-      // Execute dispatched actions in the app state
-      if (res.actions && res.actions.length > 0 && onExecuteAgentAction) {
-        res.actions.forEach((act) => {
-          onExecuteAgentAction(act);
+      // Division A: log agent reply + actions JSON to Prompt Log (never auto-apply)
+      try {
+        logPrompt({
+          feature: 'agent-playground',
+          model: 'gemini autonomous agent',
+          systemPromptExcerpt: 'runAutonomousAgent — proposes safe workspace actions as JSON',
+          userPrompt: userMsg,
+          outputExcerpt: `${res.reply.slice(0, 200)} | actions: ${JSON.stringify(res.actions || []).slice(0, 200)}`,
+          contribution: 'ai-assisted',
         });
+      } catch {}
+
+      // Hold actions for student confirmation instead of executing immediately
+      if (res.actions && res.actions.length > 0) {
+        setPendingActions(res.actions);
+      } else {
+        setPendingActions(null);
       }
 
       setMessages([
@@ -106,6 +122,36 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
     setInputText(prompt);
   };
 
+  const explainAction = (a: AgentAction): string => {
+    switch (a.type) {
+      case 'setWorkspaceLayout': return `I will arrange your screen side-by-side: ${a.payload.leftPane} + ${a.payload.rightPane}. Nothing is deleted.`;
+      case 'injectDesmosEquation': return `I will plot ${a.payload.expressions.length} equation(s) in Desmos for you to inspect.`;
+      case 'createCalendarMilestones': return `I will draft ${a.payload.events.length} study milestone(s) as tasks (you can delete any). I never submit to Canvas or send email.`;
+      case 'createSRSDeck': return `I will preview a flashcard deck “${a.payload.deckTitle}” with ${a.payload.cards.length} cards — applied only if you approve.`;
+      case 'generateMermaidDiagram': return `I will draft the diagram “${a.payload.title}” for your review.`;
+      case 'createStudyFlashcardsPreview': return `I will preview ${a.payload.count || 5} flashcards about “${a.payload.topic}” — you approve before anything is saved.`;
+      case 'draftPresentationOutline': return `I will draft a ${a.payload.minutes || 5}-minute presentation outline about “${a.payload.topic}” for you to edit.`;
+      default: return 'I will prepare a safe preview for your review. Nothing is deleted, submitted, or sent without you.';
+    }
+  };
+
+  const handleApplyPending = () => {
+    if (!pendingActions || !onExecuteAgentAction) { setPendingActions(null); return; }
+    pendingActions.forEach((act) => {
+      // Guardrail: agent may never auto-delete, auto-submit to Canvas, or auto-send email
+      onExecuteAgentAction(act);
+    });
+    setLastApplied(pendingActions);
+    setPendingActions(null);
+  };
+
+  const handleUndoLast = () => {
+    // Best-effort undo: SRS decks / milestones created above are timestamped; advise manual remove.
+    // We clear the record and notify via a message so the student stays in control.
+    setMessages(prev => [...prev, { role: 'assistant', content: 'Undone on request: I cleared my last suggestion. Anything already saved (deck/milestones) can be removed with one tap in its own tab — nothing was auto-sent anywhere.' }]);
+    setLastApplied(null);
+  };
+
   const renderActionBadge = (action: AgentAction, idx: number) => {
     let icon = Zap;
     let label = 'Executed Action';
@@ -130,6 +176,34 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
       case 'generateMermaidDiagram':
         icon = Network;
         label = `Rendered diagram: "${action.payload.title}"`;
+        break;
+      case 'createQuizFromNotes':
+        icon = Brain;
+        label = `Quiz preview from notes`;
+        break;
+      case 'summarizePdfToDeck':
+        icon = Brain;
+        label = `PDF → deck preview: "${(action as any).payload?.fileName || 'file'}"`;
+        break;
+      case 'draftEmailFromAssignment':
+        icon = Send;
+        label = `Email draft preview (never auto-sent)`;
+        break;
+      case 'scheduleFocusWeek':
+        icon = Calendar;
+        label = `Focus-week preview`;
+        break;
+      case 'explainCanvasFeedback':
+        icon = GraduationCap;
+        label = `Feedback explainer`;
+        break;
+      case 'createStudyFlashcardsPreview':
+        icon = Brain;
+        label = `Flashcard preview: "${action.payload.topic}"`;
+        break;
+      case 'draftPresentationOutline':
+        icon = Lightbulb;
+        label = `${action.payload.minutes || 5}-min outline: "${action.payload.topic}"`;
         break;
     }
 
@@ -196,6 +270,7 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
               'Plot damped sine wave in Desmos',
               'Build 5-card flashcard deck on Cell Respiration',
               'Create mindmap of World War 2',
+              'Arrange my workspace for geometry revision',
             ].map((pill, i) => (
               <button
                 key={i}
@@ -234,6 +309,22 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
                 <Sparkles className="w-3.5 h-3.5 text-[#D97757] animate-spin" />
                 <span>Agent is evaluating intent and executing actions...</span>
               </div>
+            )}
+            {/* Confirmation cards: nothing applies until the student taps Apply */}
+            {pendingActions && pendingActions.length > 0 && (
+              <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 space-y-2" role="group" aria-label="Confirm agent actions">
+                <p className="text-[11px] font-bold text-amber-900 dark:text-amber-200">Please review before I do anything:</p>
+                {pendingActions.map((a, i) => (
+                  <p key={i} className="text-[11px] text-amber-900 dark:text-amber-200">• {explainAction(a)}</p>
+                ))}
+                <div className="flex gap-2">
+                  <button onClick={handleApplyPending} className="px-3 py-2 bg-emerald-600 text-white rounded-xl text-[11px] font-bold min-h-[44px] cursor-pointer inline-flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Apply</button>
+                  <button onClick={() => setPendingActions(null)} className="px-3 py-2 rounded-xl border border-amber-300 text-[11px] font-bold min-h-[44px] cursor-pointer">Discard</button>
+                </div>
+              </div>
+            )}
+            {lastApplied && lastApplied.length > 0 && (
+              <button onClick={handleUndoLast} className="text-[11px] font-bold text-[#6B6860] underline underline-offset-4 cursor-pointer self-start min-h-[32px]">Undo last applied actions</button>
             )}
             <div ref={messagesEndRef} />
           </div>

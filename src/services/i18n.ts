@@ -17,6 +17,15 @@ const STRINGS: Record<string, { en: string; vi: string }> = {
   all_caught_up: { en: 'All caught up — nice work', vi: 'Xong hết rồi — giỏi lắm' },
   focus: { en: 'Focus', vi: 'Tập trung' },
   settings: { en: 'Settings', vi: 'Cài đặt' },
+  getting_started: { en: 'Getting started', vi: 'Bắt đầu' },
+  dismiss_today: { en: 'Dismiss for today', vi: 'Ẩn hôm nay' },
+  nasa_title: { en: 'NASA Image of the Day', vi: 'Ảnh NASA hôm nay' },
+  train_model: { en: 'Train My Model Lab', vi: 'Lab luyện mô hình' },
+  few_shot_lab: { en: 'Few-Shot Calibration Lab', vi: 'Lab hiệu chỉnh few-shot' },
+  dossier: { en: 'Competition Dossier — Division A', vi: 'Hồ sơ thi — Bảng A' },
+  prompt_log: { en: 'Prompt Log', vi: 'Nhật ký câu lệnh' },
+  verify: { en: 'Verify', vi: 'Kiểm chứng' },
+  evidence_snapshot: { en: 'Evidence Snapshot', vi: 'Chụp minh chứng' },
 };
 
 let current: Lang = ((): Lang => {
