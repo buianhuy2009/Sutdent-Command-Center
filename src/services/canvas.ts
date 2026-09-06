@@ -1,4 +1,4 @@
-import { CanvasAssignment, CanvasSettings, Assignment } from '../types';
+import { CanvasAssignment, CanvasSettings, Assignment, CanvasTodoItem } from '../types';
 
 export const DEFAULT_CANVAS_SETTINGS: CanvasSettings = {
   calendarFeedUrl: '',
@@ -371,9 +371,9 @@ export async function fetchCanvasAssignmentsFromApi(
     const proxyTodoUrl = `/api/canvas/proxy?url=${encodeURIComponent(todoUrl)}`;
     const todoRes = await fetch(proxyTodoUrl, { headers });
     if (todoRes.ok) {
-      const todoItems = await todoRes.json();
+      const todoItems: CanvasTodoItem[] = await todoRes.json();
       if (Array.isArray(todoItems)) {
-        todoItems.forEach((t: any) => {
+        todoItems.forEach((t: CanvasTodoItem) => {
           const id = t.assignment?.id || t.quiz?.id || t.id;
           if (id) todoIds.add(String(id));
         });
