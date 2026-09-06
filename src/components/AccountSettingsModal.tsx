@@ -238,6 +238,8 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
     setAutoSystemTheme(val);
     localStorage.setItem('scc_auto_system_theme_v1', String(val));
     if (val) {
+      // Re-enabling auto-follow clears any explicit choice so the OS applies.
+      try { localStorage.removeItem('scc_explicit_theme_v1'); } catch {}
       const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       setDarkMode(isSystemDark);
     }

@@ -5,6 +5,8 @@ import {
   ChevronRight,
   Plus,
   PinOff,
+  Sun,
+  Moon,
   User as UserIcon,
 } from 'lucide-react';
 import { AppLogo } from './AppLogo';
@@ -277,11 +279,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      <div className="pt-2.5 border-t border-[#DFDACB] dark:border-[#2C2B27] shrink-0" ref={userMenuRef}>
+      <div className="pt-2.5 border-t border-[#DFDACB] dark:border-[#2C2B27] shrink-0 space-y-1.5" ref={userMenuRef}>
+        <button
+          onClick={onToggleDarkMode}
+          title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          aria-pressed={darkMode}
+          className={`rounded-xl flex items-center transition-colors cursor-pointer border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27] hover:bg-[#FAF9F5] dark:hover:bg-[#252422] text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] ${
+            isExpanded ? 'w-full px-3 py-2 gap-2.5 text-xs font-semibold min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'
+          }`}
+        >
+          {darkMode ? <Sun className="w-4 h-4 shrink-0 text-[#D97757]" strokeWidth={1.75} /> : <Moon className="w-4 h-4 shrink-0" strokeWidth={1.75} />}
+          {isExpanded && <span>{darkMode ? 'Dark mode' : 'Light mode'}</span>}
+          {isExpanded && (
+            <span className={`ml-auto w-8 h-[18px] rounded-full p-[2px] transition-colors shrink-0 ${darkMode ? 'bg-[#D97757]' : 'bg-[#DFDACB] dark:bg-[#2C2B27]'}`}>
+              <span className={`block w-3.5 h-3.5 rounded-full bg-white shadow-xs transition-transform ${darkMode ? 'translate-x-[14px]' : ''}`} />
+            </span>
+          )}
+        </button>
         {!isExpanded && (
           <button
             onClick={onToggleExpand}
-            className="w-11 h-11 mx-auto mb-1.5 rounded-xl bg-[#FAF9F5]/70 hover:bg-[#FAF9F5] dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] flex items-center justify-center transition-colors cursor-pointer border border-[#DFDACB] dark:border-[#2C2B27]"
+            className="w-11 h-11 mx-auto rounded-xl bg-[#FAF9F5]/70 hover:bg-[#FAF9F5] dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] flex items-center justify-center transition-colors cursor-pointer border border-[#DFDACB] dark:border-[#2C2B27]"
             title="Expand Sidebar"
           >
             <ChevronRight className="w-4 h-4" strokeWidth={1.75} />

@@ -244,32 +244,35 @@ function saveRawEmails(list: EmailMessage[]) {
 }
 
 export default function App() {
-  // Theme state — unified via src/services/theme.ts (single source)
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
+  // Theme — single source of truth is src/services/theme.ts (owns DOM + storage).
+  // `darkMode` state is a MIRROR for UI highlights only. Nothing writes the theme
+  // on mount, so a stored dark choice can never be clobbered back to light.
+  const [darkMode, setDarkModeState] = useState<boolean>(() => {
     try {
-      const saved = localStorage.getItem('scc_theme');
-      if (saved) return saved === 'dark';
-      const dataTheme = document.documentElement.getAttribute('data-theme');
-      // User requirement: Light is default when signing up
-      return false;
+      return document.documentElement.classList.contains('dark');
     } catch { return false; }
   });
 
-  useEffect(() => {
-    // unified via theme service
-    syncDarkToTheme(darkMode);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', darkMode ? '#141413' : '#FAF9F5');
+  const applyDarkMode = useCallback((v: boolean) => {
     try {
-      const cur = localStorage.getItem('scc_color_theme_v1');
-      if (!cur || cur==='parchment') {
-        const next = darkMode ? 'midnight' : 'linen';
-        if (!cur) {
-          localStorage.setItem('scc_color_theme_v1', next);
-          document.documentElement.setAttribute('data-theme', next);
-        }
-      }
+      // Explicit user choice wins over OS auto-follow from here on.
+      localStorage.setItem('scc_explicit_theme_v1', '1');
+      localStorage.setItem('scc_auto_system_theme_v1', 'false');
     } catch {}
-  }, [darkMode]);
+    syncDarkToTheme(v);
+    setDarkModeState(v);
+    try {
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', v ? '#141413' : '#FAF9F5');
+    } catch {}
+  }, []);
+
+  const toggleDarkMode = useCallback(() => {
+    let next = true;
+    try {
+      next = !document.documentElement.classList.contains('dark');
+    } catch {}
+    applyDarkMode(next);
+  }, [applyDarkMode]);
 
   // Initialize Density & Palette Theme attributes via theme service
   useEffect(() => {
@@ -277,11 +280,17 @@ export default function App() {
     try {
       const savedDensity = localStorage.getItem('scc_ui_density_v1') || 'comfortable';
       document.documentElement.setAttribute('data-density', savedDensity);
+      // OS auto-follow applies ONLY until the user makes an explicit choice —
+      // otherwise it forces the OS theme on every reload and dark "never sticks".
+      const explicit = localStorage.getItem('scc_explicit_theme_v1') === '1';
       const autoSystem = localStorage.getItem('scc_auto_system_theme_v1') === 'true';
-      if (autoSystem) {
+      if (autoSystem && !explicit) {
         const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setDarkMode(isDark);
+        syncDarkToTheme(isDark);
       }
+      const isDarkNow = document.documentElement.classList.contains('dark');
+      setDarkModeState(isDarkNow);
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDarkNow ? '#141413' : '#FAF9F5');
     } catch (e) {
       console.error('Theme init error:', e);
     }
@@ -2494,7 +2503,7 @@ export default function App() {
           onExploreDemo={() => setIsDemoMode(true)}
           isLoggingIn={isLoggingIn}
           darkMode={darkMode}
-          setDarkMode={setDarkMode}
+          setDarkMode={applyDarkMode}
         />
         <OAuthGuideModal
           isOpen={oauthGuideModalOpen}
@@ -2570,7 +2579,7 @@ export default function App() {
               onOpenSettings={() => setAccountSettingsOpen(true)}
               onOpenAppStore={() => setAppStoreOpen(true)}
               onOpenShortcuts={() => setShortcutsModalOpen(true)}
-              onToggleDarkMode={() => setDarkMode(!darkMode)}
+              onToggleDarkMode={toggleDarkMode}
               darkMode={darkMode}
               pinnedAppIds={pinnedAppIds}
               onUnpinApp={handleUnpinApp}
@@ -2600,7 +2609,7 @@ export default function App() {
                 onOpenSettings={() => setAccountSettingsOpen(true)}
                 onOpenAppStore={() => setAppStoreOpen(true)}
                 onOpenShortcuts={() => setShortcutsModalOpen(true)}
-                onToggleDarkMode={() => setDarkMode(!darkMode)}
+                onToggleDarkMode={toggleDarkMode}
                 darkMode={darkMode}
                 pinnedAppIds={pinnedAppIds}
                 onUnpinApp={handleUnpinApp}
@@ -3192,7 +3201,7 @@ export default function App() {
         onLogout={handleLogout}
         isLoggingIn={isLoggingIn}
         darkMode={darkMode}
-        setDarkMode={setDarkMode}
+        setDarkMode={applyDarkMode}
         onRefreshAll={handleRefreshAll}
         isRefreshing={isRefreshingAll}
         sheetUrl={masterSheetUrl || null}
@@ -3297,7 +3306,7 @@ export default function App() {
           handleWorkspaceTransition('academic');
         }}
         onToggleAiChat={() => setAiChatOpen(!aiChatOpen)}
-        onToggleDarkMode={() => setDarkMode(!darkMode)}
+        onToggleDarkMode={toggleDarkMode}
         assignments={assignments}
         sheetUrl={masterSheetUrl}
       />
