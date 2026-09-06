@@ -11,10 +11,10 @@ import handleGenerate from "./gemini/generate.js";
 import handleGoogleExchange from "./auth/google/exchange.js";
 import handleGoogleRefresh from "./auth/google/refresh.js";
 
+import { setCorsHeaders } from "./cors.js";
+
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, x-canvas-token, Accept");
+  setCorsHeaders(req, res);
   if (req.method === "OPTIONS") return res.status(200).end();
 
   const rawUrl = req.headers["x-matched-path"] || req.url || "";
