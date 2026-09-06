@@ -14,6 +14,8 @@ import {
 import {
   getClientGeminiApiKey,
   setClientGeminiApiKey,
+  getClientGroqApiKey,
+  setClientGroqApiKey,
   testGeminiApiKey,
   getGeminiQuotaStatus,
 } from '../services/gemini';
@@ -128,9 +130,9 @@ export const GeminiSettingsModal: React.FC<GeminiSettingsModalProps> = ({
                 {!vaultLocked ? (
                   <button onClick={async()=>{
                     if(vaultPin.length<4){ setStatusMessage('PIN too short'); setTestStatus('failed'); return; }
-                    await vaultSet(vaultPin, { gemini: apiKey, groq: localStorage.getItem('scc_groq_api_key')||'' });
+                    await vaultSet(vaultPin, { gemini: apiKey, groq: getClientGroqApiKey()||'' });
                     setVaultLocked(true); setStatusMessage('Vault encrypted & locked. Raw keys removed from localStorage.'); setTestStatus('success');
-                    localStorage.removeItem('scc_gemini_api_key'); localStorage.removeItem('scc_groq_api_key');
+                    setClientGeminiApiKey(''); setClientGroqApiKey('');
                   }} className="px-2 py-1 text-xs font-bold bg-emerald-600 text-white rounded-lg">Encrypt & Lock</button>
                 ) : (
                   <>
@@ -138,7 +140,7 @@ export const GeminiSettingsModal: React.FC<GeminiSettingsModalProps> = ({
                       const data = await vaultGet(vaultPin);
                       if(!data){ setStatusMessage('Wrong PIN or vault corrupt'); setTestStatus('failed'); return; }
                       if(data.gemini) { setApiKey(data.gemini); setClientGeminiApiKey(data.gemini); }
-                      if(data.groq) try{ localStorage.setItem('scc_groq_api_key', data.groq); }catch{}
+                      if(data.groq) try{ setClientGroqApiKey(data.groq); }catch{}
                       setVaultLocked(false); setStatusMessage('Vault unlocked & keys restored to session.'); setTestStatus('success');
                     }} className="px-2 py-1 text-xs font-bold bg-[#D97757] text-white rounded-lg">Unlock</button>
                     <button onClick={()=>{ vaultClear(); setVaultLocked(false); setStatusMessage('Vault cleared.'); setTestStatus('idle'); }} className="px-2 py-1 text-xs text-rose-600 border border-rose-200 rounded-lg">Clear Vault</button>

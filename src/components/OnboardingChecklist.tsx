@@ -3,6 +3,7 @@ import { CheckCircle2, Circle, ArrowRight, ChevronDown } from 'lucide-react';
 import { getValidGoogleToken } from '../services/firebase';
 import { hasAnyCanvasSettings } from '../services/canvas';
 import { hasRefreshToken } from '../services/googleAuth';
+import { getClientGeminiApiKey } from '../services/gemini';
 
 export type OnboardingChecks = { canvas: boolean; google: boolean; task: boolean; pomodoro: boolean };
 
@@ -56,7 +57,7 @@ export const OnboardingChecklist: React.FC<{ onConnectCanvas: ()=>void; onConnec
     const hasCanvas = hasAnyCanvasSettings();
     let hasGoogle = false;
     try {
-      hasGoogle = Boolean(getValidGoogleToken() || hasRefreshToken() || localStorage.getItem('scc_gemini_api_key'));
+      hasGoogle = Boolean(getValidGoogleToken() || hasRefreshToken() || getClientGeminiApiKey());
     } catch {
       hasGoogle = false;
     }
