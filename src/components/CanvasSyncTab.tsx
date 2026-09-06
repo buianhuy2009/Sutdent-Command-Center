@@ -43,8 +43,6 @@ interface CanvasSyncTabProps {
   onSubmitAssignment?: (assignment: CanvasAssignment, fileId: string) => Promise<void>;
   googleToken?: string;
   onConnectGoogle?: () => void;
-  sessionExpired?: boolean;
-  onReconnectGoogle?: () => void;
 }
 
 export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
@@ -62,8 +60,6 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   onSubmitAssignment,
   googleToken,
   onConnectGoogle,
-  sessionExpired = false,
-  onReconnectGoogle,
 }) => {
   const safeSettings = settings || { calendarFeedUrl: '', apiDomain: 'https://canvas.instructure.com', apiToken: '', autoSync: true };
   const [feedUrl, setFeedUrl] = useState(safeSettings.calendarFeedUrl || '');
@@ -251,23 +247,6 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
           </button>
         </div>
       )}
-      {sessionExpired && (
-        <div className="p-4 rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 flex items-start gap-3" role="alert">
-          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <h4 className="text-xs font-bold text-amber-800 dark:text-amber-200">Google session expired</h4>
-            <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">Sign-ins last about an hour. Reconnect to resume Canvas-to-Sheet sync — nothing is lost.</p>
-          </div>
-          {onReconnectGoogle && (
-            <button
-              onClick={onReconnectGoogle}
-              className="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shrink-0 min-h-[44px]"
-            >
-              Reconnect
-            </button>
-          )}
-        </div>
-      )}
       {/* Top Filter & Actions Header */}
       <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
         
@@ -352,7 +331,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             <button
               onClick={handleSyncAll}
               disabled={isSyncingAll}
-              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
+              className="px-3 py-1.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-xs shadow-[#D97757]/20"
             >
               <CheckSquare className="w-3.5 h-3.5" />
               <span>Sync ({pendingSyncAssignments.length})</span>

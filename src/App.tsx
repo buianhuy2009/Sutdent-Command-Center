@@ -13,95 +13,116 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { useBadgeCounts } from './hooks/useBadgeCounts';
 import { useDebouncedCallback } from './hooks/useDebouncedCallback';
 import { initTheme, setTheme, syncDarkToTheme } from './services/theme';
-const AcademicRadarWorkspace = lazy(() => import('./components/workspaces/AcademicRadarWorkspace').then(m => ({ default: m.AcademicRadarWorkspace })));
-const StemLabWorkspace = lazy(() => import('./components/workspaces/StemLabWorkspace').then(m => ({ default: m.StemLabWorkspace })));
-const CreationStudioWorkspace = lazy(() => import('./components/workspaces/CreationStudioWorkspace').then(m => ({ default: m.CreationStudioWorkspace })));
-const RetentionVaultWorkspace = lazy(() => import('./components/workspaces/RetentionVaultWorkspace').then(m => ({ default: m.RetentionVaultWorkspace })));
-const DocumentHubWorkspace = lazy(() => import('./components/workspaces/DocumentHubWorkspace').then(m => ({ default: m.DocumentHubWorkspace })));
-const DesmosWorkspace = lazy(() => import('./components/workspaces/DesmosWorkspace').then(m => ({ default: m.DesmosWorkspace })));
-const GeoGebraWorkspace = lazy(() => import('./components/workspaces/GeoGebraWorkspace').then(m => ({ default: m.GeoGebraWorkspace })));
-const ExcalidrawWorkspace = lazy(() => import('./components/workspaces/ExcalidrawWorkspace').then(m => ({ default: m.ExcalidrawWorkspace })));
-const PhETWorkspace = lazy(() => import('./components/workspaces/PhETWorkspace').then(m => ({ default: m.PhETWorkspace })));
-const MermaidWorkspace = lazy(() => import('./components/workspaces/MermaidWorkspace').then(m => ({ default: m.MermaidWorkspace })));
-const WolframWorkspace = lazy(() => import('./components/workspaces/WolframWorkspace').then(m => ({ default: m.WolframWorkspace })));
-const RubricCheckerWorkspace = lazy(() => import('./components/workspaces/RubricCheckerWorkspace').then(m => ({ default: m.RubricCheckerWorkspace })));
-const FeynmanWorkspace = lazy(() => import('./components/workspaces/FeynmanWorkspace').then(m => ({ default: m.FeynmanWorkspace })));
-const PhotoMathWorkspace = lazy(() => import('./components/workspaces/PhotoMathWorkspace').then(m => ({ default: m.PhotoMathWorkspace })));
-const PdfReaderWorkspace = lazy(() => import('./components/workspaces/PdfReaderWorkspace').then(m => ({ default: m.PdfReaderWorkspace })));
-const QuizGeneratorWorkspace = lazy(() => import('./components/workspaces/QuizGeneratorWorkspace').then(m => ({ default: m.QuizGeneratorWorkspace })));
-const PomodoroWorkspace = lazy(() => import('./components/workspaces/PomodoroWorkspace').then(m => ({ default: m.PomodoroWorkspace })));
-const PeriodicTableWorkspace = lazy(() => import('./components/workspaces/PeriodicTableWorkspace').then(m => ({ default: m.PeriodicTableWorkspace })));
-const UnitConverterWorkspace = lazy(() => import('./components/workspaces/UnitConverterWorkspace').then(m => ({ default: m.UnitConverterWorkspace })));
-const ArxivWorkspace = lazy(() => import('./components/workspaces/ArxivWorkspace').then(m => ({ default: m.ArxivWorkspace })));
-const OpenLibraryWorkspace = lazy(() => import('./components/workspaces/OpenLibraryWorkspace').then(m => ({ default: m.OpenLibraryWorkspace })));
-const CitationVaultWorkspace = lazy(() => import('./components/workspaces/CitationVaultWorkspace').then(m => ({ default: m.CitationVaultWorkspace })));
-const TimetableWorkspace = lazy(() => import('./components/workspaces/TimetableWorkspace').then(m => ({ default: m.TimetableWorkspace })));
-const ScholarshipTrackerWorkspace = lazy(() => import('./components/workspaces/ScholarshipTrackerWorkspace').then(m => ({ default: m.ScholarshipTrackerWorkspace })));
-const GroupProjectWorkspace = lazy(() => import('./components/workspaces/GroupProjectWorkspace').then(m => ({ default: m.GroupProjectWorkspace })));
-const PeerQAWorkspace = lazy(() => import('./components/workspaces/PeerQAWorkspace').then(m => ({ default: m.PeerQAWorkspace })));
-const NotionImportWorkspace = lazy(() => import('./components/workspaces/NotionImportWorkspace').then(m => ({ default: m.NotionImportWorkspace })));
-const DeadlineGanttWorkspace = lazy(() => import('./components/workspaces/DeadlineGanttWorkspace').then(m => ({ default: m.DeadlineGanttWorkspace })));
-const GradeForecasterWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.GradeForecasterWorkspace })));
-const ExamModeWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.ExamModeWorkspace })));
-const InternshipTrackerWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.InternshipTrackerWorkspace })));
-const BudgetWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.BudgetWorkspace })));
-const HabitSleepWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.HabitSleepWorkspace })));
-const TimetableOptimizerWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.TimetableOptimizerWorkspace })));
-const CodeRunnerWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.CodeRunnerWorkspace })));
-const ResumeBuilderWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.ResumeBuilderWorkspace })));
-const PresentationCoachWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.PresentationCoachWorkspace })));
-const LabReportWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.LabReportWorkspace })));
-const EssayOutlinerWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.EssayOutlinerWorkspace })));
-const ImageOcclusionWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.ImageOcclusionWorkspace })));
-const FSRSSchedulerInfo = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.FSRSSchedulerInfo })));
-const VivaWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.VivaWorkspace })));
-const LanguageLabWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.LanguageLabWorkspace })));
-const ZoteroImportWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.ZoteroImportWorkspace })));
-const PaperChatWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.PaperChatWorkspace })));
-const DatasetFinderWorkspace = lazy(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.DatasetFinderWorkspace })));
-const StudyRoomPanel = lazy(() => import('./components/collab').then(m => ({ default: m.StudyRoomPanel })));
-const TeacherShareView = lazy(() => import('./components/collab').then(m => ({ default: m.TeacherShareView })));
-const LectureCopilot = lazy(() => import('./components/collab').then(m => ({ default: m.LectureCopilot })));
-const ApiDocsPanel = lazy(() => import('./components/collab').then(m => ({ default: m.ApiDocsPanel })));
-const ExtensionHelper = lazy(() => import('./components/collab').then(m => ({ default: m.ExtensionHelper })));
-const WikipediaLookupModal = lazy(() => import('./components/WikipediaLookupModal').then(m => ({ default: m.WikipediaLookupModal })));
-const StudyCardModal = lazy(() => import('./components/StudyCardModal').then(m => ({ default: m.StudyCardModal })));
-const PortfolioExportModal = lazy(() => import('./components/PortfolioExportModal').then(m => ({ default: m.PortfolioExportModal })));
-const MorningCheckInModal = lazy(() => import('./components/MorningCheckInModal').then(m => ({ default: m.MorningCheckInModal })));
-const OnboardingChecklist = lazy(() => import('./components/OnboardingChecklist').then(m => ({ default: m.OnboardingChecklist })));
-const ModelTrainingWorkspace = lazy(() => import('./components/workspaces/ModelTrainingWorkspace').then(m => ({ default: m.ModelTrainingWorkspace })));
-const FewShotLabWorkspace = lazy(() => import('./components/workspaces/FewShotLabWorkspace').then(m => ({ default: m.FewShotLabWorkspace })));
-const CompetitionDossierWorkspace = lazy(() => import('./components/workspaces/CompetitionDossierWorkspace').then(m => ({ default: m.CompetitionDossierWorkspace })));
-const SplitScreenStudio = lazy(() => import('./components/SplitScreenStudio').then(m => ({ default: m.SplitScreenStudio })));
-const DailyRadarTab = lazy(() => import('./components/DailyRadarTab').then(m => ({ default: m.DailyRadarTab })));
-const GmailRadarTab = lazy(() => import('./components/GmailRadarTab').then(m => ({ default: m.GmailRadarTab })));
-const AssignmentTrackerTab = lazy(() => import('./components/AssignmentTrackerTab').then(m => ({ default: m.AssignmentTrackerTab })));
-const CanvasSyncTab = lazy(() => import('./components/CanvasSyncTab').then(m => ({ default: m.CanvasSyncTab })));
-const GoogleDriveTab = lazy(() => import('./components/GoogleDriveTab').then(m => ({ default: m.GoogleDriveTab })));
-const NotebookLMStudioTab = lazy(() => import('./components/NotebookLMStudioTab').then(m => ({ default: m.NotebookLMStudioTab })));
-const FlashcardStudioTab = lazy(() => import('./components/FlashcardStudioTab').then(m => ({ default: m.FlashcardStudioTab })));
-const CanvaStudioTab = lazy(() => import('./components/CanvaStudioTab').then(m => ({ default: m.CanvaStudioTab })));
-const GoogleClassroomPanel = lazy(() => import('./components/GoogleClassroomPanel').then(m => ({ default: m.GoogleClassroomPanel })));
-const MoodlePanel = lazy(() => import('./components/MoodlePanel').then(m => ({ default: m.MoodlePanel })));
+// Chunk-resilient lazy(): after a fresh deploy the service worker can serve a
+// stale index.html that references rotated chunk filenames → dynamic import()
+// rejects → React throws during render → full-app error fallback. Retry once
+// with a hard reload (fresh HTML + fresh SW); if it still fails, throw for real.
+const CHUNK_RETRY_KEY = 'scc_chunk_reload_v1';
+function lazyRetry<T extends { default: React.ComponentType<any> }>(importer: () => Promise<T>) {
+  return lazy(() =>
+    importer().catch((err) => {
+      try {
+        if (!sessionStorage.getItem(CHUNK_RETRY_KEY)) {
+          sessionStorage.setItem(CHUNK_RETRY_KEY, '1');
+          window.location.reload();
+          // Return a never-resolving promise while the reload happens.
+          return new Promise<T>(() => {});
+        }
+        sessionStorage.removeItem(CHUNK_RETRY_KEY);
+      } catch {}
+      throw err;
+    })
+  );
+}
+const AcademicRadarWorkspace = lazyRetry(() => import('./components/workspaces/AcademicRadarWorkspace').then(m => ({ default: m.AcademicRadarWorkspace })));
+const StemLabWorkspace = lazyRetry(() => import('./components/workspaces/StemLabWorkspace').then(m => ({ default: m.StemLabWorkspace })));
+const CreationStudioWorkspace = lazyRetry(() => import('./components/workspaces/CreationStudioWorkspace').then(m => ({ default: m.CreationStudioWorkspace })));
+const RetentionVaultWorkspace = lazyRetry(() => import('./components/workspaces/RetentionVaultWorkspace').then(m => ({ default: m.RetentionVaultWorkspace })));
+const DocumentHubWorkspace = lazyRetry(() => import('./components/workspaces/DocumentHubWorkspace').then(m => ({ default: m.DocumentHubWorkspace })));
+const DesmosWorkspace = lazyRetry(() => import('./components/workspaces/DesmosWorkspace').then(m => ({ default: m.DesmosWorkspace })));
+const GeoGebraWorkspace = lazyRetry(() => import('./components/workspaces/GeoGebraWorkspace').then(m => ({ default: m.GeoGebraWorkspace })));
+const ExcalidrawWorkspace = lazyRetry(() => import('./components/workspaces/ExcalidrawWorkspace').then(m => ({ default: m.ExcalidrawWorkspace })));
+const PhETWorkspace = lazyRetry(() => import('./components/workspaces/PhETWorkspace').then(m => ({ default: m.PhETWorkspace })));
+const MermaidWorkspace = lazyRetry(() => import('./components/workspaces/MermaidWorkspace').then(m => ({ default: m.MermaidWorkspace })));
+const WolframWorkspace = lazyRetry(() => import('./components/workspaces/WolframWorkspace').then(m => ({ default: m.WolframWorkspace })));
+const RubricCheckerWorkspace = lazyRetry(() => import('./components/workspaces/RubricCheckerWorkspace').then(m => ({ default: m.RubricCheckerWorkspace })));
+const FeynmanWorkspace = lazyRetry(() => import('./components/workspaces/FeynmanWorkspace').then(m => ({ default: m.FeynmanWorkspace })));
+const PhotoMathWorkspace = lazyRetry(() => import('./components/workspaces/PhotoMathWorkspace').then(m => ({ default: m.PhotoMathWorkspace })));
+const PdfReaderWorkspace = lazyRetry(() => import('./components/workspaces/PdfReaderWorkspace').then(m => ({ default: m.PdfReaderWorkspace })));
+const QuizGeneratorWorkspace = lazyRetry(() => import('./components/workspaces/QuizGeneratorWorkspace').then(m => ({ default: m.QuizGeneratorWorkspace })));
+const PomodoroWorkspace = lazyRetry(() => import('./components/workspaces/PomodoroWorkspace').then(m => ({ default: m.PomodoroWorkspace })));
+const PeriodicTableWorkspace = lazyRetry(() => import('./components/workspaces/PeriodicTableWorkspace').then(m => ({ default: m.PeriodicTableWorkspace })));
+const UnitConverterWorkspace = lazyRetry(() => import('./components/workspaces/UnitConverterWorkspace').then(m => ({ default: m.UnitConverterWorkspace })));
+const ArxivWorkspace = lazyRetry(() => import('./components/workspaces/ArxivWorkspace').then(m => ({ default: m.ArxivWorkspace })));
+const OpenLibraryWorkspace = lazyRetry(() => import('./components/workspaces/OpenLibraryWorkspace').then(m => ({ default: m.OpenLibraryWorkspace })));
+const CitationVaultWorkspace = lazyRetry(() => import('./components/workspaces/CitationVaultWorkspace').then(m => ({ default: m.CitationVaultWorkspace })));
+const TimetableWorkspace = lazyRetry(() => import('./components/workspaces/TimetableWorkspace').then(m => ({ default: m.TimetableWorkspace })));
+const ScholarshipTrackerWorkspace = lazyRetry(() => import('./components/workspaces/ScholarshipTrackerWorkspace').then(m => ({ default: m.ScholarshipTrackerWorkspace })));
+const GroupProjectWorkspace = lazyRetry(() => import('./components/workspaces/GroupProjectWorkspace').then(m => ({ default: m.GroupProjectWorkspace })));
+const PeerQAWorkspace = lazyRetry(() => import('./components/workspaces/PeerQAWorkspace').then(m => ({ default: m.PeerQAWorkspace })));
+const NotionImportWorkspace = lazyRetry(() => import('./components/workspaces/NotionImportWorkspace').then(m => ({ default: m.NotionImportWorkspace })));
+const DeadlineGanttWorkspace = lazyRetry(() => import('./components/workspaces/DeadlineGanttWorkspace').then(m => ({ default: m.DeadlineGanttWorkspace })));
+const GradeForecasterWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.GradeForecasterWorkspace })));
+const ExamModeWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.ExamModeWorkspace })));
+const InternshipTrackerWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.InternshipTrackerWorkspace })));
+const BudgetWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.BudgetWorkspace })));
+const HabitSleepWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.HabitSleepWorkspace })));
+const TimetableOptimizerWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.TimetableOptimizerWorkspace })));
+const CodeRunnerWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.CodeRunnerWorkspace })));
+const ResumeBuilderWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.ResumeBuilderWorkspace })));
+const PresentationCoachWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.PresentationCoachWorkspace })));
+const LabReportWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.LabReportWorkspace })));
+const EssayOutlinerWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.EssayOutlinerWorkspace })));
+const ImageOcclusionWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.ImageOcclusionWorkspace })));
+const FSRSSchedulerInfo = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.FSRSSchedulerInfo })));
+const VivaWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.VivaWorkspace })));
+const LanguageLabWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.LanguageLabWorkspace })));
+const ZoteroImportWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.ZoteroImportWorkspace })));
+const PaperChatWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.PaperChatWorkspace })));
+const DatasetFinderWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.DatasetFinderWorkspace })));
+const StudyRoomPanel = lazyRetry(() => import('./components/collab').then(m => ({ default: m.StudyRoomPanel })));
+const TeacherShareView = lazyRetry(() => import('./components/collab').then(m => ({ default: m.TeacherShareView })));
+const LectureCopilot = lazyRetry(() => import('./components/collab').then(m => ({ default: m.LectureCopilot })));
+const ApiDocsPanel = lazyRetry(() => import('./components/collab').then(m => ({ default: m.ApiDocsPanel })));
+const ExtensionHelper = lazyRetry(() => import('./components/collab').then(m => ({ default: m.ExtensionHelper })));
+const WikipediaLookupModal = lazyRetry(() => import('./components/WikipediaLookupModal').then(m => ({ default: m.WikipediaLookupModal })));
+const StudyCardModal = lazyRetry(() => import('./components/StudyCardModal').then(m => ({ default: m.StudyCardModal })));
+const PortfolioExportModal = lazyRetry(() => import('./components/PortfolioExportModal').then(m => ({ default: m.PortfolioExportModal })));
+const MorningCheckInModal = lazyRetry(() => import('./components/MorningCheckInModal').then(m => ({ default: m.MorningCheckInModal })));
+const OnboardingChecklist = lazyRetry(() => import('./components/OnboardingChecklist').then(m => ({ default: m.OnboardingChecklist })));
+const ModelTrainingWorkspace = lazyRetry(() => import('./components/workspaces/ModelTrainingWorkspace').then(m => ({ default: m.ModelTrainingWorkspace })));
+const FewShotLabWorkspace = lazyRetry(() => import('./components/workspaces/FewShotLabWorkspace').then(m => ({ default: m.FewShotLabWorkspace })));
+const CompetitionDossierWorkspace = lazyRetry(() => import('./components/workspaces/CompetitionDossierWorkspace').then(m => ({ default: m.CompetitionDossierWorkspace })));
+const SplitScreenStudio = lazyRetry(() => import('./components/SplitScreenStudio').then(m => ({ default: m.SplitScreenStudio })));
+const DailyRadarTab = lazyRetry(() => import('./components/DailyRadarTab').then(m => ({ default: m.DailyRadarTab })));
+const GmailRadarTab = lazyRetry(() => import('./components/GmailRadarTab').then(m => ({ default: m.GmailRadarTab })));
+const AssignmentTrackerTab = lazyRetry(() => import('./components/AssignmentTrackerTab').then(m => ({ default: m.AssignmentTrackerTab })));
+const CanvasSyncTab = lazyRetry(() => import('./components/CanvasSyncTab').then(m => ({ default: m.CanvasSyncTab })));
+const GoogleDriveTab = lazyRetry(() => import('./components/GoogleDriveTab').then(m => ({ default: m.GoogleDriveTab })));
+const NotebookLMStudioTab = lazyRetry(() => import('./components/NotebookLMStudioTab').then(m => ({ default: m.NotebookLMStudioTab })));
+const FlashcardStudioTab = lazyRetry(() => import('./components/FlashcardStudioTab').then(m => ({ default: m.FlashcardStudioTab })));
+const CanvaStudioTab = lazyRetry(() => import('./components/CanvaStudioTab').then(m => ({ default: m.CanvaStudioTab })));
+const GoogleClassroomPanel = lazyRetry(() => import('./components/GoogleClassroomPanel').then(m => ({ default: m.GoogleClassroomPanel })));
+const MoodlePanel = lazyRetry(() => import('./components/MoodlePanel').then(m => ({ default: m.MoodlePanel })));
 import { AppStoreModal, loadPinnedAppIds, savePinnedAppIds } from './components/AppStoreModal';
 import { ChangelogModal, CURRENT_VERSION } from './components/ChangelogModal';
-const StudyPlanGeneratorModal = lazy(() => import('./components/StudyPlanGeneratorModal').then(m => ({ default: m.StudyPlanGeneratorModal })));
-const InteractiveIntroModal = lazy(() => import('./components/InteractiveIntroModal').then(m => ({ default: m.InteractiveIntroModal })));
+const StudyPlanGeneratorModal = lazyRetry(() => import('./components/StudyPlanGeneratorModal').then(m => ({ default: m.StudyPlanGeneratorModal })));
+const InteractiveIntroModal = lazyRetry(() => import('./components/InteractiveIntroModal').then(m => ({ default: m.InteractiveIntroModal })));
 import { LandingPage } from './components/LandingPage';
-const QuickDraftModal = lazy(() => import('./components/QuickDraftModal').then(m => ({ default: m.QuickDraftModal })));
-const ScheduleStudyModal = lazy(() => import('./components/ScheduleStudyModal').then(m => ({ default: m.ScheduleStudyModal })));
-const ConfirmationModal = lazy(() => import('./components/ConfirmationModal').then(m => ({ default: m.ConfirmationModal })));
-const StudyAssistantChat = lazy(() => import('./components/StudyAssistantChat').then(m => ({ default: m.StudyAssistantChat })));
-const AccountSettingsModal = lazy(() => import('./components/AccountSettingsModal').then(m => ({ default: m.AccountSettingsModal })));
+const QuickDraftModal = lazyRetry(() => import('./components/QuickDraftModal').then(m => ({ default: m.QuickDraftModal })));
+const ScheduleStudyModal = lazyRetry(() => import('./components/ScheduleStudyModal').then(m => ({ default: m.ScheduleStudyModal })));
+const ConfirmationModal = lazyRetry(() => import('./components/ConfirmationModal').then(m => ({ default: m.ConfirmationModal })));
+const StudyAssistantChat = lazyRetry(() => import('./components/StudyAssistantChat').then(m => ({ default: m.StudyAssistantChat })));
+const AccountSettingsModal = lazyRetry(() => import('./components/AccountSettingsModal').then(m => ({ default: m.AccountSettingsModal })));
 import { ShortcutSettings, defaultShortcutSettings } from './components/AccountSettingsModal';
-const CommandPalette = lazy(() => import('./components/CommandPalette').then(m => ({ default: m.CommandPalette })));
-const ShortcutsModal = lazy(() => import('./components/ShortcutsModal').then(m => ({ default: m.ShortcutsModal })));
-const DeploymentModal = lazy(() => import('./components/DeploymentModal').then(m => ({ default: m.DeploymentModal })));
-const OAuthGuideModal = lazy(() => import('./components/OAuthGuideModal').then(m => ({ default: m.OAuthGuideModal })));
-const ApiActivationModal = lazy(() => import('./components/ApiActivationModal').then(m => ({ default: m.ApiActivationModal })));
-const GeminiSettingsModal = lazy(() => import('./components/GeminiSettingsModal').then(m => ({ default: m.GeminiSettingsModal })));
-const AiAcademicSuiteModal = lazy(() => import('./components/AiAcademicSuiteModal').then(m => ({ default: m.AiAcademicSuiteModal })));
-const GoogleSyncHubModal = lazy(() => import('./components/GoogleSyncHubModal').then(m => ({ default: m.GoogleSyncHubModal })));
+const CommandPalette = lazyRetry(() => import('./components/CommandPalette').then(m => ({ default: m.CommandPalette })));
+const ShortcutsModal = lazyRetry(() => import('./components/ShortcutsModal').then(m => ({ default: m.ShortcutsModal })));
+const DeploymentModal = lazyRetry(() => import('./components/DeploymentModal').then(m => ({ default: m.DeploymentModal })));
+const OAuthGuideModal = lazyRetry(() => import('./components/OAuthGuideModal').then(m => ({ default: m.OAuthGuideModal })));
+const ApiActivationModal = lazyRetry(() => import('./components/ApiActivationModal').then(m => ({ default: m.ApiActivationModal })));
+const GeminiSettingsModal = lazyRetry(() => import('./components/GeminiSettingsModal').then(m => ({ default: m.GeminiSettingsModal })));
+const AiAcademicSuiteModal = lazyRetry(() => import('./components/AiAcademicSuiteModal').then(m => ({ default: m.AiAcademicSuiteModal })));
+const GoogleSyncHubModal = lazyRetry(() => import('./components/GoogleSyncHubModal').then(m => ({ default: m.GoogleSyncHubModal })));
 import { ToastContainer } from './components/Toast';
 import confetti from 'canvas-confetti';
 import { WorkspaceId, AgentAction } from './types';
@@ -118,15 +139,20 @@ import {
   onAuthStateChangedListener,
   getStoredGoogleToken,
   getValidGoogleToken,
-  isGoogleTokenExpired,
-  needsGoogleReconnect,
-  hasActiveGoogleWorkspaceToken,
-  clearStoredGoogleToken,
   classifySignInError,
   diagnoseSignInEnvironment,
   consumeRedirectResult,
   signInWithRedirectFlow,
 } from './services/firebase';
+import {
+  ensureFreshGoogleToken,
+  refreshGoogleAccessToken,
+  hasRefreshToken,
+  requestOfflineGrant,
+  isOfflineGrantSupported,
+  hydrateRefreshGrant,
+  clearGoogleGrant,
+} from './services/googleAuth';
 import type { SignInDiagnosis } from './services/firebase';
 import {
   fetchTodayCalendarEvents,
@@ -660,12 +686,11 @@ export default function App() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [sheetError, setSheetError] = useState<string | null>(null);
   const [driveError, setDriveError] = useState<string | null>(null);
-  // True when the stored Google token exists but is past its ~55 min TTL.
-  // Google gives web clients no refresh token, so sync must pause and ask for
-  // a 1-click reconnect instead of firing 401s that look like "sync is broken".
-  const [googleSessionExpired, setGoogleSessionExpired] = useState(false);
+  // Permanent offline grant (GIS code flow + server-side refresh) means access
+  // tokens renew silently — there is no expiring "session" to warn about.
+  // Connected = usable access now, or a refresh grant that can mint one.
   const [googleToken, setGoogleToken] = useState<string | null>(() => getStoredGoogleToken());
-  const isGoogleConnected = Boolean(googleToken && !isGoogleTokenExpired()) || isDemoMode;
+  const isGoogleConnected = Boolean(getValidGoogleToken() || hasRefreshToken() || googleToken) || isDemoMode;
 
   // API Disabled Info (for Google Cloud Console Enablement)
   const [driveApiInfo, setDriveApiInfo] = useState<ApiEnablementInfo | null>(null);
@@ -876,7 +901,7 @@ export default function App() {
       try {
         const queued = await db.assignmentsQueue.toArray();
         if (!queued.length) return;
-        const token = getStoredGoogleToken();
+        const token = await ensureFreshGoogleToken();
         if (!token || !masterSheetId) return;
         for (const item of queued) {
           try {
@@ -1229,7 +1254,16 @@ export default function App() {
       setUser(currentUser);
       const curToken = getStoredGoogleToken();
       setGoogleToken(curToken);
-      if (currentUser && curToken && !isGoogleTokenExpired()) {
+      if (currentUser) {
+        // Cross-device: pull a stored offline grant, then mint silently.
+        hydrateRefreshGrant(currentUser.uid).then(async (has) => {
+          if (has && !getValidGoogleToken()) {
+            const t = await ensureFreshGoogleToken();
+            if (t) setGoogleToken(t);
+          }
+        }).catch(() => {});
+      }
+      if (currentUser && (getValidGoogleToken() || hasRefreshToken() || curToken)) {
         setIsDemoMode(false);
         // onboarding: if never seen, show tour after login
         try {
@@ -1246,9 +1280,9 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Fetch Google Calendar Events
-  const loadCalendarEvents = useCallback(async (isSilent = false) => {
-    const token = getStoredGoogleToken();
+  // Fetch Google Calendar Events (access auto-renews silently via refresh grant)
+  const loadCalendarEvents = useCallback(async (isSilent = false, _retried = false) => {
+    const token = await ensureFreshGoogleToken();
     if (!token) {
       setCalendarEvents([]);
       setCalendarError(null);
@@ -1262,23 +1296,21 @@ export default function App() {
       setCalendarEvents(items);
       setCalendarError(null);
       setCalendarApiInfo(null);
-      setGoogleSessionExpired(false);
+      setGoogleToken(token);
     } catch (err: any) {
       console.error('Calendar fetch error:', err);
       const is401 = err?.status === 401 || /401|expired/i.test(err?.message || '');
-      if (is401) {
-        setGoogleSessionExpired(true);
-        setCalendarError('Google session expired. Reconnect to resume Calendar sync — your events are kept.');
-        if (!isSilent) {
-          addToast({
-            type: 'warning',
-            title: 'Google session expired',
-            message: 'Your sign-in expired after ~1 hour. One click reconnects — nothing is lost.',
-            retryLabel: 'Reconnect now',
-            persistent: true,
-            reconnectGoogle: true,
-          } as any);
+      if (is401 && !_retried) {
+        // One transparent renewal + retry — the user never sees expiry.
+        if (await refreshGoogleAccessToken(true)) {
+          return loadCalendarEvents(isSilent, true);
         }
+      }
+      if (is401) {
+        // Grant revoked or unusable — stop quietly, keep cached events.
+        await clearGoogleGrant();
+        setGoogleToken(null);
+        setCalendarError('Google disconnected. Reconnect to resume Calendar sync — your events are kept.');
       } else {
         if (err?.isServiceDisabled) {
           setCalendarApiInfo({
@@ -1306,9 +1338,9 @@ export default function App() {
     }
   }, [addToast]);
 
-  // Fetch Academic Emails & Summarize with Gemini
+  // Fetch Academic Emails & Summarize with Gemini (access auto-renews silently)
   const loadEmailsAndAlerts = useCallback(async (isSilent = false, forceResort = false, options?: FetchEmailOptions) => {
-    const token = getStoredGoogleToken();
+    const token = await ensureFreshGoogleToken();
     if (!token) {
       setRawEmails([]);
       setEmailAlerts([]);
@@ -1320,6 +1352,7 @@ export default function App() {
     if (!isSilent) setIsLoadingEmails(true);
     try {
       const emails = await fetchAcademicEmails(token, options);
+      setGoogleToken(token);
       setEmailError(null);
       setGmailApiInfo(null);
 
@@ -1409,9 +1442,9 @@ export default function App() {
     }
   }, [addToast]);
 
-  // Fetch Master Sheet Assignments
-  const loadSheetAssignments = useCallback(async (isSilent = false) => {
-    const token = getStoredGoogleToken();
+  // Fetch Master Sheet Assignments (access auto-renews silently)
+  const loadSheetAssignments = useCallback(async (isSilent = false, _retried = false) => {
+    const token = await ensureFreshGoogleToken();
     if (!token) {
       setSheetError(null);
       setSheetApiInfo(null);
@@ -1454,13 +1487,21 @@ export default function App() {
       }
       setSheetError(null);
       setSheetApiInfo(null);
-      setGoogleSessionExpired(false);
+      setGoogleToken(token);
     } catch (err: any) {
       console.error('Sheet fetch error:', err);
       const is401 = err?.status === 401 || /401|expired/i.test(err?.message || '');
+      if (is401 && !_retried) {
+        // One transparent renewal + retry — the user never sees expiry.
+        if (await refreshGoogleAccessToken(true)) {
+          return loadSheetAssignments(isSilent, true);
+        }
+      }
       if (is401) {
-        setGoogleSessionExpired(true);
-        setSheetError('Google session expired. Reconnect to resume Sheet sync — your tasks are kept.');
+        // Grant revoked or unusable — stop quietly, keep cached tasks.
+        await clearGoogleGrant();
+        setGoogleToken(null);
+        setSheetError('Google disconnected. Reconnect to resume Sheet sync — your tasks are kept.');
       } else {
         if (err?.isServiceDisabled) {
           setSheetApiInfo({
@@ -1488,9 +1529,9 @@ export default function App() {
     }
   }, [addToast]);
 
-  // Fetch Recent Files
-  const loadRecentFiles = useCallback(async (isSilent = false) => {
-    const token = getStoredGoogleToken();
+  // Fetch Recent Files (access auto-renews silently)
+  const loadRecentFiles = useCallback(async (isSilent = false, _retried = false) => {
+    const token = await ensureFreshGoogleToken();
     if (!token) {
       setRecentFiles([]);
       setDriveError(null);
@@ -1504,13 +1545,21 @@ export default function App() {
       setRecentFiles(files);
       setDriveError(null);
       setDriveApiInfo(null);
-      setGoogleSessionExpired(false);
+      setGoogleToken(token);
     } catch (err: any) {
       console.error('Drive files error:', err);
       const is401 = err?.status === 401 || /401|expired/i.test(err?.message || '');
+      if (is401 && !_retried) {
+        // One transparent renewal + retry — the user never sees expiry.
+        if (await refreshGoogleAccessToken(true)) {
+          return loadRecentFiles(isSilent, true);
+        }
+      }
       if (is401) {
-        setGoogleSessionExpired(true);
-        setDriveError('Google session expired. Reconnect to resume Drive sync — your files list is kept.');
+        // Grant revoked or unusable — stop quietly, keep cached files.
+        await clearGoogleGrant();
+        setGoogleToken(null);
+        setDriveError('Google disconnected. Reconnect to resume Drive sync — your files list is kept.');
       } else {
         const errMsg = err?.message || 'Could not fetch Google Drive files.';
         if (err?.isServiceDisabled) {
@@ -1539,9 +1588,9 @@ export default function App() {
     }
   }, [addToast]);
 
-  // Fetch Google Classroom coursework
+  // Fetch Google Classroom coursework (access auto-renews silently)
   const loadClassroomData = useCallback(async (isSilent = false) => {
-    const token = getStoredGoogleToken();
+    const token = await ensureFreshGoogleToken();
     if (!token) {
       setClassroomError(null);
       return;
@@ -1552,6 +1601,7 @@ export default function App() {
       const list = await fetchAllClassroomAssignments(token);
       setClassroomAssignments(list);
       setClassroomError(null);
+      setGoogleToken(token);
       try {
         localStorage.setItem('scc_cached_classroom_assignments', JSON.stringify(list));
       } catch {}
@@ -1674,7 +1724,7 @@ export default function App() {
       setLastSyncedAt(new Date());
 
       // Auto-Sync Canvas Completion to Master Sheet Tracker
-      const token = getStoredGoogleToken();
+      const token = await ensureFreshGoogleToken();
       let updatedSheetCount = 0;
 
       const updatedAssignments = assignments.map((sheetItem) => {
@@ -1838,8 +1888,7 @@ export default function App() {
     const handleTokenUpdated = (e: any) => {
       const updated = e.detail?.token ?? getStoredGoogleToken();
       setGoogleToken(updated);
-      if (updated && !isGoogleTokenExpired()) {
-        setGoogleSessionExpired(false);
+      if (updated) {
         runFullSync(false);
       }
     };
@@ -1877,32 +1926,6 @@ export default function App() {
       console.error('Re-cross-reference failed (non-fatal):', e);
     }
   }, [assignments]);
-
-  // Proactive Google OAuth Token Expiry Warning — fires once per expiry with a working Reconnect action
-  const expiryToastShownRef = useRef(false);
-  useEffect(() => {
-    const checkTokenExpiry = () => {
-      if (!needsGoogleReconnect()) {
-        expiryToastShownRef.current = false;
-        return;
-      }
-      setGoogleSessionExpired(true);
-      if (expiryToastShownRef.current) return;
-      expiryToastShownRef.current = true;
-      addToast({
-        type: 'warning',
-        title: 'Google Session Expiring',
-        message: 'Your Google sign-in is past its ~1 hour life. Reconnect to keep sync active — nothing is lost.',
-        retryLabel: 'Reconnect now',
-        persistent: true,
-        reconnectGoogle: true,
-      });
-    };
-
-    checkTokenExpiry();
-    const interval = setInterval(checkTokenExpiry, 60000); // Check every minute
-    return () => clearInterval(interval);
-  }, [addToast]);
 
   // Google Sign In Handler
   // Every failure gets a plain-language diagnosis + the guide modal for blocking
@@ -1970,8 +1993,6 @@ export default function App() {
       setIsDemoMode(false);
       setOauthGuideModalOpen(false);
       setOauthDiagnosis(null);
-      setGoogleSessionExpired(false);
-      expiryToastShownRef.current = false;
       // Fresh sign-in: clear stale sync errors so reconnect visibly heals every tab
       setCalendarError(null);
       setEmailError(null);
@@ -1982,11 +2003,28 @@ export default function App() {
 
       if (result.accessToken) {
         setGoogleToken(result.accessToken);
+        // One-time upgrade: trade the 1-hour popup token for a permanent
+        // offline grant (silent refresh forever). Dismiss = keep hourly token.
+        let permanent = false;
+        try {
+          if (isOfflineGrantSupported()) {
+            const offlineToken = await requestOfflineGrant();
+            if (offlineToken) {
+              setGoogleToken(offlineToken);
+              permanent = true;
+              try { await hydrateRefreshGrant(result.user?.uid); } catch {}
+            }
+          }
+        } catch (grantErr) {
+          console.warn('Offline grant unavailable, keeping hourly token:', grantErr);
+        }
         await runFullSync(false);
         addToast({
           type: 'success',
           title: 'Google Workspace Connected',
-          message: `Signed in as ${result.user.displayName || result.user.email || 'User'}. Live Workspace data active.`,
+          message: permanent
+            ? `Signed in as ${result.user.displayName || result.user.email || 'User'}. Permanent sync enabled — no more hourly reconnects.`
+            : `Signed in as ${result.user.displayName || result.user.email || 'User'}. Live Workspace data active.`,
         });
       } else {
         addToast({
@@ -2009,12 +2047,25 @@ export default function App() {
       const result = await signInWithGoogle({ requestWorkspace: true, includeGmail: true });
       if (result?.accessToken) {
         setGoogleToken(result.accessToken);
-        setGoogleSessionExpired(false);
+        let permanent = false;
+        try {
+          if (isOfflineGrantSupported()) {
+            const offlineToken = await requestOfflineGrant({ gmail: true });
+            if (offlineToken) {
+              setGoogleToken(offlineToken);
+              permanent = true;
+            }
+          }
+        } catch (grantErr) {
+          console.warn('Offline grant unavailable, keeping hourly token:', grantErr);
+        }
         await loadEmailsAndAlerts(false);
         addToast({
           type: 'success',
           title: 'Gmail Academic Connected',
-          message: 'Academic email scanning is now active.',
+          message: permanent
+            ? 'Academic email scanning is now active — permanently, no hourly reconnects.'
+            : 'Academic email scanning is now active.',
         });
       }
     } catch (err: any) {
@@ -2028,8 +2079,8 @@ export default function App() {
     await handleGoogleSignIn(false);
   };
 
-  const handleDisconnectGoogle = useCallback(() => {
-    clearStoredGoogleToken();
+  const handleDisconnectGoogle = useCallback(async () => {
+    await clearGoogleGrant();
     setGoogleToken(null);
     setCalendarEvents([]);
     setEmailAlerts([]);
@@ -2057,6 +2108,8 @@ export default function App() {
       confirmLabel: 'Disconnect',
       onConfirm: async () => {
         await signOutUser();
+        try { await clearGoogleGrant(); } catch {}
+        setGoogleToken(null);
         setUser(null);
         setCalendarEvents([]);
         setEmailAlerts([]);
@@ -2077,7 +2130,7 @@ export default function App() {
 
   // Add Assignment
   const handleAddAssignment = async (newAssign: Omit<Assignment, 'id'>) => {
-    const token = getStoredGoogleToken();
+    const token = await ensureFreshGoogleToken();
     const tempId = `assign-${Date.now()}`;
     const fullAssign: Assignment = { ...newAssign, id: tempId };
 
@@ -2116,7 +2169,7 @@ export default function App() {
     const updated = { ...assignment, status: newStatus };
     setAssignments((prev) => prev.map((a) => (a.id === assignment.id ? updated : a)));
 
-    const token = getStoredGoogleToken();
+    const token = await ensureFreshGoogleToken();
     if (token && masterSheetId && assignment.sheetRowIndex) {
       try {
         await updateAssignmentInSheet(token, masterSheetId, updated);
@@ -2147,7 +2200,7 @@ export default function App() {
   // Clear / Purge all completed assignments from Master Sheet and tracker
   const handleClearCompletedAssignments = async () => {
     const activeOnly = assignments.filter((a) => a.status !== 'Done');
-    const token = getStoredGoogleToken();
+    const token = await ensureFreshGoogleToken();
 
     if (token && masterSheetId) {
       try {
@@ -2215,7 +2268,7 @@ export default function App() {
     location?: string;
   }) => {
     setIsScheduling(true);
-    const token = getStoredGoogleToken();
+    const token = await ensureFreshGoogleToken();
 
     try {
       if (token) {
@@ -2272,7 +2325,7 @@ export default function App() {
   // Save Gmail Draft
   const handleSaveToGmailDrafts = async (to: string, subject: string, body: string) => {
     setIsSavingDraft(true);
-    const token = getStoredGoogleToken();
+    const token = await ensureFreshGoogleToken();
 
     try {
       if (token) {
@@ -2375,7 +2428,7 @@ export default function App() {
 
   // Google Drive & Canvas direct submission workflow
   const handleSubmitAssignment = async (assignment: CanvasAssignment, fileId: string) => {
-    const token = getStoredGoogleToken();
+    const token = await ensureFreshGoogleToken();
     if (!token && !isDemoMode) {
       addToast({
         type: 'error',
@@ -2719,7 +2772,9 @@ export default function App() {
               <ErrorBoundary fallback={<div className="p-6 rounded-2xl border border-rose-200 bg-rose-50 text-rose-900 text-sm">Workspace failed to load. Try refreshing or switching tabs.</div>}>
               <Suspense fallback={<div className="p-8 flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#D97757] border-t-transparent rounded-full animate-spin" /><span className="ml-2 text-xs text-[#8C897F]">Loading workspace…</span></div>}>
               <div className="max-w-7xl mx-auto space-y-6">
-                {/* Google Workspace Connection Banner: Surfaces clearly when user is signed in to Firebase but Google Workspace token is absent or expired */}
+                {/* Google Workspace Connection Banner: only when no usable grant exists.
+                    Access tokens renew silently via the offline grant, so expiry
+                    is never surfaced — this is purely the not-connected state. */}
                 {user && !isGoogleConnected && !isDemoMode && (
                   <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs animate-in fade-in">
                     <div className="flex items-center gap-3">
@@ -2728,12 +2783,10 @@ export default function App() {
                       </div>
                       <div>
                         <p className="font-bold text-[#141413] dark:text-[#FAF9F5] text-sm">
-                          {googleSessionExpired ? 'Google Workspace Session Expired' : 'Google Workspace Sync Paused'}
+                          Google Workspace Sync Paused
                         </p>
                         <p className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8]">
-                          {googleSessionExpired
-                            ? 'Your Google Workspace session has expired (~1 hour life). One click reconnects Calendar, Sheets, Drive & Classroom.'
-                            : `Signed in as ${user.email}. Connect Google Workspace with one click to enable live sync across Calendar, Drive, Sheets & Classroom.`}
+                          {`Signed in as ${user.email}. Connect Google Workspace with one click to enable live sync across Calendar, Drive, Sheets & Classroom — it stays connected automatically.`}
                         </p>
                       </div>
                     </div>
@@ -2744,7 +2797,7 @@ export default function App() {
                         className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                       >
                         <RefreshCw className={`w-3.5 h-3.5 ${isLoggingIn ? 'animate-spin' : ''}`} />
-                        <span>{isLoggingIn ? 'Connecting...' : googleSessionExpired ? 'Reconnect Workspace' : 'Connect Workspace'}</span>
+                        <span>{isLoggingIn ? 'Connecting...' : 'Connect Workspace'}</span>
                       </button>
                     </div>
                   </div>
@@ -2769,8 +2822,6 @@ export default function App() {
                     onSubmitAssignment={handleSubmitAssignment}
                     googleToken={googleToken || undefined}
                     onConnectGoogle={() => handleGoogleSignIn(true)}
-                    sessionExpired={googleSessionExpired}
-                    onReconnectGoogle={() => handleGoogleSignIn(true)}
                   />
                 )}
 
@@ -3260,7 +3311,7 @@ export default function App() {
             isOpen={googleSyncHubOpen}
             onClose={() => setGoogleSyncHubOpen(false)}
             user={user}
-            hasGoogleToken={Boolean(googleToken && !isGoogleTokenExpired())}
+            hasGoogleToken={isGoogleConnected}
             isSyncing={isRefreshingAll}
             onSyncAll={async () => {
               await runFullSync(false);

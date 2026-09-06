@@ -897,11 +897,11 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
                               const coursesRaw = localStorage.getItem('scc_canvas_courses_v1');
                               const courses: string[] = coursesRaw ? JSON.parse(coursesRaw) : [];
                               const hasCourse = courses.join(' ').toLowerCase();
-                              if (hasCourse.includes('calculus') || hasCourse.includes('math')) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 text-violet-700 border border-violet-200">Because you have Calculus — Try Desmos & Wolfram</span>;
-                              if (hasCourse.includes('chemistry') || hasCourse.includes('chem')) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">Because you have Chemistry — Periodic Table & PhET</span>;
-                              if (hasCourse) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">Recommended for your courses: {courses.slice(0,2).join(', ')}</span>;
+                              if (hasCourse.includes('calculus') || hasCourse.includes('math')) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/25">Because you have Calculus — Try Desmos & Wolfram</span>;
+                              if (hasCourse.includes('chemistry') || hasCourse.includes('chem')) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/25">Because you have Chemistry — Periodic Table & PhET</span>;
+                              if (hasCourse) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/25">Recommended for your courses: {courses.slice(0,2).join(', ')}</span>;
                               try { const usage = JSON.parse(localStorage.getItem('scc_app_usage_v1')||'{}'); const top = Object.entries(usage).sort((a:any,b:any)=>b[1]-a[1])[0]; if (top) return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D97757]/10 text-[#D97757] border border-[#D97757]/20">Because you use {top[0]} most</span>; } catch {}
-                              return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border">Starter essentials — add your courses to personalize</span>;
+                              return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#141413]/5 dark:bg-[#FAF9F5]/10 text-[#6B6860] dark:text-[#B5B2A8] border border-[#DFDACB] dark:border-[#2C2B27]">Starter essentials — add your courses to personalize</span>;
                             } catch { return null; }
                           })()}
                         </div>

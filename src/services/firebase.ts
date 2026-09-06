@@ -300,10 +300,10 @@ export const hasActiveGoogleWorkspaceToken = (): boolean => {
 };
 
 /**
- * Google OAuth access tokens expire after ~60 minutes and the web client gets
- * no refresh token — an old token string looks "connected" while every API
- * call 401s. These helpers make expiry explicit so sync surfaces a Reconnect
- * prompt instead of failing silently.
+ * Access-token freshness helpers. Popup tokens live ~60 minutes; the permanent
+ * offline grant in ./googleAuth mints fresh ones silently via the server, so
+ * these age checks are now a quiet fallback (stale token = refresh, never a
+ * user-facing expiry banner). Kept semantics-stable for existing callers.
  */
 export const GOOGLE_TOKEN_TTL_MS = 55 * 60 * 1000; // refresh 5 min before the real ~60 min expiry
 const TOKEN_ACQUIRED_AT_KEY = 'google_token_acquired_at';

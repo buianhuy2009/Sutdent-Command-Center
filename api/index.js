@@ -8,6 +8,8 @@ import handleExtractSubtasks from "./gemini/extract-subtasks.js";
 import handleEstimateEffort from "./gemini/estimate-effort.js";
 import handleSuggestStudySlots from "./gemini/suggest-study-slots.js";
 import handleGenerate from "./gemini/generate.js";
+import handleGoogleExchange from "./auth/google/exchange.js";
+import handleGoogleRefresh from "./auth/google/refresh.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -47,6 +49,12 @@ export default async function handler(req, res) {
   }
   if (cleanPath === "/gemini/generate") {
     return handleGenerate(req, res);
+  }
+  if (cleanPath === "/auth/google/exchange") {
+    return handleGoogleExchange(req, res);
+  }
+  if (cleanPath === "/auth/google/refresh") {
+    return handleGoogleRefresh(req, res);
   }
 
   res.status(404).json({ error: `API route not found: ${req.url}` });

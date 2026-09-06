@@ -74,13 +74,13 @@ const RELEASES: VersionRelease[] = [
     highlights: [
       'Fixed the blank page when opening Canvas — one bad item in your data can no longer crash the whole app',
       'Canvas failures now say what went wrong with a Try Again button, instead of looking empty',
-      'Google sign-in lasts about an hour — the app now tells you when it expires and reconnects in one click',
+      'Google Workspace now stays connected permanently — access renews silently in the background, no more hourly reconnects',
       'Your tasks and events stay on screen while reconnecting — nothing gets wiped by a failed sync',
     ],
     details: [
       'Some students tapped “Enter LMS Workspace” and got a blank page. This happened when a single assignment record was missing its title (from an old save, an email scan, or a blank spreadsheet row) — it crashed the page with no way back. Every list is now cleaned automatically, and a last-resort safety screen with a “Back to Dashboard” button catches anything unexpected.',
       'When Canvas sync failed, the tab said “All caught up!” with zero tasks, which looked broken and empty. It now shows a clear error box explaining the problem with a Try Again button, and keeps your previously loaded assignments visible.',
-      'Google only lets sign-ins last about an hour. Before, the app kept showing you as connected while every sync quietly failed. Now it detects the expired sign-in, explains it in plain words, and offers a one-click Reconnect — in the warning message, in every affected tab, and automatically after an hour.',
+      'Google only lets popup sign-ins last about an hour. The app now trades the first sign-in for a permanent offline grant and renews access silently through a secure server route — the client secret never leaves the backend, and revoked access simply returns you to the Connect state with your cached data intact.',
       'Failed syncs no longer delete what you already have. If Canvas, Calendar, Gmail, Sheets or Drive fail to refresh, your existing data stays put until the next successful sync.',
     ]
   },
