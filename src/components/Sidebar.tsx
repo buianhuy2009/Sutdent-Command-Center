@@ -167,7 +167,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               const badgeCount = badges[badgeKey] || badges[app.id] || (badges as any)[app.id.replace('-', '_')] || 0;
               const hasBadge = badgeCount > 0;
               const isActive = activeTab === app.id;
-              const badgeColor = app.id==='canvas' ? 'bg-violet-600' : app.id==='gmail' ? 'bg-amber-500' : app.id==='tracker' ? 'bg-emerald-600' : 'bg-rose-500';
+              const badgeColor = 'bg-[#D97757]';
               return (
                 <div key={app.id} className="relative group/item flex items-center">
                   <button
@@ -196,7 +196,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {isExpanded ? (
                       <div className="flex items-center gap-1.5 shrink-0">
                         {hasBadge && (
-                          <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${isActive ? 'bg-white text-rose-600' : `${badgeColor} text-white`}`}>
+                          <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full ${isActive ? 'bg-white text-[#B9552F]' : `${badgeColor} text-white`}`}>
                             {badgeCount > 99 ? '99+' : badgeCount}
                           </span>
                         )}
@@ -204,7 +204,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     ) : (
                       <>
                         {hasBadge && (
-                          <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#EFECE2] dark:ring-[#1A1917] ${badgeColor}`} />
+                          <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#EFECE2] dark:ring-[#282723] ${badgeColor}`} />
                         )}
                         <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]" role="tooltip">
                           {meta.label || app.name}

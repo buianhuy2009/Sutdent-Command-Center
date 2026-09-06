@@ -42,9 +42,12 @@
 }
 :root[data-theme="midnight"],
 html.dark {
-  --color-background: 20 20 19; /* #141413 Dark Charcoal */
-  --color-panel: 26 25 23; /* #1A1917 Warm Card Surface */
-  --color-border: 44 43 39; /* #2C2B27 */
+  --color-background: 20 20 19; /* #141413 Dark Charcoal — app canvas (unchanged per spec) */
+  --color-panel: 40 39 35; /* #282723 Elevated surface — visibly distinct from canvas */
+  --color-raised: 53 51 46; /* #35332E Raised/inner surface */
+  --color-well: 46 44 40; /* #2E2C28 Wells + inputs */
+  --color-border: 79 74 62; /* #4F4A3E Visible warm border */
+  --color-border-strong: 101 94 77; /* #655E4D Hover/emphasis border */
   --color-accent: 217 119 87; /* #D97757 Terracotta Orange */
   --color-text: 250 249 245; /* #FAF9F5 Warm Cream */
   --color-muted: 181 178 168; /* #B5B2A8 */
@@ -92,7 +95,7 @@ html.dark {
   html.dark .bg-slate-100,
   html.dark .bg-gray-50,
   html.dark .bg-gray-100 {
-    background-color: #1A1917;
+    background-color: #282723;
   }
   html.dark .bg-slate-800,
   html.dark .bg-slate-900,
@@ -100,22 +103,22 @@ html.dark {
   html.dark .bg-gray-900,
   html.dark .bg-slate-950,
   html.dark .bg-black {
-    background-color: #1A1917;
+    background-color: #282723;
   }
   html.dark .bg-slate-200,
   html.dark .bg-gray-200 {
-    background-color: #2C2B27;
+    background-color: #35332E;
   }
   html.dark .border-slate-100,
   html.dark .border-slate-200,
   html.dark .border-gray-200,
   html.dark .border-slate-800,
   html.dark .border-gray-800 {
-    border-color: #2C2B27;
+    border-color: #4F4A3E;
   }
   html.dark .border-slate-700,
   html.dark .border-gray-700 {
-    border-color: #383632;
+    border-color: #655E4D;
   }
   html.dark .text-slate-900,
   html.dark .text-gray-900,
@@ -138,8 +141,10 @@ html.dark {
     color: #E2DFD6;
   }
   html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
-  html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
-    border-color: #2C2B27;
+  html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+  html.dark .divide-slate-700 > :not([hidden]) ~ :not([hidden]),
+  html.dark .divide-slate-800 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #4F4A3E;
   }
   #root {
     background-color: rgb(var(--color-background));
@@ -147,8 +152,8 @@ html.dark {
     min-height: 100vh;
   }
   html.dark input, html.dark select, html.dark textarea {
-    border-color: #2E2D29;
-    background-color: #1F1E1B;
+    border-color: #4F4A3E;
+    background-color: #2E2C28;
     color: #FAF9F5;
   }
   html.dark input::placeholder, html.dark textarea::placeholder {
@@ -237,12 +242,12 @@ html.dark {
     -webkit-backdrop-filter: blur(var(--blur-glass-card));
   }
   .dark .glass-card {
-    background-color: rgba(26, 25, 23, 0.85);
+    background-color: rgba(40, 39, 35, 0.92);
     backdrop-filter: blur(var(--blur-glass-card));
     -webkit-backdrop-filter: blur(var(--blur-glass-card));
   }
 }
-.dark .glass-card { background-color: rgba(26, 25, 23, 0.85); }
+.dark .glass-card { background-color: rgba(40, 39, 35, 0.92); }
 @media (max-width: 768px) {
   :root { --blur-glass-panel: 8px; --blur-glass-card: 6px; --saturate-glass: 130%; }
 }
@@ -258,8 +263,8 @@ html.dark {
   border-radius: var(--radius-card);
 }
 .dark .card-micro, .dark [data-card] {
-  border-color: rgba(255,255,255,0.06);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 8px 24px rgba(0,0,0,0.35);
+  border-color: rgba(250,249,245,0.14);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.45);
 }
 .shadow-card {
   box-shadow: var(--shadow-card);
@@ -484,9 +489,9 @@ html[data-dyslexia="opendyslexic"] p, html[data-dyslexia="atkinson"] p { max-wid
    warm charcoal panel unless a `dark:bg-*` utility overrides (utilities beat base). */
 @layer base {
   .bg-\[\#FAF9F5\] { background-color: var(--linen); }
-  html.dark .bg-\[\#FAF9F5\] { background-color: #1A1917; }
+  html.dark .bg-\[\#FAF9F5\] { background-color: #282723; }
   .bg-\[\#EFECE2\] { background-color: var(--linen-deep); }
-  html.dark .bg-\[\#EFECE2\] { background-color: #1A1917; }
+  html.dark .bg-\[\#EFECE2\] { background-color: #282723; }
   .bg-\[\#D97757\] { background-color: var(--terracotta); }
   .text-\[\#D97757\] { color: var(--accent-text); }
   html.dark .text-\[\#D97757\] { color: #E8A07E; }
@@ -500,6 +505,95 @@ html[data-dyslexia="opendyslexic"] p, html[data-dyslexia="atkinson"] p { max-wid
   .focus\:ring-\[\#D97757\]:focus { --tw-ring-color: var(--terracotta); }
   .border-\[\#D97757\] { border-color: var(--terracotta); }
 }
+
+/* === Dark Elevation System (unlayered → beats layered Tailwind utilities) ===
+   App-wide remap of legacy dark hexes so EVERY panel/card/sidebar/input is
+   visibly distinct from the #141413 canvas. Strict warm-charcoal tints only:
+   surface #282723 · raised #35332E · well #2E2C28 · border #4F4A3E. */
+html.dark .dark\:bg-\[\#1A1917\] { background-color: #282723; }
+html.dark .dark\:bg-\[\#1A1917\]\/90 { background-color: color-mix(in srgb, #282723 90%, transparent); }
+html.dark .dark\:bg-\[\#1A1917\]\/60 { background-color: color-mix(in srgb, #282723 60%, transparent); }
+html.dark .dark\:bg-\[\#1A1917\]\/50 { background-color: color-mix(in srgb, #282723 50%, transparent); }
+html.dark .dark\:bg-\[\#252422\] { background-color: #35332E; }
+html.dark .dark\:bg-\[\#252422\]\/60 { background-color: color-mix(in srgb, #35332E 60%, transparent); }
+html.dark .dark\:bg-\[\#252422\]\/50 { background-color: color-mix(in srgb, #35332E 50%, transparent); }
+html.dark .dark\:bg-\[\#252422\]\/40 { background-color: color-mix(in srgb, #35332E 40%, transparent); }
+html.dark .dark\:bg-\[\#1F1E1B\] { background-color: #2E2C28; }
+html.dark .dark\:bg-\[\#1F1E1B\]\/70 { background-color: color-mix(in srgb, #2E2C28 70%, transparent); }
+html.dark .dark\:bg-\[\#1F1E1B\]\/60 { background-color: color-mix(in srgb, #2E2C28 60%, transparent); }
+html.dark .dark\:bg-\[\#1F1E1B\]\/50 { background-color: color-mix(in srgb, #2E2C28 50%, transparent); }
+html.dark .dark\:bg-\[\#1F1E1B\]\/40 { background-color: color-mix(in srgb, #2E2C28 40%, transparent); }
+html.dark .dark\:border-\[\#2C2B27\] { border-color: #4F4A3E; }
+html.dark .dark\:border-\[\#2C2B27\]\/80 { border-color: color-mix(in srgb, #4F4A3E 80%, transparent); }
+html.dark .dark\:border-\[\#2C2B27\]\/60 { border-color: color-mix(in srgb, #4F4A3E 60%, transparent); }
+html.dark .dark\:border-\[\#2C2B27\]\/40 { border-color: color-mix(in srgb, #4F4A3E 40%, transparent); }
+html.dark .dark\:border-\[\#2C2B27\]\/30 { border-color: color-mix(in srgb, #4F4A3E 30%, transparent); }
+html.dark .dark\:divide-\[\#2C2B27\]\/40 > :not([hidden]) ~ :not([hidden]) { border-color: color-mix(in srgb, #4F4A3E 40%, transparent); }
+html.dark .dark\:ring-\[\#1A1917\] { --tw-ring-color: #282723; }
+html.dark .dark\:hover\:bg-\[\#252422\]:hover { background-color: #403D36; }
+html.dark .dark\:hover\:bg-\[\#2C2A26\]:hover { background-color: #403D36; }
+html.dark .dark\:hover\:bg-\[\#1F1E1B\]:hover { background-color: #38362F; }
+html.dark .dark\:hover\:bg-\[\#1A1917\]:hover { background-color: #322F2A; }
+html.dark .dark\:hover\:border-\[\#2C2B27\]:hover { border-color: #655E4D; }
+
+/* === Strict-palette neutralization (decorative indigo/violet → terracotta) ===
+   CTA buttons, links and glyphs follow the 3-color theme in both modes.
+   Semantic status colors (emerald/rose/amber alerts, badges) are untouched. */
+@layer base {
+  .bg-indigo-600, .bg-violet-600 { background-color: #D97757; }
+  .hover\:bg-indigo-700:hover, .hover\:bg-violet-700:hover { background-color: #C86646; }
+  .text-indigo-600, .text-violet-600, .text-indigo-500 { color: var(--accent-text); }
+  html.dark .text-indigo-600, html.dark .text-violet-600, html.dark .text-indigo-500 { color: #E8A07E; }
+  .text-indigo-700, .text-violet-700, .text-violet-800 { color: #AA4F32; }
+  .bg-indigo-50 { background-color: #F9E9DF; }
+  .bg-indigo-100, .bg-violet-100 { background-color: #F5E2D5; }
+  .border-indigo-200, .border-violet-200 { border-color: #EAC4A8; }
+  .bg-indigo-500\/15 { background-color: rgba(217, 119, 87, 0.15); }
+}
+html.dark .dark\:bg-indigo-950\/60, html.dark .dark\:bg-indigo-950\/40,
+html.dark .dark\:bg-violet-950\/30, html.dark .dark\:bg-violet-950\/40,
+html.dark .dark\:bg-violet-950\/60, html.dark .dark\:bg-violet-950\/70,
+html.dark .dark\:bg-indigo-950, html.dark .dark\:bg-violet-950,
+html.dark .dark\:bg-indigo-900, html.dark .dark\:bg-violet-900,
+html.dark .dark\:bg-indigo-500\/20 { background-color: rgba(217, 119, 87, 0.16); }
+html.dark .dark\:border-indigo-800, html.dark .dark\:border-violet-800,
+html.dark .dark\:border-indigo-700 { border-color: #7A4A34; }
+html.dark .dark\:text-indigo-300, html.dark .dark\:text-indigo-400,
+html.dark .dark\:text-violet-300 { color: #E8A07E; }
+
+/* === Slate-to-palette neutralization (cool grays → warm neutrals) ===
+   Straggler components (QuickDraft, OAuthGuide, Landing, Drive fallback)
+   instantly follow the 3-color theme without per-file rewrites. */
+@layer base {
+  .bg-slate-50 { background-color: #FAF9F5; }
+  .bg-slate-100 { background-color: #EFECE2; }
+  .bg-slate-200 { background-color: #DFDACB; }
+  .border-slate-100 { border-color: #EFECE2; }
+  .border-slate-200, .border-slate-300 { border-color: #DFDACB; }
+  .text-slate-400 { color: #8C897F; }
+  .text-slate-600, .text-slate-700 { color: #5C5A54; }
+  .text-slate-800, .text-slate-900 { color: #141413; }
+  .hover\:bg-slate-50:hover { background-color: #FAF9F5; }
+  .hover\:bg-slate-100:hover, .hover\:bg-slate-200:hover { background-color: #EFECE2; }
+  .hover\:bg-slate-300:hover { background-color: #DFDACB; }
+  .hover\:text-slate-600:hover, .hover\:text-slate-800:hover, .hover\:text-slate-900:hover { color: #141413; }
+  .border-violet-200, .border-violet-300, .border-indigo-200 { border-color: #EAC4A8; }
+}
+html.dark .dark\:bg-slate-900, html.dark .dark\:bg-slate-800 { background-color: #282723; }
+html.dark .dark\:bg-slate-800\/60 { background-color: color-mix(in srgb, #282723 60%, transparent); }
+html.dark .dark\:bg-slate-800\/50 { background-color: color-mix(in srgb, #282723 50%, transparent); }
+html.dark .dark\:bg-slate-800\/40 { background-color: color-mix(in srgb, #282723 40%, transparent); }
+html.dark .dark\:bg-slate-800\/20 { background-color: color-mix(in srgb, #282723 20%, transparent); }
+html.dark .dark\:bg-slate-700 { background-color: #35332E; }
+html.dark .dark\:border-slate-800, html.dark .dark\:border-slate-700,
+html.dark .dark\:border-slate-600 { border-color: #4F4A3E; }
+html.dark .dark\:border-violet-800 { border-color: #7A4A34; }
+html.dark .dark\:text-slate-200 { color: #FAF9F5; }
+html.dark .dark\:text-slate-300 { color: #E6E4DC; }
+html.dark .dark\:text-slate-400 { color: #B5B2A8; }
+html.dark .dark\:hover\:bg-slate-800:hover, html.dark .dark\:hover\:bg-slate-700:hover { background-color: #403D36; }
+html.dark .dark\:hover\:bg-slate-600:hover { background-color: #4A473E; }
+html.dark .dark\:hover\:text-slate-200:hover { color: #FAF9F5; }
 
 /* iOS input zoom prevention — only on mobile and only when NOT compact + touch-action */
 @media (max-width: 768px) {

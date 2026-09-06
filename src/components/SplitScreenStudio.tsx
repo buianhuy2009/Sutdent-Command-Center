@@ -207,7 +207,7 @@ export const SplitScreenStudio: React.FC = () => {
       {/* Top Studio Control Bar */}
       <div className="bg-white dark:bg-[#1A1917] rounded-2xl p-4 border border-[#DFDACB] dark:border-[#2C2B27] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-sky-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D97757] to-[#B9552F] text-white flex items-center justify-center shrink-0 shadow-xs">
             <Columns2 className="w-5 h-5" />
           </div>
           <div>

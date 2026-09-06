@@ -41,7 +41,7 @@ export const ApiActivationBanner: React.FC<ApiActivationBannerProps> = ({
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl inline-flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            className="px-3.5 py-2 bg-[#D97757] hover:bg-[#C86646] text-white text-xs font-bold rounded-xl inline-flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
           >
             <span>Enable in Cloud Console</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -50,9 +50,9 @@ export const ApiActivationBanner: React.FC<ApiActivationBannerProps> = ({
           <button
             onClick={onRetry}
             disabled={isRetrying}
-            className="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-600 text-xs font-bold rounded-xl inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+            className="px-3 py-2 bg-white dark:bg-[#252422] hover:bg-[#FAF9F5] dark:hover:bg-[#2C2A26] text-[#141413] dark:text-[#FAF9F5] border border-[#DFDACB] dark:border-[#2C2B27] text-xs font-bold rounded-xl inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRetrying ? 'animate-spin text-indigo-500' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isRetrying ? 'animate-spin text-[#D97757]' : ''}`} />
             <span>Retry Sync</span>
           </button>
         </div>

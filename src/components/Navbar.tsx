@@ -62,7 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const unreadCount = hasDismissedBadge ? 0 : notifications.length;
 
   return (
-    <header role="banner" className="h-12 bg-white dark:bg-[#141413] border-b border-[#DFDACB] dark:border-[#2C2B27] px-4 sm:px-6 flex items-center justify-between z-20 shrink-0 select-none">
+    <header role="banner" className="h-12 bg-white dark:bg-[#1A1917] border-b border-[#DFDACB] dark:border-[#2C2B27] px-4 sm:px-6 flex items-center justify-between z-20 shrink-0 select-none">
       {/* LEFT: Clean breadcrumb */}
       <div className="flex items-center gap-2.5 min-w-0">
         <nav aria-label="Breadcrumb" className="flex items-center text-xs font-semibold text-[#6B6860]">

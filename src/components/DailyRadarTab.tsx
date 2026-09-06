@@ -149,20 +149,20 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Top Clean Header */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+      <div className="bg-white dark:bg-[#1A1917] rounded-2xl p-5 border border-[#DFDACB] dark:border-[#2C2B27] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#D97757]/15 text-[#D97757] flex items-center justify-center shrink-0">
             <CalendarIcon className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-base sm:text-lg font-bold text-[#141413] dark:text-[#FAF9F5] tracking-tight">
               {new Date().toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'short',
                 day: 'numeric',
               })}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-[#6B6860] mt-0.5">
               {events.length} {events.length === 1 ? 'event' : 'events'} scheduled today
             </p>
           </div>
@@ -173,8 +173,8 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
             onClick={() => setShowChronotypePanel(!showChronotypePanel)}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border ${
               showChronotypePanel
-                ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
-                : 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 border-purple-200 dark:border-purple-800'
+                ? 'bg-[#D97757] text-white border-[#D97757] shadow-xs'
+                : 'bg-[#D97757]/10 text-[#D97757] hover:bg-[#D97757]/20 border-[#D97757]/30'
             }`}
             title="AI automatically finds calendar gaps and schedules study blocks based on your energy rhythm"
           >
@@ -184,7 +184,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
 
           <button
             onClick={() => onOpenScheduleModal()}
-            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+            className="px-3.5 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Focus Block</span>
@@ -193,7 +193,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
           <button
             id="btn-refresh-schedule-radar"
             onClick={onRefreshEvents}
-            className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+            className="p-1.5 rounded-xl hover:bg-[#FAF9F5] dark:hover:bg-[#252422] text-[#8C897F] hover:text-[#D97757] transition-colors cursor-pointer border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27]"
             title="Sync Schedule with Google Calendar"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -202,25 +202,25 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
       </div>
 
       {showChronotypePanel && (
-        <div className="p-4 bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/60 rounded-2xl space-y-4 animate-in slide-in-from-top-3 duration-250">
+        <div className="p-4 bg-[#D97757]/5 dark:bg-[#D97757]/10 border border-[#D97757]/30 rounded-2xl space-y-4 animate-in slide-in-from-top-3 duration-250">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h4 className="text-xs font-bold text-purple-950 dark:text-purple-300 uppercase tracking-wider">
+              <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] uppercase tracking-wider">
                 Select your peak cognitive hours
               </h4>
-              <p className="text-[10px] text-purple-700/80 dark:text-purple-400/80 mt-0.5">
+              <p className="text-[10px] text-[#6B6860] mt-0.5">
                 AI schedules study blocks when your brain has the most energy.
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-1.5 bg-white dark:bg-[#252422] p-1 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
               <button
                 type="button"
                 onClick={() => setChronotype('morning')}
                 className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
                   chronotype === 'morning'
-                    ? 'bg-indigo-600 text-white shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    ? 'bg-[#D97757] text-white shadow-2xs'
+                    : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B]'
                 }`}
               >
                 Morning (7am-12pm)
@@ -230,8 +230,8 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                 onClick={() => setChronotype('balanced')}
                 className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
                   chronotype === 'balanced'
-                    ? 'bg-indigo-600 text-white shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    ? 'bg-[#D97757] text-white shadow-2xs'
+                    : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B]'
                 }`}
               >
                 Balanced
@@ -241,8 +241,8 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                 onClick={() => setChronotype('evening')}
                 className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
                   chronotype === 'evening'
-                    ? 'bg-indigo-600 text-white shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                    ? 'bg-[#D97757] text-white shadow-2xs'
+                    : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B]'
                 }`}
               >
                 Night Owl (4pm-10pm)

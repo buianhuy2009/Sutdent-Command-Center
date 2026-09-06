@@ -40,14 +40,14 @@ export const ToastContainer: React.FC<ToastProps & { onUndo?: any; onRetry?: any
                 ? 'bg-rose-950/90 border-rose-800/80 text-rose-100'
                 : toast.type === 'warning'
                 ? 'bg-amber-950/90 border-amber-800/80 text-amber-100'
-                : 'bg-slate-900/95 border-slate-700 text-slate-100'
+                : 'bg-[#141413]/95 border-[#4F4A3E] text-[#FAF9F5]'
             }`}
           >
             <div className="mt-0.5 shrink-0">
               {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
               {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-400" />}
               {toast.type === 'warning' && <AlertCircle className="w-5 h-5 text-amber-400" />}
-              {toast.type === 'info' && <Info className="w-5 h-5 text-sky-400" />}
+              {toast.type === 'info' && <Info className="w-5 h-5 text-[#D97757]" />}
             </div>
 
             <div className="flex-1 min-w-0">

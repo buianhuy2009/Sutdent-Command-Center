@@ -93,7 +93,7 @@ Keep dense, citation-ready, undergraduate level.`;
     <div className="space-y-6 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-[#1A1917] rounded-2xl p-5 border border-[#DFDACB] dark:border-[#2C2B27] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D97757] to-[#B9552F] text-white flex items-center justify-center shrink-0 shadow-xs">
             <Brain className="w-5 h-5" />
           </div>
           <div>
@@ -119,7 +119,7 @@ Keep dense, citation-ready, undergraduate level.`;
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-semibold text-[#5C5A54] dark:text-[#B5B2A8] mb-1">Subject</label>
-                <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. AP Biology" className="w-full px-3 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-[#141413] dark:text-[#FAF9F5]" />
+                <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="e.g. AP Biology" className="w-full px-3 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]" />
               </div>
               <div>
                 <label className="block text-[11px] font-semibold text-[#5C5A54] dark:text-[#B5B2A8] mb-1">Lens</label>
@@ -132,13 +132,13 @@ Keep dense, citation-ready, undergraduate level.`;
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-[#5C5A54] dark:text-[#B5B2A8] mb-1">Topic / Title *</label>
-              <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. CRISPR Gene Editing Ethics" className="w-full px-3 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-[#141413] dark:text-[#FAF9F5]" />
+              <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. CRISPR Gene Editing Ethics" className="w-full px-3 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]" />
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-[#5C5A54] dark:text-[#B5B2A8] mb-1">Source Notes (optional)</label>
-              <textarea rows={4} value={rawNotes} onChange={e => setRawNotes(e.target.value)} placeholder="Paste lecture notes, quotes, or chapter points to ground the brief..." className="w-full px-3 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-[#141413] dark:text-[#FAF9F5]" />
+              <textarea rows={4} value={rawNotes} onChange={e => setRawNotes(e.target.value)} placeholder="Paste lecture notes, quotes, or chapter points to ground the brief..." className="w-full px-3 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]" />
             </div>
-            <button onClick={handleGenerate} disabled={isGenerating || !topic.trim()} className="w-full px-4 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer">
+            <button onClick={handleGenerate} disabled={isGenerating || !topic.trim()} className="w-full px-4 py-2.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs cursor-pointer">
               <Sparkles className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
               <span>{isGenerating ? 'Synthesizing...' : 'Generate Research Brief'}</span>
             </button>
