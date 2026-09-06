@@ -10,8 +10,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing 'url' query parameter" });
     }
 
-    if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
-      return res.status(400).json({ error: "Invalid URL protocol" });
+    if (!targetUrl.startsWith("https://") && !(process.env.NODE_ENV !== "production" && targetUrl.startsWith("http://localhost"))) {
+      return res.status(400).json({ error: "Canvas proxy requires secure HTTPS connection" });
     }
 
     // Only allow Canvas-like domains (covers custom school hosts like 4015.instructure.com)

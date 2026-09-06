@@ -54,6 +54,17 @@ describe('sanitizers', () => {
 
 describe('google token expiry', () => {
   it('treats old tokens as expired and fresh tokens as valid', async () => {
+    if (typeof globalThis.localStorage === 'undefined') {
+      const store: Record<string, string> = {};
+      const mockStorage = {
+        getItem: (k: string) => store[k] ?? null,
+        setItem: (k: string, v: string) => { store[k] = String(v); },
+        removeItem: (k: string) => { delete store[k]; },
+        clear: () => { for (const k in store) delete store[k]; },
+      };
+      (globalThis as any).localStorage = mockStorage;
+      (globalThis as any).sessionStorage = mockStorage;
+    }
     const fb = await import('./firebase');
     fb.setStoredGoogleToken('test-token-1234567890');
     // fresh stamp → valid
