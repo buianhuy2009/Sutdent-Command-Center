@@ -58,6 +58,18 @@ export function createApiApp(): express.Express {
         return res.status(400).json({ error: "Invalid URL protocol" });
       }
 
+      // Only allow Canvas-like domains (covers custom school hosts like 4015.instructure.com)
+      try {
+        const u = new URL(targetUrl);
+        const allowedCanvas = (process.env.CANVAS_ALLOWED_HOSTS || "instructure.com,canvaslms.com").split(",").map((s) => s.trim()).filter(Boolean);
+        const isCanvasHost = allowedCanvas.some((h) => u.hostname === h || u.hostname.endsWith("." + h));
+        if (!isCanvasHost) {
+          return res.status(400).json({ error: `Host not allowlisted for Canvas proxy: ${u.hostname}. Allowed: ${allowedCanvas.join(", ")}` });
+        }
+      } catch {
+        return res.status(400).json({ error: "Invalid target URL" });
+      }
+
       const headers: Record<string, string> = {
         "User-Agent": "StudentCommandCenter/1.0",
       };

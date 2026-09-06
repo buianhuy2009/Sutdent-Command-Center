@@ -148,6 +148,7 @@ import {
   crossReferenceCanvasWithSheet,
   submitCanvasAssignment,
   loadCompletedCanvasIds,
+  normalizeCanvasDomain,
 } from './services/canvas';
 import {
   summarizeEmailsWithGemini,
@@ -1523,9 +1524,23 @@ export default function App() {
 
   // Fetch Canvas assignments (Zero fake data)
   const loadCanvasData = useCallback(async (isSilent = false) => {
-    if (!canvasSettings.calendarFeedUrl && !canvasSettings.apiToken) {
+    const feedUrl = canvasSettings.calendarFeedUrl?.trim() || '';
+    const apiToken = canvasSettings.apiToken?.trim() || '';
+    const apiDomain = canvasSettings.apiDomain?.trim()
+      ? normalizeCanvasDomain(canvasSettings.apiDomain)
+      : '';
+    const isApiConfigured = Boolean(apiToken && apiDomain);
+    if (!feedUrl && !isApiConfigured) {
       setCanvasAssignments([]);
-      setCanvasError(null);
+      // If user saved a custom URL but no token yet, explain what's missing
+      // instead of silently showing an empty tab.
+      if (canvasSettings.apiDomain?.trim() && !apiToken && !feedUrl) {
+        setCanvasError(
+          'Canvas URL saved, but no API token yet — open Settings and add your token (Canvas → Account → Settings → New Access Token), or paste a Calendar Feed URL.'
+        );
+      } else {
+        setCanvasError(null);
+      }
       return;
     }
 
@@ -1533,25 +1548,29 @@ export default function App() {
     try {
       let apiFetched: CanvasAssignment[] = [];
       let feedFetched: CanvasAssignment[] = [];
+      let apiError: string | null = null;
+      let feedError: string | null = null;
 
-      // 1. Fetch via REST API if configured
-      if (canvasSettings.apiToken && canvasSettings.apiDomain) {
+      // 1. Fetch via REST API if configured (requires BOTH Canvas URL + token)
+      if (isApiConfigured) {
         try {
           apiFetched = await fetchCanvasAssignmentsFromApi(
-            canvasSettings.apiDomain,
-            canvasSettings.apiToken
+            apiDomain,
+            apiToken
           );
-        } catch (e) {
+        } catch (e: any) {
           console.warn('Canvas REST API query error:', e);
+          apiError = e?.message || 'Canvas API request failed.';
         }
       }
 
       // 2. Fetch via Calendar Feed if configured
-      if (canvasSettings.calendarFeedUrl) {
+      if (feedUrl) {
         try {
-          feedFetched = await fetchCanvasAssignmentsFromFeed(canvasSettings.calendarFeedUrl);
-        } catch (e) {
+          feedFetched = await fetchCanvasAssignmentsFromFeed(feedUrl);
+        } catch (e: any) {
           console.warn('Canvas Calendar Feed query error:', e);
+          feedError = e?.message || 'Canvas feed request failed.';
         }
       }
 
@@ -1588,6 +1607,20 @@ export default function App() {
 
       const crossRef = crossReferenceCanvasWithSheet(fetched, assignments);
       setCanvasAssignments(crossRef);
+      // Surface source-level failures instead of silently showing "0 tasks".
+      // A 401 almost always means a wrong/expired token or wrong Canvas URL.
+      if (fetched.length === 0 && (apiError || feedError)) {
+        const combined = [apiError, feedError].filter(Boolean).join(' ');
+        const hint = /401|unauthorized/i.test(combined)
+          ? ` Check that your Canvas URL is exactly your school's host (e.g. ${apiDomain || 'https://4015.instructure.com'}) and that the API token is valid (Canvas → Account → Settings → New Access Token).`
+          : ` Check your Canvas URL (${apiDomain || 'custom host'}) and token, then retry.`;
+        const errMsg = `Canvas sync failed: ${combined}.${hint}`;
+        setCanvasError(errMsg);
+        if (!isSilent) {
+          addToast({ type: 'error', title: 'Canvas Sync Failed', message: errMsg });
+        }
+        return;
+      }
       setCanvasError(null);
       setLastSyncedAt(new Date());
 

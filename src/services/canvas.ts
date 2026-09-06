@@ -11,16 +11,42 @@ export const DEFAULT_CANVAS_SETTINGS: CanvasSettings = {
 const LOCAL_STORAGE_CANVAS_KEY = 'scc_canvas_settings_v1';
 
 /**
+ * Normalize a user-pasted Canvas instance URL to `https://<host>`.
+ * Accepts full login URLs (e.g. `https://4015.instructure.com/login/`),
+ * bare hosts (`4015.instructure.com`), or full origins — strips any
+ * path/query/hash and trailing slashes so REST calls hit the API root.
+ */
+export function normalizeCanvasDomain(input?: string, fallback = 'https://canvas.instructure.com'): string {
+  if (!input || !input.trim()) return fallback;
+  let raw = input.trim();
+  // Allow bare hosts like `4015.instructure.com`
+  if (!/^https?:\/\//i.test(raw)) {
+    raw = `https://${raw}`;
+  }
+  // Allow webcal:// pasted from calendar links
+  raw = raw.replace(/^webcal:\/\//i, 'https://');
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return fallback;
+    if (!u.hostname || !u.hostname.includes('.')) return fallback;
+    return `${u.protocol}//${u.hostname}`;
+  } catch {
+    return fallback;
+  }
+}
+
+/**
  * Extract root Canvas domain from calendarFeedUrl or return fallback
+ * (normalized to protocol + host so `/login/` style pastes still work).
  */
 export function extractCanvasDomain(feedUrl?: string, defaultDomain = 'https://canvas.instructure.com'): string {
-  if (!feedUrl || !feedUrl.trim()) return defaultDomain;
+  if (!feedUrl || !feedUrl.trim()) return normalizeCanvasDomain(defaultDomain);
   try {
     const clean = feedUrl.trim().replace(/^webcal:\/\//i, 'https://');
     const u = new URL(clean);
     return `${u.protocol}//${u.host}`;
   } catch {
-    return defaultDomain;
+    return normalizeCanvasDomain(defaultDomain);
   }
 }
 
@@ -60,7 +86,16 @@ export function loadCanvasSettings(): CanvasSettings {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_CANVAS_KEY);
     if (saved) {
-      return { ...DEFAULT_CANVAS_SETTINGS, ...JSON.parse(saved) };
+      const parsed = JSON.parse(saved);
+      return {
+        ...DEFAULT_CANVAS_SETTINGS,
+        ...parsed,
+        // Migrate legacy stored values like `https://xxx.instructure.com/login/`
+        apiDomain: normalizeCanvasDomain(
+          parsed.apiDomain || DEFAULT_CANVAS_SETTINGS.apiDomain,
+          DEFAULT_CANVAS_SETTINGS.apiDomain
+        ),
+      };
     }
   } catch (e) {
     console.error('Error loading Canvas settings:', e);
@@ -70,7 +105,11 @@ export function loadCanvasSettings(): CanvasSettings {
 
 export function saveCanvasSettings(settings: CanvasSettings) {
   try {
-    localStorage.setItem(LOCAL_STORAGE_CANVAS_KEY, JSON.stringify(settings));
+    const normalized = {
+      ...settings,
+      apiDomain: normalizeCanvasDomain(settings.apiDomain, DEFAULT_CANVAS_SETTINGS.apiDomain),
+    };
+    localStorage.setItem(LOCAL_STORAGE_CANVAS_KEY, JSON.stringify(normalized));
   } catch (e) {
     console.error('Error saving Canvas settings:', e);
   }
@@ -244,8 +283,10 @@ export async function fetchCanvasAssignmentsFromApi(
 ): Promise<CanvasAssignment[]> {
   if (!domain || !token) return [];
 
-  const cleanDomain = domain.replace(/\/$/, '');
-  const headers = { 'x-canvas-token': token };
+  const cleanDomain = normalizeCanvasDomain(domain);
+  const cleanToken = token.trim();
+  if (!cleanToken) return [];
+  const headers = { 'x-canvas-token': cleanToken };
 
   // 1. Fetch Canvas "To Do" list (authoritative pending homework list)
   const todoIds = new Set<string>();
@@ -557,7 +598,7 @@ export async function submitCanvasAssignment(
   assignmentId: string,
   fileUrl: string
 ): Promise<any> {
-  const cleanDomain = domain.replace(/\/$/, '');
+  const cleanDomain = normalizeCanvasDomain(domain);
   
   // Extract numerical assignment ID (e.g. from canvas-assign-12345)
   const rawId = assignmentId.replace(/^(canvas-assign-|canvas-planner-|canvas-api-|canvas-ics-)/, '');
@@ -565,7 +606,7 @@ export async function submitCanvasAssignment(
   const targetUrl = `${cleanDomain}/api/v1/courses/${courseId}/assignments/${rawId}/submissions`;
   
   const headers = {
-    'x-canvas-token': token,
+    'x-canvas-token': token.trim(),
     'Content-Type': 'application/json',
   };
 

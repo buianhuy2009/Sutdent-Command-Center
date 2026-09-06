@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Layers,
   RefreshCw,
@@ -24,7 +24,7 @@ import {
   Brain,
 } from 'lucide-react';
 import { CanvasAssignment, CanvasSettings } from '../types';
-import { loadCompletedCanvasIds, saveCompletedCanvasIds, resolveCanvasUrl, toMobileDeepLink } from '../services/canvas';
+import { loadCompletedCanvasIds, saveCompletedCanvasIds, resolveCanvasUrl, toMobileDeepLink, normalizeCanvasDomain } from '../services/canvas';
 import { extractSubtasksFromCanvas, SubtaskResult, calculateGradePrediction } from '../services/gemini';
 import { WhyIsThisHardModal } from './WhyIsThisHardModal';
 
@@ -73,6 +73,15 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+
+  // Keep drawer inputs in sync if settings are loaded/updated externally
+  useEffect(() => {
+    setFeedUrl(safeSettings.calendarFeedUrl || '');
+    setApiDomain(safeSettings.apiDomain || 'https://canvas.instructure.com');
+    setApiToken(safeSettings.apiToken || '');
+    setAutoSync(safeSettings.autoSync ?? true);
+  }, [safeSettings.calendarFeedUrl, safeSettings.apiDomain, safeSettings.apiToken, safeSettings.autoSync]);
 
   // Completion state loaded from local storage
   const [completedIds, setCompletedIds] = useState<string[]>(() => loadCompletedCanvasIds());
@@ -101,14 +110,35 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    setSettingsError(null);
+    const rawDomain = apiDomain.trim();
+    const normalizedDomain = normalizeCanvasDomain(rawDomain);
+    const trimmedToken = apiToken.trim();
+    const trimmedFeed = feedUrl.trim();
+    const isCustomDomain =
+      rawDomain !== '' && normalizedDomain !== 'https://canvas.instructure.com';
+    // API mode requires BOTH the Canvas instance URL and an access token.
+    if (!trimmedFeed && !trimmedToken) {
+      setSettingsError(
+        isCustomDomain
+          ? 'Canvas URL saved — now add your API access token to enable live sync (Canvas → Account → Settings → New Access Token).'
+          : 'Paste either your Calendar Feed URL or your Canvas URL + API token to connect.'
+      );
+      if (!isCustomDomain) return;
+    }
+    if (!trimmedFeed && trimmedToken && !rawDomain) {
+      setSettingsError('API token needs your Canvas URL too (e.g. https://4015.instructure.com).');
+      return;
+    }
     setIsSaving(true);
     const updated = {
-      calendarFeedUrl: feedUrl.trim(),
-      apiDomain: apiDomain.trim(),
-      apiToken: apiToken.trim(),
+      calendarFeedUrl: trimmedFeed,
+      apiDomain: normalizedDomain,
+      apiToken: trimmedToken,
       autoSync,
       lastSyncedAt: new Date().toISOString(),
     };
+    setApiDomain(normalizedDomain);
     onSaveSettings(updated);
     setTimeout(() => {
       setIsSaving(false);
@@ -196,7 +226,10 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
     });
   }, [canvasAssignments, activeTab, selectedCourse, searchQuery, completedIds]);
 
-  const isConfigured = Boolean(safeSettings.calendarFeedUrl || safeSettings.apiToken);
+  const isApiConfigured = Boolean(
+    safeSettings.apiToken?.trim() && safeSettings.apiDomain?.trim()
+  );
+  const isConfigured = Boolean(safeSettings.calendarFeedUrl?.trim() || isApiConfigured);
 
   return (
     <div className="space-y-4">
@@ -356,9 +389,48 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
           </div>
 
           <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div className="sm:col-span-2">
+              <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
+                Canvas Instance URL <span className="text-rose-500">*</span>
+                <span className="ml-1 font-normal text-[#8C897F]">— required with API token</span>
+              </label>
+              <input
+                type="text"
+                value={apiDomain}
+                onChange={(e) => setApiDomain(e.target.value)}
+                onBlur={() => setApiDomain((v) => (v.trim() ? normalizeCanvasDomain(v) : v))}
+                placeholder="https://4015.instructure.com"
+                inputMode="url"
+                className="w-full px-3 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-[#D97757]"
+              />
+              <p className="mt-1 text-[11px] text-[#8C897F] leading-snug">
+                Paste your school's Canvas link — even a login URL works
+                (e.g. <span className="font-mono">https://4015.instructure.com/login/</span>).
+                We keep just the <span className="font-mono">https://…</span> host for API calls.
+              </p>
+            </div>
+
+            <div>
+              <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
+                Canvas API Access Token <span className="text-rose-500">*</span>
+                <span className="ml-1 font-normal text-[#8C897F]">— required with URL</span>
+              </label>
+              <input
+                type="password"
+                value={apiToken}
+                onChange={(e) => setApiToken(e.target.value)}
+                placeholder="Canvas -> Account -> Settings -> New Access Token"
+                className="w-full px-3 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-[#D97757]"
+              />
+              <p className="mt-1 text-[11px] text-[#8C897F] leading-snug">
+                Live REST sync needs <span className="font-semibold">both</span> the URL above and this token.
+              </p>
+            </div>
+
             <div>
               <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
                 Canvas Calendar Feed (.ics URL)
+                <span className="ml-1 font-normal text-[#8C897F]">— alternative / extra source</span>
               </label>
               <input
                 type="text"
@@ -369,18 +441,11 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
               />
             </div>
 
-            <div>
-              <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
-                Canvas API Access Token (Optional)
-              </label>
-              <input
-                type="password"
-                value={apiToken}
-                onChange={(e) => setApiToken(e.target.value)}
-                placeholder="Canvas -> Account -> Settings -> New Access Token"
-                className="w-full px-3 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-[#D97757]"
-              />
-            </div>
+            {settingsError && (
+              <div className="sm:col-span-2 p-3 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-[11px] text-amber-800 dark:text-amber-200" role="alert">
+                {settingsError}
+              </div>
+            )}
 
             <div className="sm:col-span-2 flex items-center justify-end gap-2 pt-2">
               <button
@@ -434,7 +499,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             <p className="text-[11px] max-w-sm mx-auto">
               {isConfigured
                 ? 'No pending coursework matching your active filters.'
-                : 'Click the settings icon above to paste your Canvas calendar feed URL.'}
+                : 'Click the settings icon above to paste your Canvas URL (e.g. https://4015.instructure.com) + API token, or a calendar feed URL.'}
             </p>
           </div>
         ) : (

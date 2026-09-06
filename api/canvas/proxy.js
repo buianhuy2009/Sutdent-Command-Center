@@ -14,6 +14,18 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Invalid URL protocol" });
     }
 
+    // Only allow Canvas-like domains (covers custom school hosts like 4015.instructure.com)
+    try {
+      const u = new URL(targetUrl);
+      const allowed = (process.env.CANVAS_ALLOWED_HOSTS || "instructure.com,canvaslms.com").split(",").map((s) => s.trim()).filter(Boolean);
+      const ok = allowed.some((h) => u.hostname === h || u.hostname.endsWith("." + h));
+      if (!ok) {
+        return res.status(400).json({ error: `Host not allowlisted for Canvas proxy: ${u.hostname}. Allowed: ${allowed.join(", ")}` });
+      }
+    } catch {
+      return res.status(400).json({ error: "Invalid target URL" });
+    }
+
     const headers = {
       "User-Agent": "StudentCommandCenter/1.0",
     };
