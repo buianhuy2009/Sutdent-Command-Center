@@ -69,12 +69,20 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     xl: 'w-10 h-10',
   }[size];
 
+  // Cohesive icon system: identical shape + border + shadow for every app.
+  // Light: white tile + warm border. Dark: #252422 tile + #2C2B27 border.
+  // Gradient tiles keep brand color but gain the same border + shadow so
+  // Drive/Gmail/Classroom no longer look pasted-on.
+  const tileBase = 'flex items-center justify-center shrink-0 border shadow-sm';
+  const tileLight = 'bg-white dark:bg-[#252422] border-[#E3DDCC] dark:border-[#2C2B27]';
+  const tileGradientBorder = 'border-black/10 dark:border-white/10 shadow-sm';
+
   switch (id) {
-    // 1. Google Drive — Authentic Tricolor Triangle Ribbon
+    // 1. Google Drive — official triangle on unified tile
     case 'drive':
     case 'google-drive':
       return (
-        <div aria-label="Google Drive" className={`${sizeClasses} bg-white dark:bg-[#1E1E1C] border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-center shadow-xs shrink-0 ${className}`}>
+        <div aria-label="Google Drive" className={`${sizeClasses} ${tileBase} ${tileLight} ${className}`}>
           <svg className={iconSizes} viewBox="0 0 87.3 78" aria-hidden="true">
             <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA" />
             <path d="M43.65 25L29.9 1.2c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.4z" fill="#00AC47" />
@@ -86,43 +94,41 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
         </div>
       );
 
-    // 2. Gmail — Authentic Google Multicolored M Envelope
+    // 2. Gmail — clean official M envelope on unified tile
     case 'gmail':
     case 'google-mail':
       return (
-        <div aria-label="Gmail" className={`${sizeClasses} bg-white dark:bg-[#1E1E1C] border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-center shadow-xs shrink-0 ${className}`}>
-          <svg className={iconSizes} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M1.5 19.5V7.2l10.5 7.8 10.5-7.8v12.3c0 .8-.7 1.5-1.5 1.5H3c-.8 0-1.5-.7-1.5-1.5z" fill="#4285F4" />
-            <path d="M12 15L1.5 7.2V4.5c0-1.2 1.4-1.9 2.4-1.2L12 9.2l8.1-5.9c1-.7 2.4 0 2.4 1.2v2.7L12 15z" fill="#EA4335" />
-            <path d="M18.5 8.5V21H21c.8 0 1.5-.7 1.5-1.5V7.2L18.5 8.5z" fill="#34A853" />
-            <path d="M5.5 8.5V21H3c-.8 0-1.5-.7-1.5-1.5V7.2L5.5 8.5z" fill="#4285F4" />
-            <path d="M18 5.2L12 10.5 6 5.2 4.6 4.2C3.5 3.4 2 4.2 2 5.5v1L12 13.5l10-7v-1c0-1.3-1.5-2.1-2.6-1.3L18 5.2z" fill="#FBBC05" fillOpacity="0.4" />
+        <div aria-label="Gmail" className={`${sizeClasses} ${tileBase} ${tileLight} ${className}`}>
+          <svg className={iconSizes} viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#4285F4" d="M23.5 18.19a1.5 1.5 0 0 1-1.5 1.5H2a1.5 1.5 0 0 1-1.5-1.5V7.06L12 15.5l11.5-8.44v11.13Z" />
+            <path fill="#EA4335" d="M12 13.31 1.13 5.27c-.4-.3-.63-.77-.63-1.27 0-1 .81-1.81 1.81-1.81h19.38c1 0 1.81.81 1.81 1.81 0 .5-.23.97-.63 1.27L12 13.31Z" />
+            <path fill="#FBBC05" d="M2.31 2.19 12 9.44l9.69-7.25c.35-.26.82-.22 1.12.1.3.32.3.82-.02 1.12L12.7 13.06a.75.75 0 0 1-1.02.06L1.24 3.47a.75.75 0 0 1 .07-1.06c.26-.22.68-.3 1-.22Z" opacity=".35" />
+            <path fill="#34A853" d="M21.5 6.5h1a1 1 0 0 1 1 1v10.69a1.5 1.5 0 0 1-1.5 1.5h-1.35V8.1l.85-.62v-.98Z" opacity=".9" />
+            <path fill="#188038" d="M2.5 6.5h-1a1 1 0 0 0-1 1v10.69A1.5 1.5 0 0 0 2 19.69h1.35V8.1l-.85-.62v-.98Z" opacity=".55" />
           </svg>
         </div>
       );
 
-    // 3. Google Classroom — Authentic Green Chalkboard with Yellow Border
+    // 3. Google Classroom — green chalkboard, same tile size (no outer padding hack)
     case 'classroom':
     case 'google-classroom':
       return (
-        <div aria-label="Google Classroom" className={`${sizeClasses} bg-[#F4B400] p-0.5 rounded-xl flex items-center justify-center shadow-xs shrink-0 ${className}`}>
-          <div className="w-full h-full bg-[#137333] rounded-[7px] flex items-center justify-center relative overflow-hidden">
-            <svg className={iconSizes} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="12" cy="8.5" r="2.2" fill="#FFFFFF" />
-              <path d="M8 15c0-2.2 1.8-4 4-4s4 1.8 4 4H8z" fill="#FFFFFF" />
-              <circle cx="6.5" cy="9.5" r="1.5" fill="#C8E6C9" />
-              <path d="M3.8 15c0-1.5 1.2-2.7 2.7-2.7.7 0 1.3.3 1.8.7-.6.6-.9 1.3-.9 2H3.8z" fill="#C8E6C9" />
-              <circle cx="17.5" cy="9.5" r="1.5" fill="#C8E6C9" />
-              <path d="M20.2 15c0-1.5-1.2-2.7-2.7-2.7-.7 0-1.3.3-1.8.7.6.6.9 1.3.9 2h3.6z" fill="#C8E6C9" />
-            </svg>
-          </div>
+        <div aria-label="Google Classroom" className={`${sizeClasses} ${tileBase} bg-[#137333] border-[#0E5A28] dark:border-[#2C2B27] ${className}`}>
+          <svg className={iconSizes} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="8.5" r="2.2" fill="#FFFFFF" />
+            <path d="M8 15c0-2.2 1.8-4 4-4s4 1.8 4 4H8z" fill="#FFFFFF" />
+            <circle cx="6.5" cy="9.5" r="1.5" fill="#F9AB00" />
+            <path d="M3.8 15c0-1.5 1.2-2.7 2.7-2.7.7 0 1.3.3 1.8.7-.6.6-.9 1.3-.9 2H3.8z" fill="#F9AB00" />
+            <circle cx="17.5" cy="9.5" r="1.5" fill="#F9AB00" />
+            <path d="M20.2 15c0-1.5-1.2-2.7-2.7-2.7-.7 0-1.3.3-1.8.7.6.6.9 1.3.9 2h3.6z" fill="#F9AB00" />
+          </svg>
         </div>
       );
 
     // 4. Instructure Canvas LMS — Authentic Circular Asterism Flower
     case 'canvas':
       return (
-        <div aria-label="Canvas LMS" className={`${sizeClasses} bg-gradient-to-br from-[#E72429] to-[#C91A1E] text-white flex items-center justify-center font-bold shadow-md shadow-red-500/20 shrink-0 ${className}`}>
+        <div aria-label="Canvas LMS" className={`${sizeClasses} ${tileBase} ${tileGradientBorder} bg-gradient-to-br from-[#E72429] to-[#C91A1E] text-white font-bold ${className}`}>
           <svg className={iconSizes} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <circle cx="12" cy="3.5" r="2" />
             <circle cx="18" cy="6" r="2" />
@@ -227,7 +233,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'code-runner':
     case 'python':
       return (
-        <div aria-label="Python Code Runner" className={`${sizeClasses} bg-white dark:bg-[#1E1E1C] border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-center shadow-xs shrink-0 ${className}`}>
+        <div aria-label="Python Code Runner" className={`${sizeClasses} ${tileBase} ${tileLight} ${className}`}>
           <svg className={iconSizes} viewBox="0 0 24 24" aria-hidden="true">
             <path d="M11.9 2c-3.1 0-2.9 1.3-2.9 1.3l.01 1.4h2.9v.4H4.7S2 4.8 2 7.9c0 3.2 2.4 3.1 2.4 3.1h1.4V9.6c0-1.6 1.4-1.6 1.4-1.6h5c1.5 0 1.4-1.4 1.4-1.4V3.4S14.1 2 11.9 2zm-1.6 1a.7.7 0 1 1 0 1.4.7.7 0 0 1 0-1.4z" fill="#3776AB" />
             <path d="M12.1 22c3.1 0 2.9-1.3 2.9-1.3l-.01-1.4h-2.9v-.4h7.2s2.7.3 2.7-2.8c0-3.2-2.4-3.1-2.4-3.1h-1.4v1.4c0 1.6-1.4 1.6-1.4 1.6h-5c-1.5 0-1.4 1.4-1.4 1.4v3.2s-.5 1.4 1.7 1.4zm1.6-1a.7.7 0 1 1 0-1.4.7.7 0 0 1 0 1.4z" fill="#FFD43B" />
@@ -239,7 +245,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     case 'notion-import':
     case 'notion':
       return (
-        <div aria-label="Notion" className={`${sizeClasses} bg-white text-black border border-neutral-300 dark:border-neutral-700 flex items-center justify-center font-bold shadow-xs shrink-0 ${className}`}>
+        <div aria-label="Notion" className={`${sizeClasses} ${tileBase} ${tileLight} text-black dark:text-white font-bold ${className}`}>
           <span className="font-serif font-black text-sm tracking-tighter select-none">N</span>
         </div>
       );
@@ -279,7 +285,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 18. Daily Schedule & Radar
     case 'radar':
       return (
-        <div aria-label="Daily Schedule" className={`${sizeClasses} bg-gradient-to-br from-[#10B981] to-[#059669] text-white flex items-center justify-center font-bold shadow-md shadow-emerald-500/20 shrink-0 ${className}`}>
+        <div aria-label="Daily Schedule" className={`${sizeClasses} ${tileBase} ${tileGradientBorder} bg-gradient-to-br from-[#10B981] to-[#059669] text-white font-bold ${className}`}>
           <Compass className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -287,7 +293,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 19. Assignment Tracker
     case 'tracker':
       return (
-        <div aria-label="Assignment Tracker" className={`${sizeClasses} bg-gradient-to-br from-[#6366F1] to-[#4F46E5] text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/20 shrink-0 ${className}`}>
+        <div aria-label="Assignment Tracker" className={`${sizeClasses} ${tileBase} ${tileGradientBorder} bg-gradient-to-br from-[#6366F1] to-[#4F46E5] text-white font-bold ${className}`}>
           <CheckSquare className={iconSizes} aria-hidden="true" />
         </div>
       );
@@ -373,7 +379,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
     // 29. Pomodoro Focus Station
     case 'pomodoro':
       return (
-        <div aria-label="Pomodoro Focus" className={`${sizeClasses} bg-gradient-to-br from-[#EF4444] to-[#DC2626] text-white flex items-center justify-center font-bold shadow-md shadow-red-500/20 shrink-0 ${className}`}>
+        <div aria-label="Pomodoro Focus" className={`${sizeClasses} ${tileBase} ${tileGradientBorder} bg-gradient-to-br from-[#EF4444] to-[#DC2626] text-white font-bold ${className}`}>
           <Timer className={iconSizes} aria-hidden="true" />
         </div>
       );

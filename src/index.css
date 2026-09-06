@@ -31,16 +31,17 @@
   --shadow-card: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.04);
   --shadow-card-hover: 0 4px 12px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.06);
 }
-/* Legacy aliases — App.tsx writes parchment/linen/midnight/ocean/forest; keep sync */
-:root[data-theme="linen"], :root[data-theme="parchment"] {
-  --color-background: 250 249 245;
+/* Strict two-mode palette only — Light #FAF9F5 / Dark #141413 / Accent #D97757 */
+:root, :root[data-theme="linen"], :root[data-theme="parchment"] {
+  --color-background: 250 249 245; /* #FAF9F5 Warm Cream */
   --color-panel: 255 255 255;
-  --color-border: 223 218 203;
-  --color-accent: 217 119 87;
-  --color-text: 20 20 19;
+  --color-border: 223 218 203; /* #DFDACB */
+  --color-accent: 217 119 87; /* #D97757 Terracotta */
+  --color-text: 20 20 19; /* #141413 Dark Charcoal */
+  --color-muted: 107 104 96;
 }
 :root[data-theme="midnight"],
-html.dark:not([data-theme="ocean"]):not([data-theme="forest"]):not([data-theme="nord"]):not([data-theme="dracula"]):not([data-theme="catppuccin"]):not([data-theme="cyberpunk"]) {
+html.dark {
   --color-background: 20 20 19; /* #141413 Dark Charcoal */
   --color-panel: 26 25 23; /* #1A1917 Warm Card Surface */
   --color-border: 44 43 39; /* #2C2B27 */
@@ -48,12 +49,6 @@ html.dark:not([data-theme="ocean"]):not([data-theme="forest"]):not([data-theme="
   --color-text: 250 249 245; /* #FAF9F5 Warm Cream */
   --color-muted: 181 178 168; /* #B5B2A8 */
 }
-:root[data-theme="ocean"] { --color-background: 11 19 43; --color-panel: 18 30 62; --color-border: 38 58 107; --color-accent: 56 189 248; --color-text: 236 239 244; }
-:root[data-theme="forest"] { --color-background: 6 26 20; --color-panel: 14 42 32; --color-border: 36 71 58; --color-accent: 16 185 129; --color-text: 236 253 245; }
-:root[data-theme="nord"] { --color-background: 36 41 51; --color-panel: 46 52 64; --color-border: 67 76 94; --color-accent: 136 192 208; --color-text: 236 239 244; }
-:root[data-theme="dracula"] { --color-background: 30 31 41; --color-panel: 40 42 54; --color-border: 68 71 90; --color-accent: 255 121 198; --color-text: 248 248 242; }
-:root[data-theme="catppuccin"] { --color-background: 30 30 46; --color-panel: 24 24 37; --color-border: 49 50 68; --color-accent: 203 166 247; --color-text: 205 214 244; }
-:root[data-theme="cyberpunk"] { --color-background: 9 9 14; --color-panel: 20 12 28; --color-border: 66 20 84; --color-accent: 0 255 255; --color-text: 0 255 255; }
 
 @layer base {
   html {
@@ -88,42 +83,76 @@ html.dark:not([data-theme="ocean"]):not([data-theme="forest"]):not([data-theme="
   blockquote, .font-serif {
     font-family: var(--font-serif);
   }
-  /* Distinct Warm Charcoal Dark Mode — scoped to [data-theme] to avoid breaking Landing which expects slate-900 */
+  /* Strict warm-charcoal dark mode — map ALL legacy slate/gray/white surfaces to palette */
   .dark {
     --tw-border-opacity: 1;
   }
-  [data-theme].dark .bg-slate-900,
-  html.dark .bg-slate-900,
-  html.dark body .bg-white {
+  html.dark .bg-white,
+  html.dark .bg-slate-50,
+  html.dark .bg-slate-100,
+  html.dark .bg-gray-50,
+  html.dark .bg-gray-100 {
     background-color: #1A1917;
   }
-  html.dark .border-slate-800,
-  html.dark .border-slate-200 {
-    border-color: #2E2D29;
+  html.dark .bg-slate-800,
+  html.dark .bg-slate-900,
+  html.dark .bg-gray-800,
+  html.dark .bg-gray-900,
+  html.dark .bg-slate-950,
+  html.dark .bg-black {
+    background-color: #1A1917;
   }
-  html.dark .border-slate-700 {
+  html.dark .bg-slate-200,
+  html.dark .bg-gray-200 {
+    background-color: #2C2B27;
+  }
+  html.dark .border-slate-100,
+  html.dark .border-slate-200,
+  html.dark .border-gray-200,
+  html.dark .border-slate-800,
+  html.dark .border-gray-800 {
+    border-color: #2C2B27;
+  }
+  html.dark .border-slate-700,
+  html.dark .border-gray-700 {
     border-color: #383632;
   }
+  html.dark .text-slate-900,
+  html.dark .text-gray-900,
   html.dark .text-slate-100,
-  html.dark .text-slate-200 {
+  html.dark .text-slate-200,
+  html.dark .text-white {
     color: #FAF9F5;
   }
   html.dark .text-slate-300 {
     color: #E6E4DC;
   }
-  html.dark .text-slate-400 {
+  html.dark .text-slate-400,
+  html.dark .text-slate-500,
+  html.dark .text-gray-400,
+  html.dark .text-gray-500 {
     color: #B5B2A8;
   }
-  html.dark .text-slate-500 {
-    color: #B5B2A8;
-  }
-  html.dark .text-slate-600 {
+  html.dark .text-slate-600,
+  html.dark .text-gray-600 {
     color: #E2DFD6;
+  }
+  html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+  html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #2C2B27;
+  }
+  #root {
+    background-color: rgb(var(--color-background));
+    color: rgb(var(--color-text));
+    min-height: 100vh;
   }
   html.dark input, html.dark select, html.dark textarea {
     border-color: #2E2D29;
     background-color: #1F1E1B;
     color: #FAF9F5;
+  }
+  html.dark input::placeholder, html.dark textarea::placeholder {
+    color: #8C897F;
   }
 }
 
@@ -330,21 +359,18 @@ html[data-density="spacious"] {
   --gap-4: 1.25rem;
 }
 
-/* Color Theme Palette Classes */
+/* Color Theme Palette Classes — strict two modes only */
 html[data-theme="midnight"].dark,
 html[data-theme="midnight"].dark body,
-html.dark:not([data-theme="ocean"]):not([data-theme="forest"]):not([data-theme="nord"]):not([data-theme="dracula"]):not([data-theme="catppuccin"]):not([data-theme="cyberpunk"]),
-html.dark:not([data-theme="ocean"]):not([data-theme="forest"]):not([data-theme="nord"]):not([data-theme="dracula"]):not([data-theme="catppuccin"]):not([data-theme="cyberpunk"]) body {
+html.dark,
+html.dark body {
   background-color: #141413;
   color: #FAF9F5;
 }
-html[data-theme="ocean"].dark,
-html[data-theme="ocean"].dark body {
-  background-color: #0B132B;
-}
-html[data-theme="forest"].dark,
-html[data-theme="forest"].dark body {
-  background-color: #061A14;
+html:not(.dark),
+html:not(.dark) body {
+  background-color: #FAF9F5;
+  color: #141413;
 }
 
 /* semantic secondary / success utilities — keep terracotta CTA-only */

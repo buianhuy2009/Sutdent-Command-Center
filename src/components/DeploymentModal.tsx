@@ -69,18 +69,18 @@ export const DeploymentModal: React.FC<DeploymentModalProps> = ({ isOpen, onClos
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl animate-in zoom-in-95 max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl max-w-2xl w-full p-6 shadow-2xl animate-in zoom-in-95 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
+        <div className="flex items-center justify-between pb-4 border-b border-[#DFDACB] dark:border-[#2C2B27] shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] flex items-center justify-center font-bold">
               <Globe className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              <h3 className="text-lg font-bold text-[#141413] dark:text-[#FAF9F5]">
                 Vercel Deployment & Integration Guide
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-[#6B6860]">
                 Ensure Google Workspace, Canvas LMS, and Gemini AI work smoothly on Vercel
               </p>
             </div>
@@ -88,7 +88,7 @@ export const DeploymentModal: React.FC<DeploymentModalProps> = ({ isOpen, onClos
 
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] p-1.5 rounded-lg hover:bg-[#FAF9F5] dark:hover:bg-[#252422] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -97,7 +97,7 @@ export const DeploymentModal: React.FC<DeploymentModalProps> = ({ isOpen, onClos
         {/* Content Scrollable */}
         <div className="mt-4 space-y-4 overflow-y-auto pr-1 flex-1 text-xs sm:text-sm">
           {/* Health Status Bar */}
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-3">
+          <div className="p-3.5 rounded-xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <div
                 className={`w-2.5 h-2.5 rounded-full ${
@@ -107,10 +107,10 @@ export const DeploymentModal: React.FC<DeploymentModalProps> = ({ isOpen, onClos
                 }`}
               />
               <div>
-                <span className="font-bold text-slate-900 dark:text-white text-xs">
+                <span className="font-bold text-[#141413] dark:text-[#FAF9F5] text-xs">
                   Serverless Backend API Status:{' '}
                 </span>
-                <span className="text-slate-600 dark:text-slate-300 font-mono text-xs">
+                <span className="text-[#6B6860] font-mono text-xs">
                   {healthStatus?.status === 'ok'
                     ? `Healthy (${healthStatus.platform || 'ready'})`
                     : healthStatus?.error || 'Checking...'}
@@ -121,7 +121,7 @@ export const DeploymentModal: React.FC<DeploymentModalProps> = ({ isOpen, onClos
             <button
               onClick={checkHealth}
               disabled={isCheckingHealth}
-              className="px-2.5 py-1 text-xs font-semibold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg flex items-center gap-1 transition-colors"
+              className="px-2.5 py-1 text-xs font-semibold bg-[#EFECE2] dark:bg-[#2C2B27] hover:bg-[#DFDACB] dark:hover:bg-[#383632] text-[#141413] dark:text-[#FAF9F5] rounded-lg flex items-center gap-1 transition-colors"
             >
               <RefreshCw className={`w-3 h-3 ${isCheckingHealth ? 'animate-spin' : ''}`} />
               <span>Ping API</span>
@@ -144,9 +144,9 @@ export const DeploymentModal: React.FC<DeploymentModalProps> = ({ isOpen, onClos
               Google Auth blocks sign-in popups on new domains until authorized. When deploying to Vercel, you must add your Vercel domain to Firebase Console.
             </p>
 
-            <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-indigo-200/80 dark:border-indigo-800/80 space-y-2 text-xs">
+            <div className="bg-white dark:bg-[#1A1917] p-3 rounded-lg border border-indigo-200/80 dark:border-indigo-800/80 space-y-2 text-xs">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-slate-500 dark:text-slate-400">Current domain to add:</span>
+                <span className="text-[#6B6860]">Current domain to add:</span>
                 <button
                   onClick={() => copyToClipboard(currentHostname, 'host')}
                   className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 rounded font-mono font-bold flex items-center gap-1 hover:bg-indigo-100 transition-colors"
@@ -156,9 +156,9 @@ export const DeploymentModal: React.FC<DeploymentModalProps> = ({ isOpen, onClos
                 </button>
               </div>
 
-              <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 space-y-1 text-slate-700 dark:text-slate-300">
-                <p className="font-semibold text-slate-900 dark:text-white">Steps to enable Google Sign-In:</p>
-                <ol className="list-decimal list-inside space-y-1 pl-1 text-[11px] text-slate-600 dark:text-slate-300">
+              <div className="pt-1.5 border-t border-[#DFDACB] dark:border-[#2C2B27] space-y-1 text-[#5C5A54] dark:text-[#B5B2A8]">
+                <p className="font-semibold text-[#141413] dark:text-[#FAF9F5]">Steps to enable Google Sign-In:</p>
+                <ol className="list-decimal list-inside space-y-1 pl-1 text-[11px] text-[#6B6860]">
                   <li>
                     Open{' '}
                     <a
@@ -174,7 +174,7 @@ export const DeploymentModal: React.FC<DeploymentModalProps> = ({ isOpen, onClos
                     Navigate to <strong>Authentication</strong> → <strong>Settings</strong> tab → <strong>Authorized Domains</strong>
                   </li>
                   <li>
-                    Click <strong>Add Domain</strong> and enter <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded font-bold">{currentHostname || 'your-app.vercel.app'}</code> (or <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded font-bold">*.vercel.app</code>)
+                    Click <strong>Add Domain</strong> and enter <code className="bg-[#FAF9F5] dark:bg-[#252422] px-1 py-0.5 rounded font-bold">{currentHostname || 'your-app.vercel.app'}</code> (or <code className="bg-[#FAF9F5] dark:bg-[#252422] px-1 py-0.5 rounded font-bold">*.vercel.app</code>)
                   </li>
                 </ol>
               </div>
@@ -193,8 +193,8 @@ export const DeploymentModal: React.FC<DeploymentModalProps> = ({ isOpen, onClos
               </span>
             </div>
 
-            <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
-              Canvas LMS blocks direct browser requests due to CORS. We have configured <code className="font-mono bg-white dark:bg-slate-900 px-1 py-0.5 rounded">api/index.ts</code> and <code className="font-mono bg-white dark:bg-slate-900 px-1 py-0.5 rounded">vercel.json</code> to proxy <code className="font-mono">/api/canvas/proxy</code> via Vercel Serverless Functions automatically!
+            <p className="text-[#6B6860] text-xs leading-relaxed">
+              Canvas LMS blocks direct browser requests due to CORS. We have configured <code className="font-mono bg-white dark:bg-[#1A1917] px-1 py-0.5 rounded">api/index.ts</code> and <code className="font-mono bg-white dark:bg-[#1A1917] px-1 py-0.5 rounded">vercel.json</code> to proxy <code className="font-mono">/api/canvas/proxy</code> via Vercel Serverless Functions automatically!
             </p>
           </div>
 
@@ -210,28 +210,28 @@ export const DeploymentModal: React.FC<DeploymentModalProps> = ({ isOpen, onClos
               </span>
             </div>
 
-            <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
+            <p className="text-[#6B6860] text-xs leading-relaxed">
               To enable server-side AI processing on Vercel:
             </p>
 
-            <div className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-amber-200/80 dark:border-amber-800/80 space-y-2 text-xs">
-              <p className="text-slate-700 dark:text-slate-300">
+            <div className="bg-white dark:bg-[#1A1917] p-3 rounded-lg border border-amber-200/80 dark:border-amber-800/80 space-y-2 text-xs">
+              <p className="text-[#5C5A54] dark:text-[#B5B2A8]">
                 1. Go to your Vercel Project → <strong>Settings</strong> → <strong>Environment Variables</strong>
               </p>
-              <div className="flex items-center justify-between p-2 rounded bg-slate-50 dark:bg-slate-800 font-mono text-xs">
+              <div className="flex items-center justify-between p-2 rounded bg-[#FAF9F5] dark:bg-[#252422] font-mono text-xs">
                 <div>
-                  <span className="text-slate-500">Key: </span>
-                  <span className="font-bold text-slate-900 dark:text-white">GEMINI_API_KEY</span>
+                  <span className="text-[#6B6860]">Key: </span>
+                  <span className="font-bold text-[#141413] dark:text-[#FAF9F5]">GEMINI_API_KEY</span>
                 </div>
                 <button
                   onClick={() => copyToClipboard('GEMINI_API_KEY', 'envkey')}
-                  className="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded hover:bg-slate-300 transition-colors flex items-center gap-1 text-[11px]"
+                  className="px-2 py-0.5 bg-[#EFECE2] dark:bg-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] rounded hover:bg-[#DFDACB] transition-colors flex items-center gap-1 text-[11px]"
                 >
                   <span>Copy Key</span>
                   {copiedKey === 'envkey' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                 </button>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] text-[#6B6860]">
                 2. Paste your Gemini API key and redeploy.
               </p>
             </div>
@@ -239,13 +239,13 @@ export const DeploymentModal: React.FC<DeploymentModalProps> = ({ isOpen, onClos
         </div>
 
         {/* Footer */}
-        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
-          <span className="text-[11px] text-slate-400">
-            Files added: <code className="font-mono text-slate-600 dark:text-slate-300">api/index.ts</code> & <code className="font-mono text-slate-600 dark:text-slate-300">vercel.json</code>
+        <div className="mt-4 pt-3 border-t border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between shrink-0">
+          <span className="text-[11px] text-[#8C897F]">
+            Files added: <code className="font-mono text-[#6B6860]">api/index.ts</code> & <code className="font-mono text-[#6B6860]">vercel.json</code>
           </span>
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl cursor-pointer shadow-xs transition-colors"
+            className="px-4 py-2 text-xs font-bold bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl cursor-pointer shadow-xs transition-colors"
           >
             Close Guide
           </button>

@@ -3378,17 +3378,17 @@ export default function App() {
       <dialog
         ref={onboardingDialogRef}
         id="onboarding-tour-dialog"
-        className="backdrop:bg-slate-950/70 backdrop:backdrop-blur-xs rounded-2xl p-0 border border-slate-200 dark:border-slate-800 shadow-2xl bg-[#FAF9F6] dark:bg-[#0F172A] text-slate-900 dark:text-white max-w-lg w-full m-auto overflow-hidden"
+        className="backdrop:bg-black/60 backdrop:backdrop-blur-xs rounded-2xl p-0 border border-[#DFDACB] dark:border-[#2C2B27] shadow-2xl bg-[#FAF9F5] dark:bg-[#1A1917] text-[#141413] dark:text-[#FAF9F5] max-w-lg w-full m-auto overflow-hidden"
       >
         <div className="p-6 space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between pb-3 border-b border-[#DFDACB] dark:border-[#2C2B27]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md shadow-indigo-500/30">
+              <div className="w-10 h-10 bg-gradient-to-tr from-amber-500 to-[#D97757] rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md shadow-[#D97757]/30">
                 S
               </div>
               <div>
                 <h3 className="text-base font-bold leading-tight">Welcome to Student Command Center</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Eye-friendly, distraction-free academic workspace</p>
+                <p className="text-xs text-[#6B6860]">Eye-friendly, distraction-free academic workspace</p>
               </div>
             </div>
             <button
@@ -3396,46 +3396,46 @@ export default function App() {
                 localStorage.setItem('scc_tour_seen', 'true');
                 onboardingDialogRef.current?.close();
               }}
-              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg cursor-pointer"
+              className="p-1.5 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           <div className="space-y-3 text-xs">
-            <div className="p-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-start gap-3">
-              <span className="p-1.5 rounded-lg bg-orange-100 dark:bg-orange-950/60 text-orange-600 shrink-0 font-bold">1</span>
+            <div className="p-3 rounded-xl bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] flex items-start gap-3">
+              <span className="p-1.5 rounded-lg bg-[#D97757]/15 text-[#D97757] shrink-0 font-bold">1</span>
               <div>
-                <strong className="text-slate-900 dark:text-white block font-semibold">Canvas LMS Direct Sync</strong>
-                <p className="text-slate-500 dark:text-slate-400 mt-0.5">Filter unfinished vs. completed homework, open quizzes directly in Canvas, or submit files from Google Drive.</p>
+                <strong className="text-[#141413] dark:text-[#FAF9F5] block font-semibold">Canvas LMS Direct Sync</strong>
+                <p className="text-[#6B6860] mt-0.5">Filter unfinished vs. completed homework, open quizzes directly in Canvas, or submit files from Google Drive.</p>
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-start gap-3">
-              <span className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 shrink-0 font-bold">2</span>
+            <div className="p-3 rounded-xl bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] flex items-start gap-3">
+              <span className="p-1.5 rounded-lg bg-[#D97757]/15 text-[#D97757] shrink-0 font-bold">2</span>
               <div>
-                <strong className="text-slate-900 dark:text-white block font-semibold">Unified Daily Timeline</strong>
-                <p className="text-slate-500 dark:text-slate-400 mt-0.5">Your Google Calendar classes, study focus blocks, and today's Canvas deadlines merged in chronological order.</p>
+                <strong className="text-[#141413] dark:text-[#FAF9F5] block font-semibold">Unified Daily Timeline</strong>
+                <p className="text-[#6B6860] mt-0.5">Your Google Calendar classes, study focus blocks, and today's Canvas deadlines merged in chronological order.</p>
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-white dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-start gap-3">
-              <span className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 shrink-0 font-bold">3</span>
+            <div className="p-3 rounded-xl bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] flex items-start gap-3">
+              <span className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 shrink-0 font-bold">3</span>
               <div>
-                <strong className="text-slate-900 dark:text-white block font-semibold">Anti-Eyestrain Linen Theme</strong>
-                <p className="text-slate-500 dark:text-slate-400 mt-0.5">Custom calibrated #FAF9F6 soft background eliminates blue-light glare and eye fatigue during late study sessions.</p>
+                <strong className="text-[#141413] dark:text-[#FAF9F5] block font-semibold">Anti-Eyestrain Linen Theme</strong>
+                <p className="text-[#6B6860] mt-0.5">Warm cream #FAF9F5 light and charcoal #141413 dark with terracotta accent eliminate glare during late study sessions.</p>
               </div>
             </div>
           </div>
 
           <div className="pt-2 flex items-center justify-between gap-3">
-            <span className="text-[11px] text-slate-400 font-mono">Press 1-5 for fast keyboard switching</span>
+            <span className="text-[11px] text-[#8C897F] font-mono">Press 1-5 for fast keyboard switching</span>
             <button
               onClick={() => {
                 localStorage.setItem('scc_tour_seen', 'true');
                 onboardingDialogRef.current?.close();
               }}
-              className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-2 bg-[#D97757] hover:bg-[#C86646] text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <span>Get Started</span>
               <ArrowRight className="w-3.5 h-3.5" />

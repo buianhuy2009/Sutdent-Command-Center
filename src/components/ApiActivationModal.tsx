@@ -77,30 +77,30 @@ export const ApiActivationModal: React.FC<ApiActivationModalProps> = ({
     `https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=${projectId}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div
         id="api-activation-modal"
-        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col"
+        className="bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col"
       >
         {/* Header */}
-        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-start justify-between gap-4">
+        <div className="p-5 border-b border-[#DFDACB] dark:border-[#2C2B27] flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">
                 Enable {targetService} in Google Cloud
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Google Cloud Project ID: <code className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{projectId}</code>
+              <p className="text-xs text-[#6B6860] mt-0.5">
+                Google Cloud Project ID: <code className="font-mono font-bold text-[#D97757]">{projectId}</code>
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] rounded-lg hover:bg-[#FAF9F5] dark:hover:bg-[#252422] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -121,16 +121,16 @@ export const ApiActivationModal: React.FC<ApiActivationModalProps> = ({
 
           {/* 3 Simple Steps */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6860] mb-3">
               How to fix in 30 seconds
             </h4>
-            <div className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
-              <div className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
-                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-[10px] shrink-0">
+            <div className="space-y-2.5 text-xs text-[#5C5A54] dark:text-[#B5B2A8]">
+              <div className="flex items-start gap-3 p-3 bg-[#FAF9F5] dark:bg-[#252422] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
+                <span className="w-5 h-5 rounded-full bg-[#D97757] text-white font-bold flex items-center justify-center text-[10px] shrink-0">
                   1
                 </span>
                 <div>
-                  <p className="font-semibold text-slate-900 dark:text-white">
+                  <p className="font-semibold text-[#141413] dark:text-[#FAF9F5]">
                     Open Google Cloud Console
                   </p>
                   <p className="text-slate-500 dark:text-slate-400 mt-0.5">
@@ -139,29 +139,29 @@ export const ApiActivationModal: React.FC<ApiActivationModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
-                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-[10px] shrink-0">
+              <div className="flex items-start gap-3 p-3 bg-[#FAF9F5] dark:bg-[#252422] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
+                <span className="w-5 h-5 rounded-full bg-[#D97757] text-white font-bold flex items-center justify-center text-[10px] shrink-0">
                   2
                 </span>
                 <div>
-                  <p className="font-semibold text-slate-900 dark:text-white">
+                  <p className="font-semibold text-[#141413] dark:text-[#FAF9F5]">
                     Click the blue &quot;ENABLE&quot; button
                   </p>
-                  <p className="text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-[#6B6860] mt-0.5">
                     In the Google Cloud page that opens, click the <strong>&quot;ENABLE&quot;</strong> button at the top.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
-                <span className="w-5 h-5 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-[10px] shrink-0">
+              <div className="flex items-start gap-3 p-3 bg-[#FAF9F5] dark:bg-[#252422] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
+                <span className="w-5 h-5 rounded-full bg-[#D97757] text-white font-bold flex items-center justify-center text-[10px] shrink-0">
                   3
                 </span>
                 <div>
-                  <p className="font-semibold text-slate-900 dark:text-white">
+                  <p className="font-semibold text-[#141413] dark:text-[#FAF9F5]">
                     Return here and click Retry
                   </p>
-                  <p className="text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-[#6B6860] mt-0.5">
                     Give Google 30-60 seconds to propagate, then click &quot;Retry Sync&quot;.
                   </p>
                 </div>
@@ -176,7 +176,7 @@ export const ApiActivationModal: React.FC<ApiActivationModalProps> = ({
               href={primaryActivationUrl}
               target="_blank"
               rel="noreferrer"
-              className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md hover:shadow-lg inline-flex items-center justify-center gap-2 transition-all cursor-pointer"
+              className="w-full py-3 px-4 bg-[#D97757] hover:bg-[#C86646] text-white text-xs sm:text-sm font-bold rounded-xl shadow-md hover:shadow-lg inline-flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
               <span>Enable {targetService} in Cloud Console</span>
               <ExternalLink className="w-4 h-4" />
@@ -186,10 +186,10 @@ export const ApiActivationModal: React.FC<ApiActivationModalProps> = ({
           {/* Enable All Workspace APIs list */}
           <div className="pt-2">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              <h4 className="text-xs font-bold text-[#5C5A54] dark:text-[#B5B2A8]">
                 Enable All Student Workspace APIs (Recommended)
               </h4>
-              <span className="text-[10px] text-slate-400">1-click direct links</span>
+              <span className="text-[10px] text-[#8C897F]">1-click direct links</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {WORKSPACE_APIS.map((api) => {
@@ -203,17 +203,17 @@ export const ApiActivationModal: React.FC<ApiActivationModalProps> = ({
                     rel="noreferrer"
                     className={`p-2.5 rounded-xl border transition-all flex items-center justify-between text-xs group ${
                       isCurrent
-                        ? 'bg-indigo-50/80 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700'
-                        : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                        ? 'bg-[#D97757]/10 border-[#D97757]/40'
+                        : 'bg-[#FAF9F5] dark:bg-[#252422] border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]'
                     }`}
                   >
                     <div className="flex items-center gap-2 overflow-hidden">
-                      <Icon className="w-4 h-4 text-indigo-500 shrink-0" />
-                      <span className="font-medium text-slate-800 dark:text-slate-200 truncate">
+                      <Icon className="w-4 h-4 text-[#D97757] shrink-0" />
+                      <span className="font-medium text-[#141413] dark:text-[#FAF9F5] truncate">
                         {api.name}
                       </span>
                     </div>
-                    <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-indigo-600 shrink-0 ml-1" />
+                    <ExternalLink className="w-3 h-3 text-[#8C897F] group-hover:text-[#D97757] shrink-0 ml-1" />
                   </a>
                 );
               })}
@@ -222,10 +222,10 @@ export const ApiActivationModal: React.FC<ApiActivationModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
+        <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] border-t border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-end gap-2.5">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs font-semibold text-[#6B6860] hover:bg-[#EFECE2] dark:hover:bg-[#252422] rounded-xl transition-colors cursor-pointer"
           >
             Dismiss
           </button>

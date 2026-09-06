@@ -362,10 +362,10 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
   // Slide-over Drawer Fallback
   return (
     <div
-      className="fixed bottom-4 right-4 z-50 w-full sm:w-96 max-w-[calc(100vw-2rem)] h-[540px] max-h-[85vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-200"
+      className="fixed bottom-4 right-4 z-50 w-full sm:w-96 max-w-[calc(100vw-2rem)] h-[540px] max-h-[85vh] bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-200"
       id="ai-study-coach-pane"
     >
-      <div className="p-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white flex items-center justify-between shrink-0 shadow-xs">
+      <div className="p-3.5 bg-[#141413] dark:bg-[#252422] text-[#FAF9F5] border-b border-[#D97757]/30 flex items-center justify-between shrink-0 shadow-xs">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-amber-300" />
@@ -410,15 +410,15 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
             }`}
           >
             {msg.role === 'assistant' && (
-              <div className="w-6 h-6 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-6 h-6 rounded-md bg-[#D97757]/15 text-[#D97757] flex items-center justify-center shrink-0 mt-0.5">
                 <Bot className="w-3.5 h-3.5" />
               </div>
             )}
             <div
               className={`max-w-[82%] p-2.5 rounded-xl ${
                 msg.role === 'user'
-                  ? 'bg-indigo-600 text-white rounded-br-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-bl-xs'
+                  ? 'bg-[#D97757] text-white rounded-br-xs'
+                  : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#141413] dark:text-[#FAF9F5] border border-[#DFDACB] dark:border-[#2C2B27] rounded-bl-xs'
               }`}
             >
               <div className="prose prose-xs dark:prose-invert max-w-none leading-relaxed">
@@ -426,7 +426,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
               </div>
             </div>
             {msg.role === 'user' && (
-              <div className="w-6 h-6 rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-6 h-6 rounded-md bg-[#EFECE2] dark:bg-[#2C2B27] text-[#6B6860] flex items-center justify-center shrink-0 mt-0.5">
                 <UserIcon className="w-3.5 h-3.5" />
               </div>
             )}
@@ -434,15 +434,15 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
         ))}
 
         {isSending && (
-          <div className="flex items-center gap-2 text-slate-400 text-xs py-1">
-            <Bot className="w-4 h-4 text-indigo-500 animate-pulse" />
+          <div className="flex items-center gap-2 text-[#8C897F] text-xs py-1">
+            <Bot className="w-4 h-4 text-[#D97757] animate-pulse" />
             <span className="animate-pulse font-medium">Thinking...</span>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-2.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex gap-2">
+      <div className="p-2.5 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-white dark:bg-[#1A1917] flex gap-2">
         <input
           type="text"
           value={inputText}
@@ -451,12 +451,12 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
             if (e.key === 'Enter') handleSend();
           }}
           placeholder="Ask a question..."
-          className="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none"
+          className="flex-1 px-3 py-1.5 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs outline-none text-[#141413] dark:text-[#FAF9F5]"
         />
         <button
           onClick={() => handleSend()}
           disabled={!inputText.trim() || isSending}
-          className="p-2 bg-indigo-600 text-white rounded-xl"
+          className="p-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl"
         >
           <Send className="w-3.5 h-3.5" />
         </button>
