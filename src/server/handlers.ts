@@ -42,17 +42,25 @@ export async function generateWithModelFallback(params: {
   throw lastError || new Error("All candidate Gemini models failed.");
 }
 
-const ALLOWED_ORIGINS = [
-  process.env.APP_URL,
-  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
-  "http://localhost:5173",
-  "http://localhost:3000",
-].filter(Boolean) as string[];
+export function getAllowedOriginsList(): string[] {
+  const configured = [
+    process.env.APP_URL,
+    process.env.VERCEL_URL ? (process.env.VERCEL_URL.startsWith("http") ? process.env.VERCEL_URL : `https://${process.env.VERCEL_URL}`) : undefined,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ? (process.env.VERCEL_PROJECT_PRODUCTION_URL.startsWith("http") ? process.env.VERCEL_PROJECT_PRODUCTION_URL : `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`) : undefined,
+    "http://localhost:5173",
+    "http://localhost:3000",
+  ];
+  if (process.env.ALLOWED_ORIGINS) {
+    configured.push(...process.env.ALLOWED_ORIGINS.split(",").map(s => s.trim()));
+  }
+  return Array.from(new Set(configured.filter(Boolean))) as string[];
+}
 
-function getAllowedOrigin(req: any): string | null {
+export function getAllowedOrigin(req: any, customAllowedOrigins?: string[]): string | null {
   const origin = req.headers?.origin as string | undefined;
   if (!origin) return null;
-  if (ALLOWED_ORIGINS.some(a => origin === a || origin.endsWith(".vercel.app"))) return origin;
+  const allowedOrigins = customAllowedOrigins || getAllowedOriginsList();
+  if (allowedOrigins.some(a => origin === a)) return origin;
   // In production, only allow configured app URL; fallback deny
   return null;
 }
@@ -63,7 +71,8 @@ export function setCorsHeaders(req: { method?: string; headers?: Record<string,s
     res.setHeader("Access-Control-Allow-Origin", allowed);
     res.setHeader("Vary", "Origin");
   } else if (process.env.NODE_ENV !== "production") {
-    res.setHeader("Access-Control-Allow-Origin", ALLOWED_ORIGINS[0] || "http://localhost:5173");
+    const defaultOrigin = getAllowedOriginsList()[0] || "http://localhost:5173";
+    res.setHeader("Access-Control-Allow-Origin", defaultOrigin);
   }
   res.setHeader(
     "Access-Control-Allow-Methods",
