@@ -121,6 +121,129 @@ export const UnitConverterWorkspace: React.FC = () => {
   const [calcInput, setCalcInput] = useState('');
   const [calcResult, setCalcResult] = useState<string | null>(null);
 
+  // CSP-safe mathematical evaluator using tokenization and shunting-yard RPN parsing
+  const safeEvaluateMath = (expr: string): number | null => {
+    try {
+      const sanitized = expr.toLowerCase().replace(/\s+/g, '');
+      if (!sanitized) return null;
+
+      const tokens: string[] = [];
+      let i = 0;
+      while (i < sanitized.length) {
+        const c = sanitized[i];
+        if (/[0-9.]/.test(c)) {
+          let numStr = '';
+          while (i < sanitized.length && /[0-9.]/.test(sanitized[i])) {
+            numStr += sanitized[i++];
+          }
+          tokens.push(numStr);
+          continue;
+        }
+        if (sanitized.startsWith('sqrt', i)) { tokens.push('sqrt'); i += 4; continue; }
+        if (sanitized.startsWith('sin', i)) { tokens.push('sin'); i += 3; continue; }
+        if (sanitized.startsWith('cos', i)) { tokens.push('cos'); i += 3; continue; }
+        if (sanitized.startsWith('tan', i)) { tokens.push('tan'); i += 3; continue; }
+        if (sanitized.startsWith('log', i)) { tokens.push('log'); i += 3; continue; }
+        if (sanitized.startsWith('ln', i)) { tokens.push('ln'); i += 2; continue; }
+        if (sanitized.startsWith('pi', i)) { tokens.push(String(Math.PI)); i += 2; continue; }
+        if ('+-*/()%^'.includes(c)) {
+          tokens.push(c);
+          i++;
+          continue;
+        }
+        return null; // unrecognized character
+      }
+
+      // Shunting-yard algorithm
+      const precedence: Record<string, number> = {
+        '+': 1, '-': 1,
+        '*': 2, '/': 2, '%': 2,
+        '^': 3,
+        'sqrt': 4, 'sin': 4, 'cos': 4, 'tan': 4, 'log': 4, 'ln': 4,
+      };
+
+      const isFunc = (t: string) => ['sqrt', 'sin', 'cos', 'tan', 'log', 'ln'].includes(t);
+
+      const output: string[] = [];
+      const opStack: string[] = [];
+
+      for (let idx = 0; idx < tokens.length; idx++) {
+        const token = tokens[idx];
+        if (!isNaN(parseFloat(token))) {
+          output.push(token);
+        } else if (isFunc(token)) {
+          opStack.push(token);
+        } else if (token === '(') {
+          opStack.push(token);
+        } else if (token === ')') {
+          while (opStack.length > 0 && opStack[opStack.length - 1] !== '(') {
+            output.push(opStack.pop()!);
+          }
+          if (opStack.length === 0) return null; // Mismatched parens
+          opStack.pop(); // Pop '('
+          if (opStack.length > 0 && isFunc(opStack[opStack.length - 1])) {
+            output.push(opStack.pop()!);
+          }
+        } else {
+          // Unary minus handling
+          let tok = token;
+          if (tok === '-' && (idx === 0 || ['(', '+', '-', '*', '/', '%', '^'].includes(tokens[idx - 1]))) {
+            tok = 'u-';
+          }
+          const prec = tok === 'u-' ? 5 : (precedence[tok] || 0);
+          while (
+            opStack.length > 0 &&
+            opStack[opStack.length - 1] !== '(' &&
+            (precedence[opStack[opStack.length - 1]] || 0) >= prec
+          ) {
+            output.push(opStack.pop()!);
+          }
+          opStack.push(tok);
+        }
+      }
+
+      while (opStack.length > 0) {
+        const top = opStack.pop()!;
+        if (top === '(' || top === ')') return null;
+        output.push(top);
+      }
+
+      // RPN evaluation
+      const valStack: number[] = [];
+      for (const t of output) {
+        if (!isNaN(parseFloat(t))) {
+          valStack.push(parseFloat(t));
+        } else if (t === 'u-') {
+          if (valStack.length < 1) return null;
+          valStack.push(-valStack.pop()!);
+        } else if (isFunc(t)) {
+          if (valStack.length < 1) return null;
+          const a = valStack.pop()!;
+          if (t === 'sqrt') valStack.push(Math.sqrt(a));
+          else if (t === 'sin') valStack.push(Math.sin(a));
+          else if (t === 'cos') valStack.push(Math.cos(a));
+          else if (t === 'tan') valStack.push(Math.tan(a));
+          else if (t === 'log') valStack.push(Math.log10(a));
+          else if (t === 'ln') valStack.push(Math.log(a));
+        } else {
+          if (valStack.length < 2) return null;
+          const b = valStack.pop()!;
+          const a = valStack.pop()!;
+          if (t === '+') valStack.push(a + b);
+          else if (t === '-') valStack.push(a - b);
+          else if (t === '*') valStack.push(a * b);
+          else if (t === '/') valStack.push(b !== 0 ? a / b : NaN);
+          else if (t === '%') valStack.push(a % b);
+          else if (t === '^') valStack.push(Math.pow(a, b));
+        }
+      }
+
+      return valStack.length === 1 && !isNaN(valStack[0]) ? valStack[0] : null;
+    } catch {
+      return null;
+    }
+  };
+
   const currentCategoryData = UNIT_CATEGORIES[category];
 
   // Keep fromUnit & toUnit valid when category changes
@@ -172,28 +295,11 @@ export const UnitConverterWorkspace: React.FC = () => {
 
   const handleEvaluateExpression = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      // Safe math expression evaluation (clean sanitizer)
-      const sanitized = calcInput
-        .replace(/sqrt\(([^)]+)\)/g, 'Math.sqrt($1)')
-        .replace(/sin\(([^)]+)\)/g, 'Math.sin($1)')
-        .replace(/cos\(([^)]+)\)/g, 'Math.cos($1)')
-        .replace(/tan\(([^)]+)\)/g, 'Math.tan($1)')
-        .replace(/log\(([^)]+)\)/g, 'Math.log10($1)')
-        .replace(/ln\(([^)]+)\)/g, 'Math.log($1)')
-        .replace(/pi/gi, 'Math.PI')
-        .replace(/\^/g, '**');
-
-      if (!/^[0-9+\-*/()., MathPIsqrtincoaglnet\s]+$/.test(sanitized)) {
-        setCalcResult('Invalid expression characters');
-        return;
-      }
-
-      // eslint-disable-next-line no-new-func
-      const res = Function(`'use strict'; return (${sanitized})`)();
-      setCalcResult(typeof res === 'number' ? res.toString() : 'Error');
-    } catch {
-      setCalcResult('Syntax Error');
+    const res = safeEvaluateMath(calcInput);
+    if (res === null) {
+      setCalcResult('Invalid Expression');
+    } else {
+      setCalcResult(Number.isInteger(res) ? res.toString() : res.toFixed(6).replace(/\.?0+$/, ''));
     }
   };
 
