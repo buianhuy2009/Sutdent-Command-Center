@@ -48,7 +48,7 @@ import {
   getClientGroqApiKey,
   setClientGroqApiKey,
 } from '../services/gemini';
-import { setTheme } from '../services/theme';
+import { getTheme, setTheme } from '../services/theme';
 import { setNasaApodEnabled } from '../hooks/useNasaApod';
 import { fetchNasaApodV2, NASA_APOD_CACHE_KEY, NASA_APOD_TOGGLE_EVENT } from '../services/publicApis';
 
@@ -157,8 +157,8 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
     return (localStorage.getItem('scc_ui_density_v1') as any) || 'comfortable';
   });
   const [colorTheme, setColorTheme] = useState<string>(() => {
-    const raw = localStorage.getItem('scc_color_theme_v1');
-    return raw === 'midnight' ? 'midnight' : 'linen';
+    const theme = getTheme();
+    return theme === 'midnight' ? 'midnight' : 'linen';
   });
   const [autoSystemTheme, setAutoSystemTheme] = useState<boolean>(() => {
     return localStorage.getItem('scc_auto_system_theme_v1') === 'true';
