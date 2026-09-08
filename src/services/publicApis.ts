@@ -196,12 +196,13 @@ export function getApodCache(): { date: string; data: NasaApod } | null {
     const raw = localStorage.getItem(NASA_APOD_CACHE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed && parsed.date && parsed.data) return parsed;
+    if (parsed && parsed.date && parsed.data && typeof parsed.data.url === 'string' && parsed.data.url.trim()) return parsed;
     return null;
   } catch { return null; }
 }
 
 export function setApodCache(data: NasaApod): void {
+  if (!data || typeof data.url !== 'string' || !data.url.trim()) return;
   try {
     localStorage.setItem(NASA_APOD_CACHE_KEY, JSON.stringify({ date: todayDateStr(), data }));
     localStorage.setItem(APOD_LAST_FETCH_KEY, new Date().toISOString());
