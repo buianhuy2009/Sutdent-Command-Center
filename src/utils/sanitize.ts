@@ -95,3 +95,68 @@ export function sanitizeRawEmails(list: any): EmailMessage[] {
     unread: e.unread,
   }));
 }
+
+/**
+ * Sanitizes raw HTML strings to prevent XSS attacks when using dangerouslySetInnerHTML.
+ * Strips executable tags (<script>, <iframe>, etc.), inline event attributes (on*),
+ * and dangerous URL schemes (javascript:, etc.).
+ */
+function isDangerousUrl(urlVal: string): boolean {
+  if (!urlVal) return false;
+  const normalized = urlVal
+    .replace(/&#[xX]0*([0-9a-fA-F]+);?/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#0*([0-9]+);?/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+    .replace(/[\x00-\x20\x7F-\x9F]/g, '')
+    .toLowerCase();
+  return (
+    normalized.startsWith('javascript:') ||
+    normalized.startsWith('vbscript:') ||
+    normalized.startsWith('data:text/html') ||
+    normalized.startsWith('data:application/')
+  );
+}
+
+export function sanitizeHtml(html: string): string {
+  if (!html || typeof html !== 'string') return '';
+  if (typeof window === 'undefined' || typeof DOMParser === 'undefined') {
+    let clean = html;
+    let prev = '';
+    while (clean !== prev) {
+      prev = clean;
+      clean = clean
+        .replace(/<(script|iframe|object|embed|form|base|meta|link|style)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>/gi, '')
+        .replace(/<(script|iframe|object|embed|form|base|meta|link|style)\b[^>]*\/?>/gi, '');
+    }
+    return clean
+      .replace(/\s+on[a-z0-9_-]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+      .replace(/(href|src|action|data)\s*=\s*["']?\s*(?:java&#[xX]0*73;cript|javascript|vbscript|data:text\/html)[^"'\s>]+/gi, '');
+  }
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    const forbiddenTags = ['script', 'iframe', 'object', 'embed', 'form', 'base', 'meta', 'link', 'style'];
+    forbiddenTags.forEach((tag) => {
+      doc.querySelectorAll(tag).forEach((el) => el.remove());
+    });
+
+    doc.querySelectorAll('*').forEach((el) => {
+      const attrs = Array.from(el.attributes);
+      for (const attr of attrs) {
+        const name = attr.name.toLowerCase();
+        if (name.startsWith('on')) {
+          el.removeAttribute(attr.name);
+        } else if (['href', 'src', 'action', 'data'].includes(name)) {
+          if (isDangerousUrl(attr.value)) {
+            el.removeAttribute(attr.name);
+          }
+        }
+      }
+    });
+
+    return doc.body.innerHTML;
+  } catch {
+    return '';
+  }
+}
