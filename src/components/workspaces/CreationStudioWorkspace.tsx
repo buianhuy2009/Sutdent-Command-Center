@@ -16,6 +16,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import mermaid from 'mermaid';
+import DOMPurify from 'dompurify';
 import { IframeErrorBoundary } from '../IframeErrorBoundary';
 import { CanvaStudioTab } from '../CanvaStudioTab';
 import { generateMermaidDiagram } from '../../services/gemini';
@@ -301,7 +302,7 @@ export const CreationStudioWorkspace: React.FC = () => {
               <div
                 ref={mermaidContainerRef}
                 className="p-8 flex items-center justify-center min-h-[450px] overflow-auto bg-slate-50/50 dark:bg-[#141413]/50"
-                dangerouslySetInnerHTML={{ __html: svgContent }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(svgContent, { USE_PROFILES: { svg: true } }) }}
               />
             </div>
           )}
