@@ -1,0 +1,34 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md"],
+  "model": "opencode/muse-spark-1.3-contributor-free",
+  "small_model": "opencode/muse-spark-1.3-contributor-free",
+  "share": "manual",
+  "autoupdate": true,
+  "lsp": true,
+  "plugin": [
+    "opencode-vibeguard",
+    "opencode-dynamic-context-pruning",
+    "opencode-worktree",
+    "opencode-type-inject",
+    "opencode-shell-strategy",
+    "opencode-websearch-cited",
+    "opencode-pty",
+    "opencode-background-agents"
+  ],
+  "permission": {
+    "bash": {
+      "*": "ask",
+      "git status*": "allow",
+      "git log*": "allow",
+      "git diff*": "allow",
+      "git fetch*": "allow",
+      "npm run build*": "allow",
+      "npm run lint*": "allow",
+      "npm run test*": "allow",
+      "npx tsc*": "allow",
+      "git push --force*": "deny",
+      "rm -rf *": "deny"
+    }
+  }
+}
