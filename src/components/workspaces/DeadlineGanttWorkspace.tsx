@@ -9,17 +9,26 @@ export const DeadlineGanttWorkspace: React.FC<{ assignments: Assignment[]; canva
       ...canvasAssignments.filter(c=>!c.isCompleted).map(c=> ({ name: c.name, due: c.dueAt, course: c.courseName })),
     ].slice(0, 12);
     if (all.length===0) return 'gantt\n title No deadlines\n dateFormat YYYY-MM-DD\n section Empty\n Task : 2026-09-01, 1d';
+    const todayStr = new Date().toISOString().split('T')[0];
+    const normDue = (d?: string) => (d ? d.split('T')[0] : todayStr);
+    const dues = all.map(a => normDue(a.due));
+    const minDue = dues.reduce((m, d) => (d < m ? d : m), dues[0]);
+    const maxDue = dues.reduce((m, d) => (d > m ? d : m), dues[0]);
+    const showToday = todayStr >= minDue && todayStr <= maxDue;
     let code = 'gantt\n title Deadline Radar Timeline\n dateFormat YYYY-MM-DD\n';
+    if (showToday) code += ` vert ${todayStr}\n`;
     const byCourse: Record<string, typeof all> = {};
     all.forEach(a=> { (byCourse[a.course] ||= []).push(a); });
     Object.entries(byCourse).forEach(([course, items])=>{
       code += ` section ${course}\n`;
       items.forEach(item=>{
-        const due = item.due ? item.due.split('T')[0] : new Date().toISOString().split('T')[0];
+        const due = normDue(item.due);
         const safe = item.name.replace(/:/g,' -').slice(0,30);
-        code += ` ${safe} : ${due}, 1d\n`;
+        const overdue = due < todayStr;
+        code += overdue ? ` ${safe} :crit, ${due}, 1d\n` : ` ${safe} : ${due}, 1d\n`;
       });
     });
+    if (showToday) code += ` section Today\n Today :milestone, ${todayStr}, 0d\n`;
     return code;
   }, [assignments, canvasAssignments]);
   return (
