@@ -4,6 +4,36 @@
 export type ThemeId = 'linen' | 'midnight';
 
 const THEME_KEY = 'scc_color_theme_v1';
+const LEGACY_THEME_KEY = 'scc_theme';
+
+// Single writer of the canonical theme key — the ONLY localStorage.setItem(THEME_KEY, …) call site.
+function writeThemeKey(id: ThemeId) {
+  try { localStorage.setItem(THEME_KEY, id); } catch {}
+}
+
+let legacyMigrated = false;
+
+// One-time migration: read the legacy key once per page load, map
+// dark→midnight / light→linen (else migrateThemeId), write via the single
+// writer ONLY if the canonical key is missing, then drop the legacy key.
+function migrateLegacyThemeKeyOnce() {
+  if (legacyMigrated) return;
+  legacyMigrated = true;
+  try {
+    const legacy = localStorage.getItem(LEGACY_THEME_KEY);
+    if (legacy == null) return;
+    let mapped: ThemeId;
+    if (legacy === 'dark') mapped = 'midnight';
+    else if (legacy === 'light') mapped = 'linen';
+    else mapped = migrateThemeId(legacy);
+    try {
+      if (localStorage.getItem(THEME_KEY) == null) {
+        writeThemeKey(mapped);
+      }
+    } catch {}
+    try { localStorage.removeItem(LEGACY_THEME_KEY); } catch {}
+  } catch {}
+}
 
 export const THEME_META: Record<ThemeId, { label: string; accent: string; bg: string }> = {
   linen: { label: 'Warm Cream (Light)', accent: '#D97757', bg: '#FAF9F5' },
@@ -24,11 +54,12 @@ function migrateThemeId(raw: string | null): ThemeId {
 }
 
 export function getTheme(): ThemeId {
+  migrateLegacyThemeKeyOnce();
   try {
     const s = localStorage.getItem(THEME_KEY);
     const migrated = migrateThemeId(s);
     if (s !== migrated) {
-      try { localStorage.setItem(THEME_KEY, migrated); } catch {}
+      writeThemeKey(migrated);
     }
     return migrated;
   } catch {
@@ -38,38 +69,25 @@ export function getTheme(): ThemeId {
 
 export function setTheme(id: ThemeId) {
   const next = migrateThemeId(id as string);
-  try { localStorage.setItem(THEME_KEY, next); } catch {}
+  writeThemeKey(next);
   document.documentElement.setAttribute('data-theme', next);
   const isDarkTheme = next === 'midnight';
   if (isDarkTheme) {
     document.documentElement.classList.add('dark');
-    try { localStorage.setItem('scc_theme', 'dark'); } catch {}
   } else {
     document.documentElement.classList.remove('dark');
-    try { localStorage.setItem('scc_theme', 'light'); } catch {}
   }
   document.documentElement.style.colorScheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 }
 
 export function initTheme() {
+  migrateLegacyThemeKeyOnce();
   const t = getTheme();
   document.documentElement.setAttribute('data-theme', t);
   if (t === 'midnight') {
     document.documentElement.classList.add('dark');
   } else {
-    try {
-      const s = localStorage.getItem('scc_theme');
-      // Light is default when signing up / first open unless user explicitly chose dark
-      if (s === 'dark') {
-        document.documentElement.classList.add('dark');
-        document.documentElement.setAttribute('data-theme', 'midnight');
-        try { localStorage.setItem(THEME_KEY, 'midnight'); } catch {}
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    } catch {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.remove('dark');
   }
   document.documentElement.style.colorScheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 }
