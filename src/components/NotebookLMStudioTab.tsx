@@ -81,13 +81,40 @@ Keep dense, citation-ready, undergraduate level.`;
     } catch {}
   };
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!activeBrief) return;
-    navigator.clipboard.writeText(activeBrief);
+    try {
+      await navigator.clipboard.writeText(activeBrief);
+    } catch {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = activeBrief;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch {}
+    }
     setCopied(true); setTimeout(() => setCopied(false), 2000);
   };
 
   const currentBriefDetail = briefs.find(b => b.brief === activeBrief) || null;
+
+  const handleDownload = () => {
+    if (!activeBrief) return;
+    const source = (currentBriefDetail?.topic || topic || '').toLowerCase();
+    const slug = source.replace(/[^a-z0-9-_]+/g, '-').replace(/^-+|-+$/g, '');
+    const filename = slug ? `${slug}.md` : 'research-brief.md';
+    const blob = new Blob([activeBrief], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -166,6 +193,9 @@ Keep dense, citation-ready, undergraduate level.`;
             {activeBrief && <div className="flex items-center gap-1.5">
               <button onClick={handleCopy} className="px-2.5 py-1 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer">
                 {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}<span>{copied ? 'Copied' : 'Copy'}</span>
+              </button>
+              <button onClick={handleDownload} className="px-2.5 py-1 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer">
+                <Download className="w-3 h-3" /><span>Download .md</span>
               </button>
               <button onClick={handleSaveToNotes} className="px-2.5 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer">
                 <Save className="w-3 h-3" /><span>Save to Notes</span>
