@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { isApodCacheFresh } from './publicApis';
+import { sanitizeHtml } from '../utils/sanitize';
 
 describe('isApodCacheFresh', () => {
   it('returns true when cached date equals today', () => {
@@ -21,5 +22,26 @@ describe('APOD mediaType handling', () => {
     // Card shows <img> only for image; video shows Watch-video link
     expect(image.mediaType === 'image').toBe(true);
     expect(video.mediaType === 'image').toBe(false);
+  });
+});
+
+describe('sanitizeHtml security tests', () => {
+  it('strips script tags and inline event handlers', () => {
+    const malicious = '<script>alert("xss")</script><p>Assignment instructions</p><img src="x" onerror="alert(1)">';
+    const clean = sanitizeHtml(malicious);
+    expect(clean).not.toContain('<script');
+    expect(clean).not.toContain('onerror');
+    expect(clean).toContain('<p>Assignment instructions</p>');
+  });
+
+  it('strips javascript: URIs', () => {
+    const malicious = '<a href="javascript:alert(1)">Click here</a>';
+    const clean = sanitizeHtml(malicious);
+    expect(clean).not.toContain('javascript:');
+  });
+
+  it('preserves valid safe formatting tags', () => {
+    const safe = '<b>Important:</b> Read chapter 5 before Monday.';
+    expect(sanitizeHtml(safe)).toContain('<b>Important:</b>');
   });
 });

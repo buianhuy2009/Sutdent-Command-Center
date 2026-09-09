@@ -27,6 +27,7 @@ import { CanvasAssignment, CanvasSettings } from '../types';
 import { loadCompletedCanvasIds, saveCompletedCanvasIds, resolveCanvasUrl, toMobileDeepLink, normalizeCanvasDomain } from '../services/canvas';
 import { extractSubtasksFromCanvas, SubtaskResult, calculateGradePrediction } from '../services/gemini';
 import { WhyIsThisHardModal } from './WhyIsThisHardModal';
+import { sanitizeHtml } from '../utils/sanitize';
 
 interface CanvasSyncTabProps {
   settings: CanvasSettings;
@@ -730,7 +731,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                 </span>
                 <div
                   className="p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-[11px] text-[#5C5A54] dark:text-[#B5B2A8] max-h-48 overflow-y-auto leading-relaxed prose dark:prose-invert prose-xs"
-                  dangerouslySetInnerHTML={{ __html: selectedAssignment.description }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedAssignment.description) }}
                 />
               </div>
             )}
