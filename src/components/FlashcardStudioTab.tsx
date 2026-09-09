@@ -286,6 +286,33 @@ Example format:
     handleNextCard();
   };
 
+  // Number keys 1-4 trigger the existing SM-2 grade handlers during review
+  useEffect(() => {
+    const handleGradeKeyDown = (e: KeyboardEvent) => {
+      if (['input', 'textarea', 'select'].includes((e.target as HTMLElement).tagName.toLowerCase())) {
+        return;
+      }
+      if (!displayDeck || displayDeck.cards.length === 0) return;
+
+      if (e.key === '1') {
+        e.preventDefault();
+        handleRateCard(1);
+      } else if (e.key === '2') {
+        e.preventDefault();
+        handleRateCard(2);
+      } else if (e.key === '3') {
+        e.preventDefault();
+        handleRateCard(4);
+      } else if (e.key === '4') {
+        e.preventDefault();
+        handleRateCard(5);
+      }
+    };
+
+    window.addEventListener('keydown', handleGradeKeyDown);
+    return () => window.removeEventListener('keydown', handleGradeKeyDown);
+  }, [displayDeck, currentCardIndex]);
+
   const handleExportQuizlet = () => {
     if (!activeDeck) return;
     const quizletText = activeDeck.cards.map((c) => `${c.front}\t${c.back}`).join('\n');
@@ -572,7 +599,7 @@ Example format:
                       {displayDeck!.title}
                     </h3>
                     <span className="text-[11px] text-[#8C897F]">
-                      Card {currentCardIndex + 1} of {displayDeck!.cards.length}
+                      Card {currentCardIndex + 1}/{displayDeck!.cards.length} • {queueSummary.due} due
                     </span>
                   </div>
 
@@ -695,6 +722,8 @@ Example format:
                     <span>Flip</span>
                     <kbd className="px-1.5 py-0.5 bg-[#EFECE2] dark:bg-[#252422] rounded border border-[#DFDACB] dark:border-[#2C2B27]">← / →</kbd>
                     <span>Navigate</span>
+                    <kbd className="px-1.5 py-0.5 bg-[#EFECE2] dark:bg-[#252422] rounded border border-[#DFDACB] dark:border-[#2C2B27]">1–4</kbd>
+                    <span>Grade</span>
                   </div>
                 </div>
               </>
