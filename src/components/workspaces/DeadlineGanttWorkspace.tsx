@@ -16,7 +16,6 @@ export const DeadlineGanttWorkspace: React.FC<{ assignments: Assignment[]; canva
     const maxDue = dues.reduce((m, d) => (d > m ? d : m), dues[0]);
     const showToday = todayStr >= minDue && todayStr <= maxDue;
     let code = 'gantt\n title Deadline Radar Timeline\n dateFormat YYYY-MM-DD\n';
-    if (showToday) code += ` vert ${todayStr}\n`;
     const byCourse: Record<string, typeof all> = {};
     all.forEach(a=> { (byCourse[a.course] ||= []).push(a); });
     Object.entries(byCourse).forEach(([course, items])=>{
