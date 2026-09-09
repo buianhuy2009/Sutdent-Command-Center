@@ -139,6 +139,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </button>
             </div>
 
+            {onSignInWorkspace && (
+              <p className="mt-3 max-w-full overflow-hidden px-4 sm:px-0 text-center text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                <span className="break-words">Need Calendar &amp; Drive sync at login?{' '}</span>
+                <button
+                  type="button"
+                  onClick={onSignInWorkspace}
+                  disabled={isLoggingIn}
+                  className="inline-block max-w-full truncate align-baseline text-[#D97757] hover:text-[#C86646] hover:underline font-semibold cursor-pointer underline-offset-2 disabled:opacity-50"
+                >
+                  Sign in with Google Workspace
+                </button>
+              </p>
+            )}
+
             {/* Social-proof stats strip — glassmorphism */}
             <div className="mt-6 mx-4 sm:mx-auto max-w-xl backdrop-blur-md rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] bg-white/60 dark:bg-[#1A1917]/60 px-4 py-3.5 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2.5 sm:gap-6 text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm">
               <span className="inline-flex min-w-0 items-center gap-2">
