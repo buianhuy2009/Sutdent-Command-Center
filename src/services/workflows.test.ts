@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 // RRULE weekly expansion (pure logic mirror of tracker repeats)
 function expandWeeklyRRule(startISO: string, count: number): string[] {
   const out: string[] = [];
-  const d = new Date(startISO + 'T00:00:00');
+  const d = new Date(startISO + 'T00:00:00Z');
   for (let i = 0; i < count; i++) {
     out.push(new Date(d.getTime() + i * 7 * 86400000).toISOString().slice(0, 10));
   }
