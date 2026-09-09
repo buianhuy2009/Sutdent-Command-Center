@@ -14,6 +14,72 @@ export function normKey(v: any): string {
   return safeStr(v).toLowerCase().trim();
 }
 
+/**
+ * Whitelist-based HTML sanitizer to prevent Stored & DOM XSS attacks.
+ * Uses browser DOMParser to enforce strict tag and attribute whitelists.
+ */
+export function sanitizeHtml(html: string): string {
+  if (!html) return '';
+  if (typeof window === 'undefined' || typeof DOMParser === 'undefined') {
+    return html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+      .replace(/\s*on\w+\s*=\s*(['"]).*?\1/gi, '')
+      .replace(/href\s*=\s*(['"])\s*(javascript|data|vbscript):[^'"]*\1/gi, 'href="#"');
+  }
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    const ALLOWED_TAGS = new Set([
+      'P', 'BR', 'B', 'I', 'EM', 'STRONG', 'U', 'UL', 'OL', 'LI', 'SPAN',
+      'A', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'TABLE', 'THEAD',
+      'TBODY', 'TR', 'TH', 'TD', 'HR', 'CODE', 'PRE', 'BLOCKQUOTE', 'SMALL'
+    ]);
+
+    const ALLOWED_ATTRS = new Set(['href', 'title', 'alt', 'target', 'class']);
+
+    const cleanNode = (node: Node) => {
+      const children = Array.from(node.childNodes);
+      children.forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          const el = child as HTMLElement;
+          const tagName = el.tagName.toUpperCase();
+
+          if (!ALLOWED_TAGS.has(tagName)) {
+            el.remove();
+            return;
+          }
+
+          Array.from(el.attributes).forEach((attr) => {
+            const attrName = attr.name.toLowerCase();
+            const attrVal = attr.value.toLowerCase().replace(/[\s\x00-\x1F]+/g, '');
+
+            if (!ALLOWED_ATTRS.has(attrName) || attrName.startsWith('on')) {
+              el.removeAttribute(attr.name);
+            } else if ((attrName === 'href' || attrName === 'src') &&
+              (attrVal.includes('javascript:') || attrVal.includes('data:') || attrVal.includes('vbscript:'))) {
+              el.removeAttribute(attr.name);
+            }
+          });
+
+          if (tagName === 'A' && el.getAttribute('target') === '_blank') {
+            el.setAttribute('rel', 'noopener noreferrer');
+          }
+
+          cleanNode(el);
+        }
+      });
+    };
+
+    cleanNode(doc.body);
+    return doc.body.innerHTML;
+  } catch {
+    return '';
+  }
+}
+
 export function sanitizeAssignment(a: any, index = 0): Assignment | null {
   if (!a || typeof a !== 'object') return null;
   const assignmentName = safeStr(a.assignmentName || a.title || a.name, '').trim() || 'Untitled Assignment';
