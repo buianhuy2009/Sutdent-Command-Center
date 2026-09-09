@@ -47,6 +47,60 @@ interface AssignmentTrackerTabProps {
   onOpenLibrarySearch?: (query: string) => void;
 }
 
+type UrgencyState = 'overdue' | 'today' | 'tomorrow' | null;
+
+export function getUrgencyInfo(dueDateStr?: string, isDone?: boolean) {
+  if (!dueDateStr || isDone) return null;
+  let due: Date;
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(dueDateStr.trim());
+  if (m) {
+    due = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  } else {
+    due = new Date(dueDateStr);
+  }
+  if (Number.isNaN(due.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dueDay = new Date(due);
+  dueDay.setHours(0, 0, 0, 0);
+  const diff = Math.round((dueDay.getTime() - today.getTime()) / 86400000);
+  if (diff < 0) {
+    return { state: 'overdue' as const, label: URGENCY_LABEL.overdue, chip: URGENCY_CHIP.overdue, tint: URGENCY_TINT.overdue };
+  }
+  if (diff === 0) {
+    return { state: 'today' as const, label: URGENCY_LABEL.today, chip: URGENCY_CHIP.today, tint: URGENCY_TINT.today };
+  }
+  if (diff === 1) {
+    return { state: 'tomorrow' as const, label: URGENCY_LABEL.tomorrow, chip: URGENCY_CHIP.tomorrow, tint: URGENCY_TINT.tomorrow };
+  }
+  return null;
+}
+
+function getUrgency(assignment: Assignment): UrgencyState {
+  return getUrgencyInfo(assignment.dueDate, assignment.status === 'Done')?.state ?? null;
+}
+
+const URGENCY_CHIP: Record<Exclude<UrgencyState, null>, string> = {
+  overdue:
+    'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+  today:
+    'bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+  tomorrow:
+    'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+};
+
+const URGENCY_LABEL: Record<Exclude<UrgencyState, null>, string> = {
+  overdue: 'Overdue',
+  today: 'Due today',
+  tomorrow: 'Due tomorrow',
+};
+
+const URGENCY_TINT: Record<Exclude<UrgencyState, null>, string> = {
+  overdue: 'bg-rose-50/40 dark:bg-rose-950/20',
+  today: 'bg-amber-50/40 dark:bg-amber-950/20',
+  tomorrow: 'bg-blue-50/40 dark:bg-blue-950/20',
+};
+
 export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
   assignments,
   sheetUrl,
@@ -481,6 +535,7 @@ ${filteredAssignments.slice(0,8).map(a => `    section ${a.subject}
                     colTasks.map((task) => {
                       const isHigh = task.priority === 'High';
                       const isDone = task.status === 'Done';
+                      const urgency = getUrgency(task);
 
                       return (
                         <div
@@ -488,7 +543,7 @@ ${filteredAssignments.slice(0,8).map(a => `    section ${a.subject}
                           onClick={() => setSelectedAssignment(task)}
                           className={`p-3.5 rounded-xl border bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]/80 transition-all cursor-pointer space-y-2.5 shadow-2xs group ${
                             isDone ? 'opacity-70' : ''
-                          }`}
+                          } ${urgency ? URGENCY_TINT[urgency] : ''}`}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 truncate max-w-[130px]">
@@ -526,7 +581,14 @@ ${filteredAssignments.slice(0,8).map(a => `    section ${a.subject}
                             className="flex items-center justify-between pt-2 border-t border-[#DFDACB]/40 dark:border-[#2C2B27]/40 text-[11px] text-[#8C897F]"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <span>{task.dueDate || 'No due date'}</span>
+                            <span className="flex items-center gap-1.5 flex-wrap">
+                              <span>{task.dueDate || 'No due date'}</span>
+                              {urgency && (
+                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${URGENCY_CHIP[urgency]}`}>
+                                  {URGENCY_LABEL[urgency]}
+                                </span>
+                              )}
+                            </span>
 
                             {/* Status Mover Quick Actions */}
                             <div className="flex items-center gap-1">
@@ -592,15 +654,23 @@ ${filteredAssignments.slice(0,8).map(a => `    section ${a.subject}
             <div className="md:hidden p-3 space-y-2">
               {filteredAssignments.map(a=>{
                 const isDone = a.status==='Done';
+                const urgency = getUrgency(a);
                 return (
-                  <div key={a.id} onClick={()=>setSelectedAssignment(a)} className={`p-3 rounded-2xl border bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27] flex flex-col gap-1.5 ${isDone?'opacity-60':''}`}>
+                  <div key={a.id} onClick={()=>setSelectedAssignment(a)} className={`p-3 rounded-2xl border bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27] flex flex-col gap-1.5 ${isDone?'opacity-60':''} ${urgency ? URGENCY_TINT[urgency] : ''}`}>
                     <div className="flex items-center justify-between gap-2">
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 truncate">{a.subject}</span>
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${a.priority==='High'?'bg-rose-50 text-rose-700 border border-rose-200':'bg-slate-100 text-slate-600'}`}>{a.priority}</span>
                     </div>
                     <div className={`text-xs font-bold truncate ${isDone?'line-through text-[#6B6860]':''}`}>{a.assignmentName}</div>
                     <div className="flex items-center justify-between text-[11px] text-[#6B6860]">
-                      <span>Due {a.dueDate || 'No date'}</span>
+                      <span className="flex items-center gap-1.5 flex-wrap">
+                        <span>Due {a.dueDate || 'No date'}</span>
+                        {urgency && (
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${URGENCY_CHIP[urgency]}`}>
+                            {URGENCY_LABEL[urgency]}
+                          </span>
+                        )}
+                      </span>
                       <span className="text-[10px]">{a.status}</span>
                     </div>
                   </div>
@@ -624,6 +694,7 @@ ${filteredAssignments.slice(0,8).map(a => `    section ${a.subject}
                     const isDone = assignment.status === 'Done';
                     const isSelected = selectedAssignment?.id === assignment.id;
                     const isHigh = assignment.priority === 'High';
+                    const urgency = getUrgency(assignment);
 
                     return (
                       <tr
@@ -631,7 +702,7 @@ ${filteredAssignments.slice(0,8).map(a => `    section ${a.subject}
                         onClick={() => setSelectedAssignment(assignment)}
                         className={`h-10 hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer ${
                           isSelected ? 'bg-[#FAF9F5] dark:bg-[#1F1E1B] font-semibold' : ''
-                        } ${isDone ? 'opacity-60' : ''}`}
+                        } ${isDone ? 'opacity-60' : ''} ${urgency && !isSelected && !isDone ? URGENCY_TINT[urgency] : ''}`}
                       >
                         {/* Checkbox */}
                         <td className="py-1.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
@@ -670,7 +741,14 @@ ${filteredAssignments.slice(0,8).map(a => `    section ${a.subject}
 
                         {/* Due Date */}
                         <td className="py-1.5 px-3 whitespace-nowrap text-[11px] text-[#8C897F]">
-                          {assignment.dueDate || 'No Due Date'}
+                          <span className="inline-flex items-center gap-1.5">
+                            <span>{assignment.dueDate || 'No Due Date'}</span>
+                            {urgency && (
+                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${URGENCY_CHIP[urgency]}`}>
+                                {URGENCY_LABEL[urgency]}
+                              </span>
+                            )}
+                          </span>
                         </td>
 
                         {/* Priority */}
