@@ -13,6 +13,8 @@ import {
   ExternalLink,
   Mail,
   Calculator,
+  Copy,
+  Check,
   PenTool,
   Atom,
   Brain,
@@ -49,9 +51,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 }) => {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [mathCopied, setMathCopied] = useState(false);
+  const mathCopyTimer = React.useRef<number | undefined>(undefined);
   const listRef = React.useRef<HTMLDivElement>(null);
 
-  useEffect(() => { if (isOpen) setActiveIndex(0); }, [isOpen, query]);
+  useEffect(() => { if (isOpen) { setActiveIndex(0); setMathCopied(false); } }, [isOpen, query]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -60,6 +64,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    return () => { if (mathCopyTimer.current !== undefined) window.clearTimeout(mathCopyTimer.current); };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -108,6 +116,31 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     const val = safeEval(qTrim.replace(/\^/g,'^'));
     if (val !== null && !isNaN(val)) mathResult = `${qTrim} = ${val}`;
   }
+
+  // Copy math result to clipboard — degrades silently where clipboard API is unavailable
+  const copyMathResult = async () => {
+    if (!mathResult) return;
+    try {
+      const text = mathResult;
+      if (typeof navigator !== 'undefined' && (navigator as any).clipboard?.writeText) {
+        await (navigator as any).clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch {}
+        document.body.removeChild(ta);
+      }
+    } catch {}
+    setMathCopied(true);
+    if (mathCopyTimer.current !== undefined) window.clearTimeout(mathCopyTimer.current);
+    mathCopyTimer.current = window.setTimeout(() => setMathCopied(false), 1500);
+  };
+  const isMathActive = !!mathResult && activeIndex === 0;
 
   const actions = [
     // Workspaces
@@ -440,14 +473,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={e=>{
-              const total = (commandAction?1:0)+matchedAssignments.length+filteredActions.length;
+              const mathCount = mathResult ? 1 : 0;
+              const total = mathCount+(commandAction?1:0)+matchedAssignments.length+filteredActions.length;
               if(e.key==='ArrowDown'){ e.preventDefault(); setActiveIndex(i=> Math.min(i+1, total-1)); }
               else if(e.key==='ArrowUp'){ e.preventDefault(); setActiveIndex(i=> Math.max(i-1, 0)); }
               else if(e.key==='Enter'){
                 e.preventDefault();
+                // Cmd/Ctrl+Enter copies the math result from anywhere without triggering actions
+                if ((e.metaKey || e.ctrlKey) && mathResult) { copyMathResult(); return; }
                 const idx=activeIndex;
                 let cur=0;
-                if(commandAction && idx===0){ commandAction.run(); return; }
+                // Math result row is index 0 when present; Enter copies (it has no other action, so no conflict)
+                if (mathResult) {
+                  if (idx===0) { copyMathResult(); return; }
+                  cur++;
+                }
+                if(commandAction && idx===cur){ commandAction.run(); return; }
                 if(commandAction) cur++;
                 if(idx < cur+matchedAssignments.length){ const a=matchedAssignments[idx-cur]; if(a){ onSelectWorkspace('tracker' as any); onClose(); } return; }
                 cur+=matchedAssignments.length;
@@ -466,12 +507,23 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
         {/* Math Calculation Quick Solve */}
         {mathResult && (
-          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200">
+          <div className={`p-3 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 ${isMathActive ? 'ring-2 ring-inset ring-amber-400' : ''}`}>
             <div className="flex items-center gap-2">
               <Calculator className="w-4 h-4 text-amber-600 shrink-0" />
               <span className="font-mono font-bold">{mathResult}</span>
             </div>
-            <span className="text-[10px] opacity-75">Calculated in real-time</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] opacity-75">{mathCopied ? 'Copied ✓' : 'Calculated in real-time'}</span>
+              <button
+                type="button"
+                onClick={(ev) => { ev.stopPropagation(); copyMathResult(); }}
+                aria-label="Copy math result to clipboard"
+                title="Copy result (Enter)"
+                className="p-1.5 rounded-lg hover:bg-amber-200/60 dark:hover:bg-amber-800/60 transition-colors"
+              >
+                {mathCopied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
           </div>
         )}
 
