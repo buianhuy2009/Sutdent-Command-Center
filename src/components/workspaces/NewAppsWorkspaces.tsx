@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { speakText, dictateOnce } from '../../services/aiRouter';
 import { computeCourseGrade, cumulativeGPA, whatIfDropLowest, buildExamPlan } from '../../services/academic';
 
@@ -158,13 +158,56 @@ export const CodeRunnerWorkspace: React.FC = () => {
   const [code, setCode] = useState('print("Hello, StudentOS!")\nfor i in range(3):\n    print("study block", i+1)');
   const [lang, setLang] = useState<'python' | 'js'>('python');
   const [output, setOutput] = useState('');
+  const sandboxHostRef = useRef<HTMLDivElement | null>(null);
+  const sandboxCleanupRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => { sandboxCleanupRef.current?.(); }, []);
   const runJS = () => {
-    try {
-      const logs: string[] = [];
-      const fn = new Function('console', code);
-      fn({ log: (...a: any[]) => logs.push(a.map(String).join(' ')) });
-      setOutput(logs.join('\n') || '(no output)');
-    } catch (e: any) { setOutput(`Error: ${e.message}`); }
+    // Drop any previous run's iframe/listener/timeout before starting a new run.
+    sandboxCleanupRef.current?.();
+    sandboxCleanupRef.current = null;
+    const host = sandboxHostRef.current;
+    if (!host) return;
+    const logs: string[] = [];
+    // Opaque-origin sandbox: no allow-same-origin => no page DOM, storage, or cookies.
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('sandbox', 'allow-scripts');
+    iframe.setAttribute('title', 'JavaScript sandbox');
+    iframe.style.display = 'none';
+    const safeJson = JSON.stringify(code.replace(/<\/script/gi, '<\\/script')).replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+    iframe.srcdoc = `<!DOCTYPE html><html><body><script>
+window.addEventListener('error', function (e) { parent.postMessage({ type: 'scc-js-error', message: e.message || 'Unknown error' }, '*'); });
+(function () {
+  var format = function (v) { try { if (typeof v === 'string') return v; if (typeof v === 'undefined') return 'undefined'; return JSON.stringify(v); } catch (err) { return '[unserializable]'; } };
+  var send = function (text) { parent.postMessage({ type: 'scc-js-log', text: text }, '*'); };
+  console.log = function () { send(Array.prototype.map.call(arguments, format).join(' ')); };
+  console.info = console.debug = console.log;
+  console.warn = console.error = console.log;
+  try { new Function(${safeJson})(); parent.postMessage({ type: 'scc-js-done' }, '*'); }
+  catch (err) { parent.postMessage({ type: 'scc-js-error', message: (err && err.message) || String(err) }, '*'); }
+})();
+<\/script><\/body><\/html>`;
+    let settled = false;
+    const teardown = () => { window.clearTimeout(timer); window.removeEventListener('message', onMessage); iframe.remove(); };
+    const finish = (text: string) => {
+      if (settled) return;
+      settled = true;
+      teardown();
+      if (sandboxCleanupRef.current === cleanup) sandboxCleanupRef.current = null;
+      setOutput(text);
+    };
+    const cleanup = () => { if (settled) return; settled = true; teardown(); };
+    const onMessage = (e: MessageEvent) => {
+      if (e.source !== iframe.contentWindow) return;
+      const d = e.data as any;
+      if (!d || typeof d !== 'object' || typeof d.type !== 'string' || d.type.indexOf('scc-js-') !== 0) return;
+      if (d.type === 'scc-js-log') { logs.push(String(d.text ?? '')); setOutput(logs.join('\n')); }
+      else if (d.type === 'scc-js-done') finish(logs.join('\n') || '(no output)');
+      else if (d.type === 'scc-js-error') finish(`Error: ${d.message || 'Unknown error'}`);
+    };
+    const timer = window.setTimeout(() => finish('Error: Execution timed out after 5 seconds.'), 5000);
+    sandboxCleanupRef.current = cleanup;
+    window.addEventListener('message', onMessage);
+    host.appendChild(iframe);
   };
   return (
     <Shell title="Code Runner" sub="Python (in-browser via Pyodide) and JavaScript run with no backend. Snippets save to Drive.">
@@ -175,7 +218,7 @@ export const CodeRunnerWorkspace: React.FC = () => {
       <textarea value={code} onChange={(e) => setCode(e.target.value)} rows={8} spellCheck={false}
         className="w-full text-xs font-mono rounded-xl border bg-transparent p-3" style={{ borderColor: 'var(--line)' }} aria-label="Code editor" />
       {lang === 'js'
-        ? <div className="space-y-2"><Btn primary onClick={runJS}>Run JavaScript</Btn><pre className="text-xs p-3 rounded-xl border whitespace-pre-wrap" style={{ borderColor: 'var(--line)' }}>{output || 'Output appears here.'}</pre></div>
+        ? <div className="space-y-2"><Btn primary onClick={runJS}>Run JavaScript</Btn><div ref={sandboxHostRef} aria-hidden="true" /><pre className="text-xs p-3 rounded-xl border whitespace-pre-wrap" style={{ borderColor: 'var(--line)' }}>{output || 'Output appears here.'}</pre></div>
         : <iframe title="Python runner (Pyodide)" src="https://pyodide.org/en/stable/console.html" className="w-full rounded-xl border" style={{ height: 320, borderColor: 'var(--line)' }} loading="lazy" />}
       <p className="text-[11px] opacity-60">Tip: paste starter code from class, run, then save the snippet to Drive from the file menu.</p>
     </Shell>
