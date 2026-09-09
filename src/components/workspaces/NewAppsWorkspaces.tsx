@@ -100,6 +100,17 @@ export const HabitSleepWorkspace: React.FC = () => {
     try { return JSON.parse(localStorage.getItem('scc_focus_sessions_log') || '[]'); } catch { return []; }
   }, []);
   const focusToday = (focusLog as any[]).filter((s) => String(s.date || s.startedAt || '').startsWith(today)).reduce((sum, s) => sum + (Number(s.minutes || s.durationMin || 25)), 0);
+  const habitsList = ['No phone first 30 min', '2h deep work', 'Review flashcards', 'In bed by 11pm'];
+  const doneToday = habitsList.filter((h) => habits[`${today}:${h}`]).length;
+  const streakFor = (h: string): number => {
+    let streak = 0;
+    let offset = habits[`${today}:${h}`] ? 0 : 1;
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(Date.now() - offset * 86400000).toISOString().slice(0, 10);
+      if (habits[`${d}:${h}`]) { streak += 1; offset += 1; } else break;
+    }
+    return streak;
+  };
   return (
     <Shell title="Habit + Sleep Tracker" sub="See how sleep lines up with your focus minutes from the Pomodoro log.">
       <div className="grid grid-cols-2 gap-2">
@@ -114,13 +125,19 @@ export const HabitSleepWorkspace: React.FC = () => {
           <p className="text-[11px] opacity-60">Sleep {sleep[today] ?? '—'}h → {focusToday} focus min. Aim: sleep 8h, focus 120 min.</p>
         </div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {['No phone first 30 min', '2h deep work', 'Review flashcards', 'In bed by 11pm'].map((h) => (
-          <button key={h} onClick={() => setHabits({ ...habits, [`${today}:${h}`]: !habits[`${today}:${h}`] })}
-            className="px-3 py-2 text-xs font-bold rounded-xl border min-h-[44px]" style={{ borderColor: 'var(--line)', backgroundColor: habits[`${today}:${h}`] ? 'var(--accent-soft)' : undefined }}>
-            {habits[`${today}:${h}`] ? '✓ ' : ''}{h}
-          </button>
-        ))}
+      <div className="space-y-2">
+        <p className="text-xs font-bold opacity-70">{doneToday}/4 today</p>
+        <div className="flex flex-wrap gap-2">
+          {habitsList.map((h) => (
+            <span key={h} className="inline-flex items-center gap-1">
+              <button onClick={() => setHabits({ ...habits, [`${today}:${h}`]: !habits[`${today}:${h}`] })}
+                className="px-3 py-2 text-xs font-bold rounded-xl border min-h-[44px]" style={{ borderColor: 'var(--line)', backgroundColor: habits[`${today}:${h}`] ? 'var(--accent-soft)' : undefined }}>
+                {habits[`${today}:${h}`] ? '✓ ' : ''}{h}
+              </button>
+              <span className="text-[10px] font-semibold opacity-60">{streakFor(h)}-day streak</span>
+            </span>
+          ))}
+        </div>
       </div>
     </Shell>
   );
