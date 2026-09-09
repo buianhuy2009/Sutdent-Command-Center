@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Network, Sparkles, Copy, Check, Download, RefreshCw } from 'lucide-react';
 import mermaid from 'mermaid';
+import DOMPurify from 'dompurify';
 import { generateMermaidDiagram } from '../../services/gemini';
 
 const DEFAULT_CHART = `graph TD
@@ -34,7 +35,9 @@ export const MermaidWorkspace: React.FC = () => {
       const id = `mermaid-svg-${Date.now()}`;
       const { svg } = await mermaid.render(id, code);
       if (renderContainerRef.current) {
-        renderContainerRef.current.innerHTML = svg;
+        renderContainerRef.current.innerHTML = DOMPurify.sanitize(svg, {
+          USE_PROFILES: { svg: true },
+        });
       }
     } catch (err: any) {
       setRenderError('Syntax error in diagram code. Please adjust notation.');
