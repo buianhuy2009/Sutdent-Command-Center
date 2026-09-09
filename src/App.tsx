@@ -451,11 +451,12 @@ export default function App() {
     }
   }, []);
 
-  const handleSaveMorningIntention = (intention: string, targetHours: number) => {
+  const handleSaveMorningIntention = (intention: string, targetHours: number, mood?: string) => {
     const todayStr = new Date().toISOString().split('T')[0];
     localStorage.setItem('scc_last_morning_checkin', todayStr);
     localStorage.setItem('scc_daily_intention', intention);
     localStorage.setItem('scc_target_focus_hours', String(targetHours));
+    try { if (mood) localStorage.setItem('scc_last_morning_mood', mood); } catch {}
     // streak + confetti on 7-day
     try {
       const raw = localStorage.getItem('scc_streak_history');
