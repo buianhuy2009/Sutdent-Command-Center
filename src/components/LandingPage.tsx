@@ -44,7 +44,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 }) => {
   const [demoOpen, setDemoOpen] = useState(false);
   return (
-    <div className="min-h-screen bg-[#FAF9F5] dark:bg-[#141413] text-[#141413] dark:text-[#FAF9F5] transition-colors flex flex-col font-sans selection:bg-[#D97757] selection:text-white">
+    <div className="min-h-screen w-full max-w-[100vw] overflow-x-clip bg-[#FAF9F5] dark:bg-[#141413] text-[#141413] dark:text-[#FAF9F5] transition-colors flex flex-col font-sans selection:bg-[#D97757] selection:text-white">
       {/* Top Header — semantic role=banner */}
       <header role="banner" className="sticky top-0 z-40 bg-[#FAF9F5]/90 dark:bg-[#141413]/90 backdrop-blur-md border-b border-[#DFDACB] dark:border-[#2C2B27]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -97,7 +97,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <main className="flex-1">
         <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28">
           {/* Background Glow — will-change:transform for LCP */}
-          <div className="hero-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#D97757]/10 dark:bg-[#D97757]/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="hero-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(600px,120vw)] h-[min(600px,120vw)] max-w-none bg-[#D97757]/10 dark:bg-[#D97757]/10 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
 
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
             {/* Pill Badge — aligned to D97757 terracotta palette */}
@@ -106,55 +106,54 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <span>The Next-Gen Academic Operating System for Students</span>
             </div>
 
-            {/* Main Headline — unified terracotta accent, system font fallback corrected via index.css */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.15] max-w-4xl mx-auto" style={{ fontFamily: 'Inter, ui-sans-serif, system-ui' }}>
+            {/* Main Headline — single clear statement, scales down on small screens */}
+            <h1 className="text-2xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.15] max-w-4xl mx-auto text-balance break-words" style={{ fontFamily: 'Inter, ui-sans-serif, system-ui' }}>
               Conquer your semester with a{' '}
               <span className="text-[#D97757]">
                 unified student hub
               </span>
             </h1>
 
-            {/* Subtitle — split with • bullets for scannability */}
-            <div className="mt-6 text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed space-y-2">
-              <p>Connect your <strong>Canvas LMS</strong> • <strong>Google Calendar</strong> • <strong>Gmail AI scanner</strong> in one dashboard.</p>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Formatted Google Docs + Gemini Flash AI study coaching — local-first, offline-capable.</p>
-            </div>
+            {/* Subcopy — single line */}
+            <p className="mt-4 sm:mt-6 text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed text-balance break-words">Canvas LMS, Google Calendar &amp; Gmail in one dashboard — with Gemini AI study coaching.</p>
 
-            {/* Large Prominent CTA Buttons */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            {/* CTAs — two max: primary = onSignIn, secondary = onExploreDemo; stack on mobile */}
+            <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 px-4 sm:px-0 max-w-full">
               <button
                 id="btn-landing-primary-signup"
                 onClick={onSignIn}
                 disabled={isLoggingIn}
-                className="w-full sm:w-auto px-8 py-4 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-2xl text-base font-bold shadow-lg shadow-[#D97757]/25 flex items-center justify-center gap-3 transition-all cursor-pointer hover:scale-[1.02]"
+                className="w-full sm:w-auto max-w-full min-h-[48px] px-8 py-4 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-2xl text-base font-bold shadow-lg shadow-[#D97757]/25 flex items-center justify-center gap-3 transition-all cursor-pointer hover:scale-[1.02]"
               >
-                <GoogleIcon className="w-5 h-5" />
-                <span>{isLoggingIn ? 'Connecting to Google...' : 'Sign Up Free with Google'}</span>
-                <ArrowRight className="w-4 h-4 ml-1" />
+                <GoogleIcon className="w-5 h-5 shrink-0" />
+                <span className="truncate">{isLoggingIn ? 'Connecting to Google...' : 'Sign Up Free with Google'}</span>
+                <ArrowRight className="w-4 h-4 ml-1 shrink-0" />
               </button>
 
               <button
                 id="btn-landing-explore-demo"
                 onClick={onExploreDemo}
-                className="w-full sm:w-auto px-6 py-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-2xl text-base font-semibold transition-all cursor-pointer shadow-xs"
+                className="w-full sm:w-auto max-w-full min-h-[48px] px-6 py-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-2xl text-base font-semibold transition-all cursor-pointer shadow-xs inline-flex items-center justify-center"
               >
-                <span>Explore Live Demo Mode</span>
+                <span className="truncate">Explore Live Demo Mode</span>
               </button>
             </div>
 
-            {onSignInWorkspace && (
-              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                Need immediate Calendar & Drive sync at login?{' '}
-                <button
-                  type="button"
-                  onClick={onSignInWorkspace}
-                  disabled={isLoggingIn}
-                  className="text-[#D97757] hover:underline font-semibold cursor-pointer underline-offset-2"
-                >
-                  Sign in with Google Workspace
-                </button>
-              </p>
-            )}
+            {/* Social-proof stats strip — glassmorphism */}
+            <div className="mt-6 mx-4 sm:mx-auto max-w-xl backdrop-blur-md rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] bg-white/60 dark:bg-[#1A1917]/60 px-4 py-3.5 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2.5 sm:gap-6 text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm">
+              <span className="inline-flex min-w-0 items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" aria-hidden="true" />
+                <span className="truncate">100% Free &amp; Open Source</span>
+              </span>
+              <span className="inline-flex min-w-0 items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" aria-hidden="true" />
+                <span className="truncate">Local-First &amp; Offline Ready</span>
+              </span>
+              <span className="inline-flex min-w-0 items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#D97757] shrink-0" aria-hidden="true" />
+                <span className="truncate">Gemini Flash AI Coach</span>
+              </span>
+            </div>
 
             {/* LCP hero image preload — dashboard screenshot */}
             <div className="mt-8 max-w-3xl mx-auto">
@@ -162,35 +161,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Trust Badges — always 3col on 375px with gap-2 */}
-            <div className="mt-8 grid grid-cols-3 gap-2 sm:gap-6 text-xs text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-              <div className="flex items-center justify-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>Free & OSS</span>
+            <div className="mt-8 grid grid-cols-3 gap-2 sm:gap-6 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 max-w-xl mx-auto px-4 sm:px-0">
+              <div className="flex min-w-0 flex-wrap items-center justify-center gap-1.5 text-center">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+                <span className="min-w-0 truncate">Free &amp; OSS</span>
               </div>
-              <div className="flex items-center justify-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>Canvas Feed</span>
+              <div className="flex min-w-0 flex-wrap items-center justify-center gap-1.5 text-center">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+                <span className="min-w-0 truncate">Canvas Feed</span>
               </div>
-              <div className="flex items-center justify-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>Workspace Sync</span>
+              <div className="flex min-w-0 flex-wrap items-center justify-center gap-1.5 text-center">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+                <span className="min-w-0 truncate">Workspace Sync</span>
               </div>
             </div>
 
             {/* University logos social proof */}
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-6 opacity-60">
-              <span className="text-[11px] font-bold tracking-widest uppercase text-[#6B6860]">Trusted integrations</span>
-              <div className="flex items-center gap-4 text-xs font-bold text-[#6B6860]">
-                <span className="px-3 py-1.5 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl">Canvas / Instructure</span>
-                <span className="px-3 py-1.5 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl flex items-center gap-1.5"><GoogleIcon className="w-3.5 h-3.5" /> Workspace</span>
-                <span className="px-3 py-1.5 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl">Dexie • PWA</span>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-3 sm:gap-6 opacity-60 px-4 sm:px-0">
+              <span className="text-[11px] font-bold tracking-widest uppercase text-[#6B6860] shrink-0">Trusted integrations</span>
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 max-w-full text-xs font-bold text-[#6B6860]">
+                <span className="max-w-full truncate px-3 py-1.5 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl shrink-0">Canvas / Instructure</span>
+                <span className="max-w-full truncate px-3 py-1.5 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl inline-flex min-w-0 items-center gap-1.5 shrink-0"><GoogleIcon className="w-3.5 h-3.5 shrink-0" /><span className="truncate">Workspace</span></span>
+                <span className="max-w-full truncate px-3 py-1.5 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl shrink-0">Dexie • PWA</span>
               </div>
             </div>
           </div>
         </section>
 
+        {/* Social-proof strip — static copy only, no data fetching, no user-count claims */}
+        <section aria-label="Integrations at a glance" className="border-t border-[#DFDACB] dark:border-[#2C2B27] bg-white/60 dark:bg-[#1A1917]/40">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 text-center max-w-full">
+            <p className="text-[11px] font-bold tracking-widest uppercase text-[#6B6860] dark:text-[#B5B2A8]">Canvas + Google + AI study coach in one place</p>
+            <dl className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 text-left">
+              <div className="min-w-0 px-4 py-3 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl">
+                <dt className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">Canvas LMS Live Sync</dt>
+                <dd className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">Unfinished &amp; Finished views, one-click quiz redirects.</dd>
+              </div>
+              <div className="min-w-0 px-4 py-3 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl">
+                <dt className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">Gmail Scanner + Workspace</dt>
+                <dd className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">Teacher alerts sorted, spam filtered — EN/VI support.</dd>
+              </div>
+              <div className="min-w-0 px-4 py-3 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl">
+                <dt className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">Offline-first PWA</dt>
+                <dd className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">Dexie + Workbox — works offline, syncs on reconnect.</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+
         {/* Testimonials */}
-        <section className="py-10 bg-[#EFECE2]/40 dark:bg-[#1A1917]/60 border-y border-[#DFDACB] dark:border-[#2C2B27]">
+        <section className="py-10 bg-[#EFECE2]/40 dark:bg-[#1A1917]/60 border-b border-[#DFDACB] dark:border-[#2C2B27]">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {TESTIMONIALS.map((t,i)=>(
