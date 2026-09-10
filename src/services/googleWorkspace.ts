@@ -399,6 +399,7 @@ export async function fetchAcademicEmails(
             subject: subjectHeader ? subjectHeader.value : '(No Subject)',
             date: dateHeader ? new Date(dateHeader.value).toLocaleDateString() : 'Recent',
             snippet: bodySnippet,
+            unread: Array.isArray(data.labelIds) && data.labelIds.includes('UNREAD'),
           };
         } catch (e) {
           return null;
