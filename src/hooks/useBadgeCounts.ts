@@ -9,20 +9,38 @@ export interface BadgeCounts {
   flashcardDue: number;
 }
 
+let lastFlashcardRaw: string | null = null;
+let lastSrsRaw: string | null = null;
+let lastCalculatedDate: string | null = null;
+let cachedFlashcardCount = 0;
+
 function countFlashcardsDue(): number {
   try {
     const today = new Date().toISOString().split('T')[0];
     const raw = localStorage.getItem('scc_flashcard_decks_v1');
+    const srsRaw = localStorage.getItem('scc_srs_decks_v2');
+
+    // Optimization: Skip JSON parsing during polling if localStorage signature and date are unchanged
+    if (raw === lastFlashcardRaw && srsRaw === lastSrsRaw && today === lastCalculatedDate) {
+      return cachedFlashcardCount;
+    }
+
+    lastFlashcardRaw = raw;
+    lastSrsRaw = srsRaw;
+    lastCalculatedDate = today;
+
     if (raw) {
       const decks = JSON.parse(raw);
-      return decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
+      cachedFlashcardCount = decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
+      return cachedFlashcardCount;
     }
-    const srsRaw = localStorage.getItem('scc_srs_decks_v2');
     if (srsRaw) {
       const decks = JSON.parse(srsRaw);
-      return decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
+      cachedFlashcardCount = decks.reduce((acc: number, d: any) => acc + (d.cards || []).filter((c: any) => !c.mastered && (!c.dueDate || c.dueDate <= today)).length, 0);
+      return cachedFlashcardCount;
     }
   } catch {}
+  cachedFlashcardCount = 0;
   return 0;
 }
 
