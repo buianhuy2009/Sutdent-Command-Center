@@ -60,7 +60,22 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
 
   // AI Chronotype Study Slot states
   const [showChronotypePanel, setShowChronotypePanel] = useState(false);
-  const [chronotype, setChronotype] = useState<'morning' | 'balanced' | 'evening'>('morning');
+  const [chronotype, setChronotypeState] = useState<'morning' | 'balanced' | 'evening'>(() => {
+    try {
+      const saved = localStorage.getItem('scc_chronotype_v1');
+      return saved === 'morning' || saved === 'balanced' || saved === 'evening' ? saved : 'morning';
+    } catch {
+      return 'morning';
+    }
+  });
+  const setChronotype = (value: 'morning' | 'balanced' | 'evening') => {
+    setChronotypeState(value);
+    try {
+      localStorage.setItem('scc_chronotype_v1', value);
+    } catch {
+      /* storage unavailable — ignore */
+    }
+  };
   const [isSuggestingSlots, setIsSuggestingSlots] = useState(false);
   const [studySlotResult, setStudySlotResult] = useState<StudySlotResult | null>(null);
   const [schedulingSlotIndex, setSchedulingSlotIndex] = useState<number | null>(null);
