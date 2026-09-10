@@ -9,6 +9,9 @@ export const RubricCheckerWorkspace: React.FC = () => {
   const [isChecking, setIsChecking] = useState(false);
   const [result, setResult] = useState<RubricPreCheckResult | null>(null);
 
+  const essayWordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
+  const rubricWordCount = rubricText.trim() ? rubricText.trim().split(/\s+/).length : 0;
+
   const handleCheck = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!essayText.trim() || !rubricText.trim()) return;
@@ -62,6 +65,7 @@ export const RubricCheckerWorkspace: React.FC = () => {
             placeholder="Paste your draft essay, introduction, argument body, or thesis statement..."
             className="flex-1 w-full p-4 text-xs font-sans bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] leading-relaxed resize-none"
           />
+          <span className="text-[11px] text-[#8C897F]">{essayWordCount} words</span>
         </div>
 
         <div className="bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs space-y-2 flex flex-col justify-between">
@@ -76,6 +80,7 @@ export const RubricCheckerWorkspace: React.FC = () => {
               placeholder="Paste rubric criteria (e.g. Thesis clarity, evidence integration, analytical depth, bibliography formatting)..."
               className="flex-1 w-full p-4 text-xs font-sans bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] leading-relaxed resize-none"
             />
+            <span className="text-[11px] text-[#8C897F]">{rubricWordCount} words</span>
           </div>
 
           <button
