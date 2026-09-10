@@ -102,8 +102,12 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     localStorage.setItem(LOCAL_STORAGE_VIBE_KEY, vibe);
   };
 
-  // Personalized Focus Sprint Goal — now via Zustand (prevents BroadcastChannel race), clamped floor 1
-  const { sprintGoal, setSprintGoal, completedFocusSessions, completedSessions } = usePomodoroStore();
+  // Personalized Focus Sprint Goal — atomic selectors prevent unwanted re-renders when unselected store properties change
+  const sprintGoal = usePomodoroStore((state) => state.sprintGoal);
+  const setSprintGoal = usePomodoroStore((state) => state.setSprintGoal);
+  const completedSessions = usePomodoroStore((state) => state.completedSessions);
+  const completedFocusSessions = completedSessions;
+
   const handleAdjustSprintGoal = (amount: number) => {
     setSprintGoal(Math.max(1, sprintGoal + amount));
   };
