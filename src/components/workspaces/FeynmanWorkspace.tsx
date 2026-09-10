@@ -38,6 +38,17 @@ export const FeynmanWorkspace: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const activeText =
+    activeTier === 'eli5'
+      ? tierResult?.tier1_eli5 ?? ''
+      : activeTier === 'hs'
+      ? tierResult?.tier2_highschool ?? ''
+      : tierResult?.tier3_undergrad ?? '';
+  const readMins = Math.max(
+    1,
+    Math.ceil(activeText.trim().split(/\s+/).filter(Boolean).length / 200),
+  );
+
   return (
     <div className="space-y-6 select-none animate-in fade-in duration-150">
       
@@ -102,8 +113,11 @@ export const FeynmanWorkspace: React.FC = () => {
                 }`}
               >
                 {tier.label}
-              </button>
-            ))}
+                </button>
+              ))}
+              <span className="ml-auto text-[11px] font-medium text-[#8C897F] dark:text-[#B5B2A8]">
+                ~{readMins} min read
+              </span>
           </div>
 
           <div className="space-y-4">
