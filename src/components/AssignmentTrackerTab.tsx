@@ -289,6 +289,36 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
     onRefresh();
   };
 
+  const handleExportCsv = () => {
+    const escapeCsvCell = (value: string | undefined | null): string => {
+      const str = value ?? '';
+      return /["\n\r,]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    };
+    const header = ['Assignment Name', 'Subject', 'Due Date', 'Status', 'Priority', 'Notes'];
+    const lines = filteredAssignments.map((a) =>
+      [
+        a.assignmentName ?? '',
+        a.subject ?? '',
+        a.dueDate ?? '',
+        a.status ?? '',
+        a.priority ?? '',
+        a.notes ?? '',
+      ]
+        .map(escapeCsvCell)
+        .join(',')
+    );
+    const csv = [header.join(','), ...lines].join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `assignments-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-4">
       {/* Google Sheets Disconnected Guidance Banner */}
@@ -359,6 +389,16 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
               className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
             />
           </div>
+
+          {/* Export CSV */}
+          <button
+            onClick={handleExportCsv}
+            className="px-3 py-1.5 bg-[#FAF9F5] dark:bg-[#252422] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] text-[#141413] dark:text-[#FAF9F5] text-xs font-bold rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] transition-all flex items-center gap-1.5 cursor-pointer"
+            title="Export currently filtered rows to CSV"
+          >
+            <FileText className="w-3.5 h-3.5 text-[#D97757]" />
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
 
           {/* View Mode Toggle: Table vs Kanban */}
           <div className="flex items-center bg-[#FAF9F5] dark:bg-[#1F1E1B] p-0.5 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
