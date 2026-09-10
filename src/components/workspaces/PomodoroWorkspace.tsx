@@ -33,6 +33,11 @@ export const PomodoroWorkspace: React.FC = () => {
     }
   });
 
+  // Screen-reader live announcement (throttled to minute changes) + title countdown refs
+  const originalTitleRef = useRef<string>('');
+  const lastAnnouncedMinuteRef = useRef<number>(-1);
+  const [liveAnnouncement, setLiveAnnouncement] = useState<string>('');
+
   // Ambient Sound Engine (Web Audio API)
   const [activeSound, setActiveSound] = useState<TrackId>(ambientAudio.getTrack());
   const [soundVolume, setSoundVolume] = useState<number>(0.5);
@@ -85,7 +90,49 @@ export const PomodoroWorkspace: React.FC = () => {
     return () => clearInterval(interval);
   }, [isRunning, timeLeftSeconds, mode, completedSessions]);
 
-  // Clean Web Audio sound synthesizer
+  // Sync document.title with the timer countdown while running, restore previous title on unmount
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (!originalTitleRef.current) {
+      originalTitleRef.current = document.title;
+    }
+    const original = originalTitleRef.current;
+    return () => {
+      document.title = original;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (!originalTitleRef.current) {
+      originalTitleRef.current = document.title;
+    }
+    if (isRunning && timeLeftSeconds > 0) {
+      const m = Math.floor(timeLeftSeconds / 60);
+      const s = timeLeftSeconds % 60;
+      const mmss = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      const label = mode === 'work' ? 'Focus' : 'Break';
+      document.title = `(${mmss}) ${label} • Student Command Center`;
+    } else if (document.title !== originalTitleRef.current) {
+      document.title = originalTitleRef.current;
+    }
+  }, [isRunning, timeLeftSeconds, mode]);
+
+  // Screen-reader announcement: update at most once per minute to avoid spam
+  useEffect(() => {
+    const minsLeft = Math.ceil(timeLeftSeconds / 60);
+    if (minsLeft !== lastAnnouncedMinuteRef.current) {
+      lastAnnouncedMinuteRef.current = minsLeft;
+      const label = mode === 'work' ? 'Focus' : 'Break';
+      if (timeLeftSeconds <= 0) {
+        setLiveAnnouncement(`${label} timer finished.`);
+      } else {
+        setLiveAnnouncement(
+          `${minsLeft} minute${minsLeft === 1 ? '' : 's'} remaining in ${label} timer.`
+        );
+      }
+    }
+  }, [timeLeftSeconds, mode]);
   const stopAudio = () => {
     sourceNodesRef.current.forEach((node) => {
       try {
@@ -96,7 +143,7 @@ export const PomodoroWorkspace: React.FC = () => {
     sourceNodesRef.current = [];
   };
 
-  const startSynthesizer = (type: SoundType) => {
+  const startSynthesizer = (type: TrackId) => {
     stopAudio();
     if (type === 'none') {
       setActiveSound('none');
@@ -269,19 +316,21 @@ export const PomodoroWorkspace: React.FC = () => {
     }
   }, [soundVolume]);
 
-  // Keyboard shortcut: Space or P to start/pause when workspace active
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName;
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
-      if (e.code === 'Space' || e.key.toLowerCase() === 'p' || e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        handleToggleTimer();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isRunning, activeSound, soundVolume, timeLeftSeconds, mode, completedSessions]);
+  // Keyboard shortcuts: Space, P, or K toggle the timer. Ignore edits in form fields.
+  const handleTimerKeyDown = (e: React.KeyboardEvent) => {
+    const target = e.target as HTMLElement | null;
+    const tag = target?.tagName ?? '';
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+    if (target?.isContentEditable) return;
+    const key = e.key.toLowerCase();
+    const isSpace = e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar';
+    const isToggleKey = isSpace || key === 'p' || key === 'k';
+    if (!isToggleKey) return;
+    // Let focused buttons use native Space activation (click) to avoid double-toggling.
+    if (tag === 'BUTTON' && isSpace) return;
+    e.preventDefault();
+    handleToggleTimer();
+  };
 
   // Clean up audio on unmount
   useEffect(() => {
@@ -338,7 +387,13 @@ export const PomodoroWorkspace: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Left: Pomodoro Clock (7 cols) */}
-        <div className="lg:col-span-7 bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-8 shadow-xs flex flex-col items-center justify-center space-y-6 text-center">
+        <div
+          className="lg:col-span-7 bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-8 shadow-xs flex flex-col items-center justify-center space-y-6 text-center"
+          tabIndex={0}
+          role="group"
+          aria-label="Pomodoro timer controls. Press Space to start or pause."
+          onKeyDown={handleTimerKeyDown}
+        >
           
           {/* Preset Selector */}
           <div className="flex items-center gap-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] p-1.5 rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27]">
@@ -386,9 +441,17 @@ export const PomodoroWorkspace: React.FC = () => {
 
           {/* Huge Timer Digits */}
           <div className="space-y-2 py-4">
-            <div className="text-7xl sm:text-8xl font-mono font-extrabold text-[#141413] dark:text-[#FAF9F5] tracking-tighter">
+            <div
+              role="timer"
+              aria-live="polite"
+              aria-label={`${formatTime(timeLeftSeconds)} remaining in ${mode === 'work' ? 'Focus' : 'Break'} timer`}
+              className="text-7xl sm:text-8xl font-mono font-extrabold text-[#141413] dark:text-[#FAF9F5] tracking-tighter"
+            >
               {formatTime(timeLeftSeconds)}
             </div>
+            <span aria-live="polite" role="status" className="sr-only">
+              {liveAnnouncement}
+            </span>
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#FAF9F5] dark:bg-[#252422] text-[#8C897F] border border-[#DFDACB] dark:border-[#2C2B27]">
               {mode === 'work' ? 'Deep Work Interval' : 'Rest & Recharge'}
             </span>
