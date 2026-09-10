@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Keyboard, X } from 'lucide-react';
 import { APP_CATALOG } from './AppStoreModal';
 
@@ -8,7 +8,8 @@ interface ShortcutsModalProps {
 }
 
 export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose }) => {
-  if (!isOpen) return null;
+  const [query, setQuery] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const dynamicAppShortcuts = useMemo(() => {
     return APP_CATALOG.slice(0, 12).map((app, idx) => ({
@@ -31,6 +32,24 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
     { key: '?', description: 'Show this Keyboard Shortcuts cheat-sheet (global ?)' },
     { key: 'Esc', description: 'Close active modal or drawer' },
   ];
+
+  const q = query.trim().toLowerCase();
+  const filteredShortcuts = q
+    ? shortcuts.filter(
+        (sc) =>
+          sc.key.toLowerCase().includes(q) ||
+          sc.description.toLowerCase().includes(q)
+      )
+    : shortcuts;
+
+  useEffect(() => {
+    if (isOpen) {
+      setQuery('');
+      inputRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
 
   return (
     <div
@@ -64,8 +83,34 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
           </button>
         </div>
 
-        <div className="mt-4 space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-          {shortcuts.map((sc, idx) => (
+        <div className="mt-4">
+          <input
+            ref={inputRef}
+            autoFocus
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === 'Escape') {
+                e.preventDefault();
+                if (query !== '') {
+                  setQuery('');
+                } else {
+                  onClose();
+                }
+              }
+            }}
+            placeholder="Filter shortcuts…"
+            className="w-full mb-3 px-3 py-2 text-xs rounded-lg bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[#141413] dark:text-[#FAF9F5] placeholder:text-[#8C897F] outline-hidden focus:border-[#D97757]"
+          />
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+          {filteredShortcuts.length === 0 ? (
+            <div className="p-2 rounded-lg text-xs text-center text-[#8C897F]">
+              No matches
+            </div>
+          ) : (
+            filteredShortcuts.map((sc, idx) => (
             <div
               key={idx}
               className="flex items-center justify-between p-2 rounded-lg bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-xs"
@@ -77,7 +122,9 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ isOpen, onClose 
                 {sc.key}
               </kbd>
             </div>
-          ))}
+            ))
+          )}
+          </div>
         </div>
 
         <div className="mt-6 pt-3 border-t border-[#DFDACB] dark:border-[#2C2B27] text-center">
