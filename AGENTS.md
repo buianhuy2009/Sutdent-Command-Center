@@ -12,6 +12,13 @@ Whenever a change is requested:
 4. Once `npm run build` passes with exit code 0: Push the Code to the Github Repository
 5. Inform the user that the build passed and the update is pushing to Vercel.
 
+## 4. CHANGELOG DISCIPLINE (MANDATORY EVERY UPDATE, BIG OR SMALL)
+Every user-visible change must update the changelog in the same session — no silent fixes.
+1. Add a `VersionRelease` entry at the top of `RELEASES` in `src/components/ChangelogModal.tsx` (plain English: `highlights` = 1-line student benefits, `details` = what changed + where to find it). Only the newest entry keeps `badge: 'Latest Update'`.
+2. Bump `CURRENT_VERSION` in `ChangelogModal.tsx` AND `version` in `package.json` together (patch for fixes, minor for features).
+3. Append an `<item>` to `public/changelog.xml` with matching version, date (UTC), title and 1-sentence description.
+4. `npm run build` must pass before push. Never leave `RELEASES`, `package.json` and `changelog.xml` out of sync.
+
 ## 3. MULTI-AGENT MERGE SAFETY (MANDATORY EVERY SESSION)
 Multiple agents/users work on `main` in parallel. NEVER push blind.
 1. **Session start**: run `git fetch origin` and `git log --oneline HEAD..origin/main`. If the remote moved and the newest commit is NOT yours (check author/message), another session landed work while you were away.

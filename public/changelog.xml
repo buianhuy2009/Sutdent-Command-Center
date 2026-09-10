@@ -6,6 +6,36 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.6.0 — Everyday Polish: deadlines, focus &amp; search feel instant</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.6.0</link>
+      <pubDate>Thu, 10 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Tracker urgency badges and relative due dates, dashboard countdowns, timetable now-line, calmer Pomodoro, mood check-in, faster search with math copy and recents, Gmail unread badges, Drive sorting, CSV export, habits streaks and one-click citation copy.</description>
+    </item>
+    <item>
+      <title>v2.5.1 — True Two-Mode Theme, Calmer Home &amp; Fixed App Icons</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.5.1</link>
+      <pubDate>Sun, 06 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Exactly two modes: Warm Cream light and Dark Charcoal dark with terracotta accent. Simpler home, cleaner sidebar, every app icon unique.</description>
+    </item>
+    <item>
+      <title>v2.5.0 — Division A Kit: Home Fix, NASA Repair, AI Labs &amp; Dossier</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.5.0</link>
+      <pubDate>Sun, 06 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Getting-started card below Today Plan, NASA Image of the Day with retry, offline Train My Model Lab, Few-Shot Lab and Competition Dossier with PDF export.</description>
+    </item>
+    <item>
+      <title>v2.4.2 — Fixed: Google Sign-In That Would Not Finish</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.4.2</link>
+      <pubDate>Sat, 05 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Clear sign-in errors with fixes, redirect sign-in for blocked popups, welcome-back sync, one-tap connection check.</description>
+    </item>
+    <item>
+      <title>v2.4.1 — Fixed: Blank Canvas Page &amp; Google Sign-In Going Stale</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.4.1</link>
+      <pubDate>Wed, 03 Sep 2026 00:00:00 GMT</pubDate>
+      <description>One bad assignment row can no longer blank the Canvas page. Clear error with retry, permanent Google connection, cached data kept on failed sync.</description>
+    </item>
+    <item>
       <title>v2.4.0 — Smarter studying: auto-scheduler, grade forecaster, voice + 15 new tools</title>
       <link>https://student-command-center.vercel.app/?changelog=2.4.0</link>
       <pubDate>Thu, 03 Sep 2026 00:00:00 GMT</pubDate>

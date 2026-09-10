@@ -430,15 +430,23 @@ export default function App() {
 
   useEffect(() => {
     try {
-      const tourSeen = localStorage.getItem('scc_tour_seen_v2');
-      if (tourSeen !== 'true') {
-        setIsIntroTourOpen(true);
-      }
-
       const todayStr = new Date().toISOString().split('T')[0];
       const lastCheckIn = localStorage.getItem('scc_last_morning_checkin');
       if (lastCheckIn !== todayStr) {
         setIsMorningCheckInOpen(true);
+      }
+
+      // Guided tour: new users only, AFTER morning check-in closes (no stacked modals).
+      // X = snooze (key stays unset); "Start studying" marks scc_tour_seen_v2.
+      const tourSeen = localStorage.getItem('scc_tour_seen_v2');
+      if (tourSeen !== 'true') {
+        const delay = lastCheckIn !== todayStr ? 4000 : 1500;
+        const t = setTimeout(() => {
+          try {
+            if (localStorage.getItem('scc_tour_seen_v2') !== 'true') setIsIntroTourOpen(true);
+          } catch { setIsIntroTourOpen(true); }
+        }, delay);
+        return () => clearTimeout(t);
       }
       
       // Changelog: show dot not modal — user clicks What's New dot to open
@@ -3626,11 +3634,15 @@ export default function App() {
       />
       )}
 
-      {/* Interactive Step-by-Step Introduction Tour Modal — gated so its chunk only loads when opened */}
+      {/* Guided tour — 6 anchored stops with "take me there" actions */}
       {isIntroTourOpen && (
       <InteractiveIntroModal
         isOpen={isIntroTourOpen}
         onClose={() => setIsIntroTourOpen(false)}
+        onNavigate={(tab: string) => handleTabTransition(tab)}
+        onOpenSearch={() => setCommandPaletteOpen(true)}
+        onOpenAiCoach={() => setAiChatOpen(true)}
+        onOpenGoogleSync={() => setGoogleSyncHubOpen(true)}
       />
       )}
 

@@ -83,7 +83,7 @@ export const OnboardingChecklist: React.FC<{ onConnectCanvas: ()=>void; onConnec
     const hasCanvas = hasAnyCanvasSettings();
     let hasGoogle = false;
     try {
-      hasGoogle = Boolean(getValidGoogleToken() || hasRefreshToken() || localStorage.getItem('scc_gemini_api_key'));
+      hasGoogle = Boolean(getValidGoogleToken() || hasRefreshToken());
     } catch {
       hasGoogle = false;
     }
@@ -105,11 +105,11 @@ export const OnboardingChecklist: React.FC<{ onConnectCanvas: ()=>void; onConnec
         className="w-full flex items-center justify-between text-left cursor-pointer rounded-lg focus-visible:outline-2 focus-visible:outline-[#D97757] min-h-[44px]"
       >
         <span className="flex items-center gap-2">
-          <h4 className="text-xs font-bold uppercase tracking-wider">Bắt đầu — 4 bước nhỏ</h4>
-          <span className="text-[10px] font-medium normal-case tracking-normal text-[#6B6860] hidden sm:inline">Làm xong sẽ ẩn. Không cần làm ngay. • Getting started</span>
+          <h4 className="text-xs font-bold uppercase tracking-wider">Getting started — 4 small steps</h4>
+          <span className="text-[10px] font-medium normal-case tracking-normal text-[#6B6860] hidden sm:inline">Done items hide automatically. No rush.</span>
         </span>
         <span className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-[#6B6860]">{progress}/4 hoàn thành</span>
+          <span className="text-[11px] font-mono text-[#6B6860]">{progress}/4 done</span>
           <ChevronDown className={`w-4 h-4 text-[#6B6860] transition-transform ${collapsed ? '' : 'rotate-180'}`} />
         </span>
       </button>
@@ -120,17 +120,17 @@ export const OnboardingChecklist: React.FC<{ onConnectCanvas: ()=>void; onConnec
           onClick={() => onCreateTask()}
           className="w-full text-left text-[11px] font-semibold text-[#D97757] hover:underline underline-offset-4 py-2 min-h-[44px] cursor-pointer"
         >
-          Xem ví dụ: Tạo 1 nhiệm vụ →
+          Open Tracker and add your first assignment →
         </button>
       )}
       {!collapsed && (
       <div id="onboarding-checklist-body">
       <div className="space-y-2">
         {([
-          { key:'canvas', label:'Kết nối Canvas', done: checks.canvas, action: onConnectCanvas },
-          { key:'google', label:'Kết nối Google', done: checks.google, action: onConnectGoogle },
-          { key:'task', label:'Tạo 1 nhiệm vụ', done: checks.task, action: onCreateTask },
-          { key:'pomodoro', label:'Bắt đầu Pomodoro', done: checks.pomodoro, action: onStartPomodoro },
+          { key:'canvas', label:'Connect Canvas — pull in assignments', done: checks.canvas, action: onConnectCanvas },
+          { key:'google', label:'Connect Google — calendar, mail & files', done: checks.google, action: onConnectGoogle },
+          { key:'task', label:'Add your first assignment', done: checks.task, action: onCreateTask },
+          { key:'pomodoro', label:'Start a 25-min focus session', done: checks.pomodoro, action: onStartPomodoro },
         ] as const).map(item=>(
           <button key={item.key} onClick={()=>{ if (!item.done) item.action(); }} className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold text-left min-h-[44px] ${item.done ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300' : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]'}`}>
             <span className="flex items-center gap-2">{item.done? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Circle className="w-4 h-4 text-[#6B6860]" />} {item.label}</span>
@@ -143,7 +143,7 @@ export const OnboardingChecklist: React.FC<{ onConnectCanvas: ()=>void; onConnec
         onClick={handleDismissToday}
         className="w-full text-center text-[11px] font-semibold text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] underline underline-offset-4 py-2 min-h-[44px] cursor-pointer"
       >
-        Ẩn hôm nay • Dismiss for today
+        Hide for today
       </button>
       </div>
       )}

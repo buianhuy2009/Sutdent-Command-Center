@@ -464,10 +464,10 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                     <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between">
                       <div>
                         <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                          StudentOS Walkthrough Tour
+                          Guided tour — 6 stops around the real app
                         </div>
                         <div className="text-[11px] text-[#8C897F]">
-                          Re-open the interactive system onboarding tour.
+                          Replay the sidebar → search → sync walkthrough anytime.
                         </div>
                       </div>
                       <button

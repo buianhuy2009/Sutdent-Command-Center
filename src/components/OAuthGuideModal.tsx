@@ -65,19 +65,19 @@ export const OAuthGuideModal: React.FC<OAuthGuideModalProps> = ({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 max-h-[92vh] flex flex-col overflow-y-auto">
+      <div className="bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 max-h-[92vh] flex flex-col overflow-y-auto">
         {/* Modal Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
+        <div className="flex items-start justify-between pb-4 border-b border-[#DFDACB] dark:border-[#2C2B27] shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
               <Globe className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+              <h3 className="text-base sm:text-lg font-bold text-[#141413] dark:text-[#FAF9F5] tracking-tight">
                 Google OAuth Access Configuration
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Allow any email or configure test users
+              <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8]">
+                Connect Google so your calendar, mail and files show up here — read-only, revoke anytime
               </p>
             </div>
           </div>

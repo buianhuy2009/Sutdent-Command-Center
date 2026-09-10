@@ -78,6 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex items-center justify-center flex-1 max-w-md px-4">
         <button
           onClick={onOpenCommandPalette}
+          data-tour="search"
           className="w-full bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]/30 rounded-xl py-1.5 px-3 text-xs flex items-center justify-between text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-2">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { X, Award, Sparkles, BookOpen, Layers, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
+import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.5.1';
+export const CURRENT_VERSION = '2.6.0';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,32 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.6.0',
+    date: 'September 10, 2026',
+    title: 'Everyday Polish — Deadlines, Focus & Search Feel Instant',
+    badge: 'Latest Update',
+    highlights: [
+      'Tracker shows what is urgent at a glance — overdue, due today and due-relative labels like “due in 2d”',
+      'Dashboard countdowns, timetable “now” line and Gantt today-line keep today’s plan in view',
+      'Pomodoro focus is calmer, morning check-in tracks mood, and Feynman cards show read time',
+      'Search is faster — command palette copies math answers, remembers recents, finds apps instantly',
+      'Gmail, Drive and Schedule get practical upgrades — unread badges, sorting, presets and CSV export',
+      'Scholarships, habits, study cards, citations and briefs — counts, streaks and one-click copy/download',
+    ],
+    details: [
+      'Assignment Tracker (011/039/040): urgency badges for overdue and due-today items, relative due labels (“due in 2d”, “due tomorrow”), grouped tasks view, rubric item counts, and one-click CSV export for your full list.',
+      'Dashboard + Schedule (012/021/037): live countdown chips to your next deadline, a “now” line across today’s timetable, and saved schedule presets so a normal school day takes one tap to rebuild.',
+      'Focus + Morning (013/020/042/043): Pomodoro polish with steadier transitions, morning check-in now logs mood alongside intention and target hours, chronotype preference persists, and Feynman explanations show estimated read time.',
+      'Search + Shortcuts (018/019/026/032): press ? to see every shortcut with search, command palette does math and copies the result, remembers your 10 recent tabs plus most-used apps, and the App Store finds tools as you type.',
+      'Gmail + Drive (033/035/036): inbox categories show unread badges, unread state is a reliable flag instead of a guess, and Drive sorts by name, date or size so big files surface fast.',
+      'Study loop (015/016/017/023/027/028/029/030/031/034/038/044/045): friendlier empty states, flashcard keyboard review with smart scheduling, quiz presets with timer, scholarship deadlines with badges, habit + sleep streaks, hardened study cards, citation one-click copy, paper-chat brief download, peer Q&A replies, and wiki copy that keeps formatting.',
+      'Landing (014): hero is clearer on phones and laptops — faster first paint, cleaner headline, and no confusing placeholder video.',
+    ]
+  },
+  {
     version: '2.5.1',
     date: 'September 06, 2026',
     title: 'True Two-Mode Theme, Calmer Home & Fixed App Icons',
-    badge: 'Latest Update',
     highlights: [
       'Dark mode is now exactly dark charcoal with cream text — no more off-color blue or pink tints',
       'Home screen is simpler — the Academic Overview block is gone, Today Plan and streaks stay',
@@ -35,7 +57,6 @@ const RELEASES: VersionRelease[] = [
     version: '2.5.0',
     date: 'September 06, 2026',
     title: 'Division A Kit: Home Fix, NASA Repair, AI Labs & Dossier',
-    badge: 'Latest Update',
     highlights: [
       'Home is calm again — the setup checklist moved below your Today Plan and can be dismissed for the day',
       'NASA Image of the Day finally works — turn it on in Settings and it appears instantly with a Retry button',

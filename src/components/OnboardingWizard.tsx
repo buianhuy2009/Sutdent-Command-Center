@@ -54,8 +54,8 @@ export const OnboardingWizard: React.FC<{
 
         {step === 1 && (
           <div className="space-y-3">
-            <h2 className="text-lg font-extrabold">Paste your Canvas feed</h2>
-            <p className="text-xs opacity-70">Canvas → Calendar → copy the Feed URL. <a className="underline" href="https://community.canvaslms.com/t5/Student-Guide/tkb-p/student" target="_blank" rel="noreferrer">Watch the 1-min video</a></p>
+            <h2 className="text-lg font-extrabold">Paste your Canvas calendar link</h2>
+            <p className="text-xs opacity-70">In Canvas → Calendar → copy the Calendar Feed link, paste it below, then press Test. <a className="underline" href="https://community.canvaslms.com/t5/Student-Guide/How-do-I-subscribe-to-the-Calendar-feed-using-Google-Calendar-as-a/ta-p/536" target="_blank" rel="noreferrer">Step-by-step guide</a></p>
             <input value={feedUrl} onChange={(e) => setFeedUrl(e.target.value)} placeholder="https://canvas…/feeds/calendars/…ics"
               className="w-full px-3 py-2.5 text-xs rounded-xl border bg-transparent" style={{ borderColor: 'var(--line)' }} aria-label="Canvas calendar feed URL" />
             <div className="flex gap-2">
@@ -101,9 +101,9 @@ export const OnboardingWizard: React.FC<{
           {step > 0
             ? <button onClick={() => setStep(step - 1)} className="font-semibold opacity-60 min-h-[44px] px-2">← Back</button>
             : <span />}
-          <button onClick={onSkip} className="opacity-60 min-h-[44px] px-2">Skip tour</button>
+          <button onClick={onSkip} className="opacity-60 min-h-[44px] px-2">Skip for now</button>
         </div>
-        <p className="text-[11px] opacity-50 flex items-center gap-1"><Link2 className="w-3 h-3" /> Deep links like ?w=tracker keep working even during onboarding.</p>
+        <p className="text-[11px] opacity-50 flex items-center gap-1"><Link2 className="w-3 h-3" /> You can open any tool directly from search, even during setup.</p>
       </div>
     </div>
   );

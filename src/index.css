@@ -570,7 +570,7 @@ html.dark .dark\:text-violet-300 { color: #E8A07E; }
   .bg-slate-200 { background-color: #DFDACB; }
   .border-slate-100 { border-color: #EFECE2; }
   .border-slate-200, .border-slate-300 { border-color: #DFDACB; }
-  .text-slate-400 { color: #8C897F; }
+  .text-slate-400, .text-slate-500 { color: #6B6860; }
   .text-slate-600, .text-slate-700 { color: #5C5A54; }
   .text-slate-800, .text-slate-900 { color: #141413; }
   .hover\:bg-slate-50:hover { background-color: #FAF9F5; }
@@ -594,6 +594,21 @@ html.dark .dark\:text-slate-400 { color: #B5B2A8; }
 html.dark .dark\:hover\:bg-slate-800:hover, html.dark .dark\:hover\:bg-slate-700:hover { background-color: #403D36; }
 html.dark .dark\:hover\:bg-slate-600:hover { background-color: #4A473E; }
 html.dark .dark\:hover\:text-slate-200:hover { color: #FAF9F5; }
+
+/* === Guided-tour spotlight — warm terracotta pulse on the real UI target === */
+.scc-tour-flash {
+  outline: 3px solid #D97757 !important;
+  outline-offset: 3px;
+  border-radius: 12px;
+  animation: scc-tour-pulse 1.6s ease-in-out;
+}
+@keyframes scc-tour-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 87, 0.45); }
+  50% { box-shadow: 0 0 0 8px rgba(217, 119, 87, 0.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scc-tour-flash { animation: none; }
+}
 
 /* iOS input zoom prevention — only on mobile and only when NOT compact + touch-action */
 @media (max-width: 768px) {
