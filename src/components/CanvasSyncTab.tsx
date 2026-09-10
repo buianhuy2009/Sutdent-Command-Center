@@ -36,6 +36,22 @@ const ALLOWED_TAGS = ['p', 'b', 'i', 'u', 'a', 'ul', 'ol', 'li', 'br', 'strong',
 const sanitizeAssignmentDescription = (html: string) =>
   DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR: ['href', 'title', 'target'] });
 
+// Local-midnight day-diff relative label for due dates (plain text only, XSS-safe).
+const getRelativeDueLabel = (dueAt?: string | null): string | null => {
+  if (!dueAt) return null;
+  const d = new Date(dueAt);
+  if (Number.isNaN(d.getTime())) return null;
+  const now = new Date();
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startDue = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = Math.round((startDue.getTime() - startToday.getTime()) / 86400000);
+  if (diff === 0) return 'today';
+  if (diff === 1) return 'tomorrow';
+  if (diff > 1) return `in ${diff}d`;
+  if (diff === -1) return 'overdue';
+  return `overdue ${Math.abs(diff)}d`;
+};
+
 interface CanvasSyncTabProps {
   settings: CanvasSettings;
   onSaveSettings: (settings: CanvasSettings) => void;
@@ -513,6 +529,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                     assignment.dueAt &&
                     new Date(assignment.dueAt).getTime() - Date.now() < 86400000 * 3 &&
                     new Date(assignment.dueAt).getTime() > Date.now();
+                  const relativeDueLabel = getRelativeDueLabel(assignment.dueAt);
 
                   return (
                     <tr
@@ -558,6 +575,9 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                         <span className={isDueSoon ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-[#8C897F]'}>
                           {assignment.dueAt ? new Date(assignment.dueAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No Due Date'}
                         </span>
+                        {relativeDueLabel && (
+                          <span className="ml-1 text-[#8C897F]">· {relativeDueLabel}</span>
+                        )}
                       </td>
 
                       {/* Status */}
@@ -628,6 +648,9 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                   <span>Due Date:</span>
                   <span className="font-semibold text-[#141413] dark:text-[#FAF9F5]">
                     {selectedAssignment.dueAt ? new Date(selectedAssignment.dueAt).toLocaleString() : 'None'}
+                    {getRelativeDueLabel(selectedAssignment.dueAt) && (
+                      <span className="ml-1 font-normal text-[#8C897F]">· {getRelativeDueLabel(selectedAssignment.dueAt)}</span>
+                    )}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
