@@ -97,6 +97,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {onOpenGoogleSync && (
           <button
             id="btn-nav-google-sync"
+            data-tour="sync"
             onClick={onOpenGoogleSync}
             className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
               isGoogleConnected
@@ -112,6 +113,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           id="btn-nav-ai-coach"
+          data-tour="coach"
           onClick={onToggleAiChat}
           className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
             isAiChatOpen

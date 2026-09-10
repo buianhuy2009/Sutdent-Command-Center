@@ -563,7 +563,9 @@ html.dark .dark\:text-violet-300 { color: #E8A07E; }
 
 /* === Slate-to-palette neutralization (cool grays → warm neutrals) ===
    Straggler components (QuickDraft, OAuthGuide, Landing, Drive fallback)
-   instantly follow the 3-color theme without per-file rewrites. */
+   instantly follow the 3-color theme without per-file rewrites.
+   Blue/cyan/sky/orange washes map to warm neutrals + terracotta text —
+   brand tiles (AppLogo) and semantic status colors are untouched. */
 @layer base {
   .bg-slate-50 { background-color: #FAF9F5; }
   .bg-slate-100 { background-color: #EFECE2; }
@@ -578,6 +580,12 @@ html.dark .dark\:text-violet-300 { color: #E8A07E; }
   .hover\:bg-slate-300:hover { background-color: #DFDACB; }
   .hover\:text-slate-600:hover, .hover\:text-slate-800:hover, .hover\:text-slate-900:hover { color: #141413; }
   .border-violet-200, .border-violet-300, .border-indigo-200 { border-color: #EAC4A8; }
+  .bg-blue-50, .bg-cyan-50, .bg-sky-50, .bg-indigo-50 { background-color: #F9E9DF; }
+  .bg-blue-100, .bg-cyan-100, .bg-sky-100, .bg-orange-100 { background-color: #F5E2D5; }
+  .border-blue-200, .border-cyan-200, .border-sky-200, .border-indigo-300, .border-orange-200, .border-orange-300 { border-color: #EAC4A8; }
+  .text-blue-600, .text-blue-700, .text-cyan-700, .text-cyan-800, .text-sky-900, .text-indigo-500, .text-indigo-600, .text-orange-600, .text-orange-700 { color: #AA4F32; }
+  .hover\:border-blue-400:hover, .hover\:border-orange-400:hover, .hover\:border-indigo-400:hover { border-color: #D97757; }
+  .hover\:bg-blue-50:hover, .hover\:bg-orange-50:hover { background-color: #F9E9DF; }
 }
 html.dark .dark\:bg-slate-900, html.dark .dark\:bg-slate-800 { background-color: #282723; }
 html.dark .dark\:bg-slate-800\/60 { background-color: color-mix(in srgb, #282723 60%, transparent); }
@@ -591,6 +599,18 @@ html.dark .dark\:border-violet-800 { border-color: #7A4A34; }
 html.dark .dark\:text-slate-200 { color: #FAF9F5; }
 html.dark .dark\:text-slate-300 { color: #E6E4DC; }
 html.dark .dark\:text-slate-400 { color: #B5B2A8; }
+html.dark .dark\:bg-blue-950\/40, html.dark .dark\:bg-blue-950\/60,
+html.dark .dark\:bg-cyan-950\/40, html.dark .dark\:bg-sky-950\/30,
+html.dark .dark\:bg-indigo-950\/40, html.dark .dark\:bg-indigo-950\/60,
+html.dark .dark\:bg-orange-950\/40, html.dark .dark\:bg-orange-950\/60,
+html.dark .dark\:bg-orange-950\/10 { background-color: rgba(217, 119, 87, 0.12); }
+html.dark .dark\:text-blue-200, html.dark .dark\:text-blue-300, html.dark .dark\:text-blue-400,
+html.dark .dark\:text-cyan-300, html.dark .dark\:text-indigo-200, html.dark .dark\:text-indigo-300,
+html.dark .dark\:text-orange-300, html.dark .dark\:text-orange-400 { color: #E8A07E; }
+html.dark .dark\:border-blue-800, html.dark .dark\:border-cyan-800,
+html.dark .dark\:border-indigo-800, html.dark .dark\:border-indigo-900\/60,
+html.dark .dark\:border-orange-800 { border-color: #7A4A34; }
+html.dark .dark\:bg-\[\#0B1120\] { background-color: #141413; }
 html.dark .dark\:hover\:bg-slate-800:hover, html.dark .dark\:hover\:bg-slate-700:hover { background-color: #403D36; }
 html.dark .dark\:hover\:bg-slate-600:hover { background-color: #4A473E; }
 html.dark .dark\:hover\:text-slate-200:hover { color: #FAF9F5; }
@@ -602,12 +622,17 @@ html.dark .dark\:hover\:text-slate-200:hover { color: #FAF9F5; }
   border-radius: 12px;
   animation: scc-tour-pulse 1.6s ease-in-out;
 }
+.scc-tour-spotlight {
+  transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease;
+  pointer-events: none;
+}
 @keyframes scc-tour-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 87, 0.45); }
   50% { box-shadow: 0 0 0 8px rgba(217, 119, 87, 0.12); }
 }
 @media (prefers-reduced-motion: reduce) {
   .scc-tour-flash { animation: none; }
+  .scc-tour-spotlight { transition: none; }
 }
 
 /* iOS input zoom prevention — only on mobile and only when NOT compact + touch-action */

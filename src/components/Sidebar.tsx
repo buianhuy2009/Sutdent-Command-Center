@@ -176,6 +176,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     onClick={() => onSelectTab(app.id)}
                     aria-current={isActive ? 'page' : undefined}
+                    data-tour-tab={app.id}
                     className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D97757] ${
                       isExpanded ? 'px-3 py-2.5 justify-between gap-3 min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'
                     } ${

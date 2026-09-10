@@ -195,10 +195,18 @@ export function saveCanvasSettings(settings: CanvasSettings, uid?: string | null
  * Parse an iCalendar (.ics) string from Canvas Calendar Feed
  */
 export function parseCanvasICS(icsText: string): CanvasAssignment[] {
+  // A feed that stopped working returns an HTML login page or an error blob
+  // instead of iCalendar — never mistake that for "zero assignments".
   if (!icsText || !icsText.includes('BEGIN:VCALENDAR')) {
-    if (icsText && icsText.includes('error')) {
-      throw new Error(`Invalid Canvas calendar feed response: ${icsText.slice(0, 100)}`);
+    const preview = (icsText || '').slice(0, 120);
+    if (/<!doctype html|<html/i.test(icsText || '')) {
+      throw new Error(
+        'Canvas feed returned a login page instead of calendar data — the feed link expired or needs sign-in. In Canvas → Calendar → Calendar Feed, copy a fresh link, save it, and sync again.'
+      );
     }
+    throw new Error(
+      `Canvas feed did not return calendar data${preview ? ` (got: ${preview})` : ''} — re-copy the Calendar Feed link from Canvas and try again.`
+    );
   }
 
   const assignments: CanvasAssignment[] = [];
@@ -364,6 +372,13 @@ export async function fetchCanvasAssignmentsFromApi(
   if (!cleanToken) return [];
   const headers = { 'x-canvas-token': cleanToken };
 
+  // Tracks whether ANY Canvas endpoint answered — if none did, the URL/token
+  // is wrong and we must throw (never return a silent [] that looks "caught up").
+  let sawTodoOk = false;
+  let sawCoursesOk = false;
+  let sawPlannerOk = false;
+  let sawUpcomingOk = false;
+
   // 1. Fetch Canvas "To Do" list (authoritative pending homework list)
   const todoIds = new Set<string>();
   try {
@@ -371,6 +386,7 @@ export async function fetchCanvasAssignmentsFromApi(
     const proxyTodoUrl = `/api/canvas/proxy?url=${encodeURIComponent(todoUrl)}`;
     const todoRes = await fetch(proxyTodoUrl, { headers });
     if (todoRes.ok) {
+      sawTodoOk = true;
       const todoItems = await todoRes.json();
       if (Array.isArray(todoItems)) {
         todoItems.forEach((t: any) => {
@@ -397,6 +413,7 @@ export async function fetchCanvasAssignmentsFromApi(
         const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(ep)}`;
         const res = await fetch(proxyUrl, { headers });
         if (res.ok) {
+          sawCoursesOk = true;
           const list = await res.json();
           if (Array.isArray(list)) {
             list.forEach((c: any) => {
@@ -507,6 +524,7 @@ export async function fetchCanvasAssignmentsFromApi(
     const plannerRes = await fetch(proxyPlannerUrl, { headers });
 
     if (plannerRes.ok) {
+      sawPlannerOk = true;
       const items = await plannerRes.json();
       if (Array.isArray(items) && items.length > 0) {
         items
@@ -563,6 +581,7 @@ export async function fetchCanvasAssignmentsFromApi(
   const res = await fetch(proxyUrl, { headers });
 
   if (res.ok) {
+    sawUpcomingOk = true;
     const events = await res.json();
     if (Array.isArray(events)) {
       return events
@@ -591,6 +610,14 @@ export async function fetchCanvasAssignmentsFromApi(
           };
         });
     }
+  }
+
+  // No endpoint answered at all — the host or token is wrong. Throw so the
+  // UI shows an error banner instead of an empty "all caught up" list.
+  if (!sawTodoOk && !sawCoursesOk && !sawPlannerOk && !sawUpcomingOk) {
+    throw new Error(
+      'Canvas API did not respond — check that the Canvas URL is exactly your school host and the API token is valid (Canvas → Account → Settings → New Access Token), then retry.'
+    );
   }
 
   return [];

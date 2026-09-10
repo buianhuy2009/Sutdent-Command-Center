@@ -154,7 +154,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
     >
       <div className="bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl max-w-2xl w-full p-6 shadow-2xl animate-in zoom-in-95 my-8 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center justify-between pb-4 border-b border-[#DFDACB] dark:border-[#2C2B27]">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 flex items-center justify-center">
               <Send className="w-4 h-4" />
@@ -173,14 +173,14 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
 
           <div className="flex items-center gap-2">
             {/* Language Switch */}
-            <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-[#DFDACB] dark:border-[#2C2B27]">
+            <div className="flex items-center bg-[#FAF9F5] dark:bg-[#252422] rounded-lg p-0.5 border border-[#DFDACB] dark:border-[#2C2B27]">
               <button
                 type="button"
                 onClick={() => setLanguage('en')}
                 className={`px-2 py-0.5 text-[11px] font-bold rounded ${
                   language === 'en'
-                    ? 'bg-white dark:bg-slate-700 text-[#141413] dark:text-[#FAF9F5] shadow-2xs'
-                    : 'text-slate-500 hover:text-slate-800'
+                    ? 'bg-white dark:bg-[#252422] text-[#141413] dark:text-[#FAF9F5] shadow-2xs'
+                    : 'text-[#6B6860] hover:text-[#141413] dark:text-[#B5B2A8] dark:hover:text-[#FAF9F5]'
                 }`}
               >
                 EN
@@ -200,7 +200,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
 
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="text-[#6B6860] hover:text-[#141413] dark:text-[#B5B2A8] dark:hover:text-[#FAF9F5] p-1.5 rounded-lg hover:bg-[#FAF9F5] dark:hover:bg-[#252422] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -210,7 +210,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
         <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
           {/* Intent chips */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-[#141413] dark:text-[#FAF9F5] mb-1.5">
               {language === 'vi' ? 'Mục đích Email' : 'Email Purpose'}
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -222,7 +222,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
                   className={`px-3 py-1 text-xs font-medium rounded-lg transition-all cursor-pointer ${
                     intent === chip.id
                       ? 'bg-rose-600 text-white shadow-xs font-semibold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#141413] dark:text-[#FAF9F5] hover:bg-[#EFECE2] dark:hover:bg-[#2C2B27]'
                   }`}
                 >
                   {chip.label}
@@ -234,7 +234,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
           {/* Form fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
                 {language === 'vi' ? 'Tên Thầy / Cô / Giảng viên *' : 'Teacher / Instructor Name *'}
               </label>
               <input
@@ -247,7 +247,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
                 {language === 'vi' ? 'Tên Môn học / Lớp *' : 'Course / Subject *'}
               </label>
               <input
@@ -261,7 +261,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
               {language === 'vi' ? 'Chi tiết câu hỏi / Lý do / Ngữ cảnh' : 'Context / Details / Specific Request'}
             </label>
             <textarea
@@ -278,15 +278,15 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
           </div>
 
           {/* File attachments & Custom reference links */}
-          <div className="space-y-3 p-3.5 bg-[#FAF9F5] dark:bg-[#252422]/40 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-            <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+          <div className="space-y-3 p-3.5 bg-[#FAF9F5] dark:bg-[#252422]/40 rounded-2xl border border-[#DFDACB]/60 dark:border-[#2C2B27]">
+            <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-1.5">
               <Paperclip className="w-3.5 h-3.5 text-rose-500" />
               <span>{language === 'vi' ? 'Tài liệu Đính kèm & Đường dẫn' : 'Attachments & Reference Links'}</span>
             </h4>
 
             {/* Selected items badges */}
             {(selectedFiles.length > 0 || customLinks.length > 0) && (
-              <div className="flex flex-wrap gap-1.5 pb-2 border-b border-slate-200/60 dark:border-slate-700/60">
+              <div className="flex flex-wrap gap-1.5 pb-2 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]">
                 {selectedFiles.map((file) => (
                   <span
                     key={file.id}
@@ -328,11 +328,11 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               {/* Google Drive Selection */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-[11px] font-bold text-[#6B6860] dark:text-[#B5B2A8] mb-1">
                   {language === 'vi' ? 'Chọn tài liệu từ Google Drive' : 'Attach from Google Drive'}
                 </label>
                 {recentFiles.length === 0 ? (
-                  <span className="text-[10px] text-slate-400 block py-1.5">
+                  <span className="text-[10px] text-[#6B6860] dark:text-[#B5B2A8] block py-1.5">
                     {language === 'vi' ? 'Chưa kết nối Drive / Không có tài liệu' : 'No Drive files loaded'}
                   </span>
                 ) : (
@@ -348,7 +348,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
                         }
                         e.target.value = "";
                       }}
-                      className="flex-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-slate-700 dark:text-slate-200 cursor-pointer outline-none focus:ring-1 focus:ring-rose-500 truncate"
+                      className="flex-1 px-2.5 py-1.5 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[#141413] dark:text-[#FAF9F5] cursor-pointer outline-none focus:ring-1 focus:ring-rose-500 truncate"
                     >
                       <option value="">
                         {language === 'vi' ? '-- Chọn file Drive gần đây --' : '-- Choose recent Drive file --'}
@@ -365,7 +365,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
 
               {/* Add Custom URL Link */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-[11px] font-bold text-[#6B6860] dark:text-[#B5B2A8] mb-1">
                   {language === 'vi' ? 'Thêm liên kết (URL, Github, Vercel...)' : 'Add custom URL link'}
                 </label>
                 <div className="flex gap-1.5">
@@ -374,7 +374,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
                     value={newLinkText}
                     onChange={(e) => setNewLinkText(e.target.value)}
                     placeholder="https://..."
-                    className="flex-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-rose-500 outline-none"
+                    className="flex-1 px-2.5 py-1.5 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[#141413] dark:text-[#FAF9F5] focus:ring-1 focus:ring-rose-500 outline-none"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -393,7 +393,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
                         setNewLinkText('');
                       }
                     }}
-                    className="px-2.5 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl text-slate-800 dark:text-slate-200 font-bold transition-colors cursor-pointer"
+                    className="px-2.5 py-1.5 bg-[#EFECE2] dark:bg-[#252422] hover:bg-[#DFDACB] rounded-xl text-[#141413] dark:text-[#FAF9F5] font-bold transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
@@ -405,11 +405,11 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
           {/* Tone Selector & Generate Button */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 font-medium">{language === 'vi' ? 'Văn phong:' : 'Tone:'}</span>
+              <span className="text-xs text-[#6B6860] dark:text-[#B5B2A8] font-medium">{language === 'vi' ? 'Văn phong:' : 'Tone:'}</span>
               <select
                 value={tone}
                 onChange={(e) => setTone(e.target.value as any)}
-                className="px-2.5 py-1 text-xs bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg text-slate-700 dark:text-slate-300 font-medium"
+                className="px-2.5 py-1 text-xs bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg text-[#141413] dark:text-[#FAF9F5] font-medium"
               >
                 <option value="polite_respectful">{language === 'vi' ? 'Kính trọng, lễ phép' : 'Polite & Respectful'}</option>
                 <option value="formal">{language === 'vi' ? 'Trang trọng học vụ' : 'Formal Academic'}</option>
@@ -442,39 +442,39 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
           {generatedBody && (
             <div className="mt-4 p-4 rounded-xl bg-[#FAF9F5] dark:bg-[#252422]/60 border border-[#DFDACB] dark:border-[#2C2B27] space-y-3 animate-in fade-in">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5 text-rose-500" />
                   <span>{language === 'vi' ? 'Bản thảo Email Sẵn Sàng' : 'Generated Email Output'}</span>
                 </span>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-[#6B6860] dark:text-[#B5B2A8]">
                   {language === 'vi' ? 'Có thể chỉnh sửa trực tiếp trước khi gửi' : 'Review & edit before sending'}
                 </span>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-0.5">
+                <label className="block text-[11px] font-semibold text-[#6B6860] dark:text-[#B5B2A8] mb-0.5">
                   {language === 'vi' ? 'Tiêu đề Email (Subject):' : 'Subject Line:'}
                 </label>
                 <input
                   type="text"
                   value={generatedSubject}
                   onChange={(e) => setGeneratedSubject(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs font-medium bg-white dark:bg-slate-900 border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg dark:text-white"
+                  className="w-full px-3 py-1.5 text-xs font-medium bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg text-[#141413] dark:text-[#FAF9F5]"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-500 mb-0.5">
+                <label className="block text-[11px] font-semibold text-[#6B6860] dark:text-[#B5B2A8] mb-0.5">
                   {language === 'vi' ? 'Nội dung Email (Body):' : 'Body:'}
                 </label>
                 <textarea
                   rows={7}
                   value={generatedBody}
                   onChange={(e) => setGeneratedBody(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg dark:text-white leading-relaxed font-sans"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg text-[#141413] dark:text-[#FAF9F5] leading-relaxed font-sans"
                 />
                 <div className="flex items-center justify-end pt-1">
-                  <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                  <span className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8]">
                     {draftWordCount} words • {draftCharCount} chars{draftWordCount > 0 ? ` • ~${draftReadMins} min read` : ''}
                   </span>
                 </div>
@@ -485,7 +485,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="px-3 py-1.5 text-xs font-semibold bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-3 py-1.5 text-xs font-semibold bg-[#EFECE2] dark:bg-[#252422] hover:bg-[#DFDACB] text-[#141413] dark:text-[#FAF9F5] rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   {copied ? (
                     <>
@@ -520,7 +520,7 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
                   )}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg inline-flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-1.5 text-xs font-semibold bg-[#D97757] hover:bg-[#C86646] text-white rounded-lg inline-flex items-center gap-1.5 transition-colors"
                 >
                   <span>{language === 'vi' ? 'Mở trong Gmail Web' : 'Open in Gmail Web'}</span>
                   <ExternalLink className="w-3.5 h-3.5" />

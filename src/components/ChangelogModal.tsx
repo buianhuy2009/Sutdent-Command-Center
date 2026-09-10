@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.6.0';
+export const CURRENT_VERSION = '2.6.1';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,27 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.6.1',
+    date: 'September 10, 2026',
+    title: 'True Palette, Point-At-You Tour & Honest Canvas Errors',
+    badge: 'Latest Update',
+    highlights: [
+      'Every screen now follows the Warm Cream / Charcoal / Terracotta palette in both modes — no more blue or slate intruders',
+      'The intro tour now points directly at the real buttons and auto-moves you between tabs as you press Next',
+      'Canvas tells you plainly when a sync returns nothing — expired feed links and bad tokens get a named fix, not a fake “all caught up”',
+      'Same-named assignments in different courses no longer collapse into one row',
+    ],
+    details: [
+      'Landing page, Daily Schedule, Google sign-in help, focus scheduler and Polite Mailer were still rendering slate-gray surfaces with indigo, blue, cyan and orange accents. All surfaces, text, borders and buttons now use Warm Cream #FAF9F5, Charcoal #141413 and Terracotta #D97757 in both modes, with a stylesheet safety net catching future stragglers. App icons keep their brand colors.',
+      'The old tour was a centered card that described the UI in words and made you find everything yourself. It is now a spotlight walkthrough: a terracotta ring highlights the live sidebar, search, Sync, Tracker, AI Coach and Focus targets, and pressing Next or Back moves you to the right tab automatically. X skips, dots jump, Esc closes, and “Try it” ends the tour and opens the real feature.',
+      'When Canvas was misconfigured, the tab showed an empty “All caught up!” with no error. Expired feed links (which return a login page), dead tokens and unreachable hosts now raise a named error banner with the exact fix and a Try Again button, and a configured-but-empty sync explains itself instead of pretending everything is done.',
+      'The sync merged assignments by bare name only, so “Problem Set 1” in Physics and Math collapsed into one row. Merging now keys on name + course + due date.',
+    ]
+  },
+  {
     version: '2.6.0',
     date: 'September 10, 2026',
     title: 'Everyday Polish — Deadlines, Focus & Search Feel Instant',
-    badge: 'Latest Update',
     highlights: [
       'Tracker shows what is urgent at a glance — overdue, due today and due-relative labels like “due in 2d”',
       'Dashboard countdowns, timetable “now” line and Gantt today-line keep today’s plan in view',

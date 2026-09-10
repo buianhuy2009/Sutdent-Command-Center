@@ -107,7 +107,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Main Headline — single clear statement, scales down on small screens */}
-            <h1 className="text-2xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.15] max-w-4xl mx-auto text-balance break-words" style={{ fontFamily: 'Inter, ui-sans-serif, system-ui' }}>
+            <h1 className="text-2xl sm:text-5xl lg:text-6xl font-extrabold text-[#141413] dark:text-[#FAF9F5] tracking-tight leading-[1.15] max-w-4xl mx-auto text-balance break-words" style={{ fontFamily: 'Inter, ui-sans-serif, system-ui' }}>
               Conquer your semester with a{' '}
               <span className="text-[#D97757]">
                 unified student hub
@@ -115,7 +115,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </h1>
 
             {/* Subcopy — single line */}
-            <p className="mt-4 sm:mt-6 text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed text-balance break-words">Canvas LMS, Google Calendar &amp; Gmail in one dashboard — with Gemini AI study coaching.</p>
+            <p className="mt-4 sm:mt-6 text-sm sm:text-base lg:text-lg text-[#6B6860] dark:text-[#B5B2A8] max-w-2xl mx-auto leading-relaxed text-balance break-words">Canvas LMS, Google Calendar &amp; Gmail in one dashboard — with Gemini AI study coaching.</p>
 
             {/* CTAs — two max: primary = onSignIn, secondary = onExploreDemo; stack on mobile */}
             <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 px-4 sm:px-0 max-w-full">
@@ -133,14 +133,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <button
                 id="btn-landing-explore-demo"
                 onClick={onExploreDemo}
-                className="w-full sm:w-auto max-w-full min-h-[48px] px-6 py-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-2xl text-base font-semibold transition-all cursor-pointer shadow-xs inline-flex items-center justify-center"
+                className="w-full sm:w-auto max-w-full min-h-[48px] px-6 py-4 bg-white dark:bg-[#1A1917] hover:bg-[#FAF9F5] dark:hover:bg-[#252422] text-[#141413] dark:text-[#FAF9F5] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl text-base font-semibold transition-all cursor-pointer shadow-xs inline-flex items-center justify-center"
               >
                 <span className="truncate">Explore Live Demo Mode</span>
               </button>
             </div>
 
             {onSignInWorkspace && (
-              <p className="mt-3 max-w-full overflow-hidden px-4 sm:px-0 text-center text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              <p className="mt-3 max-w-full overflow-hidden px-4 sm:px-0 text-center text-xs leading-relaxed text-[#6B6860] dark:text-[#B5B2A8]">
                 <span className="break-words">Need Calendar &amp; Drive sync at login?{' '}</span>
                 <button
                   type="button"
@@ -154,13 +154,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             )}
 
             {/* Social-proof stats strip — glassmorphism */}
-            <div className="mt-6 mx-4 sm:mx-auto max-w-xl backdrop-blur-md rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] bg-white/60 dark:bg-[#1A1917]/60 px-4 py-3.5 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2.5 sm:gap-6 text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-200 shadow-sm">
+            <div className="mt-6 mx-4 sm:mx-auto max-w-xl backdrop-blur-md rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] bg-white/60 dark:bg-[#1A1917]/60 px-4 py-3.5 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2.5 sm:gap-6 text-xs sm:text-[13px] font-semibold text-[#141413] dark:text-[#FAF9F5] shadow-sm">
               <span className="inline-flex min-w-0 items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" aria-hidden="true" />
                 <span className="truncate">100% Free &amp; Open Source</span>
               </span>
               <span className="inline-flex min-w-0 items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" aria-hidden="true" />
+                <span className="w-2 h-2 rounded-full bg-[#D97757] shrink-0" aria-hidden="true" />
                 <span className="truncate">Local-First &amp; Offline Ready</span>
               </span>
               <span className="inline-flex min-w-0 items-center gap-2">
@@ -175,7 +175,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Trust Badges — always 3col on 375px with gap-2 */}
-            <div className="mt-8 grid grid-cols-3 gap-2 sm:gap-6 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 max-w-xl mx-auto px-4 sm:px-0">
+            <div className="mt-8 grid grid-cols-3 gap-2 sm:gap-6 text-[11px] sm:text-xs text-[#6B6860] dark:text-[#B5B2A8] max-w-xl mx-auto px-4 sm:px-0">
               <div className="flex min-w-0 flex-wrap items-center justify-center gap-1.5 text-center">
                 <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
                 <span className="min-w-0 truncate">Free &amp; OSS</span>
@@ -242,115 +242,115 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
 
         {/* Feature Grid Section */}
-        <section className="py-12 bg-white dark:bg-slate-900 border-y border-slate-200/80 dark:border-slate-800">
+        <section className="py-12 bg-white dark:bg-[#141413] border-y border-[#DFDACB] dark:border-[#2C2B27]">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto mb-12">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#141413] dark:text-[#FAF9F5] tracking-tight">
                 Everything you need to excel in your classes
               </h2>
-              <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+              <p className="mt-3 text-sm text-[#6B6860] dark:text-[#B5B2A8]">
                 Designed specifically for modern high school and university students balancing coursework, exams, and projects.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Feature 1: Canvas LMS */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-orange-400 dark:hover:border-orange-500 transition-all shadow-card flex flex-col justify-between">
+              <div className="bg-[#FAF9F5] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-card flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-[#D97757]/15 text-[#D97757] flex items-center justify-center mb-4">
                     <Layers className="w-6 h-6" strokeWidth={1.75} />
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Canvas LMS Live Sync</h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                  <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">Canvas LMS Live Sync</h3>
+                  <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] mt-2 leading-relaxed">
                     Filter assignments into <strong>Unfinished</strong> and <strong>Finished</strong> views, filter by course subject, and jump directly to quizzes with one-click Canvas redirect buttons.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                <div className="mt-4 pt-3 border-t border-[#DFDACB] dark:border-[#2C2B27] text-[11px] font-semibold text-[#D97757] flex items-center gap-1">
                   <span>Zero Manual Data Entry</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>
               </div>
 
               {/* Feature 2: AI Study Coach */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-card flex flex-col justify-between">
+              <div className="bg-[#FAF9F5] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-card flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-violet-100 dark:bg-violet-950/60 text-[#7C3AED] dark:text-violet-300 flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-[#D97757]/15 text-[#D97757] flex items-center justify-center mb-4">
                     <Sparkles className="w-6 h-6" strokeWidth={1.75} />
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">AI Study Coach (Gemini 2.0 Flash)</h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                  <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">AI Study Coach (Gemini 2.0 Flash)</h3>
+                  <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] mt-2 leading-relaxed">
                     Ask questions, plan 45-minute focus blocks, break down complex essays, and get personalized study recommendations aware of your real assignments and schedule.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-[#7C3AED] dark:text-violet-300 flex items-center gap-1">
+                <div className="mt-4 pt-3 border-t border-[#DFDACB] dark:border-[#2C2B27] text-[11px] font-semibold text-[#D97757] flex items-center gap-1">
                   <span>Powered by Gemini 2.0 Flash</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>
               </div>
 
               {/* Feature 3: Gmail Scanner */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-emerald-400 dark:hover:border-emerald-500 transition-all shadow-card flex flex-col justify-between">
+              <div className="bg-[#FAF9F5] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-card flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
                     <Mail className="w-6 h-6" strokeWidth={1.75} />
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Gmail Scanner & Spam Filter</h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                  <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">Gmail Scanner & Spam Filter</h3>
+                  <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] mt-2 leading-relaxed">
                     Intelligently categorizes teacher emails, isolates exam alerts, and filters out shopping & newsletter spam with bilingual (EN/VI) support and one-click quick draft replies.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <div className="mt-4 pt-3 border-t border-[#DFDACB] dark:border-[#2C2B27] text-[11px] font-semibold text-[#D97757] flex items-center gap-1">
                   <span>Smart Spam Shield</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>
               </div>
 
               {/* Feature 4: Assignment Tracker */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-emerald-400 dark:hover:border-emerald-500 transition-all shadow-card flex flex-col justify-between">
+              <div className="bg-[#FAF9F5] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-card flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
                     <CheckSquare className="w-6 h-6" strokeWidth={1.75} />
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Master Assignment Tracker</h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                  <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">Master Assignment Tracker</h3>
+                  <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] mt-2 leading-relaxed">
                     Add tasks with natural language "Smart Add" (e.g. <em>'Physics lab due next Friday'</em>), track priority matrices, and sync two-way with Google Sheets.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <div className="mt-4 pt-3 border-t border-[#DFDACB] dark:border-[#2C2B27] text-[11px] font-semibold text-[#D97757] flex items-center gap-1">
                   <span>Google Sheets Integration</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>
               </div>
 
               {/* Feature 5: Google Drive Organizer */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-blue-400 dark:hover:border-blue-500 transition-all shadow-card flex flex-col justify-between">
+              <div className="bg-[#FAF9F5] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-card flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-[#D97757]/15 text-[#D97757] flex items-center justify-center mb-4">
                     <FileText className="w-6 h-6" strokeWidth={1.75} />
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Drive File Categorizer</h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                  <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">Drive File Categorizer</h3>
+                  <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] mt-2 leading-relaxed">
                     Automatically sorts school files into Google Docs, Sheets, Slides, and PDFs with quick-search so you never lose lecture slides or homework sheets.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                <div className="mt-4 pt-3 border-t border-[#DFDACB] dark:border-[#2C2B27] text-[11px] font-semibold text-[#D97757] flex items-center gap-1">
                   <span>Categorized Files</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>
               </div>
 
               {/* Feature 6: Doc Starter Studio */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-card flex flex-col justify-between">
+              <div className="bg-[#FAF9F5] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] dark:hover:border-[#D97757] transition-all shadow-card flex flex-col justify-between">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-[#7C3AED] dark:text-violet-300 flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-[#D97757]/15 text-[#D97757] flex items-center justify-center mb-4">
                     <Zap className="w-6 h-6" strokeWidth={1.75} />
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Doc Starter Studio</h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                  <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">Doc Starter Studio</h3>
+                  <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] mt-2 leading-relaxed">
                     Generate professionally formatted MLA 9th or APA 7th edition Google Docs directly in your Google Drive with customizable action milestones.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 text-[11px] font-semibold text-[#7C3AED] dark:text-violet-300 flex items-center gap-1">
+                <div className="mt-4 pt-3 border-t border-[#DFDACB] dark:border-[#2C2B27] text-[11px] font-semibold text-[#D97757] flex items-center gap-1">
                   <span>MLA & APA Formatted</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>
@@ -388,10 +388,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </section>
         {/* Privacy & Scopes Transparency — consolidated single disclosure */}
-        <section id="privacy" className="py-10 bg-white dark:bg-slate-900 border-y border-slate-200 dark:border-slate-800">
+        <section id="privacy" className="py-10 bg-white dark:bg-[#141413] border-y border-[#DFDACB] dark:border-[#2C2B27]">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-3">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center justify-center gap-2"><ShieldCheck className="w-4 h-4 text-[#D97757]" /> Privacy — Why we request Google scopes</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">Student Command Center requests <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">calendar.readonly</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">gmail.readonly</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">drive.readonly</code>, <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">spreadsheets</code> and 7 other scopes <em>only</em> to sync your own data locally. No data leaves your browser except for Gemini AI summaries (truncated snippets). Tokens stay in IndexedDB, never logged. Revoke anytime in Google Account.</p>
+            <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center justify-center gap-2"><ShieldCheck className="w-4 h-4 text-[#D97757]" /> Privacy — Why we request Google scopes</h3>
+            <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] leading-relaxed">Student Command Center requests <code className="font-mono bg-[#EFECE2] dark:bg-[#252422] px-1 py-0.5 rounded">calendar.readonly</code>, <code className="font-mono bg-[#EFECE2] dark:bg-[#252422] px-1 py-0.5 rounded">gmail.readonly</code>, <code className="font-mono bg-[#EFECE2] dark:bg-[#252422] px-1 py-0.5 rounded">drive.readonly</code>, <code className="font-mono bg-[#EFECE2] dark:bg-[#252422] px-1 py-0.5 rounded">spreadsheets</code> and 7 other scopes <em>only</em> to sync your own data locally. No data leaves your browser except for Gemini AI summaries (truncated snippets). Tokens stay in IndexedDB, never logged. Revoke anytime in Google Account.</p>
             <div className="overflow-x-auto text-left">
               <table className="w-full text-[11px] border-collapse mt-2">
                 <thead><tr className="bg-[#EFECE2] dark:bg-[#1F1E1B]"><th className="p-1.5 border">Scope</th><th className="p-1.5 border">Purpose</th><th className="p-1.5 border">Stored</th></tr></thead>
@@ -418,7 +418,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <button
                 onClick={onSignIn}
                 disabled={isLoggingIn}
-                className="px-8 py-4 bg-white text-[#D97757] hover:bg-orange-50 disabled:opacity-50 rounded-2xl text-base font-extrabold shadow-xl inline-flex items-center gap-3 transition-all cursor-pointer hover:scale-[1.02]"
+                className="px-8 py-4 bg-white text-[#D97757] hover:bg-[#FAF9F5] disabled:opacity-50 rounded-2xl text-base font-extrabold shadow-xl inline-flex items-center gap-3 transition-all cursor-pointer hover:scale-[1.02]"
               >
                 <GraduationCap className="w-5 h-5 text-[#D97757]" />
                 <span>Get Started Free with Google</span>
@@ -457,12 +457,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       )}
 
       {/* Footer — Privacy / Terms / Contact */}
-      <footer className="bg-white dark:bg-[#0B1120] border-t border-slate-200 dark:border-slate-800 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col gap-4 text-xs text-slate-500 dark:text-slate-400">
+      <footer className="bg-white dark:bg-[#141413] border-t border-[#DFDACB] dark:border-[#2C2B27] py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col gap-4 text-xs text-[#6B6860] dark:text-[#B5B2A8]">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-[#D97757]" aria-hidden="true" />
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Student Command Center</span>
+              <span className="font-semibold text-[#141413] dark:text-[#FAF9F5]">Student Command Center</span>
               <span>• Open Source Academic Hub</span>
             </div>
 
@@ -472,7 +472,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <a href="mailto:buianhuy2009@gmail.com" className="hover:text-[#D97757] font-medium">Contact</a>
               <button
                 onClick={onExploreDemo}
-                className="hover:text-[#D97757] dark:hover:text-indigo-400 font-medium cursor-pointer"
+                className="hover:text-[#D97757] font-medium cursor-pointer"
               >
                 Explore Demo Mode
               </button>
@@ -480,14 +480,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 href="https://github.com/buianhuy2009/Sutdent-Command-Center"
                 target="_blank"
                 rel="noreferrer"
-                className="hover:text-[#D97757] dark:hover:text-indigo-400 font-medium flex items-center gap-1"
+                className="hover:text-[#D97757] font-medium flex items-center gap-1"
               >
                 <span>GitHub</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
           </div>
-          <div className="text-[11px] text-center sm:text-left text-[#6B6860] border-t border-slate-200 dark:border-slate-800 pt-4">
+          <div className="text-[11px] text-center sm:text-left text-[#6B6860] border-t border-[#DFDACB] dark:border-[#2C2B27] pt-4">
             © 2026 Student Command Center — MIT Licensed. <a href="#privacy" className="underline hover:text-[#D97757]">Privacy</a> • <a href="#pricing" className="underline">Pricing</a> • <a href="#faq" className="underline">FAQ</a> • <a href="#comparison" className="underline">Comparison</a> • OG 1200×630
           </div>
         </div>

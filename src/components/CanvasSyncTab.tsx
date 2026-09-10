@@ -500,11 +500,17 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
           <div className="p-16 text-center text-[#8C897F] space-y-2">
             <Layers className="w-8 h-8 mx-auto opacity-40" />
             <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-              {isConfigured ? 'All caught up! Zero tasks in this view.' : 'Canvas LMS not yet connected'}
+              {isConfigured
+                ? (canvasAssignments.length === 0
+                  ? 'Nothing synced yet — check the message above.'
+                  : 'All caught up! Zero tasks in this view.')
+                : 'Canvas LMS not yet connected'}
             </p>
             <p className="text-[11px] max-w-sm mx-auto">
               {isConfigured
-                ? 'No pending coursework matching your active filters.'
+                ? (canvasAssignments.length === 0
+                  ? 'If you expect coursework here, re-copy your Calendar Feed link or regenerate your API token, save, and press Try again.'
+                  : 'No pending coursework matching your active filters.')
                 : 'Click the settings icon above to paste your Canvas URL (e.g. https://4015.instructure.com) + API token, or a calendar feed URL.'}
             </p>
           </div>

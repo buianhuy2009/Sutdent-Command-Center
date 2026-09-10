@@ -1716,8 +1716,11 @@ export default function App() {
 
       // 3. Intelligent Union Merge so all courses (KHTN, Ngữ Văn, etc.) are captured.
       // Malformed items are normalized, never allowed to throw and wipe the whole sync.
+      // Keyed by name + course + due date so same-named work across courses never collapses.
       const mergedMap = new Map<string, CanvasAssignment>();
-      const mergeKey = (item: any): string => String(item?.name ?? item?.title ?? 'Canvas Assignment').toLowerCase().trim();
+      const mergeKey = (item: any): string =>
+        [item?.name ?? item?.title ?? 'Canvas Assignment', item?.courseName ?? item?.course ?? '', item?.dueAt ?? item?.dueDate ?? '']
+          .join('|').toLowerCase().trim();
 
       // Put feed items first
       for (const item of feedFetched) {
@@ -1758,6 +1761,17 @@ export default function App() {
         setCanvasError(errMsg);
         if (!isSilent) {
           addToast({ type: 'error', title: 'Canvas Sync Failed', message: errMsg });
+        }
+        return;
+      }
+      // Configured but zero assignments and zero errors (e.g. all sources quietly
+      // empty): say so explicitly instead of a misleading "all caught up".
+      if (fetched.length === 0 && (isApiConfigured || feedUrl)) {
+        const emptyMsg =
+          'Connected, but Canvas returned 0 assignments. If you expect coursework here, re-copy your Calendar Feed link (Canvas → Calendar → Calendar Feed) or regenerate your API token (Canvas → Account → Settings → New Access Token), save, and sync again.';
+        setCanvasError(emptyMsg);
+        if (!isSilent) {
+          addToast({ type: 'warning', title: 'Canvas Returned Nothing', message: emptyMsg });
         }
         return;
       }
@@ -3634,7 +3648,7 @@ export default function App() {
       />
       )}
 
-      {/* Guided tour — 6 anchored stops with "take me there" actions */}
+      {/* Guided spotlight tour — points at real UI, auto-moves tabs on Next/Back */}
       {isIntroTourOpen && (
       <InteractiveIntroModal
         isOpen={isIntroTourOpen}

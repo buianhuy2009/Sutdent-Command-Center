@@ -265,14 +265,14 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
             </div>      </div>
 
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-xs text-slate-500 dark:text-slate-400">
+            <span className="text-xs text-[#6B6860] dark:text-[#B5B2A8]">
               {pendingAssignments.length} pending tasks eligible • AI scans gaps & avoids classes
             </span>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleGenerateSlots}
                 disabled={isSuggestingSlots}
-                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                className="px-3.5 py-1.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
               >
                 <Sparkles className={`w-3.5 h-3.5 ${isSuggestingSlots ? 'animate-spin' : ''}`} />
                 <span>{isSuggestingSlots ? 'Calculating…' : 'Generate Today'}</span>
@@ -312,14 +312,14 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
           {studySlotResult && (
             <div className="space-y-3 pt-2">
               {studySlotResult.chronotypeAdvice && (
-                <div className="p-3 bg-indigo-100/50 dark:bg-indigo-900/30 rounded-xl text-xs text-indigo-900 dark:text-indigo-200 flex items-start gap-2">
-                  <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                <div className="p-3 bg-[#D97757]/10 dark:bg-[#D97757]/15 rounded-xl text-xs text-[#141413] dark:text-[#FAF9F5] flex items-start gap-2">
+                  <Sparkles className="w-4 h-4 text-[#D97757] dark:text-[#E8A07E] shrink-0 mt-0.5" />
                   <span>{studySlotResult.chronotypeAdvice}</span>
                 </div>
               )}
 
               {studySlotResult.suggestedSlots.length === 0 ? (
-                <p className="text-xs text-slate-500 italic py-2">
+                <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] italic py-2">
                   All suggested slots have been added to your calendar!
                 </p>
               ) : (
@@ -327,22 +327,22 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                   {studySlotResult.suggestedSlots.map((slot, idx) => (
                     <div
                       key={idx}
-                      className="p-3.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs flex flex-col justify-between gap-2.5"
+                      className="p-3.5 bg-white dark:bg-[#252422] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-2xs flex flex-col justify-between gap-2.5"
                     >
                       <div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold font-mono text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                          <span className="text-xs font-bold font-mono text-[#D97757] dark:text-[#E8A07E] flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5" />
                             <span>{slot.startTime} - {slot.endTime}</span>
                           </span>
-                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-[#EFECE2] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8]">
                             {slot.taskSubject}
                           </span>
                         </div>
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white mt-1.5">
+                        <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] mt-1.5">
                           {slot.taskName}
                         </h4>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                        <p className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8] mt-1">
                           {slot.reason}
                         </p>
                       </div>
@@ -350,7 +350,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                       <button
                         onClick={() => handleApplySlot(slot, idx)}
                         disabled={schedulingSlotIndex === idx}
-                        className="w-full py-1.5 px-3 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-600 text-indigo-700 dark:text-indigo-300 hover:text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 border border-indigo-200 dark:border-indigo-800 transition-colors cursor-pointer"
+                        className="w-full py-1.5 px-3 bg-[#D97757]/10 dark:bg-[#D97757]/15 hover:bg-[#D97757] text-[#D97757] hover:text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 border border-[#D97757]/30 transition-colors cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>{schedulingSlotIndex === idx ? 'Scheduling...' : 'Add to Calendar'}</span>
@@ -365,10 +365,10 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
       )}
 
       {/* Main Schedule Container */}
-      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs">
+      <section className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 sm:p-6 shadow-xs">
         {/* Card Header */}
-        <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
-          <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider">
+        <div className="flex justify-between items-center pb-3 border-b border-[#DFDACB] dark:border-[#2C2B27]">
+          <h3 className="font-bold text-[#141413] dark:text-[#FAF9F5] text-xs uppercase tracking-wider">
             Today's Timeline
           </h3>
         </div>
@@ -402,16 +402,16 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
         {/* Schedule Timeline */}
         <div className="mt-5 space-y-3.5">
           {!isGoogleConnected ? (
-            <div className="py-12 px-4 text-center bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
-              <CalendarIcon className="w-10 h-10 mx-auto text-indigo-500 mb-2 opacity-80" />
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Google Calendar Disconnected</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+            <div className="py-12 px-4 text-center bg-[#FAF9F5] dark:bg-[#252422]/60 rounded-xl border border-dashed border-[#DFDACB] dark:border-[#2C2B27]">
+              <CalendarIcon className="w-10 h-10 mx-auto text-[#D97757] mb-2 opacity-80" />
+              <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">Google Calendar Disconnected</h3>
+              <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] mt-1 max-w-md mx-auto">
                 Connect your Google account to automatically sync your live daily class schedule, deadlines, and study blocks.
               </p>
               {onConnectGoogle && (
                 <button
                   onClick={onConnectGoogle}
-                  className="mt-3 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl inline-flex items-center gap-2 cursor-pointer shadow-xs transition-colors"
+                  className="mt-3 px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white text-xs font-semibold rounded-xl inline-flex items-center gap-2 cursor-pointer shadow-xs transition-colors"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Connect Google Calendar</span>
@@ -419,24 +419,24 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
               )}
             </div>
           ) : isLoadingEvents ? (
-            <div className="py-16 flex flex-col items-center justify-center text-slate-400">
-              <RefreshCw className="w-7 h-7 animate-spin text-indigo-500 mb-2" />
-              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+            <div className="py-16 flex flex-col items-center justify-center text-[#6B6860] dark:text-[#B5B2A8]">
+              <RefreshCw className="w-7 h-7 animate-spin text-[#D97757] mb-2" />
+              <p className="text-xs font-semibold text-[#6B6860] dark:text-[#B5B2A8]">
                 Syncing today's calendar events...
               </p>
             </div>
           ) : combinedTimeline.length === 0 ? (
-            <div className="py-16 text-center text-slate-500 dark:text-slate-400">
-              <CalendarIcon className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            <div className="py-16 text-center text-[#6B6860] dark:text-[#B5B2A8]">
+              <CalendarIcon className="w-10 h-10 mx-auto text-[#DFDACB] dark:text-[#2C2B27] mb-2" />
+              <p className="text-sm font-semibold text-[#141413] dark:text-[#FAF9F5]">
                 No Schedule Commitments Today
               </p>
-              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+              <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] mt-1 max-w-sm mx-auto">
                 Your schedule is clear! You can use this free time to work on assignments or schedule a 45-minute focus session.
               </p>
               <button
                 onClick={() => onOpenScheduleModal()}
-                className="mt-4 px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors shadow-2xs"
+                className="mt-4 px-4 py-2 text-xs font-semibold bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl transition-colors shadow-2xs"
               >
                 Schedule 45m Focus Block
               </button>
@@ -457,7 +457,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                   className="flex items-start gap-3.5 group timeline-reveal-item"
                 >
                   {/* Time on left */}
-                  <div className="w-16 text-xs font-mono font-medium text-slate-500 dark:text-slate-400 pt-2.5 shrink-0 text-right">
+                  <div className="w-16 text-xs font-mono font-medium text-[#6B6860] dark:text-[#B5B2A8] pt-2.5 shrink-0 text-right">
                     {formatEventTime(event.start?.dateTime)}
                   </div>
 
@@ -465,14 +465,14 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                   <div
                     className={`flex-1 p-4 rounded-xl border-l-4 transition-all ${
                       event.isCanvas
-                        ? 'border-orange-500 bg-orange-50/20 dark:bg-orange-950/10 text-slate-900 dark:text-white'
+                        ? 'border-[#D97757] bg-[#D97757]/10 dark:bg-[#D97757]/10 text-[#141413] dark:text-[#FAF9F5]'
                         : event.isStudyBlock
-                        ? 'border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40 text-slate-900 dark:text-white'
+                        ? 'border-[#D97757] bg-[#D97757]/10 dark:bg-[#D97757]/15 text-[#141413] dark:text-[#FAF9F5]'
                         : isCurrent
-                        ? 'border-amber-500 bg-amber-50/80 dark:bg-amber-950/30 text-slate-900 dark:text-white shadow-xs'
+                        ? 'border-amber-500 bg-amber-50/80 dark:bg-amber-950/30 text-[#141413] dark:text-[#FAF9F5] shadow-xs'
                         : isPast
-                        ? 'border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/20 text-slate-400 opacity-60'
-                        : 'border-slate-300 dark:border-slate-700 bg-slate-50/90 dark:bg-slate-800/40 text-slate-800 dark:text-slate-200 hover:border-indigo-400'
+                        ? 'border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#252422]/40 text-[#6B6860] dark:text-[#B5B2A8] opacity-60'
+                        : 'border-[#DFDACB] dark:border-[#2C2B27] bg-white dark:bg-[#1A1917] text-[#141413] dark:text-[#FAF9F5] hover:border-[#D97757]'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -480,14 +480,14 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                         <div className="flex items-center gap-2 flex-wrap">
                           <div className="flex items-center gap-1">
                             {event.isCanvas && (
-                              <svg className="w-3.5 h-3.5 text-orange-600 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                                <circle cx="12" cy="12" r="10" className="text-orange-100 dark:text-orange-950" />
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" className="text-orange-600 dark:text-orange-400" />
+                              <svg className="w-3.5 h-3.5 text-[#D97757] shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10" className="text-[#D97757]/20" />
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" className="text-[#D97757]" />
                               </svg>
                             )}
                             <h4
                               className={`text-sm font-semibold truncate ${
-                                isPast ? 'line-through text-slate-400' : 'text-slate-900 dark:text-white'
+                                isPast ? 'line-through text-[#6B6860] dark:text-[#B5B2A8]' : 'text-[#141413] dark:text-[#FAF9F5]'
                               }`}
                             >
                               {event.summary}
@@ -499,26 +499,26 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                             </span>
                           )}
                           {event.isStudyBlock && (
-                            <span className="px-1.5 py-0.2 text-[10px] font-bold bg-indigo-600 text-white rounded">
+                            <span className="px-1.5 py-0.2 text-[10px] font-bold bg-[#D97757] text-white rounded">
                               45M FOCUS
                             </span>
                           )}
                           {event.isCanvas && (
-                            <span className="px-1.5 py-0.2 text-[9px] font-bold bg-orange-600 text-white rounded uppercase tracking-wider">
+                            <span className="px-1.5 py-0.2 text-[9px] font-bold bg-[#D97757] text-white rounded uppercase tracking-wider">
                               LMS Deadline
                             </span>
                           )}
                         </div>
 
                         {event.location && (
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-1 truncate flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                          <div className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8] font-mono mt-1 truncate flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-[#6B6860] dark:text-[#B5B2A8] shrink-0" />
                             <span>{event.location}</span>
                           </div>
                         )}
 
                         {event.description && (
-                          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 line-clamp-2 leading-relaxed">
+                          <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] mt-1.5 line-clamp-2 leading-relaxed">
                             {event.description.replace(/<[^>]*>?/gm, '')}
                           </p>
                         )}
@@ -542,11 +542,11 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                             href={toMobileDeepLink(event.htmlLink)}
                             target="_blank"
                             rel="noreferrer"
-                            className={`p-1.5 rounded-lg transition-colors ${
-                              event.isCanvas
-                                ? 'text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/40'
-                                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
-                            }`}
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                event.isCanvas
+                                  ? 'text-[#D97757] hover:bg-[#D97757]/10'
+                                  : 'text-[#6B6860] hover:text-[#141413] dark:text-[#B5B2A8] dark:hover:text-[#FAF9F5]'
+                              }`}
                             title={event.isCanvas ? "Open Assignment in Canvas" : "Open in Google Calendar"}
                           >
                             <ExternalLink className="w-4 h-4" />
@@ -562,10 +562,10 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
         </div>
 
         {/* Footer info & Direct links */}
-        <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+        <div className="mt-6 pt-4 border-t border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between text-xs text-[#6B6860] dark:text-[#B5B2A8]">
           <button
             onClick={() => onOpenScheduleModal()}
-            className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+            className="font-semibold text-[#D97757] dark:text-[#E8A07E] hover:underline flex items-center gap-1 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Schedule Another Focus Session</span>
@@ -574,7 +574,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
             href="https://calendar.google.com"
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 inline-flex items-center gap-1"
+            className="font-medium hover:text-[#D97757] inline-flex items-center gap-1"
           >
             <span>Open Google Calendar</span>
             <ExternalLink className="w-3 h-3" />
@@ -587,42 +587,42 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div
             onClick={() => onNavigateToTab('canvas')}
-            className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-orange-400 dark:hover:border-orange-500 transition-all cursor-pointer shadow-xs group flex items-center justify-between"
+            className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] transition-all cursor-pointer shadow-xs group flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-[#D97757]/15 text-[#D97757] flex items-center justify-center shrink-0">
                 <Layers className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
                   Canvas Assignments
                 </h4>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8]">
                   Deadlines and coursework
                 </p>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-4 h-4 text-[#6B6860] dark:text-[#B5B2A8] group-hover:translate-x-1 transition-transform" />
           </div>
 
           <div
             onClick={() => onNavigateToTab('gmail')}
-            className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-rose-400 dark:hover:border-rose-500 transition-all cursor-pointer shadow-xs group flex items-center justify-between"
+            className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] hover:border-rose-400 dark:hover:border-rose-500 transition-all cursor-pointer shadow-xs group flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
                 <Mail className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
                   Gmail Scanner
                 </h4>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8]">
                   Teacher alerts and updates
                 </p>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-4 h-4 text-[#6B6860] dark:text-[#B5B2A8] group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
       )}
