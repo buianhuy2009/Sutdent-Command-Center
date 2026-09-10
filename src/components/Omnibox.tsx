@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Search, Pin, ExternalLink, Plus, ArrowRight, X } from 'lucide-react';
 import type { Assignment, CanvasAssignment, EmailMessage, SchoolFile, MarkdownNote, FlashcardItem } from '../types';
 
@@ -19,6 +19,21 @@ function fuzzy(hay: string, needle: string): boolean {
   return h.includes(n);
 }
 
+const RECENT_KEY = 'scc_omnibox_recent_v1';
+const MAX_RECENTS = 5;
+
+function readRecents(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((v): v is string => typeof v === 'string').slice(0, MAX_RECENTS);
+  } catch {
+    return [];
+  }
+}
+
 /** True omnibox: Canvas + Gmail + Drive + notes + flashcards in one input, with preview + actions. */
 export const Omnibox: React.FC<{
   query: string;
@@ -35,6 +50,32 @@ export const Omnibox: React.FC<{
   onClose?: () => void;
 }> = ({ query, onQuery, assignments, canvas, emails, files, notes, flashcards, onOpen, onPin, onCreateTask, onClose }) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [recents, setRecents] = useState<string[]>(() => readRecents());
+
+  const recordRecent = (q: string) => {
+    const trimmed = q.trim();
+    if (!trimmed) return;
+    setRecents((prev) => {
+      const deduped = prev.filter((r) => r.toLowerCase() !== trimmed.toLowerCase());
+      const next = [trimmed, ...deduped].slice(0, MAX_RECENTS);
+      try {
+        localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+      } catch {
+        /* storage unavailable — ignore */
+      }
+      return next;
+    });
+  };
+
+  // Refresh recents whenever the query is cleared (picks up writes from other mounts).
+  useEffect(() => {
+    if (!query.trim()) setRecents(readRecents());
+  }, [query]);
+
+  const handleOpen = (item: OmniboxItem) => {
+    recordRecent(query);
+    onOpen(item);
+  };
 
   const results = useMemo<OmniboxItem[]>(() => {
     if (!query.trim()) return [];
@@ -69,6 +110,7 @@ export const Omnibox: React.FC<{
           <Search className="w-4 h-4 opacity-60" />
           <input
             autoFocus value={query} onChange={(e) => onQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') recordRecent(query); }}
             placeholder="Search assignments, emails, files, notes, flashcards…"
             className="flex-1 bg-transparent text-sm outline-none"
             aria-label="Global search"
@@ -76,12 +118,23 @@ export const Omnibox: React.FC<{
           {onClose && <button onClick={onClose} className="p-2 min-w-[44px] min-h-[44px]" aria-label="Close search"><X className="w-4 h-4" /></button>}
         </div>
         <div className="flex-1 overflow-y-auto" role="listbox" aria-label="Search results">
-          {results.length === 0 && (
+          {!query.trim() && recents.length > 0 && (
+            <div className="p-4 flex flex-wrap gap-2" aria-label="Recent searches">
+              {recents.map((r) => (
+                <button key={r} onClick={() => onQuery(r)}
+                  className="px-3 py-2 text-xs font-semibold rounded-xl border hover:bg-black/5 dark:hover:bg-white/5 min-h-[44px]"
+                  style={{ borderColor: 'var(--line)' }}>
+                  {r}
+                </button>
+              ))}
+            </div>
+          )}
+          {results.length === 0 && (!!query.trim() || recents.length === 0) && (
             <p className="p-6 text-xs opacity-60 text-center">No matches — try fewer words, or press <kbd className="px-1 border rounded">C</kbd> to create it.</p>
           )}
           {results.map((r) => (
             <button key={r.id} role="option" aria-selected={selected?.id === r.id}
-              onClick={() => setSelectedId(r.id)} onDoubleClick={() => onOpen(r)}
+              onClick={() => setSelectedId(r.id)} onDoubleClick={() => handleOpen(r)}
               className="w-full text-left px-4 py-2.5 flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 min-h-[44px]"
               style={selected?.id === r.id ? { backgroundColor: 'var(--accent-soft)' } : undefined}>
               <span className="text-[10px] font-bold uppercase opacity-50 w-20 shrink-0">{r.kind}</span>
@@ -101,7 +154,7 @@ export const Omnibox: React.FC<{
             {selected.kind === 'email' && <p className="text-xs leading-relaxed opacity-80 line-clamp-6">{(selected.raw as EmailMessage)?.snippet}</p>}
             {selected.kind === 'note' && <p className="text-xs leading-relaxed opacity-80 line-clamp-6">{(selected.raw as MarkdownNote)?.content?.slice(0, 400)}</p>}
             <div className="flex flex-wrap gap-2 pt-2">
-              <button onClick={() => onOpen(selected)} className="px-3 py-2 text-xs font-bold text-white rounded-xl min-h-[44px] inline-flex items-center gap-1" style={{ backgroundColor: 'var(--terracotta)' }}>
+              <button onClick={() => handleOpen(selected)} className="px-3 py-2 text-xs font-bold text-white rounded-xl min-h-[44px] inline-flex items-center gap-1" style={{ backgroundColor: 'var(--terracotta)' }}>
                 <ArrowRight className="w-3.5 h-3.5" /> Open
               </button>
               <button onClick={() => onPin(selected)} className="px-3 py-2 text-xs font-bold rounded-xl border min-h-[44px] inline-flex items-center gap-1" style={{ borderColor: 'var(--line)' }}>
