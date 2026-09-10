@@ -23,7 +23,7 @@ export const MermaidWorkspace: React.FC = () => {
     mermaid.initialize({
       startOnLoad: false,
       theme: 'default',
-      securityLevel: 'loose',
+      securityLevel: 'strict',
     });
     renderDiagram(chartCode);
   }, [chartCode]);
