@@ -18,7 +18,28 @@ export const CitationVaultWorkspace: React.FC = () => {
       saveBibliographyEntry({ id: Date.now().toString(), title: res.title, authors: res.authors, year: res.year, apa: res.apa, mla: res.mla, chicago: res.chicago, bibtex: res.bibtex, source: query, createdAt: new Date().toISOString() });
     } finally { setLoading(false); }
   };
-  const copy = (text: string, key: string) => { navigator.clipboard.writeText(text); setCopied(key); setTimeout(()=>setCopied(''),1500); };
+  const copy = async (text: string, key: string) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        throw new Error('clipboard unavailable');
+      }
+    } catch {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch { /* silent degrade where clipboard unavailable */ }
+    }
+    setCopied(key);
+    setTimeout(()=>setCopied(''),1500);
+  };
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-card">
@@ -47,7 +68,7 @@ export const CitationVaultWorkspace: React.FC = () => {
           <div className="mt-3 space-y-2 max-h-64 overflow-y-auto">
             {vault.slice(0,20).map(v=>(
               <div key={v.id} className="p-2.5 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-xs">
-                <div className="font-bold truncate">{v.title}</div><div className="text-[11px] text-[#6B6860] truncate">{v.apa.slice(0,120)}...</div>
+                <div className="flex items-center justify-between gap-2"><div className="font-bold truncate">{v.title}</div><button onClick={()=>copy(v.apa, `vault-${v.id}`)} className="shrink-0 px-2 py-1 text-[11px] bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg flex items-center gap-1">{copied===`vault-${v.id}`?<><Check className="w-3 h-3 text-emerald-600" /> Copied</>:<><Copy className="w-3 h-3" /> Copy</>}</button></div><div className="text-[11px] text-[#6B6860] truncate">{v.apa.slice(0,120)}...</div>
               </div>
             ))}
           </div>

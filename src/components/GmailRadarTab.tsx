@@ -51,23 +51,25 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
   const [activeCategory, setActiveCategory] = useState<string>('ALL');
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
 
+  const matchesCategory = (alert: EmailAlert, cat: string) => {
+    if (cat === 'ALL') return true;
+    if (cat === 'PROMOTIONS') {
+      return (
+        alert.category === 'PROMOTION' ||
+        alert.category === 'SPAM' ||
+        alert.subject.toLowerCase().includes('newsletter') ||
+        alert.subject.toLowerCase().includes('event') ||
+        alert.subject.toLowerCase().includes('invite') ||
+        alert.subject.toLowerCase().includes('promotion') ||
+        alert.sender.toLowerCase().includes('noreply')
+      );
+    }
+    return alert.category === cat;
+  };
+
   const filteredAlerts = useMemo(() => {
     return emailAlerts.filter((alert) => {
-      if (activeCategory !== 'ALL') {
-        if (activeCategory === 'PROMOTIONS') {
-          const isPromo =
-            alert.category === 'PROMOTION' ||
-            alert.category === 'SPAM' ||
-            alert.subject.toLowerCase().includes('newsletter') ||
-            alert.subject.toLowerCase().includes('event') ||
-            alert.subject.toLowerCase().includes('invite') ||
-            alert.subject.toLowerCase().includes('promotion') ||
-            alert.sender.toLowerCase().includes('noreply');
-          if (!isPromo) return false;
-        } else if (alert.category !== activeCategory) {
-          return false;
-        }
-      }
+      if (!matchesCategory(alert, activeCategory)) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchSubject = alert.subject.toLowerCase().includes(q);
@@ -78,6 +80,24 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
       return true;
     });
   }, [emailAlerts, activeCategory, searchQuery]);
+
+  // Unread counts per category tab, derived from existing data only.
+  // An alert counts as unread via its attached rawEmail flag, falling back
+  // to the rawEmails prop joined the same way as activeRawEmail below.
+  const unreadCounts = useMemo(() => {
+    const rawById = new Map(rawEmails.map((e) => [e.id, e]));
+    const rawBySubject = new Map(rawEmails.map((e) => [e.subject, e]));
+    const isUnread = (alert: EmailAlert) => {
+      if (alert.rawEmail?.unread !== undefined) return alert.rawEmail.unread;
+      const raw = rawById.get(alert.id) ?? rawBySubject.get(alert.subject);
+      return raw?.unread ?? false;
+    };
+    const counts: Record<string, number> = {};
+    for (const cat of ['ALL', 'ASSIGNMENT', 'EXAM', 'ANNOUNCEMENT', 'PROMOTIONS', 'GENERAL']) {
+      counts[cat] = emailAlerts.filter((a) => matchesCategory(a, cat) && isUnread(a)).length;
+    }
+    return counts;
+  }, [emailAlerts, rawEmails]);
 
   // Set initial selected alert if none selected
   const activeAlert = useMemo(() => {
@@ -116,6 +136,16 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
                 : cat === 'PROMOTIONS'
                 ? 'Promotions & Spam'
                 : cat.charAt(0) + cat.slice(1).toLowerCase()}
+              {unreadCounts[cat] > 0 && (
+                <span
+                  aria-label={`${unreadCounts[cat]} unread`}
+                  className={`ml-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[10px] font-extrabold leading-none ${
+                    activeCategory === cat ? 'bg-white text-[#D97757]' : 'bg-[#D97757] text-white'
+                  }`}
+                >
+                  {unreadCounts[cat]}
+                </span>
+              )}
             </button>
           ))}
         </div>

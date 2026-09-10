@@ -6,6 +6,8 @@ import {
   ExternalLink,
   RefreshCw,
   Globe,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { fetchWikipediaSummary, WikipediaSummary } from '../services/publicApis';
 
@@ -24,6 +26,7 @@ export const WikipediaLookupModal: React.FC<WikipediaLookupModalProps> = ({
   const [summary, setSummary] = useState<WikipediaSummary | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -42,6 +45,7 @@ export const WikipediaLookupModal: React.FC<WikipediaLookupModalProps> = ({
     if (!term.trim()) return;
     setIsLoading(true);
     setError(null);
+    setCopied(false);
     try {
       const data = await fetchWikipediaSummary(term);
       if (data) {
@@ -59,6 +63,36 @@ export const WikipediaLookupModal: React.FC<WikipediaLookupModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleLookup(searchTerm);
+  };
+
+  const handleCopySummary = async () => {
+    if (!summary) return;
+    const text = [summary.displayTitle, summary.description, summary.extract]
+      .filter(Boolean)
+      .join('\n\n');
+    if (!text) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        throw new Error('clipboard unavailable');
+      }
+    } catch {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch {
+        return;
+      }
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
   };
 
   if (!isOpen) return null;
@@ -131,9 +165,18 @@ export const WikipediaLookupModal: React.FC<WikipediaLookupModalProps> = ({
                   />
                 )}
                 <div className="space-y-1 flex-1 min-w-0">
-                  <h4 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] leading-snug">
-                    {summary.displayTitle}
-                  </h4>
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] leading-snug flex-1 min-w-0">
+                      {summary.displayTitle}
+                    </h4>
+                    <button
+                      onClick={handleCopySummary}
+                      className="px-2.5 py-1 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                    >
+                      {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      <span>{copied ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  </div>
                   {summary.description && (
                     <p className="text-xs text-[#D97757] font-medium">
                       {summary.description}

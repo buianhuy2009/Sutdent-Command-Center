@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   HelpCircle,
   Sparkles,
@@ -28,6 +28,10 @@ export const QuizGeneratorWorkspace: React.FC = () => {
     try { const s = localStorage.getItem('scc_quiz_history_v1'); return s ? JSON.parse(s) : []; } catch { return []; }
   });
   const [retryMode, setRetryMode] = useState(false);
+  const [difficulty, setDifficulty] = useState<'Easy' | 'Mixed' | 'Hard'>('Mixed');
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleGenerateQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +41,7 @@ export const QuizGeneratorWorkspace: React.FC = () => {
     setErrorMessage(null);
     setUserAnswers({});
     setIsSubmitted(false);
+    setTimedOut(false);
 
     try {
       const questions = await generateInteractiveQuiz(inputText.trim());
@@ -84,6 +89,42 @@ export const QuizGeneratorWorkspace: React.FC = () => {
     setUserAnswers({});
     setIsSubmitted(false);
   };
+
+  const submitRef = useRef<() => void>(() => {});
+  submitRef.current = handleSubmitQuiz;
+
+  const formatTime = (totalSeconds: number) => {
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  useEffect(() => {
+    if (quizQuestions.length === 0 || isSubmitted) {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+      if (quizQuestions.length === 0) setTimeLeft(null);
+      return;
+    }
+    const initial = quizQuestions.length > 0 ? quizQuestions.length * 60 : 600;
+    setTimeLeft(initial);
+    setTimedOut(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev === null) return prev;
+        if (prev <= 1) {
+          if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+          setTimedOut(true);
+          setTimeout(() => submitRef.current(), 0);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => {
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    };
+  }, [quizQuestions.length, isSubmitted]);
 
   const correctCount = quizQuestions.filter((q, idx) => userAnswers[idx] === q.correctIndex).length;
 
@@ -153,7 +194,7 @@ export const QuizGeneratorWorkspace: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-[#8C897F]">Questions:</span>
               <div className="flex items-center gap-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] p-1 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
-                {[3, 5, 8].map((count) => (
+                {[5, 10, 20].map((count) => (
                   <button
                     key={count}
                     type="button"
@@ -165,6 +206,26 @@ export const QuizGeneratorWorkspace: React.FC = () => {
                     }`}
                   >
                     {count}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#8C897F]">Difficulty:</span>
+              <div className="flex items-center gap-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] p-1 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
+                {(['Easy', 'Mixed', 'Hard'] as const).map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setDifficulty(level)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      difficulty === level
+                        ? 'bg-[#D97757] text-white shadow-2xs'
+                        : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757]'
+                    }`}
+                  >
+                    {level}
                   </button>
                 ))}
               </div>
@@ -208,6 +269,16 @@ export const QuizGeneratorWorkspace: React.FC = () => {
           {retryMode && (
             <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-300">Retry Mode: Showing {quizQuestions.length} incorrect question(s) only</div>
           )}
+          {/* Quiz countdown + timeout state */}
+          {!isSubmitted && timeLeft !== null && (
+            <div className="px-4 py-2.5 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs font-bold text-[#5C5A54] dark:text-[#B5B2A8] flex items-center justify-between">
+              <span>Time remaining</span>
+              <span className="font-mono text-sm text-[#141413] dark:text-[#FAF9F5]">{formatTime(timeLeft)}</span>
+            </div>
+          )}
+          {timedOut && isSubmitted && (
+            <div className="px-4 py-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-bold text-rose-700 dark:text-rose-300">Time&apos;s up — answers locked. Review your results below.</div>
+          )}
           {/* Score Header (When Submitted) */}
           {isSubmitted && (
             <div className="p-6 bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -232,6 +303,7 @@ export const QuizGeneratorWorkspace: React.FC = () => {
                   setQuizQuestions([]);
                   setUserAnswers({});
                   setIsSubmitted(false);
+                  setTimedOut(false);
                 }}
                 className="px-4 py-2 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >

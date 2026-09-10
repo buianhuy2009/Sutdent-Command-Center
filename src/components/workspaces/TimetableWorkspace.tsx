@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, GripVertical } from 'lucide-react';
 import { insertCalendarEvent } from '../../services/googleWorkspace';
 import { getStoredGoogleToken } from '../../services/firebase';
@@ -11,6 +11,17 @@ export const TimetableWorkspace: React.FC = () => {
     try { const raw = localStorage.getItem('scc_timetable_v1'); return raw ? JSON.parse(raw) : []; } catch { return []; }
   });
   const [dragged, setDragged] = useState<string | null>(null);
+  // Current-time line: re-render at most once per minute, cleanup on unmount.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(t);
+  }, []);
+  // Map JS getDay() (Sun=0) onto DAYS (Mon-first). Grid always shows the full
+  // Mon-Sun week, so today is always within the displayed week; the line is
+  // additionally hidden when the current hour is outside the displayed rows.
+  const todayName = DAYS[(now.getDay() + 6) % 7];
+  const nowHourInRange = now.getHours() >= HOURS[0] && now.getHours() < HOURS[0] + HOURS.length;
   const addEvent = async (day: string, hour: number) => {
     const title = prompt(`New class for ${day} ${hour}:00`); if (!title) return;
     const ev = { id: `tt-${Date.now()}`, day, hour, title };
@@ -38,7 +49,7 @@ export const TimetableWorkspace: React.FC = () => {
       <div className="bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] overflow-hidden overflow-x-auto">
         <div className="min-w-[700px] grid" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
           <div className="p-2 text-xs font-bold text-[#6B6860] border-b border-[#DFDACB] dark:border-[#2C2B27]">Time</div>
-          {DAYS.map(d=><div key={d} className="p-2 text-xs font-bold text-center border-b border-l border-[#DFDACB] dark:border-[#2C2B27]">{d}</div>)}
+          {DAYS.map(d=><div key={d} className={`p-2 text-xs font-bold text-center border-b border-l border-[#DFDACB] dark:border-[#2C2B27]${d===todayName ? ' bg-[#D97757]/10 text-[#D97757]' : ''}`}>{d}</div>)}
           {HOURS.map(h=>(
             <React.Fragment key={h}>
               <div className="p-2 text-[11px] font-mono text-[#6B6860] border-b border-[#DFDACB]/40 h-14">{h}:00</div>
@@ -46,6 +57,12 @@ export const TimetableWorkspace: React.FC = () => {
                 const ev = events.find(e=>e.day===day && e.hour===h);
                 return (
                   <div key={`${day}-${h}`} onClick={()=>!ev && addEvent(day,h)} className="border-b border-l border-[#DFDACB]/40 h-14 p-1 relative hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B] cursor-pointer">
+                    {day===todayName && nowHourInRange && h===now.getHours() && (
+                      <div className="absolute left-1 right-1 pointer-events-none" style={{ top: `${(now.getMinutes()/60)*100}%` }}>
+                        <div className="h-[2px] w-full bg-red-500 rounded-full" />
+                        <div className="absolute -left-0.5 -top-[3px] w-2 h-2 rounded-full bg-red-500" />
+                      </div>
+                    )}
                     {ev && (
                       <div draggable onDragStart={()=>setDragged(ev.id)} onDragOver={e=>e.preventDefault()} onDrop={()=>{
                         if (dragged) {

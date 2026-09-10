@@ -42,6 +42,7 @@ export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [fileCategory, setFileCategory] = useState<string>('ALL');
+  const [sortOrder, setSortOrder] = useState<string>('DEFAULT');
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
 
   // Sharing state
@@ -66,7 +67,7 @@ export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({
   };
 
   const filteredFiles = useMemo(() => {
-    return recentFiles.filter((file) => {
+    const filtered = recentFiles.filter((file) => {
       if (fileCategory === 'DOCS' && !file.mimeType.includes('document') && !file.mimeType.includes('docx')) return false;
       if (fileCategory === 'SHEETS' && !file.mimeType.includes('spreadsheet') && !file.mimeType.includes('sheet')) return false;
       if (fileCategory === 'SLIDES' && !file.mimeType.includes('presentation') && !file.mimeType.includes('slide')) return false;
@@ -77,7 +78,16 @@ export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({
       }
       return true;
     });
-  }, [recentFiles, fileCategory, searchQuery]);
+    const sorted = [...filtered];
+    if (sortOrder === 'NAME') {
+      sorted.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortOrder === 'NEWEST') {
+      sorted.sort((a, b) => new Date(b.modifiedTime || 0).getTime() - new Date(a.modifiedTime || 0).getTime());
+    } else if (sortOrder === 'OLDEST') {
+      sorted.sort((a, b) => new Date(a.modifiedTime || 0).getTime() - new Date(b.modifiedTime || 0).getTime());
+    }
+    return sorted;
+  }, [recentFiles, fileCategory, searchQuery, sortOrder]);
 
   const activeFile = useMemo(() => {
     if (selectedFileId) {
@@ -133,6 +143,17 @@ export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({
 
         {/* Right Search & Refresh */}
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            aria-label="Sort files"
+            className="px-2 py-1.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] font-semibold cursor-pointer"
+          >
+            <option value="DEFAULT">Default</option>
+            <option value="NAME">Name A–Z</option>
+            <option value="NEWEST">Newest</option>
+            <option value="OLDEST">Oldest</option>
+          </select>
           <div className="relative w-full sm:w-48">
             <Search className="w-3.5 h-3.5 text-[#8C897F] absolute left-3 top-1/2 -translate-y-1/2" />
             <input

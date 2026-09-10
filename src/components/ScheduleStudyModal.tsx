@@ -41,6 +41,8 @@ export const ScheduleStudyModal: React.FC<ScheduleStudyModalProps> = ({
   const [location, setLocation] = useState('Library / Quiet Study Room');
   const [sessionNotes, setSessionNotes] = useState('');
 
+  const durationPresets = [25, 45, 60, 90];
+
   useEffect(() => {
     const today = new Date();
     // Default to tomorrow or today's afternoon
@@ -187,6 +189,22 @@ export const ScheduleStudyModal: React.FC<ScheduleStudyModalProps> = ({
                 <option value={60}>60 Minutes</option>
                 <option value={90}>90 Minutes (Deep Block)</option>
               </select>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {durationPresets.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setDurationMinutes(preset)}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition-colors ${
+                      durationMinutes === preset
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>

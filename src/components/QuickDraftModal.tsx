@@ -86,6 +86,10 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
 
   if (!isOpen) return null;
 
+  const draftWordCount = generatedBody.trim() ? generatedBody.trim().split(/\s+/).length : 0;
+  const draftCharCount = generatedBody.length;
+  const draftReadMins = draftWordCount > 0 ? Math.max(1, Math.ceil(draftWordCount / 200)) : 0;
+
   const handleGenerate = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsGenerating(true);
@@ -469,6 +473,11 @@ export const QuickDraftModal: React.FC<QuickDraftModalProps> = ({
                   onChange={(e) => setGeneratedBody(e.target.value)}
                   className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg dark:text-white leading-relaxed font-sans"
                 />
+                <div className="flex items-center justify-end pt-1">
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                    {draftWordCount} words • {draftCharCount} chars{draftWordCount > 0 ? ` • ~${draftReadMins} min read` : ''}
+                  </span>
+                </div>
               </div>
 
               {/* Action buttons on generated draft */}
