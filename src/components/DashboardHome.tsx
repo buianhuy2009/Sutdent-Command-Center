@@ -141,6 +141,44 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     return assignments.filter((a) => a.status !== 'Done');
   }, [assignments]);
 
+  // Next-up hero strip — nearest incomplete assignment with a valid due date
+  const nextDeadline = useMemo(() => {
+    const dated = pendingAssignments.filter((a) => {
+      if (!a.dueDate || typeof a.dueDate !== 'string') return false;
+      const t = new Date(a.dueDate.length === 10 ? `${a.dueDate}T23:59:59` : a.dueDate).getTime();
+      return !Number.isNaN(t);
+    });
+    if (dated.length === 0) return null;
+    const withTime = dated.map((a) => ({
+      assignment: a,
+      dueTime: new Date(a.dueDate.length === 10 ? `${a.dueDate}T23:59:59` : a.dueDate).getTime(),
+    }));
+    withTime.sort((x, y) => x.dueTime - y.dueTime);
+    return withTime[0].assignment;
+  }, [pendingAssignments]);
+
+  const nextDeadlineInfo = useMemo(() => {
+    if (!nextDeadline?.dueDate) return null;
+    const dueTime = new Date(
+      nextDeadline.dueDate.length === 10 ? `${nextDeadline.dueDate}T23:59:59` : nextDeadline.dueDate
+    ).getTime();
+    if (Number.isNaN(dueTime)) return null;
+    const now = Date.now();
+    const diffMs = dueTime - now;
+    if (diffMs < 0) {
+      const absMs = -diffMs;
+      const days = Math.floor(absMs / 86400000);
+      const hours = Math.floor((absMs % 86400000) / 3600000);
+      if (days > 0) return { text: `Overdue by ${days}d ${hours}h`, isOverdue: true };
+      return { text: `Overdue by ${Math.max(hours, 1)}h`, isOverdue: true };
+    }
+    const days = Math.floor(diffMs / 86400000);
+    const hours = Math.floor((diffMs % 86400000) / 3600000);
+    if (days > 0) return { text: `due in ${days}d ${hours}h`, isOverdue: false };
+    if (hours > 0) return { text: `due in ${hours}h`, isOverdue: false };
+    return { text: `due in <1h`, isOverdue: false };
+  }, [nextDeadline]);
+
   // todayFormattedDate kept for potential use but not shown above fold (moved to navbar)
   const todayFormattedDate = useMemo(() => {
     return new Intl.DateTimeFormat('en-US', {
@@ -283,6 +321,50 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
         {/* Today's Plan — overdue grouping + due today */}
         {pendingAssignments.length > 0 ? (
           <div className="bg-white/70 dark:bg-[#1C1B19]/60 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 text-left space-y-3">
+            {/* Next Up deadline countdown strip — hero banner at top of Today's Plan */}
+            {nextDeadline && nextDeadlineInfo && (
+              <div
+                className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border backdrop-blur-md text-left ${
+                  nextDeadlineInfo.isOverdue
+                    ? 'border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/30'
+                    : 'border-[#D97757]/30 dark:border-[#D97757]/30 bg-white/70 dark:bg-[#1C1B19]/60'
+                }`}
+              >
+                <span className="flex items-center gap-2 min-w-0 text-xs sm:text-sm">
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span
+                      className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                        nextDeadlineInfo.isOverdue ? 'bg-rose-500' : 'bg-[#D97757]'
+                      }`}
+                    />
+                    <span
+                      className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                        nextDeadlineInfo.isOverdue ? 'bg-rose-600' : 'bg-[#D97757]'
+                      }`}
+                    />
+                  </span>
+                  <span className="font-bold text-[#141413] dark:text-[#FAF9F5] shrink-0">Next Up:</span>
+                  <span className="font-semibold text-[#141413] dark:text-[#FAF9F5] truncate">{nextDeadline.assignmentName}</span>
+                  <span className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8] truncate hidden sm:inline">• {nextDeadline.subject}</span>
+                </span>
+                <span className="flex items-center gap-2 shrink-0">
+                  <span
+                    className={`text-[11px] sm:text-xs font-bold ${
+                      nextDeadlineInfo.isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-[#D97757]'
+                    }`}
+                  >
+                    {nextDeadlineInfo.text}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onNavigateWorkspace('tracker')}
+                    className="px-3 py-1.5 rounded-xl bg-[#D97757] hover:bg-[#C86646] text-white text-[11px] font-bold transition-colors min-h-[32px] cursor-pointer"
+                  >
+                    View
+                  </button>
+                </span>
+              </div>
+            )}
             {(() => {
               const todayStr = new Date().toISOString().slice(0,10);
               const overdue = pendingAssignments.filter(a => a.dueDate && a.dueDate < todayStr);
