@@ -823,7 +823,20 @@ export const AppStoreModal: React.FC<AppStoreModalProps> = ({
         ) : (
           /* VIEW 2: STORE CATALOG & CONTINUOUS FLOW */
           <div className="max-w-6xl mx-auto px-6 sm:px-10 py-8 space-y-8">
-            
+
+            {/* Mobile search input (header search bar is md+ only) */}
+            <div className="md:hidden relative">
+              <Search className="w-4 h-4 text-[#8C897F] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tools, Canvas, Desmos, Quizlet..."
+                aria-label="Search apps"
+                className="w-full pl-10 pr-4 py-2 text-xs bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
+              />
+            </div>
+
             {/* Category Filter Pills — sticky + count badges */}
             <div className="sticky top-0 z-10 bg-[#FAF9F5] dark:bg-[#141413] py-2 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-[#DFDACB]/40 dark:border-[#2C2B27]/40 -mx-6 sm:-mx-10 px-6 sm:px-10">
               {CATEGORIES.map((cat) => {
