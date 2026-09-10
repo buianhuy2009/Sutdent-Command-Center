@@ -36,10 +36,34 @@ export const StudyCardModal: React.FC<StudyCardModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleShareLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleShareLink = async () => {
+    const showCopiedFeedback = () => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+    const href = window.location.href;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(href);
+        showCopiedFeedback();
+        return;
+      }
+      throw new Error('clipboard unavailable');
+    } catch {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = href;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (ok) showCopiedFeedback();
+      } catch {
+        // silent degrade: clipboard unavailable
+      }
+    }
   };
 
   const handleDownloadSvg = () => {
@@ -51,7 +75,9 @@ export const StudyCardModal: React.FC<StudyCardModalProps> = ({
     const link = document.createElement('a');
     link.href = url;
     link.download = `StudentOS-StudyCard-${userName.replace(/\s+/g, '_')}.svg`;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
