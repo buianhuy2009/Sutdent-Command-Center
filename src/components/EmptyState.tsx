@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, CheckSquare, HardDrive, Inbox, Mail, BookOpen, CreditCard, Sparkles } from 'lucide-react';
+import { Calendar, CheckSquare, HardDrive, Inbox, Mail, BookOpen, CreditCard, Sparkles, Lightbulb } from 'lucide-react';
 
 export interface EmptyStateAction { label: string; onClick: () => void; primary?: boolean; }
 
@@ -12,31 +12,32 @@ export const EmptyState: React.FC<{
 }> = ({ icon: Icon = Inbox, title, description, actionLabel, onAction, actions, illustration, tip }) => {
   const resolved: EmptyStateAction[] = actions ?? (actionLabel && onAction ? [{ label: actionLabel, onClick: onAction, primary: true }] : []);
   return (
-    <div className="py-16 flex flex-col items-center justify-center text-center space-y-3 px-6">
+    <div className="w-full mx-auto py-16 flex flex-col items-center justify-center text-center px-6 animate-in fade-in duration-200" style={{ color: 'var(--ink)' }}>
       {illustration ?? (
-        <div className="w-16 h-16 rounded-2xl surface-token border border-token flex items-center justify-center" style={{ backgroundColor: 'var(--linen)', borderColor: 'var(--line)' }}>
+        <div className="w-16 h-16 rounded-2xl surface-token border border-token flex items-center justify-center shadow-xs transition-transform hover:scale-105" style={{ backgroundColor: 'var(--linen)', borderColor: 'var(--line)' }}>
           <Icon className="w-7 h-7 opacity-80" style={{ color: 'var(--terracotta)' }} aria-hidden="true" />
         </div>
       )}
-      <h4 className="text-sm font-bold">{title}</h4>
-      <p className="text-xs max-w-sm leading-relaxed" style={{ color: 'var(--stone)' }}>{description}</p>
+      <h4 className="mt-4 text-base font-bold tracking-tight text-balance text-[#141413] dark:text-[#FAF9F5]">{title}</h4>
+      <p className="mt-1 text-xs max-w-sm leading-relaxed text-pretty text-[#6B6860] dark:text-[#B5B2A8]" style={{ color: 'var(--stone)' }}>{description}</p>
       {resolved.length > 0 && (
-        <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
           {resolved.map((a, i) => (
             <button
               key={i}
               onClick={a.onClick}
+              type="button"
               className={a.primary
-                ? 'mt-1 px-4 py-2 text-white rounded-xl text-xs font-bold shadow-xs transition-colors min-h-[44px]'
-                : 'mt-1 px-4 py-2 rounded-xl text-xs font-bold border transition-colors min-h-[44px]'}
-              style={a.primary ? { backgroundColor: 'var(--terracotta)' } : { borderColor: 'var(--line)' }}
+                ? 'mt-1 px-4 py-2 text-white rounded-xl text-xs font-bold shadow-xs transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 min-h-[44px] bg-[#D97757] hover:bg-[#C86A4B]'
+                : 'mt-1 px-4 py-2 rounded-xl text-xs font-bold border border-[#E8E6E0] dark:border-[#2A2925] transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 min-h-[44px]'}
+              style={a.primary ? { backgroundColor: '#D97757' } : { borderColor: 'var(--line)', color: 'var(--ink)' }}
             >
               {a.label}
             </button>
           ))}
         </div>
       )}
-      {tip && <p className="text-[11px] max-w-xs leading-relaxed opacity-70">💡 {tip}</p>}
+      {tip && <p className="mt-3 text-[11px] max-w-xs leading-relaxed inline-flex items-start justify-center gap-1.5 text-center" style={{ color: 'var(--stone)' }}><Lightbulb className="w-3.5 h-3.5 shrink-0 mt-px opacity-70" aria-hidden="true" /><span className="opacity-80">{tip}</span></p>}
     </div>
   );
 };
