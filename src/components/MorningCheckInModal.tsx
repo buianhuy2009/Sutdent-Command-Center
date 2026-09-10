@@ -7,14 +7,27 @@ import {
   ArrowRight,
   Sparkles,
   CheckCircle2,
+  CloudRain,
+  Frown,
+  Meh,
+  Smile,
+  Flame,
 } from 'lucide-react';
 
 interface MorningCheckInModalProps {
   isOpen: boolean;
   onClose: () => void;
   userName: string;
-  onSaveIntention: (intention: string, targetHours: number) => void;
+  onSaveIntention: (intention: string, targetHours: number, mood?: string) => void;
 }
+
+const MOOD_OPTIONS = [
+  { value: 'struggling', label: 'Struggling', Icon: CloudRain },
+  { value: 'low', label: 'Low', Icon: Frown },
+  { value: 'okay', label: 'Okay', Icon: Meh },
+  { value: 'good', label: 'Good', Icon: Smile },
+  { value: 'fired-up', label: 'Fired up', Icon: Flame },
+];
 
 export const MorningCheckInModal: React.FC<MorningCheckInModalProps> = ({
   isOpen,
@@ -24,13 +37,14 @@ export const MorningCheckInModal: React.FC<MorningCheckInModalProps> = ({
 }) => {
   const [intention, setIntention] = useState('');
   const [targetHours, setTargetHours] = useState(3);
+  const [mood, setMood] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!intention.trim()) return;
-    onSaveIntention(intention.trim(), targetHours);
+    onSaveIntention(intention.trim(), targetHours, mood ?? undefined);
     onClose();
   };
 
@@ -94,6 +108,30 @@ export const MorningCheckInModal: React.FC<MorningCheckInModalProps> = ({
                   }`}
                 >
                   {hours} {hours === 1 ? 'Hour' : 'Hours'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-[#141413] dark:text-[#FAF9F5] mb-1.5 flex items-center gap-1.5">
+              <Smile className="w-3.5 h-3.5 text-[#D97757]" />
+              <span>How are you feeling today?</span>
+            </label>
+            <div className="grid grid-cols-5 gap-2">
+              {MOOD_OPTIONS.map(({ value, label, Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setMood(value)}
+                  className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                    mood === value
+                      ? 'bg-[#D97757] text-white border-[#D97757] shadow-xs'
+                      : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border-[#DFDACB] dark:border-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] hover:border-[#D97757]'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-[10px] leading-none">{label}</span>
                 </button>
               ))}
             </div>
