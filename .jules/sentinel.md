@@ -1,0 +1,4 @@
+## 2026-09-06 - Mermaid Diagram SVG Rendering XSS Vulnerability
+**Vulnerability:** Unsanitized Mermaid SVG rendering combined with `securityLevel: 'loose'` allowed potential cross-site scripting (XSS) when rendering AI-generated or user-controlled Mermaid diagram definitions via `dangerouslySetInnerHTML`.
+**Learning:** Mermaid's default or loose security mode allows execution of inline JavaScript and HTML nodes embedded within diagram syntax. When combined with direct injection of rendered SVG markup into the DOM without HTML sanitization, malicious diagram inputs could execute arbitrary code in the user's browser context.
+**Prevention:** Always initialize Mermaid with `securityLevel: 'strict'` and sanitize all rendered SVG strings using `DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true } })` before injecting into the DOM via `dangerouslySetInnerHTML` or `element.innerHTML`.
