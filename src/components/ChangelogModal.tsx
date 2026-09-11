@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.6.1';
+export const CURRENT_VERSION = '2.7.0';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,29 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.7.0',
+    date: 'September 11, 2026',
+    title: 'Claude Palette, VI/EN Toggle, Calmer Toolbars & Honest Canvas',
+    badge: 'Latest Update',
+    highlights: [
+      'Whole app now follows the Anthropic Claude palette — canvas, hairline borders and primary accent',
+      'New Vietnamese / English toggle in the navbar, landing header, footer and Settings — auto-detects on first visit',
+      'Master Tracker toolbar decluttered — filters, export and sheet link moved into a Filters panel, AI Rank merged into Smart Add',
+      'Canvas failures show one clear banner only (no more duplicate popup) and never wipe your loaded assignments',
+      'Logged-out homepage rebuilt — Features, How-it-works, FAQ and Privacy sections with anchor navigation',
+    ],
+    details: [
+      'Palette (theme, stylesheet, app shell): tokens move to Claude official values — canvas #F5F4ED, warm-sand borders #E8E6DC, primary #C96442, muted #5E5D59. Avatar badges drop off-palette blue/emerald/purple for Claude neutrals, and error toasts use the dark surface instead of the old rose block. Find it in Settings → Appearance.',
+      'Language (navbar, landing, Tracker, Canvas, Settings → General): every chrome string goes through one dictionary with auto-detect (browser Vietnamese → Vietnamese) saved per device. Deep AI-generated content stays in its source language by design.',
+      'Tracker (Master Tracker header): removed the Export CSV button, standalone Sheet pill and Timeline toggle from the main row. Subject/status/priority filters, CSV export and Open Sheet live behind the new Filters icon; AI Rank now sits inside the Smart Add bar. Canvas tab pills wrap cleanly and the Settings → General Tour + Changelog cards merge into one Help & updates row.',
+      'Canvas (Canvas LMS tab): the same failure used to fire both an inline banner and an identical popup. Only the banner shows now, the message is shortened to a single fix, failed syncs keep your cached assignments (now persisted across reloads) instead of blanking the list.',
+      'Homepage (logged-out landing): new section nav (Features, How it works, FAQ, Privacy), a 3-step setup guide built from the real connect flows, and honest product cards instead of quote-styled testimonials. No invented users, counts or videos.',
+    ]
+  },
+  {
     version: '2.6.1',
     date: 'September 10, 2026',
     title: 'True Palette, Point-At-You Tour & Honest Canvas Errors',
-    badge: 'Latest Update',
     highlights: [
       'Every screen now follows the Warm Cream / Charcoal / Terracotta palette in both modes — no more blue or slate intruders',
       'The intro tour now points directly at the real buttons and auto-moves you between tabs as you press Next',
@@ -153,7 +172,6 @@ const RELEASES: VersionRelease[] = [
     version: '2.3.1',
     date: 'September 02, 2026',
     title: 'Clean & Simple — Menu, Pinned Tools & Easier Updates',
-    badge: 'Latest Update',
     highlights: [
       'Top menu is now clean and simple — only your location, search, and AI Coach + notifications remain. No more clock, sync status, or extra buttons to distract you',
       'No more confusing “Academic Core” section — your 5 main tools (Canvas, Daily Schedule, Assignment Tracker, Gmail, and Drive) are now in “Pinned” and ready from day one. Add more from the App Store',

@@ -292,7 +292,7 @@ export default function App() {
     syncDarkToTheme(v);
     setDarkModeState(v);
     try {
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', v ? '#141413' : '#FAF9F5');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', v ? '#141413' : '#F5F4ED');
     } catch {}
   }, []);
 
@@ -320,7 +320,7 @@ export default function App() {
       }
       const isDarkNow = document.documentElement.classList.contains('dark');
       setDarkModeState(isDarkNow);
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDarkNow ? '#141413' : '#FAF9F5');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDarkNow ? '#141413' : '#F5F4ED');
     } catch (e) {
       console.error('Theme init error:', e);
     }
@@ -471,7 +471,7 @@ export default function App() {
       const arr: string[] = raw ? JSON.parse(raw) : [];
       if (!arr.includes(todayStr)) { arr.push(todayStr); localStorage.setItem('scc_streak_history', JSON.stringify(arr.slice(-30))); }
       if (arr.length % 7 === 0 && arr.length>0 && typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
-        confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 }, colors: ['#D97757','#10b981','#7C3AED'] });
+        confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 }, colors: ['#C96442','#10b981','#7C3AED'] });
       }
     } catch {}
     addToast({
@@ -542,7 +542,14 @@ export default function App() {
   emailAlertsRef.current = emailAlerts;
   const [assignments, setAssignments] = useState<Assignment[]>(loadSavedAssignments());
   const [recentFiles, setRecentFiles] = useState<SchoolFile[]>([]);
-  const [canvasAssignments, setCanvasAssignments] = useState<CanvasAssignment[]>([]);
+  const [canvasAssignments, setCanvasAssignments] = useState<CanvasAssignment[]>(() => {
+    try {
+      const saved = localStorage.getItem('scc_cached_canvas_assignments');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [classroomAssignments, setClassroomAssignments] = useState<CanvasAssignment[]>(() => {
     try {
       const saved = localStorage.getItem('scc_cached_classroom_assignments');
@@ -1749,32 +1756,27 @@ export default function App() {
       const fetched = Array.from(mergedMap.values());
 
       const crossRef = crossReferenceCanvasWithSheet(fetched, assignments);
-      setCanvasAssignments(crossRef);
-      // Surface source-level failures instead of silently showing "0 tasks".
-      // A 401 almost always means a wrong/expired token or wrong Canvas URL.
+      // Single-channel error policy: the inline banner is the source of truth.
+      // Never toast the same message (that was the duplicate banner+toast bug),
+      // and never overwrite the list with [] on failure — keep previous items.
       if (fetched.length === 0 && (apiError || feedError)) {
         const combined = [apiError, feedError].filter(Boolean).join(' ');
         const hint = /401|unauthorized/i.test(combined)
-          ? ` Check that your Canvas URL is exactly your school's host (e.g. ${apiDomain || 'https://4015.instructure.com'}) and that the API token is valid (Canvas → Account → Settings → New Access Token).`
-          : ` Check your Canvas URL (${apiDomain || 'custom host'}) and token, then retry.`;
-        const errMsg = `Canvas sync failed: ${combined}.${hint}`;
-        setCanvasError(errMsg);
-        if (!isSilent) {
-          addToast({ type: 'error', title: 'Canvas Sync Failed', message: errMsg });
-        }
+          ? ` Check that the Canvas URL is exactly your school host and the API token is valid (Canvas → Account → Settings → New Access Token), then retry.`
+          : ` Check your Canvas URL and token, then retry.`;
+        setCanvasError(`Canvas sync failed: ${combined}.${hint}`);
         return;
       }
       // Configured but zero assignments and zero errors (e.g. all sources quietly
       // empty): say so explicitly instead of a misleading "all caught up".
       if (fetched.length === 0 && (isApiConfigured || feedUrl)) {
-        const emptyMsg =
-          'Connected, but Canvas returned 0 assignments. If you expect coursework here, re-copy your Calendar Feed link (Canvas → Calendar → Calendar Feed) or regenerate your API token (Canvas → Account → Settings → New Access Token), save, and sync again.';
-        setCanvasError(emptyMsg);
-        if (!isSilent) {
-          addToast({ type: 'warning', title: 'Canvas Returned Nothing', message: emptyMsg });
-        }
+        setCanvasError(
+          'Connected, but Canvas returned 0 assignments. If you expect coursework here, re-copy your Calendar Feed link (Canvas → Calendar → Calendar Feed) or regenerate your API token (Canvas → Account → Settings → New Access Token), save, and sync again.'
+        );
         return;
       }
+      setCanvasAssignments(crossRef);
+      try { localStorage.setItem('scc_cached_canvas_assignments', JSON.stringify(crossRef)); } catch {}
       setCanvasError(null);
       setLastSyncedAt(new Date());
 
@@ -1831,14 +1833,8 @@ export default function App() {
       console.error('Canvas load error:', err);
       const errMsg = err.message || 'Failed to fetch Canvas feed. Please verify the URL.';
       setCanvasError(errMsg);
-      // Keep previously loaded assignments so the tab never goes blank on a transient failure
-      if (!isSilent) {
-        addToast({
-          type: 'error',
-          title: 'Canvas Sync Failed',
-          message: errMsg,
-        });
-      }
+      // Keep previously loaded assignments so the tab never goes blank on a transient failure.
+      // Banner-only (no duplicate toast) per single-channel error policy.
     } finally {
       if (!isSilent) setIsLoadingCanvas(false);
     }
@@ -2644,7 +2640,7 @@ export default function App() {
 
   // reducedMotion already handled via CSS prefers-reduced-motion + index.css; MotionConfig not required (motion 12 export issue avoided)
   return (
-    <div className="h-screen max-h-screen overflow-hidden bg-[#FAF9F5] dark:bg-[#141413] text-[#141413] dark:text-[#FAF9F5] transition-colors flex flex-col font-sans selection:bg-[#D97757] selection:text-white">
+    <div className="h-screen max-h-screen overflow-hidden bg-[#F5F4ED] dark:bg-[#141413] text-[#141413] dark:text-[#F5F4ED] transition-colors flex flex-col font-sans selection:bg-[#C96442] selection:text-white">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-white dark:focus:bg-[#1A1917] focus:border focus:rounded-xl">Skip to content</a>
       {/* Demo Mode Top Alert */}
       {!user && isDemoMode && (
@@ -2674,7 +2670,7 @@ export default function App() {
       <div className="flex-1 flex overflow-hidden h-full">
         {/* Mobile hamburger — visible only <768px */}
         {!zenFocusMode && activeTab !== 'dashboard' && (
-          <button onClick={()=>setMobileNavOpen(v=>!v)} className="md:hidden fixed top-2 left-2 z-40 p-2 rounded-xl bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] shadow-md" aria-label="Toggle navigation" aria-expanded={mobileNavOpen}>
+          <button onClick={()=>setMobileNavOpen(v=>!v)} className="md:hidden fixed top-2 left-2 z-40 p-2 rounded-xl bg-white dark:bg-[#1A1917] border border-[#E8E6DC] dark:border-[#2C2B27] shadow-md" aria-label="Toggle navigation" aria-expanded={mobileNavOpen}>
             <span className="text-sm font-bold">☰</span>
           </button>
         )}
@@ -2710,7 +2706,7 @@ export default function App() {
         {/* Mobile drawer overlay with swipe to close + Esc */}
         {mobileNavOpen && !zenFocusMode && activeTab !== 'dashboard' && (
           <div className="md:hidden fixed inset-0 z-30 flex" onTouchStart={(e)=>{ (e.currentTarget as any)._sx = e.touches[0].clientX; }} onTouchEnd={(e)=>{ const sx=(e.currentTarget as any)._sx||0; const dx=e.changedTouches[0].clientX - sx; if(dx < -60 || dx > 60) setMobileNavOpen(false); }} onKeyDown={(e)=>{ if(e.key==='Escape') setMobileNavOpen(false); }}>
-            <div className="w-64 shrink-0 bg-[#EFECE2] dark:bg-[#1A1917] border-r border-[#DFDACB] dark:border-[#2C2B27] overflow-y-auto">
+            <div className="w-64 shrink-0 bg-[#E8E6DC] dark:bg-[#1A1917] border-r border-[#E8E6DC] dark:border-[#2C2B27] overflow-y-auto">
               <Sidebar
                 activeTab={activeTab}
                 onSelectTab={(t)=>{ handleTabTransition(t); setMobileNavOpen(false); }}
@@ -2741,10 +2737,10 @@ export default function App() {
         )}
 
         {/* Right Main Column with Top Header, Scrollable Content, and Bottom Status Bar */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#FAF9F5] dark:bg-[#141413]">
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#F5F4ED] dark:bg-[#141413]">
           {/* Top Header — simplified & error-guarded */}
           {activeTab !== 'dashboard' && (
-            <ErrorBoundary fallback={<header className="h-12 bg-white dark:bg-[#141413] border-b border-[#DFDACB] dark:border-[#2C2B27] px-4 sm:px-6 flex items-center justify-between z-20 text-xs font-semibold text-[#6B6860]"><button onClick={() => window.dispatchEvent(new CustomEvent('scc-navigate', { detail: 'dashboard' }))} className="hover:text-[#D97757]">StudentOS / Dashboard</button></header>}>
+            <ErrorBoundary fallback={<header className="h-12 bg-white dark:bg-[#141413] border-b border-[#E8E6DC] dark:border-[#2C2B27] px-4 sm:px-6 flex items-center justify-between z-20 text-xs font-semibold text-[#5E5D59]"><button onClick={() => window.dispatchEvent(new CustomEvent('scc-navigate', { detail: 'dashboard' }))} className="hover:text-[#C96442]">StudentOS / Dashboard</button></header>}>
             <Navbar
               activeTabLabel={
                 {
@@ -2806,18 +2802,18 @@ export default function App() {
 
           {/* PWA Install Banner — simplified */}
           {showInstallBtn && !zenFocusMode && activeTab !== 'dashboard' && (
-            <div className="mx-4 mt-2 p-3 bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl flex items-center justify-between text-xs shadow-sm">
+            <div className="mx-4 mt-2 p-3 bg-[#F5F4ED] dark:bg-[#1A1917] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-2xl flex items-center justify-between text-xs shadow-sm">
               <div className="flex items-center gap-2"><span>📲</span><span className="font-semibold">Install app for offline access</span></div>
               <div className="flex items-center gap-2">
-                <button onClick={handleInstallPwa} className="px-3 py-1.5 bg-[#D97757] text-white rounded-xl font-bold hover:bg-[#C86646]">Install</button>
-                <button onClick={handleDismissPwa} className="px-2 py-1 text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5]">Later</button>
+                <button onClick={handleInstallPwa} className="px-3 py-1.5 bg-[#C96442] text-white rounded-xl font-bold hover:bg-[#A94E33]">Install</button>
+                <button onClick={handleDismissPwa} className="px-2 py-1 text-[#5E5D59] hover:text-[#141413] dark:hover:text-[#F5F4ED]">Later</button>
               </div>
             </div>
           )}
 
           {/* Main Area: Full-Screen AI Coach View OR Tab Workspaces — lazy + suspense + error boundary */}
           {aiChatOpen ? (
-            <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8"><div className="w-6 h-6 border-2 border-[#D97757] border-t-transparent rounded-full animate-spin" /><span className="ml-2 text-xs text-[#6B6860]">Loading AI Coach…</span></div>}>
+            <Suspense fallback={<div className="flex-1 flex items-center justify-center p-8"><div className="w-6 h-6 border-2 border-[#C96442] border-t-transparent rounded-full animate-spin" /><span className="ml-2 text-xs text-[#5E5D59]">Loading AI Coach…</span></div>}>
               <StudyAssistantChat
                 isOpen={true}
                 onClose={() => setAiChatOpen(false)}
@@ -2830,7 +2826,7 @@ export default function App() {
           ) : (
             <main id="main-content" className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 min-h-0" aria-label="Workspace content">
               <ErrorBoundary fallback={<div className="p-6 rounded-2xl border border-rose-200 bg-rose-50 text-rose-900 text-sm">Workspace failed to load. Try refreshing or switching tabs.</div>}>
-              <Suspense fallback={<div className="p-8 flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#D97757] border-t-transparent rounded-full animate-spin" /><span className="ml-2 text-xs text-[#8C897F]">Loading workspace…</span></div>}>
+              <Suspense fallback={<div className="p-8 flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#C96442] border-t-transparent rounded-full animate-spin" /><span className="ml-2 text-xs text-[#8C897F]">Loading workspace…</span></div>}>
               <div className="max-w-7xl mx-auto space-y-6">
                 {/* Google Workspace Connection Banner: only when no usable grant
                     exists. Access renews silently via the offline grant, so no
@@ -2839,14 +2835,14 @@ export default function App() {
                 {user && !isGoogleConnected && !isDemoMode && (
                   <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs animate-in fade-in">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-[#D97757]/15 text-[#D97757] flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-[#C96442]/15 text-[#C96442] flex items-center justify-center shrink-0">
                         <Sparkles className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="font-bold text-[#141413] dark:text-[#FAF9F5] text-sm">
+                        <p className="font-bold text-[#141413] dark:text-[#F5F4ED] text-sm">
                           Google Workspace Sync Paused
                         </p>
-                        <p className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8]">
+                        <p className="text-[11px] text-[#5E5D59] dark:text-[#B5B2A8]">
                           {`Signed in as ${user.email}. Connect Google Workspace with one click to enable live sync across Calendar, Drive, Sheets & Classroom — it stays connected automatically.`}
                         </p>
                       </div>
@@ -2855,7 +2851,7 @@ export default function App() {
                       <button
                         onClick={() => handleGoogleSignIn(true)}
                         disabled={isLoggingIn}
-                        className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        className="px-4 py-2 bg-[#C96442] hover:bg-[#A94E33] text-white font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                       >
                         <RefreshCw className={`w-3.5 h-3.5 ${isLoggingIn ? 'animate-spin' : ''}`} />
                         <span>{isLoggingIn ? 'Connecting...' : 'Connect Workspace'}</span>
@@ -3521,17 +3517,17 @@ export default function App() {
       <dialog
         ref={onboardingDialogRef}
         id="onboarding-tour-dialog"
-        className="backdrop:bg-black/60 backdrop:backdrop-blur-xs rounded-2xl p-0 border border-[#DFDACB] dark:border-[#2C2B27] shadow-2xl bg-[#FAF9F5] dark:bg-[#1A1917] text-[#141413] dark:text-[#FAF9F5] max-w-lg w-full m-auto overflow-hidden"
+        className="backdrop:bg-black/60 backdrop:backdrop-blur-xs rounded-2xl p-0 border border-[#E8E6DC] dark:border-[#2C2B27] shadow-2xl bg-[#F5F4ED] dark:bg-[#1A1917] text-[#141413] dark:text-[#F5F4ED] max-w-lg w-full m-auto overflow-hidden"
       >
         <div className="p-6 space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-[#DFDACB] dark:border-[#2C2B27]">
+          <div className="flex items-center justify-between pb-3 border-b border-[#E8E6DC] dark:border-[#2C2B27]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-tr from-amber-500 to-[#D97757] rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md shadow-[#D97757]/30">
+              <div className="w-10 h-10 bg-gradient-to-tr from-amber-500 to-[#C96442] rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md shadow-[#C96442]/30">
                 S
               </div>
               <div>
                 <h3 className="text-base font-bold leading-tight">Welcome to Student Command Center</h3>
-                <p className="text-xs text-[#6B6860]">Eye-friendly, distraction-free academic workspace</p>
+                <p className="text-xs text-[#5E5D59]">Eye-friendly, distraction-free academic workspace</p>
               </div>
             </div>
             <button
@@ -3539,34 +3535,34 @@ export default function App() {
                 localStorage.setItem('scc_tour_seen', 'true');
                 onboardingDialogRef.current?.close();
               }}
-              className="p-1.5 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] rounded-lg cursor-pointer"
+              className="p-1.5 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#F5F4ED] rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           <div className="space-y-3 text-xs">
-            <div className="p-3 rounded-xl bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] flex items-start gap-3">
-              <span className="p-1.5 rounded-lg bg-[#D97757]/15 text-[#D97757] shrink-0 font-bold">1</span>
+            <div className="p-3 rounded-xl bg-white dark:bg-[#252422] border border-[#E8E6DC] dark:border-[#2C2B27] flex items-start gap-3">
+              <span className="p-1.5 rounded-lg bg-[#C96442]/15 text-[#C96442] shrink-0 font-bold">1</span>
               <div>
-                <strong className="text-[#141413] dark:text-[#FAF9F5] block font-semibold">Canvas LMS Direct Sync</strong>
-                <p className="text-[#6B6860] mt-0.5">Filter unfinished vs. completed homework, open quizzes directly in Canvas, or submit files from Google Drive.</p>
+                <strong className="text-[#141413] dark:text-[#F5F4ED] block font-semibold">Canvas LMS Direct Sync</strong>
+                <p className="text-[#5E5D59] mt-0.5">Filter unfinished vs. completed homework, open quizzes directly in Canvas, or submit files from Google Drive.</p>
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] flex items-start gap-3">
-              <span className="p-1.5 rounded-lg bg-[#D97757]/15 text-[#D97757] shrink-0 font-bold">2</span>
+            <div className="p-3 rounded-xl bg-white dark:bg-[#252422] border border-[#E8E6DC] dark:border-[#2C2B27] flex items-start gap-3">
+              <span className="p-1.5 rounded-lg bg-[#C96442]/15 text-[#C96442] shrink-0 font-bold">2</span>
               <div>
-                <strong className="text-[#141413] dark:text-[#FAF9F5] block font-semibold">Unified Daily Timeline</strong>
-                <p className="text-[#6B6860] mt-0.5">Your Google Calendar classes, study focus blocks, and today's Canvas deadlines merged in chronological order.</p>
+                <strong className="text-[#141413] dark:text-[#F5F4ED] block font-semibold">Unified Daily Timeline</strong>
+                <p className="text-[#5E5D59] mt-0.5">Your Google Calendar classes, study focus blocks, and today's Canvas deadlines merged in chronological order.</p>
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] flex items-start gap-3">
+            <div className="p-3 rounded-xl bg-white dark:bg-[#252422] border border-[#E8E6DC] dark:border-[#2C2B27] flex items-start gap-3">
               <span className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 shrink-0 font-bold">3</span>
               <div>
-                <strong className="text-[#141413] dark:text-[#FAF9F5] block font-semibold">Anti-Eyestrain Linen Theme</strong>
-                <p className="text-[#6B6860] mt-0.5">Warm cream #FAF9F5 light and charcoal #141413 dark with terracotta accent eliminate glare during late study sessions.</p>
+                <strong className="text-[#141413] dark:text-[#F5F4ED] block font-semibold">Anti-Eyestrain Linen Theme</strong>
+                <p className="text-[#5E5D59] mt-0.5">Warm cream #F5F4ED light and charcoal #141413 dark with terracotta accent eliminate glare during late study sessions.</p>
               </div>
             </div>
           </div>
@@ -3578,7 +3574,7 @@ export default function App() {
                 localStorage.setItem('scc_tour_seen', 'true');
                 onboardingDialogRef.current?.close();
               }}
-              className="px-5 py-2 bg-[#D97757] hover:bg-[#C86646] text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-2 bg-[#C96442] hover:bg-[#A94E33] text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <span>Get Started</span>
               <ArrowRight className="w-3.5 h-3.5" />

@@ -35,19 +35,19 @@ export const ToastContainer: React.FC<ToastProps & { onUndo?: any; onRetry?: any
             id={`toast-${toast.id}`}
             className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-200 animate-in slide-in-from-bottom-5 ${
               toast.type === 'success'
-                ? 'bg-emerald-950/90 border-emerald-800/80 text-emerald-100'
+                ? 'bg-[#30302E]/95 border-[#4F4A3E] text-[#F5F4ED]'
                 : toast.type === 'error'
-                ? 'bg-rose-950/90 border-rose-800/80 text-rose-100'
+                ? 'bg-[#30302E]/95 border-[#C96442]/50 text-[#F5F4ED]'
                 : toast.type === 'warning'
-                ? 'bg-amber-950/90 border-amber-800/80 text-amber-100'
-                : 'bg-[#141413]/95 border-[#4F4A3E] text-[#FAF9F5]'
+                ? 'bg-[#30302E]/95 border-[#E8E6DC]/30 text-[#F5F4ED]'
+                : 'bg-[#141413]/95 border-[#4F4A3E] text-[#F5F4ED]'
             }`}
           >
             <div className="mt-0.5 shrink-0">
-              {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
-              {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-400" />}
-              {toast.type === 'warning' && <AlertCircle className="w-5 h-5 text-amber-400" />}
-              {toast.type === 'info' && <Info className="w-5 h-5 text-[#D97757]" />}
+              {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+              {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-[#C96442]" />}
+              {toast.type === 'warning' && <AlertCircle className="w-5 h-5 text-amber-500" />}
+              {toast.type === 'info' && <Info className="w-5 h-5 text-[#C96442]" />}
             </div>
 
             <div className="flex-1 min-w-0">

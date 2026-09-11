@@ -4,15 +4,15 @@
 
 /* === Tokenized Theme Engine — Brand / Design System v2.0 === */
 :root {
-  --color-background: 250 249 245; /* #FAF9F5 linen */
+  --color-background: 245 244 237; /* #F5F4ED claude canvas */
   --color-panel: 255 255 255;
-  --color-border: 223 218 203; /* #DFDACB */
-  --color-accent: 217 119 87; /* #D97757 terracotta — primary CTA only */
+  --color-border: 232 230 220; /* #E8E6DC warm-sand */
+  --color-accent: 201 100 66; /* #C96442 claude primary — CTA only */
   --color-secondary: 124 58 237; /* #7C3AED violet — secondary semantic */
   --color-success: 16 185 129; /* #10B981 emerald — success */
   --color-text: 20 20 19;
-  --color-muted: 107 104 96; /* #6B6860 WCAG AA 4.6:1 on #FAF9F5 — replaces #8C897F */
-  --color-muted-aa: 107 104 96;
+  --color-muted: 94 93 89; /* #5E5D59 claude muted AA on #F5F4ED */
+  --color-muted-aa: 94 93 89;
   --text-display: 600 2.5rem/1.1 Inter, ui-sans-serif, system-ui;
   --text-body: 400 0.875rem/1.6 Inter, ui-sans-serif, system-ui;
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -31,14 +31,14 @@
   --shadow-card: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.04);
   --shadow-card-hover: 0 4px 12px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.06);
 }
-/* Strict two-mode palette only — Light #FAF9F5 / Dark #141413 / Accent #D97757 */
+/* Strict two-mode palette only — Claude Canvas #F5F4ED / Dark #141413 / Primary #C96442 */
 :root, :root[data-theme="linen"], :root[data-theme="parchment"] {
-  --color-background: 250 249 245; /* #FAF9F5 Warm Cream */
+  --color-background: 245 244 237; /* #F5F4ED Claude canvas */
   --color-panel: 255 255 255;
-  --color-border: 223 218 203; /* #DFDACB */
-  --color-accent: 217 119 87; /* #D97757 Terracotta */
-  --color-text: 20 20 19; /* #141413 Dark Charcoal */
-  --color-muted: 107 104 96;
+  --color-border: 232 230 220; /* #E8E6DC warm-sand */
+  --color-accent: 201 100 66; /* #C96442 Claude primary */
+  --color-text: 20 20 19; /* #141413 */
+  --color-muted: 94 93 89;
 }
 :root[data-theme="midnight"],
 html.dark {
@@ -48,8 +48,8 @@ html.dark {
   --color-well: 46 44 40; /* #2E2C28 Wells + inputs */
   --color-border: 79 74 62; /* #4F4A3E Visible warm border */
   --color-border-strong: 101 94 77; /* #655E4D Hover/emphasis border */
-  --color-accent: 217 119 87; /* #D97757 Terracotta Orange */
-  --color-text: 250 249 245; /* #FAF9F5 Warm Cream */
+  --color-accent: 201 100 66; /* #C96442 Claude primary */
+  --color-text: 245 244 237; /* #F5F4ED */
   --color-muted: 181 178 168; /* #B5B2A8 */
 }
 
@@ -76,7 +76,7 @@ html.dark {
     color: rgb(var(--color-text));
   }
   ::selection {
-    background-color: #D97757;
+    background-color: #C96442;
     color: #FFFFFF;
   }
   h1, h2, h3, h4, h5 {
@@ -125,7 +125,7 @@ html.dark {
   html.dark .text-slate-100,
   html.dark .text-slate-200,
   html.dark .text-white {
-    color: #FAF9F5;
+    color: #F5F4ED;
   }
   html.dark .text-slate-300 {
     color: #E6E4DC;
@@ -154,7 +154,7 @@ html.dark {
   html.dark input, html.dark select, html.dark textarea {
     border-color: #4F4A3E;
     background-color: #2E2C28;
-    color: #FAF9F5;
+    color: #F5F4ED;
   }
   html.dark input::placeholder, html.dark textarea::placeholder {
     color: #8C897F;
@@ -373,11 +373,11 @@ html[data-theme="midnight"].dark body,
 html.dark,
 html.dark body {
   background-color: #141413;
-  color: #FAF9F5;
+  color: #F5F4ED;
 }
 html:not(.dark),
 html:not(.dark) body {
-  background-color: #FAF9F5;
+  background-color: #F5F4ED;
   color: #141413;
 }
 
@@ -400,15 +400,15 @@ html:not(.dark) body {
 
 /* === Centralized Design Tokens — single source of truth (v2.4) ===
    Use var(--bg), var(--surface), var(--border), var(--accent) instead of one-off hexes.
-   Legacy hexes (#EFECE2, #D97757, #6B6860, #FAF9F5, #DFDACB) are aliased here so old
+   Legacy hexes (#E8E6DC, #C96442, #5E5D59, #F5F4ED, #E8E6DC) are aliased here so old
    Tailwind arbitrary values keep working while new code uses tokens. */
 :root {
   --bg: rgb(var(--color-background));
   --surface: rgb(var(--color-panel));
   --border: rgb(var(--color-border));
   --accent: rgb(var(--color-accent));
-  --accent-text: #AA4F32; /* AA-safe terracotta for small text on white (4.6:1+). Bright #D97757 stays for fills/buttons only. */
-  --accent-soft: rgba(217, 119, 87, 0.12);
+  --accent-text: #A94E33; /* AA-safe claude primary for small text on white. Bright #C96442 stays for fills/buttons only. */
+  --accent-soft: rgba(201, 100, 66, 0.12);
   --ink: rgb(var(--color-text));
   --muted: rgb(var(--color-muted));
   --radius: var(--radius-card);
@@ -416,12 +416,12 @@ html:not(.dark) body {
   --shadow: var(--shadow-card);
   --shadow-lg: var(--shadow-card-hover);
   /* compat aliases for scattered hexes */
-  --linen: #FAF9F5; --linen-deep: #EFECE2; --line: #DFDACB;
-  --terracotta: #D97757; --terracotta-dark: #AA4F32; --stone: #6B6860;
+  --linen: #F5F4ED; --linen-deep: #E8E6DC; --line: #E8E6DC;
+  --terracotta: #C96442; --terracotta-dark: #A94E33; --stone: #5E5D59;
 }
 .dark, :root[data-theme="midnight"] {
   --accent-text: #E8A07E; /* lighter terracotta passes on dark surfaces */
-  --accent-soft: rgba(217, 119, 87, 0.22);
+  --accent-soft: rgba(201, 100, 66, 0.22);
 }
 /* Token utility classes — prefer these over arbitrary hexes */
 .bg-token { background-color: var(--bg); }
@@ -484,26 +484,26 @@ html[data-dyslexia="opendyslexic"] p, html[data-dyslexia="atkinson"] p { max-wid
 .cq-card { container-type: inline-size; }
 
 /* Token aliases — layered (no !important) so Tailwind `dark:` variants always win.
-   Root cause of mixed dark mode was unlayered `!important` forcing #FAF9F5/#EFECE2
+   Root cause of mixed dark mode was unlayered `!important` forcing #F5F4ED/#E8E6DC
    even when `.dark` was active. Now: light maps to linen, dark falls back to
    warm charcoal panel unless a `dark:bg-*` utility overrides (utilities beat base). */
 @layer base {
-  .bg-\[\#FAF9F5\] { background-color: var(--linen); }
-  html.dark .bg-\[\#FAF9F5\] { background-color: #282723; }
-  .bg-\[\#EFECE2\] { background-color: var(--linen-deep); }
-  html.dark .bg-\[\#EFECE2\] { background-color: #282723; }
-  .bg-\[\#D97757\] { background-color: var(--terracotta); }
-  .text-\[\#D97757\] { color: var(--accent-text); }
-  html.dark .text-\[\#D97757\] { color: #E8A07E; }
-  .text-\[\#6B6860\] { color: var(--stone); }
-  html.dark .text-\[\#6B6860\] { color: #B5B2A8; }
-  .border-\[\#DFDACB\] { border-color: var(--line); }
-  html.dark .border-\[\#DFDACB\] { border-color: #2C2B27; }
-  .hover\:bg-\[\#C86646\]:hover { background-color: var(--terracotta-dark); }
-  .hover\:bg-\[\#EFECE2\]:hover { background-color: var(--linen-deep); }
-  html.dark .hover\:bg-\[\#EFECE2\]:hover { background-color: #252422; }
-  .focus\:ring-\[\#D97757\]:focus { --tw-ring-color: var(--terracotta); }
-  .border-\[\#D97757\] { border-color: var(--terracotta); }
+  .bg-\[\#F5F4ED\] { background-color: var(--linen); }
+  html.dark .bg-\[\#F5F4ED\] { background-color: #282723; }
+  .bg-\[\#E8E6DC\] { background-color: var(--linen-deep); }
+  html.dark .bg-\[\#E8E6DC\] { background-color: #282723; }
+  .bg-\[\#C96442\] { background-color: var(--terracotta); }
+  .text-\[\#C96442\] { color: var(--accent-text); }
+  html.dark .text-\[\#C96442\] { color: #E8A07E; }
+  .text-\[\#5E5D59\] { color: var(--stone); }
+  html.dark .text-\[\#5E5D59\] { color: #B5B2A8; }
+  .border-\[\#E8E6DC\] { border-color: var(--line); }
+  html.dark .border-\[\#E8E6DC\] { border-color: #2C2B27; }
+  .hover\:bg-\[\#A94E33\]:hover { background-color: var(--terracotta-dark); }
+  .hover\:bg-\[\#E8E6DC\]:hover { background-color: var(--linen-deep); }
+  html.dark .hover\:bg-\[\#E8E6DC\]:hover { background-color: #252422; }
+  .focus\:ring-\[\#C96442\]:focus { --tw-ring-color: var(--terracotta); }
+  .border-\[\#C96442\] { border-color: var(--terracotta); }
 }
 
 /* === Dark Elevation System (unlayered → beats layered Tailwind utilities) ===
@@ -540,22 +540,22 @@ html.dark .dark\:hover\:border-\[\#2C2B27\]:hover { border-color: #655E4D; }
    CTA buttons, links and glyphs follow the 3-color theme in both modes.
    Semantic status colors (emerald/rose/amber alerts, badges) are untouched. */
 @layer base {
-  .bg-indigo-600, .bg-violet-600 { background-color: #D97757; }
-  .hover\:bg-indigo-700:hover, .hover\:bg-violet-700:hover { background-color: #C86646; }
+  .bg-indigo-600, .bg-violet-600 { background-color: #C96442; }
+  .hover\:bg-indigo-700:hover, .hover\:bg-violet-700:hover { background-color: #A94E33; }
   .text-indigo-600, .text-violet-600, .text-indigo-500 { color: var(--accent-text); }
   html.dark .text-indigo-600, html.dark .text-violet-600, html.dark .text-indigo-500 { color: #E8A07E; }
-  .text-indigo-700, .text-violet-700, .text-violet-800 { color: #AA4F32; }
+  .text-indigo-700, .text-violet-700, .text-violet-800 { color: #A94E33; }
   .bg-indigo-50 { background-color: #F9E9DF; }
   .bg-indigo-100, .bg-violet-100 { background-color: #F5E2D5; }
   .border-indigo-200, .border-violet-200 { border-color: #EAC4A8; }
-  .bg-indigo-500\/15 { background-color: rgba(217, 119, 87, 0.15); }
+  .bg-indigo-500\/15 { background-color: rgba(201, 100, 66, 0.15); }
 }
 html.dark .dark\:bg-indigo-950\/60, html.dark .dark\:bg-indigo-950\/40,
 html.dark .dark\:bg-violet-950\/30, html.dark .dark\:bg-violet-950\/40,
 html.dark .dark\:bg-violet-950\/60, html.dark .dark\:bg-violet-950\/70,
 html.dark .dark\:bg-indigo-950, html.dark .dark\:bg-violet-950,
 html.dark .dark\:bg-indigo-900, html.dark .dark\:bg-violet-900,
-html.dark .dark\:bg-indigo-500\/20 { background-color: rgba(217, 119, 87, 0.16); }
+html.dark .dark\:bg-indigo-500\/20 { background-color: rgba(201, 100, 66, 0.16); }
 html.dark .dark\:border-indigo-800, html.dark .dark\:border-violet-800,
 html.dark .dark\:border-indigo-700 { border-color: #7A4A34; }
 html.dark .dark\:text-indigo-300, html.dark .dark\:text-indigo-400,
@@ -567,24 +567,24 @@ html.dark .dark\:text-violet-300 { color: #E8A07E; }
    Blue/cyan/sky/orange washes map to warm neutrals + terracotta text —
    brand tiles (AppLogo) and semantic status colors are untouched. */
 @layer base {
-  .bg-slate-50 { background-color: #FAF9F5; }
-  .bg-slate-100 { background-color: #EFECE2; }
-  .bg-slate-200 { background-color: #DFDACB; }
-  .border-slate-100 { border-color: #EFECE2; }
-  .border-slate-200, .border-slate-300 { border-color: #DFDACB; }
-  .text-slate-400, .text-slate-500 { color: #6B6860; }
+  .bg-slate-50 { background-color: #F5F4ED; }
+  .bg-slate-100 { background-color: #E8E6DC; }
+  .bg-slate-200 { background-color: #E8E6DC; }
+  .border-slate-100 { border-color: #E8E6DC; }
+  .border-slate-200, .border-slate-300 { border-color: #E8E6DC; }
+  .text-slate-400, .text-slate-500 { color: #5E5D59; }
   .text-slate-600, .text-slate-700 { color: #5C5A54; }
   .text-slate-800, .text-slate-900 { color: #141413; }
-  .hover\:bg-slate-50:hover { background-color: #FAF9F5; }
-  .hover\:bg-slate-100:hover, .hover\:bg-slate-200:hover { background-color: #EFECE2; }
-  .hover\:bg-slate-300:hover { background-color: #DFDACB; }
+  .hover\:bg-slate-50:hover { background-color: #F5F4ED; }
+  .hover\:bg-slate-100:hover, .hover\:bg-slate-200:hover { background-color: #E8E6DC; }
+  .hover\:bg-slate-300:hover { background-color: #E8E6DC; }
   .hover\:text-slate-600:hover, .hover\:text-slate-800:hover, .hover\:text-slate-900:hover { color: #141413; }
   .border-violet-200, .border-violet-300, .border-indigo-200 { border-color: #EAC4A8; }
   .bg-blue-50, .bg-cyan-50, .bg-sky-50, .bg-indigo-50 { background-color: #F9E9DF; }
   .bg-blue-100, .bg-cyan-100, .bg-sky-100, .bg-orange-100 { background-color: #F5E2D5; }
   .border-blue-200, .border-cyan-200, .border-sky-200, .border-indigo-300, .border-orange-200, .border-orange-300 { border-color: #EAC4A8; }
-  .text-blue-600, .text-blue-700, .text-cyan-700, .text-cyan-800, .text-sky-900, .text-indigo-500, .text-indigo-600, .text-orange-600, .text-orange-700 { color: #AA4F32; }
-  .hover\:border-blue-400:hover, .hover\:border-orange-400:hover, .hover\:border-indigo-400:hover { border-color: #D97757; }
+  .text-blue-600, .text-blue-700, .text-cyan-700, .text-cyan-800, .text-sky-900, .text-indigo-500, .text-indigo-600, .text-orange-600, .text-orange-700 { color: #A94E33; }
+  .hover\:border-blue-400:hover, .hover\:border-orange-400:hover, .hover\:border-indigo-400:hover { border-color: #C96442; }
   .hover\:bg-blue-50:hover, .hover\:bg-orange-50:hover { background-color: #F9E9DF; }
 }
 html.dark .dark\:bg-slate-900, html.dark .dark\:bg-slate-800 { background-color: #282723; }
@@ -596,14 +596,14 @@ html.dark .dark\:bg-slate-700 { background-color: #35332E; }
 html.dark .dark\:border-slate-800, html.dark .dark\:border-slate-700,
 html.dark .dark\:border-slate-600 { border-color: #4F4A3E; }
 html.dark .dark\:border-violet-800 { border-color: #7A4A34; }
-html.dark .dark\:text-slate-200 { color: #FAF9F5; }
+html.dark .dark\:text-slate-200 { color: #F5F4ED; }
 html.dark .dark\:text-slate-300 { color: #E6E4DC; }
 html.dark .dark\:text-slate-400 { color: #B5B2A8; }
 html.dark .dark\:bg-blue-950\/40, html.dark .dark\:bg-blue-950\/60,
 html.dark .dark\:bg-cyan-950\/40, html.dark .dark\:bg-sky-950\/30,
 html.dark .dark\:bg-indigo-950\/40, html.dark .dark\:bg-indigo-950\/60,
 html.dark .dark\:bg-orange-950\/40, html.dark .dark\:bg-orange-950\/60,
-html.dark .dark\:bg-orange-950\/10 { background-color: rgba(217, 119, 87, 0.12); }
+html.dark .dark\:bg-orange-950\/10 { background-color: rgba(201, 100, 66, 0.12); }
 html.dark .dark\:text-blue-200, html.dark .dark\:text-blue-300, html.dark .dark\:text-blue-400,
 html.dark .dark\:text-cyan-300, html.dark .dark\:text-indigo-200, html.dark .dark\:text-indigo-300,
 html.dark .dark\:text-orange-300, html.dark .dark\:text-orange-400 { color: #E8A07E; }
@@ -613,11 +613,11 @@ html.dark .dark\:border-orange-800 { border-color: #7A4A34; }
 html.dark .dark\:bg-\[\#0B1120\] { background-color: #141413; }
 html.dark .dark\:hover\:bg-slate-800:hover, html.dark .dark\:hover\:bg-slate-700:hover { background-color: #403D36; }
 html.dark .dark\:hover\:bg-slate-600:hover { background-color: #4A473E; }
-html.dark .dark\:hover\:text-slate-200:hover { color: #FAF9F5; }
+html.dark .dark\:hover\:text-slate-200:hover { color: #F5F4ED; }
 
 /* === Guided-tour spotlight — warm terracotta pulse on the real UI target === */
 .scc-tour-flash {
-  outline: 3px solid #D97757 !important;
+  outline: 3px solid #C96442 !important;
   outline-offset: 3px;
   border-radius: 12px;
   animation: scc-tour-pulse 1.6s ease-in-out;
@@ -627,8 +627,8 @@ html.dark .dark\:hover\:text-slate-200:hover { color: #FAF9F5; }
   pointer-events: none;
 }
 @keyframes scc-tour-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 87, 0.45); }
-  50% { box-shadow: 0 0 0 8px rgba(217, 119, 87, 0.12); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 100, 66, 0.45); }
+  50% { box-shadow: 0 0 0 8px rgba(201, 100, 66, 0.12); }
 }
 @media (prefers-reduced-motion: reduce) {
   .scc-tour-flash { animation: none; }

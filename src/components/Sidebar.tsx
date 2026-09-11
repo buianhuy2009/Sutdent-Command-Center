@@ -14,7 +14,7 @@ import { APP_CATALOG } from './AppStoreModal';
 
 const NavSection: React.FC<{ title?: string; isExpanded: boolean; children: React.ReactNode }> = ({ title, isExpanded, children }) => (
   <div className="space-y-1">
-    {isExpanded && title && <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6860]">{title}</div>}
+    {isExpanded && title && <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#5E5D59]">{title}</div>}
     <div className="space-y-1">{children}</div>
   </div>
 );
@@ -120,29 +120,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
       aria-label="Primary navigation"
       data-tour="sidebar"
       role="navigation"
-      className={`h-screen shrink-0 bg-[#EFECE2] dark:bg-[#1A1917] border-r border-[#DFDACB] dark:border-[#2C2B27] flex flex-col transition-all duration-300 z-30 select-none ${
+      className={`h-screen shrink-0 bg-[#E8E6DC] dark:bg-[#1A1917] border-r border-[#E8E6DC] dark:border-[#2C2B27] flex flex-col transition-all duration-300 z-30 select-none ${
         isExpanded ? 'w-64 p-4' : 'w-16 p-2'
       }`}
     >
-      <div className="flex items-center justify-between pb-3 border-b border-[#DFDACB] dark:border-[#2C2B27] mb-2 shrink-0">
+      <div className="flex items-center justify-between pb-3 border-b border-[#E8E6DC] dark:border-[#2C2B27] mb-2 shrink-0">
         <button
           onClick={() => onSelectTab('dashboard')}
           className={`flex items-center gap-3 min-w-0 p-0.5 rounded-2xl transition-all cursor-pointer text-left ${
             activeTab === 'dashboard'
-              ? 'ring-2 ring-[#D97757]/60 bg-white/40 dark:bg-[#252422]/40'
+              ? 'ring-2 ring-[#C96442]/60 bg-white/40 dark:bg-[#252422]/40'
               : 'hover:opacity-90'
           }`}
           title="Go to Dashboard Home"
         >
-          <div className="w-9 h-9 bg-gradient-to-br from-amber-500 to-[#D97757] rounded-xl flex items-center justify-center text-white font-extrabold text-sm shadow-sm shadow-[#D97757]/30 shrink-0" aria-hidden="true">
+          <div className="w-9 h-9 bg-gradient-to-br from-amber-500 to-[#C96442] rounded-xl flex items-center justify-center text-white font-extrabold text-sm shadow-sm shadow-[#C96442]/30 shrink-0" aria-hidden="true">
             S
           </div>
           {isExpanded && (
             <div className="min-w-0">
-              <h1 className="text-sm font-extrabold text-[#141413] dark:text-[#FAF9F5] tracking-tight truncate leading-tight">
+              <h1 className="text-sm font-extrabold text-[#141413] dark:text-[#F5F4ED] tracking-tight truncate leading-tight">
                 StudentOS
               </h1>
-              <p className="text-[10px] text-[#6B6860] font-mono truncate">Academic AI Hub</p>
+              <p className="text-[10px] text-[#5E5D59] font-mono truncate">Academic AI Hub</p>
             </div>
           )}
         </button>
@@ -150,7 +150,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {isExpanded && (
           <button
             onClick={onToggleExpand}
-            className="p-2.5 rounded-xl hover:bg-[#DFDACB]/60 dark:hover:bg-[#252422] text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="p-2.5 rounded-xl hover:bg-[#E8E6DC]/60 dark:hover:bg-[#252422] text-[#5E5D59] hover:text-[#141413] dark:hover:text-[#F5F4ED] transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
             title="Collapse to icon rail"
             aria-label="Collapse sidebar to icon rail"
           >
@@ -163,26 +163,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <NavSection title="Pinned" isExpanded={isExpanded}>
           <div className="space-y-1">
             {pinnedApps.length === 0 ? (
-              <div className="text-[11px] text-[#6B6860] px-2 py-2 italic">No pinned apps — add from App Store</div>
+              <div className="text-[11px] text-[#5E5D59] px-2 py-2 italic">No pinned apps — add from App Store</div>
             ) : pinnedApps.map((app) => {
               const meta = APP_META[app.id] || { label: app.name, desc: app.category };
               const badgeKey = (APP_META[app.id]?.badgeKey) || app.id;
               const badgeCount = badges[badgeKey] || badges[app.id] || (badges as any)[app.id.replace('-', '_')] || 0;
               const hasBadge = badgeCount > 0;
               const isActive = activeTab === app.id;
-              const badgeColor = 'bg-[#D97757]';
+              const badgeColor = 'bg-[#C96442]';
               return (
                 <div key={app.id} className="relative group/item flex items-center">
                   <button
                     onClick={() => onSelectTab(app.id)}
                     aria-current={isActive ? 'page' : undefined}
                     data-tour-tab={app.id}
-                    className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D97757] ${
+                    className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C96442] ${
                       isExpanded ? 'px-3 py-2.5 justify-between gap-3 min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'
                     } ${
                       isActive
-                        ? 'bg-[#D97757] text-white shadow-sm shadow-[#D97757]/20 font-bold'
-                        : 'bg-[#FAF9F5]/70 hover:bg-[#FAF9F5] dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#141413] dark:text-[#FAF9F5] border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27]'
+                        ? 'bg-[#C96442] text-white shadow-sm shadow-[#C96442]/20 font-bold'
+                        : 'bg-[#F5F4ED]/70 hover:bg-[#F5F4ED] dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#141413] dark:text-[#F5F4ED] border border-transparent hover:border-[#E8E6DC] dark:hover:border-[#2C2B27]'
                     }`}
                     title={app.name}
                   >
@@ -191,7 +191,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {isExpanded && (
                         <div className="text-left min-w-0">
                           <div className="text-xs truncate leading-tight">{meta.label || app.name}</div>
-                          <div className={`text-[10px] truncate ${isActive ? 'text-white/80' : 'text-[#6B6860]'}`}>
+                          <div className={`text-[10px] truncate ${isActive ? 'text-white/80' : 'text-[#5E5D59]'}`}>
                             {meta.desc || app.category}
                           </div>
                         </div>
@@ -208,9 +208,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     ) : (
                       <>
                         {hasBadge && (
-                          <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#EFECE2] dark:ring-[#282723] ${badgeColor}`} />
+                          <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#E8E6DC] dark:ring-[#282723] ${badgeColor}`} />
                         )}
-                        <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]" role="tooltip">
+                        <span className="absolute left-16 bg-[#141413] dark:bg-[#F5F4ED] text-[#F5F4ED] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#E8E6DC] dark:border-[#2C2B27]" role="tooltip">
                           {meta.label || app.name}
                         </span>
                       </>
@@ -219,7 +219,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {isExpanded && (
                     <button
                       onClick={() => onUnpinApp(app.id)}
-                      className="absolute right-2 opacity-0 group-hover/item:opacity-100 p-1 text-[#6B6860] hover:text-rose-500 rounded transition-opacity cursor-pointer"
+                      className="absolute right-2 opacity-0 group-hover/item:opacity-100 p-1 text-[#5E5D59] hover:text-rose-500 rounded transition-opacity cursor-pointer"
                       title="Unpin"
                     >
                       <PinOff className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -240,7 +240,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     key={`recent-${app.id}`}
                     onClick={() => onSelectTab(app.id)}
-                    className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative ${isExpanded ? 'px-3 py-2.5 justify-between gap-3 min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'} ${isActive ? 'bg-[#D97757] text-white shadow-sm font-bold' : 'bg-[#FAF9F5]/70 hover:bg-[#FAF9F5] dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#141413] dark:text-[#FAF9F5] border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27]'}`}
+                    className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative ${isExpanded ? 'px-3 py-2.5 justify-between gap-3 min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'} ${isActive ? 'bg-[#C96442] text-white shadow-sm font-bold' : 'bg-[#F5F4ED]/70 hover:bg-[#F5F4ED] dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#141413] dark:text-[#F5F4ED] border border-transparent hover:border-[#E8E6DC] dark:hover:border-[#2C2B27]'}`}
                     title={app.name}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -248,12 +248,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {isExpanded && (
                         <div className="text-left min-w-0">
                           <div className="text-xs truncate leading-tight">{app.name}</div>
-                          <div className={`text-[10px] truncate ${isActive ? 'text-white/80' : 'text-[#6B6860]'}`}>{app.category}</div>
+                          <div className={`text-[10px] truncate ${isActive ? 'text-white/80' : 'text-[#5E5D59]'}`}>{app.category}</div>
                         </div>
                       )}
                     </div>
                     {!isExpanded && (
-                      <span className="absolute left-16 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]" role="tooltip">{app.name}</span>
+                      <span className="absolute left-16 bg-[#141413] dark:bg-[#F5F4ED] text-[#F5F4ED] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#E8E6DC] dark:border-[#2C2B27]" role="tooltip">{app.name}</span>
                     )}
                   </button>
                 );
@@ -265,7 +265,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="pt-2 relative group/add">
           <button
             onClick={onOpenAppStore}
-            className={`w-full rounded-xl flex items-center transition-all cursor-pointer border border-dashed border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757] ${
+            className={`w-full rounded-xl flex items-center transition-all cursor-pointer border border-dashed border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#C96442] ${
               isExpanded ? 'px-3 py-2.5 gap-2.5 text-xs font-semibold min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'
             }`}
             title="Open App Store"
@@ -274,27 +274,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {isExpanded && <span>Add Tools &amp; Apps</span>}
           </button>
           {!isExpanded && (
-            <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-[#141413] dark:bg-[#FAF9F5] text-[#FAF9F5] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover/add:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#DFDACB] dark:border-[#2C2B27]">
+            <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-[#141413] dark:bg-[#F5F4ED] text-[#F5F4ED] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover/add:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#E8E6DC] dark:border-[#2C2B27]">
               App Store
             </span>
           )}
         </div>
       </div>
 
-      <div className="pt-2.5 border-t border-[#DFDACB] dark:border-[#2C2B27] shrink-0 space-y-1.5" ref={userMenuRef}>
+      <div className="pt-2.5 border-t border-[#E8E6DC] dark:border-[#2C2B27] shrink-0 space-y-1.5" ref={userMenuRef}>
         <button
           onClick={onToggleDarkMode}
           title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
           aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
           aria-pressed={darkMode}
-          className={`rounded-xl flex items-center transition-colors cursor-pointer border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27] hover:bg-[#FAF9F5] dark:hover:bg-[#252422] text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] ${
+          className={`rounded-xl flex items-center transition-colors cursor-pointer border border-transparent hover:border-[#E8E6DC] dark:hover:border-[#2C2B27] hover:bg-[#F5F4ED] dark:hover:bg-[#252422] text-[#5E5D59] hover:text-[#141413] dark:hover:text-[#F5F4ED] ${
             isExpanded ? 'w-full px-3 py-2 gap-2.5 text-xs font-semibold min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'
           }`}
         >
-          {darkMode ? <Sun className="w-4 h-4 shrink-0 text-[#D97757]" strokeWidth={1.75} /> : <Moon className="w-4 h-4 shrink-0" strokeWidth={1.75} />}
+          {darkMode ? <Sun className="w-4 h-4 shrink-0 text-[#C96442]" strokeWidth={1.75} /> : <Moon className="w-4 h-4 shrink-0" strokeWidth={1.75} />}
           {isExpanded && <span>{darkMode ? 'Dark mode' : 'Light mode'}</span>}
           {isExpanded && (
-            <span className={`ml-auto w-8 h-[18px] rounded-full p-[2px] transition-colors shrink-0 ${darkMode ? 'bg-[#D97757]' : 'bg-[#DFDACB] dark:bg-[#2C2B27]'}`}>
+            <span className={`ml-auto w-8 h-[18px] rounded-full p-[2px] transition-colors shrink-0 ${darkMode ? 'bg-[#C96442]' : 'bg-[#E8E6DC] dark:bg-[#2C2B27]'}`}>
               <span className={`block w-3.5 h-3.5 rounded-full bg-white shadow-xs transition-transform ${darkMode ? 'translate-x-[14px]' : ''}`} />
             </span>
           )}
@@ -302,7 +302,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {!isExpanded && (
           <button
             onClick={onToggleExpand}
-            className="w-11 h-11 mx-auto rounded-xl bg-[#FAF9F5]/70 hover:bg-[#FAF9F5] dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] flex items-center justify-center transition-colors cursor-pointer border border-[#DFDACB] dark:border-[#2C2B27]"
+            className="w-11 h-11 mx-auto rounded-xl bg-[#F5F4ED]/70 hover:bg-[#F5F4ED] dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#5E5D59] hover:text-[#141413] dark:hover:text-[#F5F4ED] flex items-center justify-center transition-colors cursor-pointer border border-[#E8E6DC] dark:border-[#2C2B27]"
             title="Expand Sidebar"
           >
             <ChevronRight className="w-4 h-4" strokeWidth={1.75} />
@@ -310,13 +310,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
         <div
           onClick={onOpenSettings}
-          className={`flex items-center rounded-xl p-1 cursor-pointer hover:bg-[#FAF9F5] dark:hover:bg-[#252422] transition-colors border border-transparent hover:border-[#DFDACB] dark:border-[#2C2B27] ${
+          className={`flex items-center rounded-xl p-1 cursor-pointer hover:bg-[#F5F4ED] dark:hover:bg-[#252422] transition-colors border border-transparent hover:border-[#E8E6DC] dark:border-[#2C2B27] ${
             isExpanded ? 'gap-3 justify-start p-2 min-h-[44px]' : 'w-11 h-11 mx-auto justify-center p-0'
           }`}
           title="Account & Settings"
         >
           {user ? (
-            <div className="w-9 h-9 rounded-2xl bg-[#D97757]/20 border-2 border-[#D97757] flex items-center justify-center text-xs font-bold text-[#D97757] overflow-hidden shrink-0 shadow-xs">
+            <div className="w-9 h-9 rounded-2xl bg-[#C96442]/20 border-2 border-[#C96442] flex items-center justify-center text-xs font-bold text-[#C96442] overflow-hidden shrink-0 shadow-xs">
               {user.photoURL ? (
                 <img
                   src={user.photoURL}
@@ -329,16 +329,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
           ) : (
-            <div className="w-9 h-9 rounded-2xl bg-[#D97757] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-xs">
+            <div className="w-9 h-9 rounded-2xl bg-[#C96442] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-xs">
               <UserIcon className="w-4 h-4" strokeWidth={1.75} />
             </div>
           )}
           {isExpanded && (
             <div className="min-w-0 flex-1 text-left">
-              <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] truncate leading-tight">
+              <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED] truncate leading-tight">
                 {user ? user.displayName || user.email?.split('@')[0] : 'Guest Student'}
               </div>
-              <div className="text-[10px] text-[#6B6860] truncate">
+              <div className="text-[10px] text-[#5E5D59] truncate">
                 {user ? user.email : 'Click for Settings'}
               </div>
             </div>

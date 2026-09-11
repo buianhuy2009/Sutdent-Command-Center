@@ -5,6 +5,8 @@ import {
   Search,
   RefreshCw,
 } from 'lucide-react';
+import { t, useLang } from '../services/i18n';
+import { LanguageToggle } from './LanguageToggle';
 
 export interface NotificationItem {
   id: string;
@@ -60,15 +62,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, [showNotifications]);
 
   const unreadCount = hasDismissedBadge ? 0 : notifications.length;
+  useLang();
 
   return (
-    <header role="banner" className="h-12 bg-white dark:bg-[#1A1917] border-b border-[#DFDACB] dark:border-[#2C2B27] px-4 sm:px-6 flex items-center justify-between z-20 shrink-0 select-none">
+    <header role="banner" className="h-12 bg-white dark:bg-[#1A1917] border-b border-[#E8E6DC] dark:border-[#2C2B27] px-4 sm:px-6 flex items-center justify-between z-20 shrink-0 select-none">
       {/* LEFT: Clean breadcrumb */}
       <div className="flex items-center gap-2.5 min-w-0">
-        <nav aria-label="Breadcrumb" className="flex items-center text-xs font-semibold text-[#6B6860]">
-          <button onClick={() => window.dispatchEvent(new CustomEvent('scc-navigate', { detail: 'dashboard' }))} className="hover:text-[#D97757] hover:underline transition-colors cursor-pointer" aria-label="Go to Dashboard">StudentOS</button>
-          <span className="mx-1.5 text-[#DFDACB] dark:text-[#2C2B27]">/</span>
-          <span className="font-bold text-[#141413] dark:text-[#FAF9F5] truncate" aria-current="page">
+        <nav aria-label="Breadcrumb" className="flex items-center text-xs font-semibold text-[#5E5D59]">
+          <button onClick={() => window.dispatchEvent(new CustomEvent('scc-navigate', { detail: 'dashboard' }))} className="hover:text-[#C96442] hover:underline transition-colors cursor-pointer" aria-label="Go to Dashboard">StudentOS</button>
+          <span className="mx-1.5 text-[#E8E6DC] dark:text-[#2C2B27]">/</span>
+          <span className="font-bold text-[#141413] dark:text-[#F5F4ED] truncate" aria-current="page">
             {activeTabLabel}
           </span>
         </nav>
@@ -79,21 +82,22 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           onClick={onOpenCommandPalette}
           data-tour="search"
-          className="w-full bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]/30 rounded-xl py-1.5 px-3 text-xs flex items-center justify-between text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors cursor-pointer group"
+          className="w-full bg-[#F5F4ED] dark:bg-[#1A1917] border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442]/30 rounded-xl py-1.5 px-3 text-xs flex items-center justify-between text-[#5E5D59] hover:text-[#141413] dark:hover:text-[#F5F4ED] transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-2">
-            <Search className="w-3.5 h-3.5 text-[#6B6860] group-hover:text-[#D97757] transition-colors" strokeWidth={1.75} />
-            <span className="hidden sm:inline">Search or jump...</span>
-            <span className="sm:hidden">Search</span>
+            <Search className="w-3.5 h-3.5 text-[#5E5D59] group-hover:text-[#C96442] transition-colors" strokeWidth={1.75} />
+            <span className="hidden sm:inline">{t('search_or_jump')}</span>
+            <span className="sm:hidden">{t('search')}</span>
           </div>
-          <kbd className="hidden sm:inline text-[10px] font-mono bg-white dark:bg-[#252422] px-1.5 py-0.5 rounded border border-[#DFDACB] dark:border-[#2C2B27] text-[#6B6860]">
+          <kbd className="hidden sm:inline text-[10px] font-mono bg-white dark:bg-[#252422] px-1.5 py-0.5 rounded border border-[#E8E6DC] dark:border-[#2C2B27] text-[#5E5D59]">
             {platformKey}
           </kbd>
         </button>
       </div>
 
-      {/* RIGHT: Only essentials - Google Sync + AI Coach + Notifications */}
+      {/* RIGHT: Essentials only — language, sync, AI coach, notifications */}
       <div className="flex items-center gap-1.5 shrink-0">
+        <LanguageToggle compact className="hidden lg:inline-flex" />
         {onOpenGoogleSync && (
           <button
             id="btn-nav-google-sync"
@@ -102,12 +106,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
               isGoogleConnected
                 ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:border-emerald-400'
-                : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] text-[#6B6860] dark:text-[#B5B2A8] border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]'
+                : 'bg-[#F5F4ED] dark:bg-[#1F1E1B] text-[#5E5D59] dark:text-[#B5B2A8] border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442]'
             }`}
             title="Google Workspace Sync Hub"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingGoogle ? 'animate-spin text-[#D97757]' : isGoogleConnected ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
-            <span className="hidden md:inline text-[11px]">{isSyncingGoogle ? 'Syncing...' : isGoogleConnected ? 'Google Sync' : 'Connect Google'}</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingGoogle ? 'animate-spin text-[#C96442]' : isGoogleConnected ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
+            <span className="hidden md:inline text-[11px]">{isSyncingGoogle ? t('syncing') : isGoogleConnected ? 'Google Sync' : t('connect_google')}</span>
           </button>
         )}
 
@@ -117,8 +121,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={onToggleAiChat}
           className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
             isAiChatOpen
-              ? 'bg-[#D97757] border-[#D97757] text-white shadow-xs'
-              : 'bg-[#D97757]/10 hover:bg-[#D97757]/20 text-[#D97757] border-[#D97757]/20'
+              ? 'bg-[#C96442] border-[#C96442] text-white shadow-xs'
+              : 'bg-[#C96442]/10 hover:bg-[#C96442]/20 text-[#C96442] border-[#C96442]/20'
           }`}
           title="AI Study Coach"
         >
@@ -136,7 +140,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               setHasDismissedBadge(true);
             }}
             onKeyDown={(e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); setShowNotifications(!showNotifications); setHasDismissedBadge(true);} if(e.key==='Escape') setShowNotifications(false); }}
-            className="p-1.5 text-[#6B6860] hover:text-[#D97757] hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B] rounded-xl transition-colors cursor-pointer relative"
+            className="p-1.5 text-[#5E5D59] hover:text-[#C96442] hover:bg-[#F5F4ED] dark:hover:bg-[#1F1E1B] rounded-xl transition-colors cursor-pointer relative"
             title="Notifications"
           >
             <Bell className="w-4 h-4" aria-hidden="true" strokeWidth={1.75} />
@@ -147,20 +151,20 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-[#1A1917] rounded-2xl shadow-xl border border-[#DFDACB] dark:border-[#2C2B27] py-2 z-50 text-xs animate-in fade-in zoom-in-95">
-              <div className="px-4 py-2 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60 flex items-center justify-between">
-                <span className="font-bold text-[#141413] dark:text-[#FAF9F5]">Notifications</span>
-                <span className="text-[10px] text-[#6B6860]">{notifications.length}</span>
+            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-[#1A1917] rounded-2xl shadow-xl border border-[#E8E6DC] dark:border-[#2C2B27] py-2 z-50 text-xs animate-in fade-in zoom-in-95">
+              <div className="px-4 py-2 border-b border-[#E8E6DC]/60 dark:border-[#2C2B27]/60 flex items-center justify-between">
+                <span className="font-bold text-[#141413] dark:text-[#F5F4ED]">Notifications</span>
+                <span className="text-[10px] text-[#5E5D59]">{notifications.length}</span>
               </div>
-              <div className="max-h-64 overflow-y-auto divide-y divide-[#DFDACB]/40 dark:divide-[#2C2B27]/40">
+              <div className="max-h-64 overflow-y-auto divide-y divide-[#E8E6DC]/40 dark:divide-[#2C2B27]/40">
                 {notifications.length === 0 ? (
-                  <div className="p-4 text-center text-[#6B6860]">No new notifications</div>
+                  <div className="p-4 text-center text-[#5E5D59]">No new notifications</div>
                 ) : (
                   notifications.map((n, i) => (
-                    <button key={n.id || i} onClick={()=>{ setShowNotifications(false); onNotificationClick?.(n); if(n.link && n.link !== '#'){ window.open(n.link,'_blank'); } }} className="w-full text-left p-3 hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer">
-                      <div className="font-semibold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-1.5">{n.title} {n.tier==='urgent' && <span className="px-1 py-0.5 rounded text-[9px] bg-rose-100 text-rose-700">Urgent</span>}</div>
-                      <div className="text-[11px] text-[#6B6860]">{n.description}</div>
-                      <span className="text-[10px] text-[#D97757] font-bold">Go → {n.source || 'Tracker'}</span>
+                    <button key={n.id || i} onClick={()=>{ setShowNotifications(false); onNotificationClick?.(n); if(n.link && n.link !== '#'){ window.open(n.link,'_blank'); } }} className="w-full text-left p-3 hover:bg-[#F5F4ED] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer">
+                      <div className="font-semibold text-[#141413] dark:text-[#F5F4ED] flex items-center gap-1.5">{n.title} {n.tier==='urgent' && <span className="px-1 py-0.5 rounded text-[9px] bg-rose-100 text-rose-700">Urgent</span>}</div>
+                      <div className="text-[11px] text-[#5E5D59]">{n.description}</div>
+                      <span className="text-[10px] text-[#C96442] font-bold">Go → {n.source || 'Tracker'}</span>
                     </button>
                   ))
                 )}

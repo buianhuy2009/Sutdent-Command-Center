@@ -27,6 +27,7 @@ import DOMPurify from 'dompurify';
 import { CanvasAssignment, CanvasSettings } from '../types';
 import { loadCompletedCanvasIds, saveCompletedCanvasIds, resolveCanvasUrl, toMobileDeepLink, normalizeCanvasDomain } from '../services/canvas';
 import { extractSubtasksFromCanvas, SubtaskResult, calculateGradePrediction } from '../services/gemini';
+import { t, useLang } from '../services/i18n';
 import { WhyIsThisHardModal } from './WhyIsThisHardModal';
 
 DOMPurify.addHook('afterSanitizeAttributes', (node) => {
@@ -127,6 +128,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   const [gradeCurrent, setGradeCurrent] = useState(84);
   const [gradeDesired, setGradeDesired] = useState(90);
   const [gradeFinalWeight, setGradeFinalWeight] = useState(30);
+  useLang();
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,38 +255,37 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Sync error banner — previously errorMessage was accepted but never rendered,
-          so failures looked like a blank page. Now: message + working Retry. */}
+      {/* Sync error banner — single channel (no duplicate toast). Claude palette. */}
       {errorMessage && (
-        <div className="p-4 rounded-2xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 flex items-start gap-3" role="alert">
-          <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+        <div className="p-4 rounded-2xl border border-[#E8E6DC] dark:border-[#4F4A3E] bg-white dark:bg-[#262624] flex items-start gap-3" role="alert">
+          <AlertTriangle className="w-5 h-5 text-[#C96442] shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <h4 className="text-xs font-bold text-rose-700 dark:text-rose-300">Couldn't sync Canvas</h4>
-            <p className="text-xs text-rose-600 dark:text-rose-400 mt-0.5 break-words">{errorMessage}</p>
-            <p className="text-[11px] text-rose-500 dark:text-rose-400/80 mt-1">Your previously loaded assignments are kept below.</p>
+            <h4 className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">{t('canvas_sync_failed')}</h4>
+            <p className="text-xs text-[#5E5D59] dark:text-[#B5B2A8] mt-0.5 break-words">{errorMessage}</p>
+            <p className="text-[11px] text-[#5E5D59] dark:text-[#B5B2A8] mt-1">{t('canvas_kept_below')}</p>
           </div>
           <button
             onClick={onFetchCanvas}
-            className="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shrink-0 min-h-[44px] inline-flex items-center gap-1.5"
+            className="px-3 py-2 bg-[#C96442] hover:bg-[#A94E33] text-white rounded-xl text-xs font-bold shrink-0 min-h-[44px] inline-flex items-center gap-1.5"
           >
-            <RefreshCw className="w-3.5 h-3.5" /> Try again
+            <RefreshCw className="w-3.5 h-3.5" /> {t('retry')}
           </button>
         </div>
       )}
       {/* Top Filter & Actions Header */}
-      <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+      <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
         
         {/* Left: Status Filter Pills */}
-        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 w-full sm:w-auto flex-wrap">
           <button
             onClick={() => setActiveTab('UNFINISHED')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'UNFINISHED'
-                ? 'bg-[#D97757] text-white shadow-xs ring-2 ring-[#D97757]/50'
-                : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27]'
+                ? 'bg-[#C96442] text-white shadow-xs ring-2 ring-[#C96442]/50'
+                : 'bg-[#F5F4ED] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] border border-[#E8E6DC] dark:border-[#2C2B27]'
             }`}
           >
-            <span>Unfinished</span>
+            <span>{t('unfinished')}</span>
             <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
               activeTab === 'UNFINISHED' ? 'bg-white/20 text-white' : 'bg-black/5 dark:bg-white/10'
             }`}>
@@ -296,11 +297,11 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             onClick={() => setActiveTab('ALL')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'ALL'
-                ? 'bg-[#141413] text-white dark:bg-[#FAF9F5] dark:text-[#141413] shadow-xs ring-2 ring-[#141413]/20'
-                : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27]'
+                ? 'bg-[#141413] text-white dark:bg-[#F5F4ED] dark:text-[#141413] shadow-xs ring-2 ring-[#141413]/20'
+                : 'bg-[#F5F4ED] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] border border-[#E8E6DC] dark:border-[#2C2B27]'
             }`}
           >
-            <span>All</span>
+            <span>{t('all')}</span>
             <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-bold ${
               activeTab === 'ALL' ? 'bg-white/20 text-white dark:bg-black/20 dark:text-[#141413]' : 'bg-black/5 dark:bg-white/10'
             }`}>
@@ -313,15 +314,15 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'FINISHED'
                 ? 'bg-emerald-600 text-white shadow-xs ring-2 ring-emerald-600/50'
-                : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] border border-[#DFDACB] dark:border-[#2C2B27]'
+                : 'bg-[#F5F4ED] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] border border-[#E8E6DC] dark:border-[#2C2B27]'
             }`}
           >
-            <span>Finished</span>
+            <span>{t('finished')}</span>
           </button>
         </div>
 
         {/* Right: Search, Course Dropdown & Sync Buttons */}
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
           {/* Search Box */}
           <div className="relative w-full sm:w-48">
             <Search className="w-3.5 h-3.5 text-[#8C897F] absolute left-3 top-1/2 -translate-y-1/2" />
@@ -329,8 +330,8 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter tasks..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
+              placeholder={t('filter_tasks')}
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#C96442] text-[#141413] dark:text-[#F5F4ED]"
             />
           </div>
 
@@ -339,9 +340,9 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             <select
               value={selectedCourse}
               onChange={(e) => setSelectedCourse(e.target.value)}
-              className="px-2.5 py-1.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[#141413] dark:text-[#FAF9F5] font-semibold cursor-pointer outline-none"
+              className="px-2.5 py-1.5 text-xs bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl text-[#141413] dark:text-[#F5F4ED] font-semibold cursor-pointer outline-none"
             >
-              <option value="ALL">All Courses</option>
+              <option value="ALL">{t('all_courses')}</option>
               {courses.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -355,7 +356,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             <button
               onClick={handleSyncAll}
               disabled={isSyncingAll}
-              className="px-3 py-1.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-xs shadow-[#D97757]/20"
+              className="px-3 py-1.5 bg-[#C96442] hover:bg-[#A94E33] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap shadow-xs shadow-[#C96442]/20"
             >
               <CheckSquare className="w-3.5 h-3.5" />
               <span>Sync ({pendingSyncAssignments.length})</span>
@@ -365,7 +366,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
           {/* Config Drawer Toggle */}
           <button
             onClick={() => setShowSettingsDrawer(!showSettingsDrawer)}
-            className="p-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl transition-colors cursor-pointer"
+            className="p-1.5 bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl transition-colors cursor-pointer"
             title="Canvas LMS Connection Settings"
           >
             <SlidersHorizontal className="w-4 h-4" />
@@ -375,17 +376,17 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
       {/* Settings Drawer Overlay if Opened */}
       {showSettingsDrawer && (
-        <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 shadow-sm space-y-4 animate-in fade-in">
-          <div className="flex items-center justify-between pb-3 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60">
+        <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] p-5 shadow-sm space-y-4 animate-in fade-in">
+          <div className="flex items-center justify-between pb-3 border-b border-[#E8E6DC]/60 dark:border-[#2C2B27]/60">
             <div className="flex items-center gap-2">
-              <Key className="w-4 h-4 text-[#D97757]" />
-              <h3 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                Canvas LMS Connection Parameters
+              <Key className="w-4 h-4 text-[#C96442]" />
+              <h3 className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
+                {t('canvas_settings_title')}
               </h3>
             </div>
             <button
               onClick={() => setShowSettingsDrawer(false)}
-              className="text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5]"
+              className="text-[#8C897F] hover:text-[#141413] dark:hover:text-[#F5F4ED]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -393,7 +394,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
           <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div className="sm:col-span-2">
-              <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
+              <label className="block font-bold text-[#141413] dark:text-[#F5F4ED] mb-1">
                 Canvas Instance URL <span className="text-rose-500">*</span>
                 <span className="ml-1 font-normal text-[#8C897F]">— required with API token</span>
               </label>
@@ -404,7 +405,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                 onBlur={() => setApiDomain((v) => (v.trim() ? normalizeCanvasDomain(v) : v))}
                 placeholder="https://4015.instructure.com"
                 inputMode="url"
-                className="w-full px-3 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-[#D97757]"
+                className="w-full px-3 py-2 bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-[#C96442]"
               />
               <p className="mt-1 text-[11px] text-[#8C897F] leading-snug">
                 Paste your school's Canvas link — even a login URL works
@@ -414,7 +415,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             </div>
 
             <div>
-              <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
+              <label className="block font-bold text-[#141413] dark:text-[#F5F4ED] mb-1">
                 Canvas API Access Token <span className="text-rose-500">*</span>
                 <span className="ml-1 font-normal text-[#8C897F]">— required with URL</span>
               </label>
@@ -423,7 +424,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                 value={apiToken}
                 onChange={(e) => setApiToken(e.target.value)}
                 placeholder="Canvas -> Account -> Settings -> New Access Token"
-                className="w-full px-3 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-[#D97757]"
+                className="w-full px-3 py-2 bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-[#C96442]"
               />
               <p className="mt-1 text-[11px] text-[#8C897F] leading-snug">
                 Live REST sync needs <span className="font-semibold">both</span> the URL above and this token.
@@ -434,7 +435,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             </div>
 
             <div>
-              <label className="block font-bold text-[#141413] dark:text-[#FAF9F5] mb-1">
+              <label className="block font-bold text-[#141413] dark:text-[#F5F4ED] mb-1">
                 Canvas Calendar Feed (.ics URL)
                 <span className="ml-1 font-normal text-[#8C897F]">— alternative / extra source</span>
               </label>
@@ -443,7 +444,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                 value={feedUrl}
                 onChange={(e) => setFeedUrl(e.target.value)}
                 placeholder="https://canvas.instructure.com/feeds/calendars/..."
-                className="w-full px-3 py-2 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-[#D97757]"
+                className="w-full px-3 py-2 bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-[#C96442]"
               />
             </div>
 
@@ -457,7 +458,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white font-bold rounded-xl text-xs cursor-pointer shadow-xs transition-colors"
+                className="px-4 py-2 bg-[#C96442] hover:bg-[#A94E33] text-white font-bold rounded-xl text-xs cursor-pointer shadow-xs transition-colors"
               >
                 {isSaving ? 'Saving & Syncing...' : 'Save & Sync Canvas'}
               </button>
@@ -467,20 +468,20 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
       )}
 
       {/* Grade What-If Predictor — accordion (collapsed) */}
-      <details className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-xs group">
-        <summary className="list-none flex items-center justify-between cursor-pointer text-xs font-bold">Grade Predictor — What-if Final <span className="px-2 py-0.5 rounded-full bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[10px]">Expand</span></summary>
+      <details className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] p-4 shadow-xs group">
+        <summary className="list-none flex items-center justify-between cursor-pointer text-xs font-bold">{t('grade_predictor')} <span className="px-2 py-0.5 rounded-full bg-[#F5F4ED] dark:bg-[#252422] border border-[#E8E6DC] dark:border-[#2C2B27] text-[10px]">{t('expand')}</span></summary>
         <div className="mt-3">
-        <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-1.5"><Sliders className="w-3.5 h-3.5 text-[#D97757]" strokeWidth={1.75} /> Grade Predictor — What-if Final Exam</h4>
+        <h4 className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED] flex items-center gap-1.5"><Sliders className="w-3.5 h-3.5 text-[#C96442]" strokeWidth={1.75} /> Grade Predictor — What-if Final Exam</h4>
         <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
-          <label className="space-y-1"><span className="text-[11px] font-bold text-[#6B6860]">Current %</span><input type="number" value={gradeCurrent} onChange={e=>setGradeCurrent(parseInt(e.target.value)||0)} className="w-full px-2 py-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg text-sm font-mono" /></label>
-          <label className="space-y-1"><span className="text-[11px] font-bold text-[#6B6860]">Desired %</span><input type="number" value={gradeDesired} onChange={e=>setGradeDesired(parseInt(e.target.value)||0)} className="w-full px-2 py-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg text-sm font-mono" /></label>
-          <label className="space-y-1"><span className="text-[11px] font-bold text-[#6B6860]">Final weight %</span><input type="range" min={10} max={50} value={gradeFinalWeight} onChange={e=>setGradeFinalWeight(parseInt(e.target.value))} className="w-full accent-[#D97757]" /><span className="text-[11px] font-mono">{gradeFinalWeight}%</span></label>
+          <label className="space-y-1"><span className="text-[11px] font-bold text-[#6B6860]">Current %</span><input type="number" value={gradeCurrent} onChange={e=>setGradeCurrent(parseInt(e.target.value)||0)} className="w-full px-2 py-1.5 bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-lg text-sm font-mono" /></label>
+          <label className="space-y-1"><span className="text-[11px] font-bold text-[#6B6860]">Desired %</span><input type="number" value={gradeDesired} onChange={e=>setGradeDesired(parseInt(e.target.value)||0)} className="w-full px-2 py-1.5 bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-lg text-sm font-mono" /></label>
+          <label className="space-y-1"><span className="text-[11px] font-bold text-[#6B6860]">Final weight %</span><input type="range" min={10} max={50} value={gradeFinalWeight} onChange={e=>setGradeFinalWeight(parseInt(e.target.value))} className="w-full accent-[#C96442]" /><span className="text-[11px] font-mono">{gradeFinalWeight}%</span></label>
         </div>
         {(() => {
           const r = calculateGradePrediction({ currentGrade: gradeCurrent, desiredGrade: gradeDesired, finalExamWeight: gradeFinalWeight });
           return (
-            <div className="mt-3 p-3 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-xs space-y-1">
-              <div className="flex items-center justify-between"><span className="font-bold">Need on final: <span className="text-[#D97757]">{r.requiredFinalScore}%</span></span><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${r.status==='Guaranteed'?'bg-emerald-100 text-emerald-700': r.status==='Achievable'?'bg-blue-100 text-blue-700': r.status==='Challenging'?'bg-amber-100 text-amber-700':'bg-rose-100 text-rose-700'}`}>{r.status}</span></div>
+            <div className="mt-3 p-3 rounded-xl bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] text-xs space-y-1">
+              <div className="flex items-center justify-between"><span className="font-bold">Need on final: <span className="text-[#C96442]">{r.requiredFinalScore}%</span></span><span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${r.status==='Guaranteed'?'bg-emerald-100 text-emerald-700': r.status==='Achievable'?'bg-blue-100 text-blue-700': r.status==='Challenging'?'bg-amber-100 text-amber-700':'bg-rose-100 text-rose-700'}`}>{r.status}</span></div>
               <p className="text-[11px] text-[#6B6860]">{r.feedback}</p>
               <p className="text-[11px] text-[#6B6860] italic">Weighted GPA: Canvas grades auto-imported → GPA calculation uses same formula.</p>
             </div>
@@ -490,35 +491,35 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
       </details>
 
       {/* Main High-Density macOS Table View (40px Rows) */}
-      <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] overflow-hidden shadow-xs">
+      <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] overflow-hidden shadow-xs">
         {isLoading ? (
           <div className="p-16 text-center text-[#8C897F] flex flex-col items-center justify-center gap-2">
-            <RefreshCw className="w-6 h-6 animate-spin text-[#D97757]" />
+            <RefreshCw className="w-6 h-6 animate-spin text-[#C96442]" />
             <span className="text-xs font-semibold">Syncing live Canvas assignments...</span>
           </div>
         ) : filteredAssignments.length === 0 ? (
           <div className="p-16 text-center text-[#8C897F] space-y-2">
             <Layers className="w-8 h-8 mx-auto opacity-40" />
-            <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
+            <p className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
               {isConfigured
                 ? (canvasAssignments.length === 0
-                  ? 'Nothing synced yet — check the message above.'
-                  : 'All caught up! Zero tasks in this view.')
-                : 'Canvas LMS not yet connected'}
+                  ? t('canvas_empty_title')
+                  : t('all_caught_up'))
+                : t('canvas_not_connected')}
             </p>
             <p className="text-[11px] max-w-sm mx-auto">
               {isConfigured
                 ? (canvasAssignments.length === 0
-                  ? 'If you expect coursework here, re-copy your Calendar Feed link or regenerate your API token, save, and press Try again.'
-                  : 'No pending coursework matching your active filters.')
-                : 'Click the settings icon above to paste your Canvas URL (e.g. https://4015.instructure.com) + API token, or a calendar feed URL.'}
+                  ? t('canvas_empty_hint')
+                  : '')
+                : t('canvas_not_connected_hint')}
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#DFDACB]/80 dark:border-[#2C2B27]/80 bg-[#FAF9F5] dark:bg-[#1F1E1B] text-[10px] font-bold uppercase tracking-wider text-[#8C897F]">
+                <tr className="border-b border-[#E8E6DC]/80 dark:border-[#2C2B27]/80 bg-[#F5F4ED] dark:bg-[#1F1E1B] text-[10px] font-bold uppercase tracking-wider text-[#8C897F]">
                   <th className="py-2.5 px-3 w-10 text-center">Done</th>
                   <th className="py-2.5 px-3 w-36">Course</th>
                   <th className="py-2.5 px-3">Assignment Title</th>
@@ -527,7 +528,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                   <th className="py-2.5 px-3 w-24 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#DFDACB]/40 dark:divide-[#2C2B27]/40 text-xs font-medium">
+              <tbody className="divide-y divide-[#E8E6DC]/40 dark:divide-[#2C2B27]/40 text-xs font-medium">
                 {filteredAssignments.map((assignment) => {
                   const isCompleted = assignment.isCompleted || completedIds.includes(assignment.id);
                   const isSelected = selectedAssignment?.id === assignment.id;
@@ -541,8 +542,8 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                     <tr
                       key={assignment.id}
                       onClick={() => setSelectedAssignment(assignment)}
-                      className={`h-10 hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer ${
-                        isSelected ? 'bg-[#FAF9F5] dark:bg-[#1F1E1B] font-semibold' : ''
+                      className={`h-10 hover:bg-[#F5F4ED] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer ${
+                        isSelected ? 'bg-[#F5F4ED] dark:bg-[#1F1E1B] font-semibold' : ''
                       } ${isCompleted ? 'opacity-60' : ''}`}
                     >
                       {/* Checkbox */}
@@ -551,7 +552,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                           type="checkbox"
                           checked={isCompleted}
                           onChange={() => handleToggleComplete(assignment.id)}
-                          className="w-4 h-4 rounded text-[#D97757] focus:ring-[#D97757] cursor-pointer"
+                          className="w-4 h-4 rounded text-[#C96442] focus:ring-[#C96442] cursor-pointer"
                         />
                       </td>
 
@@ -565,7 +566,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                       {/* Title */}
                       <td className="py-1.5 px-3">
                         <div className="flex items-center gap-2 truncate">
-                          <span className={`text-[#141413] dark:text-[#FAF9F5] truncate ${isCompleted ? 'text-[#6B6860]' : ''}`}>
+                          <span className={`text-[#141413] dark:text-[#F5F4ED] truncate ${isCompleted ? 'text-[#6B6860]' : ''}`}>
                             {assignment.name}
                           </span>
                           {assignment.pointsPossible !== undefined && (
@@ -604,7 +605,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => setSelectedAssignment(assignment)}
-                            className="p-1 text-[#8C897F] hover:text-[#D97757] rounded-lg hover:bg-[#EFECE2] dark:hover:bg-[#252422]"
+                            className="p-1 text-[#8C897F] hover:text-[#C96442] rounded-lg hover:bg-[#E8E6DC] dark:hover:bg-[#252422]"
                             title="Inspect Details"
                           >
                             <ChevronRight className="w-4 h-4" />
@@ -622,20 +623,20 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
       {/* SLIDE-OVER INSPECTOR DRAWER */}
       {selectedAssignment && (
-        <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white dark:bg-[#1A1917] border-l border-[#DFDACB] dark:border-[#2C2B27] shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-200">
+        <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white dark:bg-[#1A1917] border-l border-[#E8E6DC] dark:border-[#2C2B27] shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-200">
           
           {/* Drawer Header */}
-          <div className="p-4 border-b border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex items-center justify-between">
+          <div className="p-4 border-b border-[#E8E6DC] dark:border-[#2C2B27] bg-[#F5F4ED] dark:bg-[#1F1E1B] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 rounded-md">
                 {selectedAssignment.courseName}
               </span>
-              <span className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">Inspector</span>
+              <span className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">Inspector</span>
             </div>
 
             <button
               onClick={() => setSelectedAssignment(null)}
-              className="p-1.5 text-[#8C897F] hover:bg-[#EFECE2] dark:hover:bg-[#252422] rounded-lg cursor-pointer"
+              className="p-1.5 text-[#8C897F] hover:bg-[#E8E6DC] dark:hover:bg-[#252422] rounded-lg cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -646,13 +647,13 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             
             {/* Title & Metadata */}
             <div>
-              <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] mb-2">
+              <h3 className="text-sm font-bold text-[#141413] dark:text-[#F5F4ED] mb-2">
                 {selectedAssignment.name}
               </h3>
               <div className="space-y-1 text-[#8C897F] text-[11px]">
                 <div className="flex items-center justify-between">
                   <span>Due Date:</span>
-                  <span className="font-semibold text-[#141413] dark:text-[#FAF9F5]">
+                  <span className="font-semibold text-[#141413] dark:text-[#F5F4ED]">
                     {selectedAssignment.dueAt ? new Date(selectedAssignment.dueAt).toLocaleString() : 'None'}
                     {getRelativeDueLabel(selectedAssignment.dueAt) && (
                       <span className="ml-1 font-normal text-[#8C897F]">· {getRelativeDueLabel(selectedAssignment.dueAt)}</span>
@@ -661,7 +662,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Points Possible:</span>
-                  <span className="font-semibold text-[#141413] dark:text-[#FAF9F5]">
+                  <span className="font-semibold text-[#141413] dark:text-[#F5F4ED]">
                     {selectedAssignment.pointsPossible ?? 'Unspecified'}
                   </span>
                 </div>
@@ -669,10 +670,10 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             </div>
 
             {/* AI Sub-task Extractor */}
-            <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3">
+            <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 font-bold text-[#141413] dark:text-[#FAF9F5]">
-                  <Sparkles className="w-3.5 h-3.5 text-[#D97757]" />
+                <div className="flex items-center gap-1.5 font-bold text-[#141413] dark:text-[#F5F4ED]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#C96442]" />
                   <span>AI Sub-task Extractor</span>
                 </div>
 
@@ -680,7 +681,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                   <button
                     onClick={() => handleExtractSubtasks(selectedAssignment)}
                     disabled={extractingIds[selectedAssignment.id]}
-                    className="px-2.5 py-1 bg-[#D97757] hover:bg-[#C86646] text-white font-bold rounded-lg text-[10px] cursor-pointer flex items-center gap-1"
+                    className="px-2.5 py-1 bg-[#C96442] hover:bg-[#A94E33] text-white font-bold rounded-lg text-[10px] cursor-pointer flex items-center gap-1"
                   >
                     <Sparkles className={`w-3 h-3 ${extractingIds[selectedAssignment.id] ? 'animate-spin' : ''}`} />
                     <span>{extractingIds[selectedAssignment.id] ? 'Extracting...' : 'Deconstruct'}</span>
@@ -702,14 +703,14 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                           className={`flex items-start gap-2 p-2 rounded-xl border transition-colors cursor-pointer text-[11px] ${
                             isChecked
                               ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900 line-through text-[#8C897F]'
-                              : 'bg-white dark:bg-[#252422] border-[#DFDACB] dark:border-[#2C2B27] text-[#141413] dark:text-[#FAF9F5]'
+                              : 'bg-white dark:bg-[#252422] border-[#E8E6DC] dark:border-[#2C2B27] text-[#141413] dark:text-[#F5F4ED]'
                           }`}
                         >
                           <input
                             type="checkbox"
                             checked={Boolean(isChecked)}
                             onChange={() => handleToggleSubtaskCheck(selectedAssignment.id, idx)}
-                            className="mt-0.5 rounded text-[#D97757] focus:ring-[#D97757]"
+                            className="mt-0.5 rounded text-[#C96442] focus:ring-[#C96442]"
                           />
                           <span className="flex-1 leading-tight">{st.title} (~{st.estimatedMinutes}m)</span>
                         </label>
@@ -722,8 +723,8 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
             {/* Google Drive Submission Picker */}
             {onSubmitAssignment && (
-              <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3">
-                <div className="flex items-center gap-1.5 font-bold text-[#141413] dark:text-[#FAF9F5]">
+              <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
+                <div className="flex items-center gap-1.5 font-bold text-[#141413] dark:text-[#F5F4ED]">
                   <UploadCloud className="w-3.5 h-3.5 text-blue-500" />
                   <span>Submit from Google Drive</span>
                 </div>
@@ -733,7 +734,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
                     <select
                       value={selectedFileId}
                       onChange={(e) => setSelectedFileId(e.target.value)}
-                      className="w-full p-2 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-[11px] outline-none"
+                      className="w-full p-2 bg-white dark:bg-[#252422] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl text-[11px] outline-none"
                     >
                       <option value="">Select a Drive file to attach...</option>
                       {recentFiles.map((f) => (
@@ -762,11 +763,11 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             {/* Description & Rubric */}
             {selectedAssignment.description && (
               <div>
-                <span className="font-bold text-[#141413] dark:text-[#FAF9F5] block mb-1">
+                <span className="font-bold text-[#141413] dark:text-[#F5F4ED] block mb-1">
                   Assignment Instructions
                 </span>
                 <div
-                  className="p-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-[11px] text-[#5C5A54] dark:text-[#B5B2A8] max-h-48 overflow-y-auto leading-relaxed prose dark:prose-invert prose-xs"
+                  className="p-3 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] text-[11px] text-[#5C5A54] dark:text-[#B5B2A8] max-h-48 overflow-y-auto leading-relaxed prose dark:prose-invert prose-xs"
                   dangerouslySetInnerHTML={{ __html: sanitizeAssignmentDescription(typeof selectedAssignment.description === 'string' ? selectedAssignment.description : '') }}
                 />
               </div>
@@ -774,20 +775,20 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
           </div>
 
           {/* Drawer Footer */}
-          <div className="p-4 border-t border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] flex flex-wrap items-center justify-between gap-2">
+          <div className="p-4 border-t border-[#E8E6DC] dark:border-[#2C2B27] bg-[#F5F4ED] dark:bg-[#1F1E1B] flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setWhyIsThisHardCanvasAssignment(selectedAssignment)}
-                className="px-3 py-1.5 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-[#F5F4ED] dark:bg-[#252422] border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] text-[#141413] dark:text-[#F5F4ED] rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
                 title="AI Cognitive Deconstruction"
               >
-                <Brain className="w-3.5 h-3.5 text-[#D97757]" />
+                <Brain className="w-3.5 h-3.5 text-[#C96442]" />
                 <span>Why Is This Hard?</span>
               </button>
 
               <button
                 onClick={() => onSyncToSheet(selectedAssignment)}
-                className="px-3 py-1.5 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                className="px-3 py-1.5 bg-white dark:bg-[#252422] border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] text-[#141413] dark:text-[#F5F4ED] rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
                 Sync to Sheet
               </button>
@@ -803,7 +804,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
               )}
               target="_blank"
               rel="noreferrer"
-              className="px-3 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold flex items-center gap-1 transition-colors"
+              className="px-3 py-1.5 bg-[#C96442] hover:bg-[#A94E33] text-white rounded-xl text-xs font-bold flex items-center gap-1 transition-colors"
             >
               <span>Open in Canvas</span>
               <ExternalLink className="w-3 h-3" />
