@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.6.1';
+export const CURRENT_VERSION = '2.6.2';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,22 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.6.2',
+    date: 'September 11, 2026',
+    title: 'Accessible Confirmation Modals & Keyboard Navigation',
+    badge: 'Latest Update',
+    highlights: [
+      'Confirmation modal dialogs are now screen-reader accessible with ARIA dialog roles and labels',
+      'Press Escape at any time to quickly dismiss active confirmation dialogs',
+    ],
+    details: [
+      'ConfirmationModal now includes role="dialog", aria-modal="true", and aria-labelledby for screen reader navigation, along with an explicit aria-label on the close button and keyboard Escape support.',
+    ]
+  },
+  {
     version: '2.6.1',
     date: 'September 10, 2026',
     title: 'True Palette, Point-At-You Tour & Honest Canvas Errors',
-    badge: 'Latest Update',
     highlights: [
       'Every screen now follows the Warm Cream / Charcoal / Terracotta palette in both modes — no more blue or slate intruders',
       'The intro tour now points directly at the real buttons and auto-moves you between tabs as you press Next',
