@@ -332,6 +332,9 @@ export async function fetchCanvasAssignmentsFromFeed(feedUrl: string): Promise<C
     return [];
   }
 
+  // Detect a broken/missing deployment before blaming the user's feed URL.
+  await probeBackend();
+
   // Handle webcal:// prefix from Apple/Canvas copy link
   const normalizedUrl = cleanUrl.replace(/^webcal:\/\//i, 'https://');
 
@@ -362,7 +365,7 @@ export async function fetchCanvasAssignmentsFromFeed(feedUrl: string): Promise<C
  * Automatically fetches all active courses & favorites, inspecting authentic user-specific submission status
  */
 
-export type CanvasFailureKind = 'auth' | 'host' | 'network' | 'unknown';
+export type CanvasFailureKind = 'auth' | 'host' | 'network' | 'backend' | 'unknown';
 
 /** Thrown when no Canvas endpoint answered. `kind` lets the UI name the exact fix. Message is a bare reason — the UI composes the user-facing hint (never duplicated). */
 export class CanvasSyncError extends Error {
@@ -373,6 +376,29 @@ export class CanvasSyncError extends Error {
     this.name = 'CanvasSyncError';
     this.kind = kind;
     this.status = status;
+  }
+}
+
+/**
+ * Fail fast when the deployed server API is not actually serving this origin.
+ * When the serverless functions are missing or misrouted (e.g. the deployment
+ * was replaced by a static SPA), the platform still answers /api/* with the
+ * SPA's index.html at status 200 — every Canvas endpoint then "succeeds" with
+ * a web page, and sync fails with a misleading auth/network error instead of
+ * the real one. Detect that state up front and name the actual fix.
+ */
+async function probeBackend(): Promise<void> {
+  try {
+    const res = await fetch('/api/health', { headers: { Accept: 'application/json' } });
+    const type = res.headers.get('content-type') || '';
+    if (res.ok && type.includes('json')) return;
+    throw new CanvasSyncError(
+      'backend',
+      `the server API answered status ${res.status} (${type.split(';')[0] || 'unknown type'}) instead of JSON`
+    );
+  } catch (err) {
+    if (err instanceof CanvasSyncError) throw err;
+    throw new CanvasSyncError('backend', 'the server API is unreachable from this browser');
   }
 }
 
@@ -406,6 +432,9 @@ export async function fetchCanvasAssignmentsFromApi(
   token: string
 ): Promise<CanvasAssignment[]> {
   if (!domain || !token) return [];
+
+  // Detect a broken/missing deployment before blaming the user's token or URL.
+  await probeBackend();
 
   const cleanDomain = normalizeCanvasDomain(domain);
   const cleanToken = token.trim();

@@ -1696,7 +1696,7 @@ export default function App() {
       let apiFetched: CanvasAssignment[] = [];
       let feedFetched: CanvasAssignment[] = [];
       let apiError: { message: string; kind?: string } | null = null;
-      let feedError: string | null = null;
+      let feedError: { message: string; kind?: string } | null = null;
 
       // 1. Fetch via REST API if configured (requires BOTH Canvas URL + token)
       if (isApiConfigured) {
@@ -1717,7 +1717,7 @@ export default function App() {
           feedFetched = await fetchCanvasAssignmentsFromFeed(feedUrl);
         } catch (e: any) {
           console.warn('Canvas Calendar Feed query error:', e);
-          feedError = e?.message || 'Canvas feed request failed.';
+          feedError = { message: e?.message || 'Canvas feed request failed.', kind: (e as any)?.kind };
         }
       }
 
@@ -1774,6 +1774,9 @@ export default function App() {
             case 'network':
               errMsg = 'Could not reach Canvas — network error or timed out after 15s. Check your connection, then retry.';
               break;
+            case 'backend':
+              errMsg = `Canvas sync is blocked: ${apiError.message}. This is a deployment issue, not your token — the app's /api functions are not serving JSON. Redeploy the latest main, then retry.`;
+              break;
             default: {
               const reason = (apiError.message || '').trim();
               const needsHint = !/retr(y|ied)\.?$/i.test(reason);
@@ -1784,11 +1787,15 @@ export default function App() {
             }
           }
         } else {
-          const combined = [apiError?.message, feedError].filter(Boolean).join(' ').trim();
-          const needsHint = !/retr(y|ied)\.?$/i.test(combined);
-          errMsg = needsHint
-            ? `Canvas sync failed: ${combined} Check your Canvas URL and token, then retry.`
-            : `Canvas sync failed: ${combined}`;
+          if (feedError?.kind === 'backend') {
+            errMsg = `Canvas sync is blocked: ${feedError.message}. This is a deployment issue, not your feed URL — the app's /api functions are not serving JSON. Redeploy the latest main, then retry.`;
+          } else {
+            const combined = [apiError?.message, feedError?.message].filter(Boolean).join(' ').trim();
+            const needsHint = !/retr(y|ied)\.?$/i.test(combined);
+            errMsg = needsHint
+              ? `Canvas sync failed: ${combined} Check your Canvas URL and token, then retry.`
+              : `Canvas sync failed: ${combined}`;
+          }
         }
         setCanvasError(errMsg);
         return;

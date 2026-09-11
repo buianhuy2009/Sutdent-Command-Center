@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.8.0';
+export const CURRENT_VERSION = '2.8.1';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,24 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.8.1',
+    date: 'September 11, 2026',
+    title: 'Canvas Sync Fix — Honest Errors When the Server API Is Down',
+    badge: 'Latest Update',
+    highlights: [
+      'Canvas sync now tells you when the problem is the deployment itself — not your token or feed link',
+      'No more misleading “bad token” or “network” errors when the site’s API is actually unreachable',
+      'Local development reaches the Canvas + AI endpoints automatically, no extra server step needed',
+    ],
+    details: [
+      'Canvas (Canvas LMS tab + sync engine): before any sync, the app checks its own /api/health endpoint. If it answers with a web page instead of JSON — what happens when the deployed server functions are missing or replaced — sync stops immediately with one clear message telling you to redeploy, instead of blaming your Canvas URL, token or connection. Calendar-feed failures now carry the same typed error kinds as API failures.',
+      'Development (vite.config.ts): running just `npm run dev:vite` now proxies /api to the app server on port 3000, so the Canvas proxy and AI endpoints work without also starting the express server.',
+    ]
+  },
+  {
     version: '2.8.0',
     date: 'September 11, 2026',
     title: 'Math That Renders — KaTeX Formulas in Every AI Answer',
-    badge: 'Latest Update',
     highlights: [
       'Math formulas in AI answers now render beautifully — fractions, integrals and equations instead of raw $ symbols',
       'Works everywhere AI writes: Study Coach, Feynman explanations, quizzes, PhotoMath and STEM Lab',

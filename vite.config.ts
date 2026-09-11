@@ -60,6 +60,14 @@ export default defineConfig(() => {
       },
     },
     server: {
+      // Proxy /api to the express server (server.ts) so Canvas proxy + Gemini
+      // endpoints work when running bare `vite` (dev:vite) without it on :3000.
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3000',
+          changeOrigin: true,
+        },
+      },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',

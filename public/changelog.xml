@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.8.1 — Canvas Sync Fix: Honest Errors When the Server API Is Down</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.8.1</link>
+      <pubDate>Thu, 11 Sep 2026 14:10:00 GMT</pubDate>
+      <description>Canvas sync now detects a broken deployment (server API returning pages instead of JSON) and says so plainly, instead of blaming your token or feed link; bare vite dev proxies /api to the app server.</description>
+    </item>
+    <item>
       <title>v2.8.0 — Math That Renders: KaTeX Formulas in Every AI Answer</title>
       <link>https://student-command-center.vercel.app/?changelog=2.8.0</link>
       <pubDate>Fri, 11 Sep 2026 00:00:00 GMT</pubDate>
