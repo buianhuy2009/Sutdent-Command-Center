@@ -141,6 +141,48 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     return assignments.filter((a) => a.status !== 'Done');
   }, [assignments]);
 
+  // Memoized completed task count for Focus Analytics section
+  const completedAssignmentsCount = useMemo(() => {
+    return assignments.length - pendingAssignments.length;
+  }, [assignments.length, pendingAssignments.length]);
+
+  // Performance Optimization (Bolt ⚡):
+  // Partition and sort pending assignments into Overdue, Due Today, and Upcoming groups in a single O(N) pass,
+  // memoized with useMemo. Previously, this was executed inside an inline IIFE on every render, re-filtering
+  // and sorting 3 separate arrays on any state change in DashboardHome (e.g. typing name or intention).
+  const todayPlanGroups = useMemo(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const overdue: Assignment[] = [];
+    const dueToday: Assignment[] = [];
+    const upcoming: Assignment[] = [];
+
+    for (const a of pendingAssignments) {
+      if (a.dueDate && a.dueDate < todayStr) {
+        overdue.push(a);
+      } else if (a.dueDate === todayStr) {
+        dueToday.push(a);
+      } else {
+        upcoming.push(a);
+      }
+    }
+
+    const priorityMap: Record<string, number> = { High: 0, Med: 1, Low: 2 };
+    const sortFn = (a: Assignment, b: Assignment) => {
+      const pa = priorityMap[a.priority] ?? 1;
+      const pb = priorityMap[b.priority] ?? 1;
+      if (pa !== pb) return pa - pb;
+      const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+      const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+      return da - db;
+    };
+
+    overdue.sort(sortFn);
+    dueToday.sort(sortFn);
+    upcoming.sort(sortFn);
+
+    return { overdue, dueToday, upcoming };
+  }, [pendingAssignments]);
+
   // Next-up hero strip — nearest incomplete assignment with a valid due date
   const nextDeadline = useMemo(() => {
     const dated = pendingAssignments.filter((a) => {
@@ -366,24 +408,13 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
               </div>
             )}
             {(() => {
-              const todayStr = new Date().toISOString().slice(0,10);
-              const overdue = pendingAssignments.filter(a => a.dueDate && a.dueDate < todayStr);
-              const dueToday = pendingAssignments.filter(a => a.dueDate === todayStr);
-              const upcoming = pendingAssignments.filter(a => !a.dueDate || a.dueDate > todayStr);
-              const sorted = (arr: typeof pendingAssignments) => [...arr].sort((a,b)=>{
-                const pri = { High:0, Med:1, Low:2 } as any;
-                const pa = pri[a.priority] ?? 1; const pb = pri[b.priority] ?? 1;
-                if (pa !== pb) return pa - pb;
-                const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-                const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-                return da - db;
-              });
+              const { overdue, dueToday, upcoming } = todayPlanGroups;
               return (
                 <>
-                  {overdue.length>0 && (
+                  {overdue.length > 0 && (
                     <div className="space-y-1.5">
                       <h4 className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Overdue • {overdue.length}</h4>
-                      {sorted(overdue).slice(0,2).map(a=>(
+                      {overdue.slice(0, 2).map((a) => (
                         <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-xs">
                           <span className="font-semibold truncate flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0" />{a.assignmentName}</span>
                           <span className="text-[11px] text-rose-700 ml-2 shrink-0">{a.subject} • {a.dueDate}</span>
@@ -391,10 +422,10 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                       ))}
                     </div>
                   )}
-                  {dueToday.length>0 && (
+                  {dueToday.length > 0 && (
                     <div className="space-y-1.5">
                       <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Due Today • {dueToday.length}</h4>
-                      {sorted(dueToday).slice(0,2).map(a=>(
+                      {dueToday.slice(0, 2).map((a) => (
                         <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs">
                           <span className="font-semibold truncate flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />{a.assignmentName}</span>
                           <span className="text-[11px] text-amber-800 ml-2 shrink-0">{a.subject} • Today</span>
@@ -404,13 +435,13 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                   )}
                   <div className="space-y-1.5">
                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#6B6860] flex items-center gap-1.5"><Clock className="w-3 h-3 text-[#D97757]" />Upcoming</h4>
-                    {sorted(upcoming).slice(0,3).map(a=>(
+                    {upcoming.slice(0, 3).map((a) => (
                       <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB]/40 text-xs">
                         <span className="font-semibold truncate flex items-center gap-1.5"><span className={`w-1.5 h-1.5 rounded-full shrink-0 ${a.priority==='High'?'bg-rose-500': a.priority==='Med'?'bg-amber-500':'bg-emerald-500'}`} />{a.assignmentName}</span>
                         <span className="text-[11px] text-[#6B6860] ml-2 shrink-0">{a.subject} • Due {a.dueDate} {a.priority==='High' && <span className="ml-1 px-1 py-0.5 rounded bg-rose-100 text-rose-700 text-[9px] font-bold">HIGH</span>}</span>
                       </div>
                     ))}
-                    {upcoming.length===0 && overdue.length===0 && dueToday.length===0 && <div className="text-xs text-[#6B6860] italic">All caught up — no upcoming tasks.</div>}
+                    {upcoming.length === 0 && overdue.length === 0 && dueToday.length === 0 && <div className="text-xs text-[#6B6860] italic">All caught up — no upcoming tasks.</div>}
                   </div>
                 </>
               );
@@ -517,7 +548,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             <div className="mt-3 space-y-2">
               <div className="flex items-center justify-between text-xs"><span>Deep work today</span><span className="font-mono font-bold">{completedFocusSessions * 25}m / {sprintGoal * 25}m</span></div>
               <div className="h-2 bg-[#EFECE2] dark:bg-[#252422] rounded-full overflow-hidden"><div className="h-full bg-[#D97757]" style={{width: `${Math.min(100, (completedFocusSessions/sprintGoal)*100)}%`}} /></div>
-              <p className="text-[11px] text-[#6B6860]">Completion funnel: {assignments.filter(a=>a.status==='Done').length}/{assignments.length} tasks done</p>
+              <p className="text-[11px] text-[#6B6860]">Completion funnel: {completedAssignmentsCount}/{assignments.length} tasks done</p>
             </div>
           </div>
         </div>
