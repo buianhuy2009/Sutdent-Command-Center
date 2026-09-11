@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Zap, UploadCloud, Sparkles, Copy, Check, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { MathMarkdown } from '../MathMarkdown';
 import { scribbleToLatex, debugHandwrittenMath } from '../../services/gemini';
 import { MathDebugResult } from '../../types';
 
@@ -133,6 +134,13 @@ export const PhotoMathWorkspace: React.FC = () => {
                   <pre className="font-mono text-xs text-[#D97757] overflow-x-auto whitespace-pre-wrap">
                     {extractedLatex.latex}
                   </pre>
+                  <div className="p-3 bg-white dark:bg-[#1A1917] rounded-xl border border-[#DFDACB]/60 dark:border-[#2C2B27]/60 text-xs text-[#141413] dark:text-[#FAF9F5]">
+                    <MathMarkdown>
+                      {/\$/.test(extractedLatex.latex)
+                        ? extractedLatex.latex
+                        : `$$${extractedLatex.latex}$$`}
+                    </MathMarkdown>
+                  </div>
                 </div>
 
                 {mathDebugResult && (
@@ -145,9 +153,11 @@ export const PhotoMathWorkspace: React.FC = () => {
                       {mathDebugResult.hasError ? <AlertTriangle className="w-4 h-4 text-rose-600" /> : <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
                       <span>{mathDebugResult.hasError ? 'Calculation Issue Detected' : 'All Steps Algebraically Valid'}</span>
                     </div>
-                    <p className="leading-relaxed">
-                      {mathDebugResult.errorDescription || mathDebugResult.socraticHint || 'All derivation lines match algebra rules.'}
-                    </p>
+                    <div className="text-xs leading-relaxed">
+                      <MathMarkdown>
+                        {mathDebugResult.errorDescription || mathDebugResult.socraticHint || 'All derivation lines match algebra rules.'}
+                      </MathMarkdown>
+                    </div>
                   </div>
                 )}
               </div>

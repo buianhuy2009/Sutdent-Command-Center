@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Copy, Check, BookOpen, Layers } from 'lucide-react';
+import { MathMarkdown } from '../MathMarkdown';
 import { feynmanExplainThreeTiers } from '../../services/gemini';
 import { ThreeTierFeynmanResult } from '../../types';
 
@@ -122,17 +123,20 @@ export const FeynmanWorkspace: React.FC = () => {
 
           <div className="space-y-4">
             <div className="p-5 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs leading-relaxed text-[#141413] dark:text-[#FAF9F5]">
-              {activeTier === 'eli5'
-                ? tierResult.tier1_eli5
-                : activeTier === 'hs'
-                ? tierResult.tier2_highschool
-                : tierResult.tier3_undergrad}
+              <MathMarkdown>
+                {activeTier === 'eli5'
+                  ? tierResult.tier1_eli5
+                  : activeTier === 'hs'
+                  ? tierResult.tier2_highschool
+                  : tierResult.tier3_undergrad}
+              </MathMarkdown>
             </div>
 
             {/* Everyday Analogy */}
             {tierResult.analogy && (
               <div className="p-4 bg-amber-50/60 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-900/40 text-xs text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed">
-                <strong className="text-[#141413] dark:text-[#FAF9F5]">Real-World Analogy:</strong> {tierResult.analogy}
+                <strong className="text-[#141413] dark:text-[#FAF9F5]">Real-World Analogy:</strong>{' '}
+                <MathMarkdown>{tierResult.analogy}</MathMarkdown>
               </div>
             )}
           </div>

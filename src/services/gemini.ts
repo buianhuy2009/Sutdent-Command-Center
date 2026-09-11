@@ -1240,6 +1240,7 @@ Based on the following lecture notes or study topic:
 "${topicOrNotes.slice(0, 5000)}"
 
 Generate exactly 5 high-yield multiple-choice practice quiz questions to test deep understanding.
+Write any math with KaTeX delimiters: inline $...$, display $$...$$ (one block per line, never two on one line).
 Return a JSON array of questions with this exact format:
 [
   {

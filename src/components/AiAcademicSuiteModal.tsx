@@ -29,6 +29,7 @@ import {
   ParsedSyllabusData,
 } from '../services/gemini';
 import { Assignment } from '../types';
+import { MathMarkdown } from './MathMarkdown';
 
 type SuiteTab = 'planner' | 'syllabus' | 'quiz' | 'grades';
 
@@ -513,7 +514,7 @@ export const AiAcademicSuiteModal: React.FC<AiAcademicSuiteModalProps> = ({
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] leading-snug">
-                          {qIndex + 1}. {q.question}
+                          <MathMarkdown>{`${qIndex + 1}. ${q.question}`}</MathMarkdown>
                         </div>
                         <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-[#FAF9F5] dark:bg-[#252422] text-[#8C897F] border border-[#DFDACB] dark:border-[#2C2B27]">
                           {q.topic}
@@ -549,7 +550,7 @@ export const AiAcademicSuiteModal: React.FC<AiAcademicSuiteModalProps> = ({
                               }
                               className={`p-3 rounded-xl border text-xs text-left transition-colors cursor-pointer flex items-center justify-between gap-2 ${btnStyle}`}
                             >
-                              <span>{opt}</span>
+                              <MathMarkdown>{opt}</MathMarkdown>
                               {quizSubmitted && isCorrect && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
                             </button>
                           );
@@ -558,7 +559,8 @@ export const AiAcademicSuiteModal: React.FC<AiAcademicSuiteModalProps> = ({
 
                       {quizSubmitted && (
                         <div className="p-3 bg-amber-50/70 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900/60 text-[11px] text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed">
-                          <strong>Explanation:</strong> {q.explanation}
+                          <strong>Explanation:</strong>{' '}
+                          <MathMarkdown>{q.explanation}</MathMarkdown>
                         </div>
                       )}
                     </div>

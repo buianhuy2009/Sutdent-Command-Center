@@ -9,7 +9,7 @@ import {
   Trash2,
   ArrowLeft,
 } from 'lucide-react';
-import Markdown from 'react-markdown';
+import { MathMarkdown } from './MathMarkdown';
 import { sendStudyAssistantMessage } from '../services/gemini';
 import { queryVault, getVaultStats, VaultChunk } from '../services/ragVault';
 import { Assignment, CalendarEvent, EmailAlert } from '../types';
@@ -259,7 +259,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
                   }`}
                 >
                   <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed">
-                    <Markdown>{msg.content}</Markdown>
+                    <MathMarkdown>{msg.content}</MathMarkdown>
                   </div>
                 </div>
 
@@ -278,7 +278,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
                 </div>
                 <div className="max-w-[85%] p-4 rounded-2xl bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-bl-xs">
                   <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed">
-                    <Markdown>{streamingContent}</Markdown>
+                    <MathMarkdown>{streamingContent}</MathMarkdown>
                   </div>
                 </div>
               </div>
@@ -422,7 +422,7 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
               }`}
             >
               <div className="prose prose-xs dark:prose-invert max-w-none leading-relaxed">
-                <Markdown>{msg.content}</Markdown>
+                <MathMarkdown>{msg.content}</MathMarkdown>
               </div>
             </div>
             {msg.role === 'user' && (
@@ -433,7 +433,19 @@ export const StudyAssistantChat: React.FC<StudyAssistantChatProps> = ({
           </div>
         ))}
 
-        {isSending && (
+        {isSending && streamingContent && (
+          <div className="flex items-start gap-2 justify-start">
+            <div className="w-6 h-6 rounded-md bg-[#D97757]/15 text-[#D97757] flex items-center justify-center shrink-0 mt-0.5">
+              <Bot className="w-3.5 h-3.5" />
+            </div>
+            <div className="max-w-[82%] p-2.5 rounded-xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-bl-xs">
+              <div className="prose prose-xs dark:prose-invert max-w-none leading-relaxed">
+                <MathMarkdown>{streamingContent}</MathMarkdown>
+              </div>
+            </div>
+          </div>
+        )}
+        {isSending && !streamingContent && (
           <div className="flex items-center gap-2 text-[#8C897F] text-xs py-1">
             <Bot className="w-4 h-4 text-[#D97757] animate-pulse" />
             <span className="animate-pulse font-medium">Thinking...</span>

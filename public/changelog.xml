@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.8.0 — Math That Renders: KaTeX Formulas in Every AI Answer</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.8.0</link>
+      <pubDate>Fri, 11 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Math formulas in Study Coach, Feynman, quizzes, PhotoMath and STEM Lab now render as real equations with KaTeX, theme-matched and Vietnamese-safe.</description>
+    </item>
+    <item>
       <title>v2.7.0 — Claude Palette, VI/EN Toggle, Calmer Toolbars &amp; Honest Canvas</title>
       <link>https://student-command-center.vercel.app/?changelog=2.7.0</link>
       <pubDate>Fri, 11 Sep 2026 00:00:00 GMT</pubDate>

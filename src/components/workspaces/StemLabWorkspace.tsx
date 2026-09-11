@@ -20,6 +20,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { IframeErrorBoundary } from '../IframeErrorBoundary';
+import { MathMarkdown } from '../MathMarkdown';
 import {
   injectDesmosGraph,
   socraticStemSpar,
@@ -448,7 +449,7 @@ export const StemLabWorkspace: React.FC = () => {
                         : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-[#141413] dark:text-[#FAF9F5] rounded-bl-none'
                     }`}
                   >
-                    {turn.text}
+                    <MathMarkdown>{turn.text}</MathMarkdown>
                   </div>
                 </div>
               ))}
@@ -580,7 +581,11 @@ export const StemLabWorkspace: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <div className="mt-1 break-all">{line}</div>
+                      <div className="mt-1 break-all">
+                        <MathMarkdown>
+                          {/\$/.test(line) ? line : `$$${line}$$`}
+                        </MathMarkdown>
+                      </div>
                     </div>
                   );
                 })}
@@ -590,11 +595,12 @@ export const StemLabWorkspace: React.FC = () => {
               {mathDebugResult.hasError && (
                 <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-xs space-y-2">
                   <div className="font-bold text-amber-900 dark:text-amber-200">
-                    {mathDebugResult.errorDescription}
+                    <MathMarkdown>{mathDebugResult.errorDescription}</MathMarkdown>
                   </div>
                   {mathDebugResult.socraticHint && (
                     <div className="text-amber-800 dark:text-amber-300 leading-relaxed font-medium">
-                      <strong>Socratic Hint:</strong> {mathDebugResult.socraticHint}
+                      <strong>Socratic Hint:</strong>{' '}
+                      <MathMarkdown>{mathDebugResult.socraticHint}</MathMarkdown>
                     </div>
                   )}
                 </div>
@@ -625,9 +631,17 @@ export const StemLabWorkspace: React.FC = () => {
                 {extractedLatex.latex}
               </div>
 
-              <p className="text-xs text-[#8C897F]">
-                {extractedLatex.explanation}
-              </p>
+              <div className="p-3 bg-white dark:bg-[#252422] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs text-[#141413] dark:text-[#FAF9F5]">
+                <MathMarkdown>
+                  {/\$/.test(extractedLatex.latex)
+                    ? extractedLatex.latex
+                    : `$$${extractedLatex.latex}$$`}
+                </MathMarkdown>
+              </div>
+
+              <div className="text-xs text-[#8C897F]">
+                <MathMarkdown>{extractedLatex.explanation}</MathMarkdown>
+              </div>
             </div>
           )}
         </div>

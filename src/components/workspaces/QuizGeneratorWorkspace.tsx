@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { MathMarkdown } from '../MathMarkdown';
 import { generateInteractiveQuiz, QuizQuestion } from '../../services/gemini';
 
 export const QuizGeneratorWorkspace: React.FC = () => {
@@ -342,9 +343,9 @@ export const QuizGeneratorWorkspace: React.FC = () => {
                     )}
                   </div>
 
-                  <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] leading-relaxed">
-                    {q.question}
-                  </h3>
+                  <div className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5] leading-relaxed">
+                    <MathMarkdown>{q.question}</MathMarkdown>
+                  </div>
 
                   {/* Options */}
                   <div className="space-y-2">
@@ -371,7 +372,7 @@ export const QuizGeneratorWorkspace: React.FC = () => {
                           disabled={isSubmitted}
                           className={`w-full p-3.5 rounded-2xl border text-left text-xs transition-all flex items-center justify-between cursor-pointer ${btnStyle}`}
                         >
-                          <span>{opt}</span>
+                          <MathMarkdown>{opt}</MathMarkdown>
                           {isSubmitted && isCorrectOption && (
                             <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                           )}
@@ -387,7 +388,7 @@ export const QuizGeneratorWorkspace: React.FC = () => {
                   {isSubmitted && q.explanation && (
                     <div className="p-3.5 bg-purple-50/60 dark:bg-purple-950/30 rounded-2xl border border-purple-200 dark:border-purple-800/60 text-xs text-[#5C5A54] dark:text-[#B5B2A8] space-y-1">
                       <strong className="text-purple-950 dark:text-purple-300 block">Explanation:</strong>
-                      <p className="leading-relaxed">{q.explanation}</p>
+                      <div className="leading-relaxed"><MathMarkdown>{q.explanation}</MathMarkdown></div>
                     </div>
                   )}
                 </div>

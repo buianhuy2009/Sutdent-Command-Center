@@ -643,3 +643,82 @@ html.dark .dark\:hover\:text-slate-200:hover { color: #F5F4ED; }
   /* prevent double-tap zoom on CTAs */
   button, a { touch-action: manipulation; }
 }
+
+/* === MathMarkdown (KaTeX) — inherit theme ink, scroll long equations === */
+.math-markdown .katex { color: inherit; font-size: 1.05em; }
+/* KaTeX webfonts contain 0 Vietnamese glyphs (verified: 0/74) — per-glyph
+   fallback to Inter (full VN coverage, already loaded) then system fonts,
+   so $\text{tiếng Việt}$ / Vietnamese inside math never renders as tofu.
+   KaTeX families stay first, so Latin/Greek math keeps its classic look. */
+.math-markdown .katex,
+.math-markdown .katex .mathit,
+.math-markdown .katex .mathbf,
+.math-markdown .katex .textrm,
+.math-markdown .katex .mathrm,
+.math-markdown .katex .textit {
+  font-family: KaTeX_Main, "Times New Roman", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.math-markdown .katex .mathnormal,
+.math-markdown .katex .boldsymbol {
+  font-family: KaTeX_Math, KaTeX_Main, "Inter", system-ui, sans-serif;
+}
+.math-markdown .katex .amsrm,
+.math-markdown .katex .mathbb,
+.math-markdown .katex .textbb {
+  font-family: KaTeX_AMS, KaTeX_Main, "Inter", system-ui, sans-serif;
+}
+.math-markdown .katex .mathcal {
+  font-family: KaTeX_Caligraphic, KaTeX_Main, "Inter", system-ui, sans-serif;
+}
+.math-markdown .katex .mathfrak,
+.math-markdown .katex .textfrak,
+.math-markdown .katex .mathboldfrak,
+.math-markdown .katex .textboldfrak {
+  font-family: KaTeX_Fraktur, KaTeX_Main, "Inter", system-ui, sans-serif;
+}
+.math-markdown .katex .mathscr,
+.math-markdown .katex .textscr {
+  font-family: KaTeX_Script, KaTeX_Main, "Inter", system-ui, sans-serif;
+}
+.math-markdown .katex .textsf {
+  font-family: KaTeX_SansSerif, "Inter", system-ui, sans-serif;
+}
+.math-markdown .katex .mathtt,
+.math-markdown .katex .texttt {
+  font-family: KaTeX_Typewriter, ui-monospace, "SF Mono", Menlo, Consolas, "Inter", system-ui, sans-serif;
+}
+.math-markdown .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0.25rem;
+  margin: 0.5rem 0;
+}
+.math-markdown .katex-display > .katex { white-space: nowrap; }
+.dark .math-markdown .katex,
+html.dark .math-markdown .katex { color: #FAF9F5; }
+/* KaTeX parse-error fallback: amber tint instead of default red-on-white */
+.math-markdown .katex-error { color: #B45309; }
+.dark .math-markdown .katex-error,
+html.dark .math-markdown .katex-error { color: #FBBF24; }
+/* GFM tables inside AI answers */
+.math-md-table-wrap { overflow-x: auto; margin: 0.5rem 0; }
+.math-md-table-wrap table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
+.math-md-table-wrap th, .math-md-table-wrap td {
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+.math-md-table-wrap thead tr { background: rgba(0,0,0,0.04); }
+.dark .math-md-table-wrap thead tr,
+html.dark .math-md-table-wrap thead tr { background: rgba(255,255,255,0.06); }
+/* Code blocks inside AI answers */
+.math-markdown pre {
+  overflow-x: auto;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(0,0,0,0.04);
+  font-size: 0.75rem;
+}
+.dark .math-markdown pre,
+html.dark .math-markdown pre { background: rgba(255,255,255,0.06); }
+.math-markdown code { overflow-wrap: anywhere; }

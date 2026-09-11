@@ -27,7 +27,7 @@ import {
   HelpCircle,
   FileCheck,
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import { MathMarkdown } from '../MathMarkdown';
 import { GoogleDriveTab } from '../GoogleDriveTab';
 import { createFormattedAssignmentDoc } from '../../services/googleWorkspace';
 import {
@@ -633,7 +633,7 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                       Live Formatted Preview
                     </span>
                     <div className="flex-1 p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl overflow-y-auto prose dark:prose-invert prose-xs max-w-none text-[#141413] dark:text-[#FAF9F5]">
-                      <ReactMarkdown>{activeNote.content}</ReactMarkdown>
+                      <MathMarkdown>{activeNote.content}</MathMarkdown>
                     </div>
                   </div>
                 </div>
@@ -855,7 +855,7 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                     <div className="text-[10px] font-bold opacity-60 mb-1">
                       {turn.role === 'user' ? 'You' : 'Socratic Tutor'}
                     </div>
-                    <div>{turn.content}</div>
+                    <MathMarkdown>{turn.content}</MathMarkdown>
                   </div>
                 </div>
               ))
@@ -1057,7 +1057,7 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                   Core Idea in One Sentence
                 </span>
                 <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                  &ldquo;{feynmanResult.coreIdea}&rdquo;
+                  <MathMarkdown>{`“${feynmanResult.coreIdea}”`}</MathMarkdown>
                 </p>
               </div>
 
@@ -1065,9 +1065,9 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C897F] block mb-1">
                   Plain English Explanation (ELI12)
                 </span>
-                <p className="text-xs text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed">
-                  {feynmanResult.simplified}
-                </p>
+                <div className="text-xs text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed">
+                  <MathMarkdown>{feynmanResult.simplified}</MathMarkdown>
+                </div>
               </div>
 
               <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-1">
@@ -1075,9 +1075,9 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                   <Lightbulb className="w-3.5 h-3.5" />
                   <span>Real-World Everyday Analogy</span>
                 </span>
-                <p className="text-xs text-[#141413] dark:text-[#FAF9F5] italic leading-relaxed">
-                  {feynmanResult.analogy}
-                </p>
+                <div className="text-xs text-[#141413] dark:text-[#FAF9F5] italic leading-relaxed">
+                  <MathMarkdown>{feynmanResult.analogy}</MathMarkdown>
+                </div>
               </div>
 
               {/* 3-Tier Rigor Breakdown */}
@@ -1115,7 +1115,7 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                         <span className="text-[10px] font-bold text-[#D97757] uppercase tracking-wider block mb-1">
                           Tier 1: Explain Like I&apos;m 5
                         </span>
-                        <p>{threeTierResult.tier1_eli5}</p>
+                        <MathMarkdown>{threeTierResult.tier1_eli5}</MathMarkdown>
                       </div>
                     )}
 
@@ -1124,7 +1124,7 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                         <span className="text-[10px] font-bold text-[#D97757] uppercase tracking-wider block mb-1">
                           Tier 2: High School Physical Intuition
                         </span>
-                        <p>{threeTierResult.tier2_highschool}</p>
+                        <MathMarkdown>{threeTierResult.tier2_highschool}</MathMarkdown>
                       </div>
                     )}
 
@@ -1133,7 +1133,7 @@ export const DocumentHubWorkspace: React.FC<DocumentHubWorkspaceProps> = ({
                         <span className="text-[10px] font-bold text-[#D97757] uppercase tracking-wider block mb-1">
                           Tier 3: Undergraduate Mathematical Formalism
                         </span>
-                        <p className="font-mono text-[11px]">{threeTierResult.tier3_undergrad}</p>
+                        <MathMarkdown>{threeTierResult.tier3_undergrad}</MathMarkdown>
                       </div>
                     )}
                   </div>
