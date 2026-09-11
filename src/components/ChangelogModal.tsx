@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.7.0';
+export const CURRENT_VERSION = '2.8.0';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,24 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.8.0',
+    date: 'September 11, 2026',
+    title: 'Math That Renders — KaTeX Formulas in Every AI Answer',
+    badge: 'Latest Update',
+    highlights: [
+      'Math formulas in AI answers now render beautifully — fractions, integrals and equations instead of raw $ symbols',
+      'Works everywhere AI writes: Study Coach, Feynman explanations, quizzes, PhotoMath and STEM Lab',
+      'Vietnamese text inside formulas never shows as boxes, long equations scroll sideways',
+    ],
+    details: [
+      'AI answers (Study Coach, Socratic Tutor, Feynman 3-tier explanations, Quiz Generator, PhotoMath handwritten solver, STEM Lab, Document Hub, NotebookLM briefs): one shared MathMarkdown renderer shows Markdown plus KaTeX math — inline $...$ and display $$...$$ — with streaming-safe balancing so half-typed formulas never flash raw code while the answer is still arriving. The AI prompt now asks for KaTeX delimiters directly.',
+      'Theme & language (stylesheet + KaTeX fonts): formulas inherit the Warm Cream / Charcoal theme ink in both modes, display equations scroll horizontally instead of overflowing, and Vietnamese diacritics inside math fall back to Inter so they never render as tofu boxes. Code blocks and GFM tables inside AI answers are styled to match.',
+    ]
+  },
+  {
     version: '2.7.0',
     date: 'September 11, 2026',
     title: 'Claude Palette, VI/EN Toggle, Calmer Toolbars & Honest Canvas',
-    badge: 'Latest Update',
     highlights: [
       'Whole app now follows the Anthropic Claude palette — canvas, hairline borders and primary accent',
       'New Vietnamese / English toggle in the navbar, landing header, footer and Settings — auto-detects on first visit',

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Calculator, ExternalLink, Sparkles, Copy, Check, BookOpen } from 'lucide-react';
+import { MathMarkdown } from '../MathMarkdown';
 import { callGemini, callGroqDirect } from '../../services/gemini';
 
 export const WolframWorkspace: React.FC = () => {
@@ -145,8 +146,8 @@ Provide clear numbered steps, intermediate derivations, and final box answers.`;
             </button>
           </div>
 
-          <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed font-sans whitespace-pre-line">
-            {solution}
+          <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed font-sans">
+            <MathMarkdown>{solution}</MathMarkdown>
           </div>
         </div>
       )}

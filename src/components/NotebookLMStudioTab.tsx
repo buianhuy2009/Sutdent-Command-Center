@@ -12,7 +12,7 @@ import {
   Brain,
   Lightbulb,
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import { MathMarkdown } from './MathMarkdown';
 
 interface ResearchBrief {
   id: string;
@@ -211,7 +211,7 @@ Keep dense, citation-ready, undergraduate level.`;
               </div>
             ) : (
               <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed">
-                <ReactMarkdown>{activeBrief}</ReactMarkdown>
+                <MathMarkdown>{activeBrief}</MathMarkdown>
               </div>
             )}
           </div>

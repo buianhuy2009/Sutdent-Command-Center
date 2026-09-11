@@ -82,7 +82,7 @@ export default defineConfig(() => {
             // canvas-confetti lazy via celebrateWin(); excalidraw deferred (no static import — iframe/lazy only).
             mermaid: ['mermaid'],
             katex: ['katex'],
-            markdown: ['react-markdown'],
+            markdown: ['react-markdown', 'remark-math', 'rehype-katex', 'remark-gfm'],
             dnd: ['@dnd-kit/core','@dnd-kit/sortable','@dnd-kit/utilities'],
             dexie: ['dexie']
             // CI check: run `npx vite-bundle-visualizer` on PRs; warn at 600k (brotli) per build.chunkSizeWarningLimit

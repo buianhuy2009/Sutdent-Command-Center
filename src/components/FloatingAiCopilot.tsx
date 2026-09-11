@@ -18,6 +18,7 @@ import {
   Network,
 } from 'lucide-react';
 import { runAutonomousAgent } from '../services/gemini';
+import { MathMarkdown } from './MathMarkdown';
 import { logPrompt } from '../services/promptLog';
 import { AgentAction } from '../types';
 
@@ -296,7 +297,7 @@ export const FloatingAiCopilot: React.FC<FloatingAiCopilotProps> = ({
                       : 'bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-[#141413] dark:text-[#FAF9F5] rounded-bl-none'
                   }`}
                 >
-                  <p>{m.content}</p>
+                  <MathMarkdown>{m.content}</MathMarkdown>
 
                   {/* Dispatched Actions Badges */}
                   {m.executedActions &&
