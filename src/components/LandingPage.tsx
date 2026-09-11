@@ -50,9 +50,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [demoOpen, setDemoOpen] = useState(false);
   useLang();
   return (
-    <div className="min-h-screen w-full max-w-[100vw] overflow-x-clip bg-[#F5F4ED] dark:bg-[#141413] text-[#141413] dark:text-[#F5F4ED] transition-colors flex flex-col font-sans selection:bg-[#C96442] selection:text-white">
+    <div className="min-h-screen w-full max-w-[100vw] overflow-x-clip bg-[#E8E6DC] dark:bg-[#141413] text-[#141413] dark:text-[#F5F4ED] transition-colors flex flex-col font-sans selection:bg-[#C96442] selection:text-white">
       {/* Top Header — semantic role=banner */}
-      <header role="banner" className="sticky top-0 z-40 bg-[#F5F4ED]/90 dark:bg-[#141413]/90 backdrop-blur-md border-b border-[#E8E6DC] dark:border-[#2C2B27]">
+      <header role="banner" className="sticky top-0 z-40 bg-[#E8E6DC]/90 dark:bg-[#141413]/90 backdrop-blur-md border-b border-[#E8E6DC] dark:border-[#2C2B27]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#C96442] rounded-xl flex items-center justify-center text-white shadow-md shadow-[#C96442]/20" aria-hidden="true">
@@ -145,7 +145,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <button
                 id="btn-landing-explore-demo"
                 onClick={onExploreDemo}
-                className="w-full sm:w-auto max-w-full min-h-[48px] px-6 py-4 bg-white dark:bg-[#1A1917] hover:bg-[#F5F4ED] dark:hover:bg-[#252422] text-[#141413] dark:text-[#F5F4ED] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-2xl text-base font-semibold transition-all cursor-pointer shadow-xs inline-flex items-center justify-center"
+                className="w-full sm:w-auto max-w-full min-h-[48px] px-6 py-4 bg-white dark:bg-[#1A1917] hover:bg-[#E8E6DC] dark:hover:bg-[#252422] text-[#141413] dark:text-[#F5F4ED] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-2xl text-base font-semibold transition-all cursor-pointer shadow-xs inline-flex items-center justify-center"
               >
                 <span className="truncate">{t('landing_explore')}</span>
               </button>
@@ -271,7 +271,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Feature 1: Canvas LMS */}
-              <div className="bg-[#F5F4ED] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] dark:hover:border-[#C96442] transition-all shadow-card flex flex-col justify-between">
+              <div className="bg-[#E8E6DC] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] dark:hover:border-[#C96442] transition-all shadow-card flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-[#C96442]/15 text-[#C96442] flex items-center justify-center mb-4">
                     <Layers className="w-6 h-6" strokeWidth={1.75} />
@@ -288,7 +288,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Feature 2: AI Study Coach */}
-              <div className="bg-[#F5F4ED] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] dark:hover:border-[#C96442] transition-all shadow-card flex flex-col justify-between">
+              <div className="bg-[#E8E6DC] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] dark:hover:border-[#C96442] transition-all shadow-card flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-[#C96442]/15 text-[#C96442] flex items-center justify-center mb-4">
                     <Sparkles className="w-6 h-6" strokeWidth={1.75} />
@@ -305,7 +305,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Feature 3: Gmail Scanner */}
-              <div className="bg-[#F5F4ED] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] dark:hover:border-[#C96442] transition-all shadow-card flex flex-col justify-between">
+              <div className="bg-[#E8E6DC] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] dark:hover:border-[#C96442] transition-all shadow-card flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
                     <Mail className="w-6 h-6" strokeWidth={1.75} />
@@ -322,7 +322,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Feature 4: Assignment Tracker */}
-              <div className="bg-[#F5F4ED] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] dark:hover:border-[#C96442] transition-all shadow-card flex flex-col justify-between">
+              <div className="bg-[#E8E6DC] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] dark:hover:border-[#C96442] transition-all shadow-card flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
                     <CheckSquare className="w-6 h-6" strokeWidth={1.75} />
@@ -339,7 +339,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Feature 5: Google Drive Organizer */}
-              <div className="bg-[#F5F4ED] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] dark:hover:border-[#C96442] transition-all shadow-card flex flex-col justify-between">
+              <div className="bg-[#E8E6DC] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] dark:hover:border-[#C96442] transition-all shadow-card flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-[#C96442]/15 text-[#C96442] flex items-center justify-center mb-4">
                     <FileText className="w-6 h-6" strokeWidth={1.75} />
@@ -356,7 +356,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               {/* Feature 6: Doc Starter Studio */}
-              <div className="bg-[#F5F4ED] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] dark:hover:border-[#C96442] transition-all shadow-card flex flex-col justify-between">
+              <div className="bg-[#E8E6DC] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] dark:hover:border-[#C96442] transition-all shadow-card flex flex-col justify-between">
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-[#C96442]/15 text-[#C96442] flex items-center justify-center mb-4">
                     <Zap className="w-6 h-6" strokeWidth={1.75} />
@@ -376,7 +376,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
 
         {/* How it works — real setup flow, no fiction */}
-        <section id="how" className="py-12 bg-[#F5F4ED] dark:bg-[#141413] border-b border-[#E8E6DC] dark:border-[#2C2B27] scroll-mt-16">
+        <section id="how" className="py-12 bg-[#E8E6DC] dark:bg-[#141413] border-b border-[#E8E6DC] dark:border-[#2C2B27] scroll-mt-16">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-center tracking-tight">{t('landing_how_title')}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -397,7 +397,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
 
         {/* Comparison vs Notion/Canvas/Motion + Pricing anchor */}
-        <section id="comparison" className="py-12 bg-[#F5F4ED] dark:bg-[#141413] border-b border-[#E8E6DC] dark:border-[#2C2B27] scroll-mt-16">
+        <section id="comparison" className="py-12 bg-[#E8E6DC] dark:bg-[#141413] border-b border-[#E8E6DC] dark:border-[#2C2B27] scroll-mt-16">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
             <h2 className="text-lg font-extrabold text-center">{t('landing_compare_title')}</h2>
             <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
@@ -455,7 +455,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <button
                 onClick={onSignIn}
                 disabled={isLoggingIn}
-                className="px-8 py-4 bg-white text-[#C96442] hover:bg-[#F5F4ED] disabled:opacity-50 rounded-2xl text-base font-extrabold shadow-xl inline-flex items-center gap-3 transition-all cursor-pointer hover:scale-[1.02]"
+                className="px-8 py-4 bg-white text-[#C96442] hover:bg-[#E8E6DC] disabled:opacity-50 rounded-2xl text-base font-extrabold shadow-xl inline-flex items-center gap-3 transition-all cursor-pointer hover:scale-[1.02]"
               >
                 <GraduationCap className="w-5 h-5 text-[#C96442]" />
                 <span>{t('landing_cta_btn')}</span>
@@ -474,13 +474,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="bg-white dark:bg-[#1A1917] rounded-3xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold flex items-center gap-2"><Play className="w-5 h-5 text-[#C96442]" /> 60s Demo — Student Command Center</h3>
-              <button onClick={()=>setDemoOpen(false)} className="p-2 hover:bg-[#F5F4ED] dark:hover:bg-[#252422] rounded-xl"><X className="w-4 h-4" /></button>
+              <button onClick={()=>setDemoOpen(false)} className="p-2 hover:bg-[#E8E6DC] dark:hover:bg-[#252422] rounded-xl"><X className="w-4 h-4" /></button>
             </div>
             <div className="aspect-video bg-black rounded-2xl overflow-hidden border border-[#E8E6DC] dark:border-[#2C2B27] relative">
               <video src="/demo.mp4" poster="/screenshot-dashboard.png" controls autoPlay muted playsInline className="w-full h-full object-cover" onError={(e)=>{ (e.currentTarget as HTMLVideoElement).style.display='none'; const fb=document.getElementById('demo-fallback'); if(fb) fb.style.display='flex'; }}>
                 Your browser does not support video.
               </video>
-              <div id="demo-fallback" style={{display:'none'}} className="absolute inset-0 flex-col items-center justify-center text-center p-6 space-y-3 bg-[#F5F4ED] dark:bg-[#1F1E1B]">
+              <div id="demo-fallback" style={{display:'none'}} className="absolute inset-0 flex-col items-center justify-center text-center p-6 space-y-3 bg-[#E8E6DC] dark:bg-[#1F1E1B]">
                 <div className="w-14 h-14 rounded-2xl bg-[#C96442] text-white flex items-center justify-center"><Play className="w-6 h-6" /></div>
                 <p className="text-sm font-bold">{t('demo_video_missing')}</p>
                 <p className="text-xs text-[#5E5D59] max-w-md">Connect Canvas → Sync Google Workspace → AI Study Coach plans your day. Replace public/demo.mp4 with your Loom embed.</p>
@@ -488,7 +488,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <button onClick={onExploreDemo} className="mt-2 px-4 py-2 bg-[#C96442] hover:bg-[#A94E33] text-white rounded-xl text-xs font-bold">{t('landing_explore')}</button>
               </div>
             </div>
-            <div className="text-[11px] text-[#5E5D59]">Tip: Replace <code className="font-mono bg-[#F5F4ED] dark:bg-[#252422] px-1 rounded">public/demo.mp4</code> with your 60s Loom recording. YouTube fallback shown if missing.</div>
+            <div className="text-[11px] text-[#5E5D59]">Tip: Replace <code className="font-mono bg-[#E8E6DC] dark:bg-[#252422] px-1 rounded">public/demo.mp4</code> with your 60s Loom recording. YouTube fallback shown if missing.</div>
           </div>
         </div>
       )}

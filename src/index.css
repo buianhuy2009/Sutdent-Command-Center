@@ -615,6 +615,21 @@ html.dark .dark\:hover\:bg-slate-800:hover, html.dark .dark\:hover\:bg-slate-700
 html.dark .dark\:hover\:bg-slate-600:hover { background-color: #4A473E; }
 html.dark .dark\:hover\:text-slate-200:hover { color: #F5F4ED; }
 
+/* === No pure-white surfaces (user requirement) ===
+   Opaque white panels → warm canvas; white inputs → sand wells so they stay
+   visible on cream cards. Translucent bg-white/* overlays (on terracotta/dark)
+   are intentional tints and are NOT remapped. Unlayered so it beats utilities;
+   dark branches preserve the warm-charcoal elevation system. */
+.bg-white { background-color: #F5F4ED; }
+html.dark .bg-white { background-color: #282723; }
+input[class*="bg-white"], select[class*="bg-white"], textarea[class*="bg-white"] { background-color: #E8E6DC; }
+html.dark input[class*="bg-white"], html.dark select[class*="bg-white"], html.dark textarea[class*="bg-white"] { background-color: #2E2C28; }
+/* Hairline borders stay visible on the sand main panel */
+[class*="border-[#E8E6DC]"] { border-color: #D6CFBD; }
+html.dark [class*="border-[#E8E6DC]"] { border-color: #4F4A3E; }
+[class*="divide-[#E8E6DC]"] > :not([hidden]) ~ :not([hidden]) { border-color: #D6CFBD; }
+html.dark [class*="divide-[#E8E6DC]"] > :not([hidden]) ~ :not([hidden]) { border-color: #4F4A3E; }
+
 /* === Guided-tour spotlight — warm terracotta pulse on the real UI target === */
 .scc-tour-flash {
   outline: 3px solid #C96442 !important;

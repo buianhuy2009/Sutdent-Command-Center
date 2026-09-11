@@ -345,7 +345,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
       <div className="bg-white dark:bg-[#1A1917] rounded-3xl max-w-4xl w-full h-[620px] max-h-[90vh] flex border border-[#E8E6DC] dark:border-[#2C2B27] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
         
         {/* LEFT PANE: Categorized Sidebar matching uploaded reference */}
-        <div className="w-60 shrink-0 bg-[#F5F4ED] dark:bg-[#1F1E1B] border-r border-[#E8E6DC] dark:border-[#2C2B27] flex flex-col justify-between p-4 select-none">
+        <div className="w-60 shrink-0 bg-[#E8E6DC] dark:bg-[#1F1E1B] border-r border-[#E8E6DC] dark:border-[#2C2B27] flex flex-col justify-between p-4 select-none">
           <div className="space-y-4">
             <div className="px-2 pt-1">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#8C897F]">
@@ -425,7 +425,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-[#8C897F] hover:bg-[#F5F4ED] dark:hover:bg-[#1F1E1B] hover:text-[#141413] dark:hover:text-[#F5F4ED] transition-colors cursor-pointer"
+              className="p-2 rounded-xl text-[#8C897F] hover:bg-[#E8E6DC] dark:hover:bg-[#1F1E1B] hover:text-[#141413] dark:hover:text-[#F5F4ED] transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -443,7 +443,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                   </span>
 
                   {/* Setting Card: Auto Sync */}
-                  <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between gap-3">
+                  <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between gap-3">
                     <div>
                       <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                         {t('bg_refresh_title')}
@@ -463,7 +463,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                   </div>
 
                   {/* Setting Card: Language — whole-app VI/EN toggle */}
-                  <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between gap-3">
+                  <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between gap-3">
                     <div>
                       <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                         {t('language_title')}
@@ -477,7 +477,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
 
                   {/* Setting Card: Help & updates (tour + changelog merged — one row, not two) */}
                   {(onOpenTour || onOpenChangelog) && (
-                    <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between gap-3">
+                    <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between gap-3">
                       <div>
                         <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                           {t('help_updates_title')}
@@ -514,7 +514,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                   )}
 
                   {/* Setting Card: User Avatar Selection — Claude neutrals, single terracotta active */}
-                  <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
+                  <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
                     <div>
                       <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                         {t('avatar_title')}
@@ -528,7 +528,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                       {[
                         { id: 'grad', label: t('avatar_scholar'), bg: 'bg-[#C96442]', icon: 'GraduationCap' },
                         { id: 'book', label: t('avatar_researcher'), bg: 'bg-[#5E5D59]', icon: 'BookOpen' },
-                        { id: 'bot', label: t('avatar_cybernetic'), bg: 'bg-[#141413] dark:bg-[#E8E6DC]', icon: 'Bot' },
+                        { id: 'bot', label: t('avatar_cybernetic'), bg: 'bg-[#141413] dark:bg-[#F5F4ED]', icon: 'Bot' },
                         { id: 'zap', label: t('avatar_polymath'), bg: 'bg-[#A94E33]', icon: 'Zap' },
                       ].map((av) => (
                         <button
@@ -549,7 +549,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                   </div>
 
                   {/* Setting Card: Start Fresh / Semester Reset */}
-                  <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
+                  <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
                     <div>
                       <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                         {t('semester_reset_title')}
@@ -567,7 +567,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                   </div>
 
                   {/* Setting Card: Local Storage Reset */}
-                  <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
+                  <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
                     <div>
                       <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                         {t('clear_cache_title')}
@@ -603,7 +603,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 </div>
 
                 {/* Gemini Key */}
-                <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <label className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED] block">
@@ -658,7 +658,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 </div>
 
                 {/* Groq Key */}
-                <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <label className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED] block">
@@ -713,7 +713,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
             {activeSection === 'sync' && (
               <div className="space-y-4">
                 {/* Google Account */}
-                <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
                   <div>
                     <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                       Google Workspace Sync
@@ -742,7 +742,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
 
                 {/* Google Sheets URL */}
                 {sheetUrl && (
-                  <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
+                  <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
                     <div>
                       <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                         Master Assignment Sheet
@@ -771,7 +771,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                         onClose();
                         onOpenOAuthGuide();
                       }}
-                      className="p-3 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] text-left hover:border-[#C96442] transition-colors cursor-pointer"
+                      className="p-3 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] text-left hover:border-[#C96442] transition-colors cursor-pointer"
                     >
                       <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                         OAuth &amp; Test Users Guide
@@ -787,7 +787,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                         onClose();
                         onOpenDeploymentGuide();
                       }}
-                      className="p-3 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] text-left hover:border-[#C96442] transition-colors cursor-pointer"
+                      className="p-3 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] text-left hover:border-[#C96442] transition-colors cursor-pointer"
                     >
                       <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                         Vercel Deployment Guide
@@ -805,7 +805,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
             {activeSection === 'appearance' && (
               <div className="space-y-4">
                 {/* Interface Density Toggle */}
-                <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                       Display &amp; Layout Density
@@ -832,7 +832,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 </div>
 
                 {/* Color Theme Palette Selector — strict two-mode palette */}
-                <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
@@ -849,7 +849,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
 
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { id: 'linen', name: 'Warm Cream (Light)', color: 'bg-[#F5F4ED] text-[#141413] border-[#E8E6DC]', accent: 'bg-[#C96442]' },
+                      { id: 'linen', name: 'Warm Cream (Light)', color: 'bg-[#E8E6DC] text-[#141413] border-[#E8E6DC]', accent: 'bg-[#C96442]' },
                       { id: 'midnight', name: 'Dark Charcoal (Dark)', color: 'bg-[#141413] text-[#F5F4ED] border-[#2C2B27]', accent: 'bg-[#C96442]' },
                     ].map((t) => (
                       <button
@@ -871,7 +871,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 </div>
 
                 {/* Dark / Light Toggle */}
-                <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
                   <div>
                     <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                       Dark &amp; Light Mode
@@ -903,7 +903,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 </div>
 
                 {/* Auto-Follow System Theme */}
-                <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
                   <div>
                     <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                       Sync with Operating System
@@ -921,7 +921,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 </div>
 
                 {/* Reduced Motion */}
-                <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
                   <div>
                     <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                       Reduced Motion
@@ -939,7 +939,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 </div>
 
                 {/* High Contrast */}
-                <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
                   <div>
                     <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                       High Contrast Mode
@@ -957,7 +957,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 </div>
 
                 {/* NASA APOD Atmospheric Wallpaper */}
-                <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
                   <div className="flex items-center justify-between gap-2">
                   <div>
                     <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
@@ -1010,7 +1010,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
             {/* SECTION 5: SHORTCUTS */}
             {activeSection === 'shortcuts' && (
               <div className="space-y-4">
-                <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
                   <div>
                     <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                       Master Keyboard Shortcuts Switch
@@ -1040,7 +1040,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                   ].map((s) => (
                     <div
                       key={s.label}
-                      className="p-3 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between"
+                      className="p-3 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between"
                     >
                       <div>
                         <span className="font-semibold block text-[#141413] dark:text-[#F5F4ED]">
@@ -1076,7 +1076,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                   return (
                     <div
                       key={integ.name}
-                      className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between"
+                      className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl bg-white dark:bg-[#141413] border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-center text-[#C96442]">
@@ -1102,7 +1102,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
             {activeSection === 'support' && (
               <div className="space-y-4">
                 {/* PWA Install */}
-                <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-xl bg-[#C96442] text-white flex items-center justify-center font-bold text-xs">S</div>
                     <div>
@@ -1136,7 +1136,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                 </div>
 
                 {/* Help & Feedback */}
-                <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
                   <div className="flex items-center gap-2">
                     <MessageCircle className="w-4 h-4 text-[#C96442]" />
                     <span className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">Help & Feedback</span>
@@ -1164,7 +1164,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                     <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED] flex items-center gap-1.5"><Heart className="w-3.5 h-3.5 text-rose-500" /> StudentOS</div>
                     <div className="text-[11px] text-[#8C897F]">Open-source • Local-first • v2.2.2 • <a href="https://github.com/buianhuy2009/Sutdent-Command-Center" target="_blank" rel="noreferrer" className="underline hover:text-[#C96442]">GitHub</a> • <span className="cursor-pointer underline hover:text-[#C96442]" onClick={() => { onClose(); onOpenChangelog?.(); }}>What’s new?</span></div>
                   </div>
-                  <div className="text-[10px] font-mono text-[#8C897F] bg-[#F5F4ED] dark:bg-[#1F1E1B] px-2 py-1 rounded-lg border">v2.2.2</div>
+                  <div className="text-[10px] font-mono text-[#8C897F] bg-[#E8E6DC] dark:bg-[#1F1E1B] px-2 py-1 rounded-lg border">v2.2.2</div>
                 </div>
               </div>
             )}
@@ -1188,7 +1188,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
               <button
                 type="button"
                 onClick={() => setShowSemesterResetModal(false)}
-                className="px-4 py-2 bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] text-[#141413] dark:text-[#F5F4ED] rounded-xl text-xs font-bold cursor-pointer"
+                className="px-4 py-2 bg-[#E8E6DC] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] text-[#141413] dark:text-[#F5F4ED] rounded-xl text-xs font-bold cursor-pointer"
               >
                 Cancel
               </button>

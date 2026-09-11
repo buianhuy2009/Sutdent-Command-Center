@@ -17,8 +17,10 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ambientAudio, AMBIENT_TRACKS, TrackId } from '../../services/ambientAudio';
+import { t, useLang } from '../../services/i18n';
 
 export const PomodoroWorkspace: React.FC = () => {
+  useLang();
   // Timer States
   const [mode, setMode] = useState<'work' | 'short' | 'long'>('work');
   const [durationMinutes, setDurationMinutes] = useState<number>(25);
@@ -111,7 +113,7 @@ export const PomodoroWorkspace: React.FC = () => {
       const m = Math.floor(timeLeftSeconds / 60);
       const s = timeLeftSeconds % 60;
       const mmss = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-      const label = mode === 'work' ? 'Focus' : 'Break';
+      const label = mode === 'work' ? t('focus') : t('pom_break');
       document.title = `(${mmss}) ${label} • Student Command Center`;
     } else if (document.title !== originalTitleRef.current) {
       document.title = originalTitleRef.current;
@@ -123,12 +125,12 @@ export const PomodoroWorkspace: React.FC = () => {
     const minsLeft = Math.ceil(timeLeftSeconds / 60);
     if (minsLeft !== lastAnnouncedMinuteRef.current) {
       lastAnnouncedMinuteRef.current = minsLeft;
-      const label = mode === 'work' ? 'Focus' : 'Break';
+      const label = mode === 'work' ? t('focus') : t('pom_break');
       if (timeLeftSeconds <= 0) {
-        setLiveAnnouncement(`${label} timer finished.`);
+        setLiveAnnouncement(`${label} ${t('pom_finished_suffix')}`);
       } else {
         setLiveAnnouncement(
-          `${minsLeft} minute${minsLeft === 1 ? '' : 's'} remaining in ${label} timer.`
+          `${t('pom_left_prefix')} ${minsLeft} ${minsLeft === 1 ? t('pom_min_one') : t('pom_mins_other')} ${label}${t('pom_left_suffix')}`
         );
       }
     }
@@ -362,14 +364,14 @@ export const PomodoroWorkspace: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-[#141413] dark:text-[#FAF9F5]">
-                Pomodoro Focus Station &amp; Soundscapes
+                {t('pom_title')}
               </h2>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
-                Web Audio Synthesizer
+                {t('pom_badge')}
               </span>
             </div>
             <p className="text-xs text-[#8C897F] mt-0.5">
-              Deep work intervals with pure synthesized ambient soundscapes
+              {t('pom_sub')}
             </p>
           </div>
         </div>
@@ -378,7 +380,7 @@ export const PomodoroWorkspace: React.FC = () => {
         <div className="flex items-center gap-3">
           <div className="px-3.5 py-1.5 rounded-2xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] flex items-center gap-2 text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>{completedSessions} Intervals Completed Today</span>
+            <span>{completedSessions} {t('pom_intervals')}</span>
           </div>
         </div>
       </div>
@@ -391,7 +393,7 @@ export const PomodoroWorkspace: React.FC = () => {
           className="lg:col-span-7 bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-8 shadow-xs flex flex-col items-center justify-center space-y-6 text-center"
           tabIndex={0}
           role="group"
-          aria-label="Pomodoro timer controls. Press Space to start or pause."
+          aria-label={t('pom_group_aria')}
           onKeyDown={handleTimerKeyDown}
         >
           
@@ -405,7 +407,7 @@ export const PomodoroWorkspace: React.FC = () => {
                   : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757]'
               }`}
             >
-              Pomodoro (25m)
+              {t('pom_preset_pomo')}
             </button>
             <button
               onClick={() => setPreset('work', 50)}
@@ -415,7 +417,7 @@ export const PomodoroWorkspace: React.FC = () => {
                   : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757]'
               }`}
             >
-              Deep Work (50m)
+              {t('pom_preset_deep')}
             </button>
             <button
               onClick={() => setPreset('short', 5)}
@@ -425,7 +427,7 @@ export const PomodoroWorkspace: React.FC = () => {
                   : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757]'
               }`}
             >
-              Short Break (5m)
+              {t('pom_preset_short')}
             </button>
             <button
               onClick={() => setPreset('long', 15)}
@@ -435,7 +437,7 @@ export const PomodoroWorkspace: React.FC = () => {
                   : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#D97757]'
               }`}
             >
-              Long Break (15m)
+              {t('pom_preset_long')}
             </button>
           </div>
 
@@ -444,7 +446,7 @@ export const PomodoroWorkspace: React.FC = () => {
             <div
               role="timer"
               aria-live="polite"
-              aria-label={`${formatTime(timeLeftSeconds)} remaining in ${mode === 'work' ? 'Focus' : 'Break'} timer`}
+              aria-label={`${formatTime(timeLeftSeconds)} ${t('pom_aria_remaining')} ${mode === 'work' ? t('focus') : t('pom_break')} ${t('pom_aria_timer')}`}
               className="text-7xl sm:text-8xl font-mono font-extrabold text-[#141413] dark:text-[#FAF9F5] tracking-tighter"
             >
               {formatTime(timeLeftSeconds)}
@@ -453,7 +455,7 @@ export const PomodoroWorkspace: React.FC = () => {
               {liveAnnouncement}
             </span>
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#FAF9F5] dark:bg-[#252422] text-[#8C897F] border border-[#DFDACB] dark:border-[#2C2B27]">
-              {mode === 'work' ? 'Deep Work Interval' : 'Rest & Recharge'}
+              {mode === 'work' ? t('pom_mode_work') : t('pom_mode_break')}
             </span>
           </div>
 
@@ -476,7 +478,7 @@ export const PomodoroWorkspace: React.FC = () => {
               }`}
             >
               {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
-              <span>{isRunning ? 'Pause Session' : 'Start Focus Session'}</span>
+              <span>{isRunning ? t('pom_pause_btn') : t('pom_start')}</span>
             </button>
 
             <button
@@ -485,7 +487,7 @@ export const PomodoroWorkspace: React.FC = () => {
                 setTimeLeftSeconds(durationMinutes * 60);
               }}
               className="p-3.5 rounded-2xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#8C897F] hover:text-[#141413] transition-colors cursor-pointer"
-              title="Reset Timer"
+              title={t('pom_reset_title')}
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -501,12 +503,12 @@ export const PomodoroWorkspace: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Volume2 className="w-4 h-4 text-[#D97757]" />
                 <span className="text-xs font-bold uppercase tracking-wider text-[#141413] dark:text-[#FAF9F5]">
-                  Synthesized Soundscapes
+                  {t('pom_sound_title')}
                 </span>
               </div>
               {activeSound !== 'none' && (
                 <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
-                  Synthesizing
+                  {t('pom_synth')}
                 </span>
               )}
             </div>
@@ -553,7 +555,7 @@ export const PomodoroWorkspace: React.FC = () => {
             <div className="flex items-center gap-2 pb-2 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60">
               <FileText className="w-4 h-4 text-[#D97757]" />
               <span className="text-xs font-bold uppercase tracking-wider text-[#141413] dark:text-[#FAF9F5]">
-                Focus Thought Dump
+                {t('pom_scratch_title')}
               </span>
             </div>
 
@@ -565,7 +567,7 @@ export const PomodoroWorkspace: React.FC = () => {
                   localStorage.setItem('scc_pomo_scratchpad_v1', e.target.value);
                 } catch {}
               }}
-              placeholder="Dump distracting thoughts here to stay focused on your active interval..."
+              placeholder={t('pom_scratch_ph')}
               rows={4}
               className="w-full p-3 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl focus:outline-none focus:ring-1 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] resize-none leading-relaxed"
             />

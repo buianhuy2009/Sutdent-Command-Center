@@ -11,8 +11,10 @@ import {
   Save,
 } from 'lucide-react';
 import { searchOpenLibrary, OpenLibraryBook } from '../../services/publicApis';
+import { t, useLang } from '../../services/i18n';
 
 export const OpenLibraryWorkspace: React.FC = () => {
+  useLang();
   const [query, setQuery] = useState(() => {
     try { const p = localStorage.getItem('scc_openlib_prefill_v1'); if (p) { localStorage.removeItem('scc_openlib_prefill_v1'); return p; } } catch {}
     return '';
@@ -70,10 +72,10 @@ export const OpenLibraryWorkspace: React.FC = () => {
           </div>
           <div>
             <h2 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">
-              Open Library &amp; Textbook Finder
+              {t('lib_title')}
             </h2>
             <p className="text-xs text-[#8C897F]">
-              Live global book catalog querying Internet Archive Open Library API • 100% Genuine Metadata
+              {t('lib_sub')}
             </p>
           </div>
         </div>
@@ -86,7 +88,7 @@ export const OpenLibraryWorkspace: React.FC = () => {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search textbook title, author, or ISBN..."
+              placeholder={t('lib_search_ph')}
               className="pl-9 pr-4 py-2 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs text-[#141413] dark:text-[#FAF9F5] focus:outline-none focus:border-[#D97757] w-72"
             />
           </div>
@@ -97,7 +99,7 @@ export const OpenLibraryWorkspace: React.FC = () => {
             className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Find Books</span>
+            <span>{t('lib_find')}</span>
           </button>
         </form>
       </div>
@@ -107,13 +109,13 @@ export const OpenLibraryWorkspace: React.FC = () => {
         {isLoading ? (
           <div className="py-24 text-center text-[#8C897F] text-xs space-y-2">
             <RefreshCw className="w-7 h-7 text-[#D97757] animate-spin mx-auto opacity-70" />
-            <p>Querying Open Library global book repository...</p>
+            <p>{t('lib_loading')}</p>
           </div>
         ) : books.length === 0 ? (
           <div className="py-24 text-center text-[#8C897F] text-xs space-y-3">
             <Book className="w-10 h-10 mx-auto opacity-30" />
             <div className="space-y-1">
-              <p className="font-bold text-[#141413] dark:text-[#FAF9F5]">Search for any course textbook or literature</p>
+              <p className="font-bold text-[#141413] dark:text-[#FAF9F5]">{t('lib_empty_t')}</p>
               <p>Try: "Campbell Biology", "Stewart Calculus", "Introduction to Algorithms", "Pride and Prejudice"</p>
             </div>
           </div>
@@ -156,7 +158,7 @@ export const OpenLibraryWorkspace: React.FC = () => {
                     )}
                     {book.editionCount && (
                       <span className="px-2 py-0.5 rounded-md bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27]">
-                        {book.editionCount} editions
+                        {book.editionCount} {t('lib_editions')}
                       </span>
                     )}
                   </div>
@@ -169,13 +171,13 @@ export const OpenLibraryWorkspace: React.FC = () => {
                     <button
                       onClick={() => handleCopyIsbn(book)}
                       className="px-2 py-1 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[#141413] dark:text-[#FAF9F5] rounded-lg text-[10px] font-mono font-bold flex items-center gap-1 cursor-pointer"
-                      title="Copy ISBN"
+                      title={t('lib_copy_isbn')}
                     >
                       {copiedKey === book.key ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                       <span>{book.isbn[0]}</span>
                     </button>
                   ) : (
-                    <span className="text-[10px] text-[#8C897F]">Open Catalog</span>
+                    <span className="text-[10px] text-[#8C897F]">{t('lib_open_catalog')}</span>
                   )}
 
                   <a
@@ -184,11 +186,11 @@ export const OpenLibraryWorkspace: React.FC = () => {
                     rel="noreferrer"
                     className="px-2.5 py-1 bg-[#D97757] hover:bg-[#C86646] text-white rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors"
                   >
-                    <span>Read / Borrow</span>
+                    <span>{t('lib_read_borrow')}</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                   </div>
-                  <button onClick={()=>handleSaveBib(book)} className="w-full py-1 text-[11px] font-bold bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg flex items-center justify-center gap-1 hover:border-violet-400"><Save className="w-3 h-3 text-violet-600" /> Add to Bibliography</button>
+                  <button onClick={()=>handleSaveBib(book)} className="w-full py-1 text-[11px] font-bold bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg flex items-center justify-center gap-1 hover:border-violet-400"><Save className="w-3 h-3 text-violet-600" /> {t('lib_add_bib')}</button>
                 </div>
               </div>
             ))}

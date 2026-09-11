@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react';
+import { WS_TABS_STRINGS } from './i18n-tabs';
+import { WS1_STRINGS } from './i18n-ws1';
+import { WS2_STRINGS } from './i18n-ws2';
+import { WS3_STRINGS } from './i18n-ws3';
 
 export type Lang = 'en' | 'vi';
 
-// Claude-palette-aligned, full-chrome dictionary. Every user-visible chrome string
-// in Landing / Navbar / Tracker / Canvas / Settings-General / Toasts goes through
-// t() so VI and EN can never mix. Deep AI workspace internals reuse these common
-// action keys; model-generated content (email bodies, AI answers) is user data and
-// stays in its source language by design.
-const STRINGS: Record<string, { en: string; vi: string }> = {
+// Full-chrome dictionary. Every user-visible UI string goes through t() so VI and
+// EN can never mix. Technical proper nouns (API, PWA, GPA, BibTeX, Zotero, arXiv,
+// MLA, APA, Kanban, URL, CSV…) stay identical in both languages — standard
+// localization practice, not untranslated text. Model-generated content and user
+// data (email bodies, AI answers, draft templates, file names) stay in their
+// source language by design — translating them would rewrite the user's data.
+type Dict = Record<string, { en: string; vi: string }>;
+const BASE_STRINGS: Dict = {
   // ——— Common actions ———
   dashboard: { en: 'Dashboard', vi: 'Bảng điều khiển' },
   assignments: { en: 'Assignments', vi: 'Bài tập' },
@@ -147,6 +153,139 @@ const STRINGS: Record<string, { en: string; vi: string }> = {
   landing_pricing_t: { en: 'Free & Open Source — MIT Licensed', vi: 'Miễn phí & Mã nguồn mở — Giấy phép MIT' },
   landing_pricing_d: { en: 'No paywall. Self-host on Vercel. Your data stays in your browser + Google account.', vi: 'Không trả phí. Tự triển khai trên Vercel. Dữ liệu ở trình duyệt + tài khoản Google của bạn.' },
   demo_video_missing: { en: 'Demo video not yet recorded', vi: 'Video demo chưa được quay' },
+  // ——— Shared workspace chrome (reused by every workspace file) ———
+  loading: { en: 'Loading…', vi: 'Đang tải…' },
+  saving: { en: 'Saving…', vi: 'Đang lưu…' },
+  deleting: { en: 'Deleting…', vi: 'Đang xóa…' },
+  delete: { en: 'Delete', vi: 'Xóa' },
+  edit: { en: 'Edit', vi: 'Sửa' },
+  back: { en: 'Back', vi: 'Quay lại' },
+  open: { en: 'Open', vi: 'Mở' },
+  download: { en: 'Download', vi: 'Tải xuống' },
+  copy: { en: 'Copy', vi: 'Sao chép' },
+  copied: { en: 'Copied', vi: 'Đã sao chép' },
+  clear: { en: 'Clear', vi: 'Xóa' },
+  confirm: { en: 'Confirm', vi: 'Xác nhận' },
+  apply: { en: 'Apply', vi: 'Áp dụng' },
+  reset: { en: 'Reset', vi: 'Đặt lại' },
+  view: { en: 'View', vi: 'Xem' },
+  create: { en: 'Create', vi: 'Tạo' },
+  update: { en: 'Update', vi: 'Cập nhật' },
+  remove: { en: 'Remove', vi: 'Gỡ' },
+  send: { en: 'Send', vi: 'Gửi' },
+  preview: { en: 'Preview', vi: 'Xem trước' },
+  print: { en: 'Print', vi: 'In' },
+  export: { en: 'Export', vi: 'Xuất' },
+  import: { en: 'Import', vi: 'Nhập' },
+  enable: { en: 'Enable', vi: 'Bật' },
+  disable: { en: 'Disable', vi: 'Tắt' },
+  refresh: { en: 'Refresh', vi: 'Làm mới' },
+  details: { en: 'Details', vi: 'Chi tiết' },
+  overview: { en: 'Overview', vi: 'Tổng quan' },
+  instructions: { en: 'Instructions', vi: 'Hướng dẫn' },
+  next: { en: 'Next', vi: 'Tiếp' },
+  previous: { en: 'Previous', vi: 'Trước' },
+  got_it: { en: 'Got it', vi: 'Đã hiểu' },
+  learn_more: { en: 'Learn more', vi: 'Tìm hiểu thêm' },
+  start: { en: 'Start', vi: 'Bắt đầu' },
+  pause: { en: 'Pause', vi: 'Tạm dừng' },
+  stop: { en: 'Stop', vi: 'Dừng' },
+  resume: { en: 'Resume', vi: 'Tiếp tục' },
+  finish: { en: 'Finish', vi: 'Hoàn thành' },
+  today: { en: 'Today', vi: 'Hôm nay' },
+  tomorrow: { en: 'Tomorrow', vi: 'Ngày mai' },
+  yesterday: { en: 'Yesterday', vi: 'Hôm qua' },
+  minutes: { en: 'minutes', vi: 'phút' },
+  score: { en: 'Score', vi: 'Điểm' },
+  streak: { en: 'Streak', vi: 'Chuỗi' },
+  question: { en: 'Question', vi: 'Câu hỏi' },
+  answer: { en: 'Answer', vi: 'Trả lời' },
+  correct: { en: 'Correct', vi: 'Đúng' },
+  incorrect: { en: 'Incorrect', vi: 'Sai' },
+  no_results: { en: 'No results found', vi: 'Không tìm thấy gì' },
+  try_different_search: { en: 'Try a different search', vi: 'Thử tìm kiếm khác' },
+  error_generic: { en: 'Something went wrong — please retry.', vi: 'Có lỗi xảy ra — hãy thử lại.' },
+  show_more: { en: 'Show more', vi: 'Xem thêm' },
+  show_less: { en: 'Show less', vi: 'Thu gọn' },
+  sort_by: { en: 'Sort by', vi: 'Sắp xếp theo' },
+  mark_done: { en: 'Mark done', vi: 'Đánh dấu xong' },
+  archive: { en: 'Archive', vi: 'Lưu trữ' },
+  restore: { en: 'Restore', vi: 'Khôi phục' },
+  duplicate: { en: 'Duplicate', vi: 'Nhân bản' },
+  upload: { en: 'Upload', vi: 'Tải lên' },
+  actions: { en: 'Actions', vi: 'Thao tác' },
+  status: { en: 'Status', vi: 'Trạng thái' },
+  priority: { en: 'Priority', vi: 'Ưu tiên' },
+  subject: { en: 'Subject', vi: 'Môn học' },
+  due_date: { en: 'Due date', vi: 'Hạn nộp' },
+  notes: { en: 'Notes', vi: 'Ghi chú' },
+  name: { en: 'Name', vi: 'Tên' },
+  title: { en: 'Title', vi: 'Tiêu đề' },
+  date: { en: 'Date', vi: 'Ngày' },
+  time: { en: 'Time', vi: 'Giờ' },
+  // ——— App Store (ratings removed — honesty; meta below is real) ———
+  store_sub: { en: 'Connect and launch all your academic tools & integrations in one place', vi: 'Kết nối và mở mọi công cụ học tập tại một nơi' },
+  installed: { en: 'Installed', vi: 'Đã cài' },
+  install: { en: 'Install', vi: 'Cài đặt' },
+  open_app: { en: 'Open App', vi: 'Mở app' },
+  get_app: { en: 'GET', vi: 'TẢI' },
+  featured: { en: 'Featured', vi: 'Nổi bật' },
+  size: { en: 'Size', vi: 'Dung lượng' },
+  permissions: { en: 'Permissions', vi: 'Quyền' },
+  last_updated: { en: 'Last updated', vi: 'Cập nhật' },
+  screenshots: { en: 'Screenshots', vi: 'Ảnh chụp' },
+  about_app: { en: 'About this app', vi: 'Về ứng dụng' },
+  key_capabilities: { en: 'Key capabilities', vi: 'Tính năng chính' },
+  back_to_store: { en: 'Back to Store', vi: 'Về cửa hàng' },
+  search_tools: { en: 'Search tools…', vi: 'Tìm công cụ…' },
+  search_tools_long: { en: 'Search tools, Canvas, Desmos, Wolfram, Quizlet, Notes…', vi: 'Tìm công cụ, Canvas, Desmos, Wolfram, Quizlet, Ghi chú…' },
+  cat_highlights: { en: 'Highlights', vi: 'Nổi bật' },
+  cat_plan: { en: 'Plan', vi: 'Kế hoạch' },
+  cat_create: { en: 'Create', vi: 'Sáng tạo' },
+  cat_learn: { en: 'Learn', vi: 'Học tập' },
+  cat_research: { en: 'Research', vi: 'Nghiên cứu' },
+  cat_all: { en: 'All Apps', vi: 'Tất cả' },
+  top8_title: { en: 'Top 8 Recommended Essentials', vi: '8 công cụ thiết yếu nên dùng' },
+  top8_sub: { en: 'The curated core tools every student needs for daily academic workflow', vi: 'Các công cụ cốt lõi cho việc học mỗi ngày' },
+  because_you: { en: 'Because you use', vi: 'Vì bạn hay dùng' },
+  install_in_sidebar: { en: 'Install in Sidebar', vi: 'Ghim vào sidebar' },
+  installed_in_sidebar: { en: 'Installed in Sidebar', vi: 'Đã ghim ở sidebar' },
+  perms_browser: { en: 'Browser only', vi: 'Chỉ trong trình duyệt' },
+  changelog_verified: { en: 'No telemetry until you connect Google. Verified open-source.', vi: 'Không thu thập dữ liệu cho đến khi bạn kết nối Google. Mã nguồn mở đã kiểm chứng.' },
+  // ——— Landing comparison + privacy tables (EN/VI twin tables) ———
+  cmp_feature: { en: 'Feature', vi: 'Tính năng' },
+  cmp_canvas_sync: { en: 'Canvas LMS sync', vi: 'Đồng bộ Canvas LMS' },
+  cmp_native_only: { en: 'Native only', vi: 'Chỉ trong Canvas' },
+  cmp_gmail_scanner: { en: 'Gmail AI scanner', vi: 'Quét Gmail bằng AI' },
+  cmp_bilingual: { en: '✓ Bilingual EN/VI', vi: '✓ Song ngữ Anh/Việt' },
+  cmp_sheets: { en: 'Sheets 2-way', vi: 'Sheet 2 chiều' },
+  cmp_master_tracker: { en: '✓ Master tracker', vi: '✓ Theo dõi tổng' },
+  cmp_manual: { en: 'Manual', vi: 'Thủ công' },
+  cmp_offline_pwa: { en: 'Offline PWA', vi: 'PWA offline' },
+  cmp_partial: { en: 'Partial', vi: 'Một phần' },
+  cmp_price: { en: 'Price', vi: 'Giá' },
+  cmp_free_oss: { en: 'Free & OSS', vi: 'Miễn phí & OSS' },
+  cmp_freemium: { en: 'Freemium', vi: 'Freemium' },
+  cmp_institution: { en: 'Institution', vi: 'Nhà trường' },
+  th_scope: { en: 'Scope', vi: 'Quyền' },
+  th_purpose: { en: 'Purpose', vi: 'Mục đích' },
+  th_stored: { en: 'Stored', vi: 'Lưu trữ' },
+  scope_gmail: { en: 'Scan teacher emails', vi: 'Quét mail thầy cô' },
+  stored_snippet: { en: 'Snippet + local', vi: 'Đoạn trích + cục bộ' },
+  scope_drive: { en: 'List school files', vi: 'Liệt kê tệp học tập' },
+  stored_meta: { en: 'Metadata only', vi: 'Chỉ siêu dữ liệu' },
+  scope_cal: { en: 'Schedule blocks', vi: 'Các khung giờ học' },
+  stored_local: { en: 'Local', vi: 'Cục bộ' },
+  priv_body: { en: 'requests only the scopes needed to sync your own data locally. No data leaves your browser except for Gemini AI summaries (truncated snippets). Tokens stay in IndexedDB, never logged. Revoke anytime in Google Account.', vi: 'chỉ xin các quyền cần thiết để đồng bộ dữ liệu của chính bạn trên máy. Không dữ liệu nào rời trình duyệt trừ đoạn trích gửi Gemini AI để tóm tắt. Token nằm trong IndexedDB, không ghi log. Thu hồi bất cứ lúc nào trong Tài khoản Google.' },
+};
+
+// Merged dictionary: core + per-area packs (later packs win on collision — keys must stay unique).
+const STRINGS: Dict = {
+  ...BASE_STRINGS,
+  ...WS_TABS_STRINGS,
+  ...WS1_STRINGS,
+  ...WS2_STRINGS,
+  ...WS3_STRINGS,
 };
 
 function detectInitialLang(): Lang {

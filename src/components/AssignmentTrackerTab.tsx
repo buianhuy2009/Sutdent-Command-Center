@@ -387,12 +387,12 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('search_tracker')}
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#C96442] text-[#141413] dark:text-[#F5F4ED]"
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-[#E8E6DC] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#C96442] text-[#141413] dark:text-[#F5F4ED]"
             />
           </div>
 
           {/* View Mode Toggle: Table vs Kanban (timeline removed — Gantt lives in its own workspace) */}
-          <div className="flex items-center bg-[#F5F4ED] dark:bg-[#1F1E1B] p-0.5 rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27]">
+          <div className="flex items-center bg-[#E8E6DC] dark:bg-[#1F1E1B] p-0.5 rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27]">
             <button
               onClick={() => setViewMode('table')}
               className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -423,7 +423,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
               showFilters
                 ? 'bg-[#C96442] text-white border-[#C96442]'
-                : 'bg-[#F5F4ED] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442]'
+                : 'bg-[#E8E6DC] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442]'
             }`}
             title="Filters, export & sheet"
           >
@@ -434,7 +434,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
           <button
             onClick={onRefresh}
             disabled={isLoading}
-            className="px-3 py-1.5 bg-[#F5F4ED] dark:bg-[#252422] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] text-[#141413] dark:text-[#F5F4ED] text-xs font-bold rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="px-3 py-1.5 bg-[#E8E6DC] dark:bg-[#252422] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] text-[#141413] dark:text-[#F5F4ED] text-xs font-bold rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             title="Sync with Google Sheet"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-[#C96442] ${isLoading ? 'animate-spin' : ''}`} />
@@ -447,7 +447,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors flex items-center gap-1.5 cursor-pointer ${
               showAiAdd
                 ? 'bg-[#C96442] text-white border-[#C96442] shadow-xs'
-                : 'bg-[#F5F4ED] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] border-[#E8E6DC] dark:border-[#2C2B27]'
+                : 'bg-[#E8E6DC] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] border-[#E8E6DC] dark:border-[#2C2B27]'
             }`}
           >
             <Sparkles className={`w-3.5 h-3.5 ${showAiAdd ? 'text-white' : 'text-[#C96442]'}`} />
@@ -471,7 +471,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
           <select
             value={filterSubject}
             onChange={(e) => setFilterSubject(e.target.value)}
-            className="px-2.5 py-1.5 text-xs bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl font-semibold cursor-pointer outline-none"
+            className="px-2.5 py-1.5 text-xs bg-[#E8E6DC] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl font-semibold cursor-pointer outline-none"
           >
             <option value="ALL">{t('all')} subjects</option>
             {subjects.map((s) => (
@@ -481,7 +481,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-2.5 py-1.5 text-xs bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl font-semibold cursor-pointer outline-none"
+            className="px-2.5 py-1.5 text-xs bg-[#E8E6DC] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl font-semibold cursor-pointer outline-none"
           >
             <option value="ALL">{t('all')} status</option>
             <option value="Not Started">Not Started</option>
@@ -491,7 +491,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
-            className="px-2.5 py-1.5 text-xs bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl font-semibold cursor-pointer outline-none"
+            className="px-2.5 py-1.5 text-xs bg-[#E8E6DC] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl font-semibold cursor-pointer outline-none"
           >
             <option value="ALL">{t('all')} priority</option>
             <option value="High">High</option>
@@ -500,7 +500,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
           </select>
           <button
             onClick={handleExportCsv}
-            className="px-3 py-1.5 bg-[#F5F4ED] dark:bg-[#252422] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] text-[#141413] dark:text-[#F5F4ED] text-xs font-bold rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 bg-[#E8E6DC] dark:bg-[#252422] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] text-[#141413] dark:text-[#F5F4ED] text-xs font-bold rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] transition-all flex items-center gap-1.5 cursor-pointer"
             title="Export currently filtered rows to CSV"
           >
             <FileText className="w-3.5 h-3.5 text-[#C96442]" />
@@ -511,7 +511,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
               href={sheetUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-2.5 py-1.5 bg-[#F5F4ED] dark:bg-[#252422] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] text-[#5C5A54] dark:text-[#B5B2A8] text-xs font-semibold rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] transition-all flex items-center gap-1 cursor-pointer"
+              className="px-2.5 py-1.5 bg-[#E8E6DC] dark:bg-[#252422] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] text-[#5C5A54] dark:text-[#B5B2A8] text-xs font-semibold rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] transition-all flex items-center gap-1 cursor-pointer"
               title="Open Google Sheet in new tab"
             >
               <ExternalLink className="w-3.5 h-3.5 text-[#0F9D58]" />
@@ -533,13 +533,13 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             value={quickInput}
             onChange={(e) => setQuickInput(e.target.value)}
             placeholder={t('smart_add_placeholder')}
-            className="flex-1 min-w-[200px] px-3 py-1.5 text-xs bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#C96442] text-[#141413] dark:text-[#F5F4ED]"
+            className="flex-1 min-w-[200px] px-3 py-1.5 text-xs bg-[#E8E6DC] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#C96442] text-[#141413] dark:text-[#F5F4ED]"
           />
           <button
             type="button"
             onClick={handleRunAIEstimates}
             disabled={isEstimating || assignments.length === 0}
-            className="px-3 py-1.5 bg-[#F5F4ED] dark:bg-[#252422] hover:bg-[#E8E6DC] text-xs font-bold rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+            className="px-3 py-1.5 bg-[#E8E6DC] dark:bg-[#252422] hover:bg-[#E8E6DC] text-xs font-bold rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
             title="AI Dynamic Priority & Effort Matrix"
           >
             <Zap className={`w-3.5 h-3.5 text-[#C96442] ${isEstimating ? 'animate-bounce' : ''}`} />
@@ -579,7 +579,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                     <h3 className="text-xs font-bold uppercase tracking-wider text-[#141413] dark:text-[#F5F4ED]">
                       {col.label}
                     </h3>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#F5F4ED] dark:bg-[#252422] text-[#8C897F] border border-[#E8E6DC] dark:border-[#2C2B27]">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8E6DC] dark:bg-[#252422] text-[#8C897F] border border-[#E8E6DC] dark:border-[#2C2B27]">
                       {colTasks.length}
                     </span>
                   </div>
@@ -601,7 +601,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                         <div
                           key={task.id}
                           onClick={() => setSelectedAssignment(task)}
-                          className={`p-3.5 rounded-xl border bg-[#F5F4ED] dark:bg-[#1F1E1B] border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442]/80 transition-all cursor-pointer space-y-2.5 shadow-2xs group ${
+                          className={`p-3.5 rounded-xl border bg-[#E8E6DC] dark:bg-[#1F1E1B] border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442]/80 transition-all cursor-pointer space-y-2.5 shadow-2xs group ${
                             isDone ? 'opacity-70' : ''
                           } ${urgency ? URGENCY_TINT[urgency] : ''}`}
                         >
@@ -716,7 +716,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                 const isDone = a.status==='Done';
                 const urgency = getUrgency(a);
                 return (
-                  <div key={a.id} onClick={()=>setSelectedAssignment(a)} className={`p-3 rounded-2xl border bg-[#F5F4ED] dark:bg-[#1F1E1B] border-[#E8E6DC] dark:border-[#2C2B27] flex flex-col gap-1.5 ${isDone?'opacity-60':''} ${urgency ? URGENCY_TINT[urgency] : ''}`}>
+                  <div key={a.id} onClick={()=>setSelectedAssignment(a)} className={`p-3 rounded-2xl border bg-[#E8E6DC] dark:bg-[#1F1E1B] border-[#E8E6DC] dark:border-[#2C2B27] flex flex-col gap-1.5 ${isDone?'opacity-60':''} ${urgency ? URGENCY_TINT[urgency] : ''}`}>
                     <div className="flex items-center justify-between gap-2">
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 truncate">{a.subject}</span>
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${a.priority==='High'?'bg-rose-50 text-rose-700 border border-rose-200':'bg-slate-100 text-slate-600'}`}>{a.priority}</span>
@@ -740,7 +740,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#E8E6DC]/80 dark:border-[#2C2B27]/80 bg-[#F5F4ED] dark:bg-[#1F1E1B] text-[10px] font-bold uppercase tracking-wider text-[#6B6860]">
+                  <tr className="border-b border-[#E8E6DC]/80 dark:border-[#2C2B27]/80 bg-[#E8E6DC] dark:bg-[#1F1E1B] text-[10px] font-bold uppercase tracking-wider text-[#6B6860]">
                     <th className="py-2.5 px-3 w-10 text-center">Done</th>
                     <th className="py-2.5 px-3 w-32">Subject</th>
                     <th className="py-2.5 px-3">Assignment Name</th>
@@ -760,8 +760,8 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                       <tr
                         key={assignment.id}
                         onClick={() => setSelectedAssignment(assignment)}
-                        className={`h-10 hover:bg-[#F5F4ED] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer ${
-                          isSelected ? 'bg-[#F5F4ED] dark:bg-[#1F1E1B] font-semibold' : ''
+                        className={`h-10 hover:bg-[#E8E6DC] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer ${
+                          isSelected ? 'bg-[#E8E6DC] dark:bg-[#1F1E1B] font-semibold' : ''
                         } ${isDone ? 'opacity-60' : ''} ${urgency && !isSelected && !isDone ? URGENCY_TINT[urgency] : ''}`}
                       >
                         {/* Checkbox */}
@@ -846,7 +846,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
       {/* SLIDE-OVER INSPECTOR DRAWER */}
       {selectedAssignment && (
         <div className="fixed inset-y-0 right-0 w-full sm:w-96 bg-white dark:bg-[#1A1917] border-l border-[#E8E6DC] dark:border-[#2C2B27] shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-200">
-          <div className="p-4 border-b border-[#E8E6DC] dark:border-[#2C2B27] bg-[#F5F4ED] dark:bg-[#1F1E1B] flex items-center justify-between">
+          <div className="p-4 border-b border-[#E8E6DC] dark:border-[#2C2B27] bg-[#E8E6DC] dark:bg-[#1F1E1B] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 rounded-md">
                 {selectedAssignment.subject}
@@ -885,7 +885,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
 
             {/* AI Estimation Card if present */}
             {effortEstimates[selectedAssignment.id] && (
-              <div className="p-4 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-2">
+              <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-2">
                 <div className="flex items-center gap-1.5 font-bold text-[#C96442]">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>AI Effort Matrix</span>
@@ -905,7 +905,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             {selectedAssignment.notes && (
               <div>
                 <span className="font-bold text-[#141413] dark:text-[#F5F4ED] block mb-1">Notes</span>
-                <div className="p-3 bg-[#F5F4ED] dark:bg-[#1F1E1B] rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] text-[11px] text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed">
+                <div className="p-3 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] text-[11px] text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed">
                   {selectedAssignment.notes}
                 </div>
               </div>
@@ -927,11 +927,11 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             )}
           </div>
 
-          <div className="p-4 border-t border-[#E8E6DC] dark:border-[#2C2B27] bg-[#F5F4ED] dark:bg-[#1F1E1B] flex flex-wrap items-center justify-between gap-2">
+          <div className="p-4 border-t border-[#E8E6DC] dark:border-[#2C2B27] bg-[#E8E6DC] dark:bg-[#1F1E1B] flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setWhyIsThisHardTask(selectedAssignment)}
-                className="px-3 py-1.5 bg-[#F5F4ED] dark:bg-[#252422] border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] text-[#141413] dark:text-[#F5F4ED] rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-[#E8E6DC] dark:bg-[#252422] border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] text-[#141413] dark:text-[#F5F4ED] rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
                 title="AI Cognitive Deconstruction"
               >
                 <Brain className="w-3.5 h-3.5 text-[#C96442]" />
@@ -999,7 +999,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="e.g. Chapter 4 Problem Set"
-                  className="w-full px-3 py-2 bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#C96442]"
+                  className="w-full px-3 py-2 bg-[#E8E6DC] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#C96442]"
                   required
                 />
               </div>
@@ -1012,7 +1012,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                     type="text"
                     value={newSubject}
                     onChange={(e) => setNewSubject(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#C96442]"
+                    className="w-full px-3 py-2 bg-[#E8E6DC] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#C96442]"
                   />
                 </div>
 
@@ -1023,7 +1023,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                     type="date"
                     value={newDueDate}
                     onChange={(e) => setNewDueDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#C96442]"
+                    className="w-full px-3 py-2 bg-[#E8E6DC] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#C96442]"
                   />
                 </div>
               </div>
@@ -1034,7 +1034,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                   id="assign-priority"
                   value={newPriority}
                   onChange={(e) => setNewPriority(e.target.value as PriorityLevel)}
-                  className="w-full px-3 py-2 bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#C96442]"
+                  className="w-full px-3 py-2 bg-[#E8E6DC] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#C96442]"
                 >
                   <option value="High">High</option>
                   <option value="Med">Medium</option>
@@ -1050,7 +1050,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                   onChange={(e) => setNewNotes(e.target.value)}
                   placeholder="Rubric notes or instructions..."
                   rows={2}
-                  className="w-full px-3 py-2 bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#C96442]"
+                  className="w-full px-3 py-2 bg-[#E8E6DC] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#C96442]"
                 />
               </div>
 
@@ -1058,7 +1058,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 bg-[#F5F4ED] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl text-xs font-bold"
+                  className="px-4 py-2 bg-[#E8E6DC] dark:bg-[#1F1E1B] border border-[#E8E6DC] dark:border-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl text-xs font-bold"
                 >
                   Cancel
                 </button>

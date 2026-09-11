@@ -25,6 +25,7 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { Assignment, WorkspaceId } from '../types';
+import { t, useLang } from '../services/i18n';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -49,6 +50,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   assignments,
   sheetUrl,
 }) => {
+  useLang();
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [mathCopied, setMathCopied] = useState(false);
@@ -147,7 +149,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'ws-dashboard',
       title: 'Home Dashboard (Overview)',
-      category: 'Workspaces',
+      category: t('pal_cat_workspaces'),
       icon: CheckSquare,
       run: () => {
         onSelectWorkspace('dashboard');
@@ -157,7 +159,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'ws-academic',
       title: 'Canvas & Assignments Hub (Canvas, Classroom, Tracker)',
-      category: 'Workspaces',
+      category: t('pal_cat_workspaces'),
       icon: Layers,
       run: () => {
         onSelectWorkspace('canvas');
@@ -167,7 +169,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'ws-stem',
       title: 'STEM & Calculation Lab (Desmos, GeoGebra, PhET)',
-      category: 'Workspaces',
+      category: t('pal_cat_workspaces'),
       icon: Atom,
       run: () => {
         onSelectWorkspace('stem');
@@ -177,7 +179,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'ws-creation',
       title: 'Creation & Whiteboard Studio (Excalidraw, Canva)',
-      category: 'Workspaces',
+      category: t('pal_cat_workspaces'),
       icon: PenTool,
       run: () => {
         onSelectWorkspace('creation');
@@ -187,7 +189,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'ws-retention',
       title: 'Active Study & Retention Vault (Pomodoro, SRS, NotebookLM)',
-      category: 'Workspaces',
+      category: t('pal_cat_workspaces'),
       icon: Brain,
       run: () => {
         onSelectWorkspace('retention');
@@ -197,7 +199,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'ws-documents',
       title: 'Document & Resource Hub (Markdown, Google Drive)',
-      category: 'Workspaces',
+      category: t('pal_cat_workspaces'),
       icon: FolderOpen,
       run: () => {
         onSelectWorkspace('documents');
@@ -207,7 +209,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'ws-split',
       title: 'Split-Screen Dual-Pane Dock',
-      category: 'Workspaces',
+      category: t('pal_cat_workspaces'),
       icon: Columns2,
       run: () => {
         onSelectWorkspace('splitscreen');
@@ -219,7 +221,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'act-new-assignment',
       title: 'Create New Assignment',
-      category: 'Actions',
+      category: t('actions'),
       icon: Plus,
       run: () => {
         onSelectWorkspace('tracker');
@@ -230,7 +232,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'act-quick-draft',
       title: 'Draft Teacher Email (AI Quick-Drafter)',
-      category: 'Actions',
+      category: t('actions'),
       icon: Send,
       run: () => {
         onOpenQuickDraft();
@@ -240,7 +242,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'act-ai-coach',
       title: 'Open AI Study Coach',
-      category: 'Actions',
+      category: t('actions'),
       icon: Sparkles,
       run: () => {
         onToggleAiChat();
@@ -251,7 +253,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'slash-split',
       title: '/split [left-tool] [right-tool] — Dock two academic tools side-by-side in Dual-Pane Studio',
-      category: 'AI Slash Commands',
+      category: t('pal_cat_slash'),
       icon: Columns2,
       run: () => {
         onSelectWorkspace('splitscreen');
@@ -261,7 +263,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'slash-explain',
       title: '/explain [concept] — 3-Tier Feynman Simplification (ELI5, High School, Undergrad)',
-      category: 'AI Slash Commands',
+      category: t('pal_cat_slash'),
       icon: Sparkles,
       run: () => {
         onSelectWorkspace('documents');
@@ -271,7 +273,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'slash-graph',
       title: '/graph [equation] — Natural language prompt-to-graph injector for Desmos',
-      category: 'AI Slash Commands',
+      category: t('pal_cat_slash'),
       icon: Calculator,
       run: () => {
         onSelectWorkspace('stem');
@@ -281,7 +283,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'slash-breakdown',
       title: '/breakdown [assignment-id] — Deconstruct assignment into 4 actionable sub-tasks',
-      category: 'AI Slash Commands',
+      category: t('pal_cat_slash'),
       icon: Layers,
       run: () => {
         onSelectWorkspace('tracker');
@@ -291,7 +293,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'slash-focus',
       title: '/focus 25 — Start 25m customizable focus session with Lo-Fi ambient sound',
-      category: 'AI Slash Commands',
+      category: t('pal_cat_slash'),
       icon: Timer,
       run: () => {
         onSelectWorkspace('retention');
@@ -301,7 +303,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'slash-pomodoro',
       title: '/pomodoro 25 — Launch Pomodoro sprint in Active Recall Vault',
-      category: 'AI Slash Commands',
+      category: t('pal_cat_slash'),
       icon: Timer,
       run: () => {
         onSelectWorkspace('retention');
@@ -311,7 +313,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'slash-viva',
       title: '/viva [subject] — Start AI Oral Exam with voice dictation & speech synthesis',
-      category: 'AI Slash Commands',
+      category: t('pal_cat_slash'),
       icon: GraduationCap,
       run: () => {
         onSelectWorkspace('retention');
@@ -321,7 +323,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'slash-quiz',
       title: '/quiz [subject] — Generate active recall flashcards with SM-2 spaced repetition',
-      category: 'AI Slash Commands',
+      category: t('pal_cat_slash'),
       icon: Brain,
       run: () => {
         onSelectWorkspace('retention');
@@ -333,7 +335,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       id: 'act-theme',
       title: 'Toggle Dark / Light Mode',
-      category: 'Settings',
+      category: t('settings'),
       icon: Moon,
       run: () => {
         onToggleDarkMode();
@@ -351,7 +353,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       return {
         id: 'cmd-create-task',
         title: `Create Task: "${title}" → Master Tracker`,
-        category: 'Create',
+        category: t('create'),
         icon: Plus,
         run: () => {
           try {
@@ -361,7 +363,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             localStorage.setItem('scc_user_assignments_v2', JSON.stringify([...arr, newTask]));
           } catch {}
           onSelectWorkspace('dashboard');
-          window.dispatchEvent(new CustomEvent('scc-toast', { detail: { title: 'Task Created', message: title }}));
+          window.dispatchEvent(new CustomEvent('scc-toast', { detail: { title: t('pal_task_created'), message: title }}));
           onClose();
         }
       };
@@ -372,7 +374,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       return {
         id: 'cmd-create-note',
         title: `Create Note: "${title}" → Markdown Hub`,
-        category: 'Create',
+        category: t('create'),
         icon: FileText,
         run: () => {
           try {
@@ -393,7 +395,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       return {
         id: 'cmd-pomo',
         title: `Start Pomodoro: ${mins} minutes → Focus Station`,
-        category: 'Focus',
+        category: t('focus'),
         icon: Timer,
         run: () => {
           try { localStorage.setItem('scc_pomo_requested_duration', String(mins)); } catch {}
@@ -454,7 +456,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Command palette"
+      aria-label={t('pal_dialog_label')}
       className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
       id="command-palette-backdrop"
       onClick={(e) => {
@@ -468,7 +470,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           <input
             type="text"
             autoFocus
-            aria-label="Command palette search"
+            aria-label={t('pal_search_label')}
             aria-activedescendant={filteredActions[activeIndex] ? `palette-item-${filteredActions[activeIndex].id}` : undefined}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -497,7 +499,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 else if(commandAction) commandAction.run();
               }
             }}
-            placeholder="Try: t Read bio ch5  •  note Bio Lab  •  pomo 50  •  or search tools... (↑↓ to navigate, ↵ to select)"
+            placeholder={t('pal_placeholder')}
             className="w-full text-sm bg-transparent border-none outline-none text-[#141413] dark:text-[#FAF9F5] placeholder:text-[#8C897F]"
           />
           <kbd className="px-2 py-0.5 text-[10px] font-mono font-semibold bg-[#FAF9F5] dark:bg-[#252422] text-[#8C897F] rounded border border-[#DFDACB] dark:border-[#2C2B27]">
@@ -513,12 +515,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               <span className="font-mono font-bold">{mathResult}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] opacity-75">{mathCopied ? 'Copied ✓' : 'Calculated in real-time'}</span>
+              <span className="text-[10px] opacity-75">{mathCopied ? `${t('copied')} ✓` : t('pal_calculated')}</span>
               <button
                 type="button"
                 onClick={(ev) => { ev.stopPropagation(); copyMathResult(); }}
-                aria-label="Copy math result to clipboard"
-                title="Copy result (Enter)"
+                aria-label={t('pal_copy_label')}
+                title={t('pal_copy_title')}
                 className="p-1.5 rounded-lg hover:bg-amber-200/60 dark:hover:bg-amber-800/60 transition-colors"
               >
                 {mathCopied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -531,20 +533,20 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         <div className="max-h-96 overflow-y-auto p-2 space-y-3">
           {commandAction && (
             <div>
-              <div className="px-2 py-1 text-[10px] font-bold text-[#D97757] uppercase tracking-wider">Action Launcher</div>
+              <div className="px-2 py-1 text-[10px] font-bold text-[#D97757] uppercase tracking-wider">{t('pal_launcher')}</div>
               <button onClick={commandAction.run} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#D97757] text-white hover:bg-[#C86646] transition-colors text-left">
                 <commandAction.icon className="w-4 h-4" />
                 <span className="text-xs font-bold">{commandAction.title}</span>
-                <span className="ml-auto text-[10px] opacity-80">↵ Run</span>
+                <span className="ml-auto text-[10px] opacity-80">{t('pal_run')}</span>
               </button>
-              <div className="px-2 pt-1 text-[10px] text-[#8C897F]">Tip: <span className="font-mono">t &lt;task&gt;</span> • <span className="font-mono">note &lt;title&gt;</span> • <span className="font-mono">pomo &lt;mins&gt;</span></div>
+              <div className="px-2 pt-1 text-[10px] text-[#8C897F]">{t('pal_tip')} <span className="font-mono">t &lt;task&gt;</span> • <span className="font-mono">note &lt;title&gt;</span> • <span className="font-mono">pomo &lt;mins&gt;</span></div>
             </div>
           )}
           {/* Matched Assignments */}
           {matchedAssignments.length > 0 && (
             <div>
               <div className="px-2 py-1 text-[10px] font-bold text-[#8C897F] uppercase tracking-wider">
-                Matching Assignments
+                {t('pal_matching')}
               </div>
               <div className="space-y-1 mt-1">
                 {matchedAssignments.map((a) => (
@@ -575,7 +577,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           {filteredActions.length > 0 && (
             <div>
               <div className="px-2 py-1 text-[10px] font-bold text-[#8C897F] uppercase tracking-wider">
-                Workspaces &amp; Commands
+                {t('pal_workspaces')}
               </div>
               <div className="space-y-1 mt-1">
                 {filteredActions.map((action) => {

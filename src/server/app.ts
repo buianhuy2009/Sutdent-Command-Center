@@ -46,16 +46,17 @@ export function createApiApp(): express.Express {
   });
 
   // Canvas Proxy (handles .ics calendar feed and API calls without CORS issues)
-  app.get("/api/canvas/proxy", async (req, res) => {
+  // app.all (not just GET) so Drive-file submissions (POST) work on the dev server too.
+  app.all("/api/canvas/proxy", async (req, res) => {
     try {
       const targetUrl = req.query.url as string;
       if (!targetUrl) {
-        return res.status(400).json({ error: "Missing 'url' query parameter" });
+        return res.status(400).json({ error: "Missing 'url' query parameter", code: "missing-url" });
       }
 
       // Security check: must be http or https
       if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
-        return res.status(400).json({ error: "Invalid URL protocol" });
+        return res.status(400).json({ error: "Invalid URL protocol", code: "invalid-url" });
       }
 
       // Only allow Canvas-like domains (covers custom school hosts like 4015.instructure.com)
@@ -64,10 +65,10 @@ export function createApiApp(): express.Express {
         const allowedCanvas = (process.env.CANVAS_ALLOWED_HOSTS || "instructure.com,canvaslms.com").split(",").map((s) => s.trim()).filter(Boolean);
         const isCanvasHost = allowedCanvas.some((h) => u.hostname === h || u.hostname.endsWith("." + h));
         if (!isCanvasHost) {
-          return res.status(400).json({ error: `Host not allowlisted for Canvas proxy: ${u.hostname}. Allowed: ${allowedCanvas.join(", ")}` });
+          return res.status(400).json({ error: `Host not allowlisted for Canvas proxy: ${u.hostname}. Allowed: ${allowedCanvas.join(", ")}`, code: "host-not-allowlisted", host: u.hostname });
         }
       } catch {
-        return res.status(400).json({ error: "Invalid target URL" });
+        return res.status(400).json({ error: "Invalid target URL", code: "invalid-url" });
       }
 
       const headers: Record<string, string> = {
@@ -79,10 +80,22 @@ export function createApiApp(): express.Express {
         headers["Authorization"] = `Bearer ${canvasToken}`;
       }
 
-      const response = await fetch(targetUrl, { headers });
+      // Forward method + JSON body so Canvas submissions (POST) work, not just GET sync.
+      const method = ((req.method as string) || "GET").toUpperCase();
+      const fetchInit: Record<string, any> = { headers, method };
+      if (method !== "GET" && method !== "HEAD" && req.body && Object.keys(req.body).length > 0) {
+        try {
+          fetchInit.body = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
+          headers["Content-Type"] = "application/json";
+        } catch {}
+      }
+
+      const response = await fetch(targetUrl, fetchInit);
       if (!response.ok) {
         return res.status(response.status).json({
           error: `Canvas fetch failed with status ${response.status}: ${response.statusText}`,
+          code: response.status === 401 ? "canvas-unauthorized" : "canvas-upstream-error",
+          status: response.status,
         });
       }
 

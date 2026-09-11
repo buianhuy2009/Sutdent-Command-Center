@@ -14,8 +14,10 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { generateInteractiveQuiz, QuizQuestion } from '../../services/gemini';
+import { t, useLang } from '../../services/i18n';
 
 export const QuizGeneratorWorkspace: React.FC = () => {
+  useLang();
   const [inputText, setInputText] = useState('');
   const [questionCount, setQuestionCount] = useState<number>(5);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -48,10 +50,10 @@ export const QuizGeneratorWorkspace: React.FC = () => {
       if (questions && questions.length > 0) {
         setQuizQuestions(questions);
       } else {
-        throw new Error('Could not generate quiz questions from this text.');
+        throw new Error(t('quiz_gen_fail'));
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to generate quiz.');
+      setErrorMessage(err.message || t('quiz_gen_fail2'));
     } finally {
       setIsGenerating(false);
     }
@@ -140,14 +142,14 @@ export const QuizGeneratorWorkspace: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-[#141413] dark:text-[#FAF9F5]">
-                AI Practice Quiz Generator
+                {t('quiz_title')}
               </h2>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
-                Retrieval Practice Engine
+                {t('quiz_badge')}
               </span>
             </div>
             <p className="text-xs text-[#8C897F] mt-0.5">
-              Paste lecture notes, slides, or study outlines to generate practice exams with explanations
+              {t('quiz_sub')}
             </p>
           </div>
         </div>
@@ -160,7 +162,7 @@ export const QuizGeneratorWorkspace: React.FC = () => {
                 className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Retry Incorrect Only ({quizQuestions.filter((q, idx) => userAnswers[idx] !== q.correctIndex).length})</span>
+                <span>{t('quiz_retry_btn')} ({quizQuestions.filter((q, idx) => userAnswers[idx] !== q.correctIndex).length})</span>
               </button>
             )}
             <button
@@ -168,7 +170,7 @@ export const QuizGeneratorWorkspace: React.FC = () => {
               className="px-3.5 py-2 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-2xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
             >
               <RotateCcw className="w-3.5 h-3.5 text-[#D97757]" />
-              <span>Retake Quiz</span>
+              <span>{t('quiz_retake')}</span>
             </button>
           </div>
         )}
@@ -179,12 +181,12 @@ export const QuizGeneratorWorkspace: React.FC = () => {
         <form onSubmit={handleGenerateQuiz} className="bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F]">
-              Paste Lecture Material, Textbook Excerpt, or Study Notes
+              {t('quiz_input_label')}
             </label>
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="e.g. In thermodynamics, the second law states that the total entropy of an isolated system always increases over time. Carnot efficiency is given by 1 - (Tc / Th)..."
+              placeholder={t('quiz_input_ph')}
               rows={8}
               className="w-full p-4 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] resize-none leading-relaxed"
             />
@@ -192,7 +194,7 @@ export const QuizGeneratorWorkspace: React.FC = () => {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[#8C897F]">Questions:</span>
+              <span className="text-xs font-bold text-[#8C897F]">{t('quiz_questions')}</span>
               <div className="flex items-center gap-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] p-1 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
                 {[5, 10, 20].map((count) => (
                   <button
@@ -212,7 +214,7 @@ export const QuizGeneratorWorkspace: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[#8C897F]">Difficulty:</span>
+              <span className="text-xs font-bold text-[#8C897F]">{t('quiz_difficulty')}</span>
               <div className="flex items-center gap-1 bg-[#FAF9F5] dark:bg-[#1F1E1B] p-1 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
                 {(['Easy', 'Mixed', 'Hard'] as const).map((level) => (
                   <button

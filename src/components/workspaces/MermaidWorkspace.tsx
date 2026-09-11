@@ -3,6 +3,7 @@ import { Network, Sparkles, Copy, Check, Download, RefreshCw } from 'lucide-reac
 import mermaid from 'mermaid';
 import DOMPurify from 'dompurify';
 import { generateMermaidDiagram } from '../../services/gemini';
+import { t, useLang } from '../../services/i18n';
 
 const DEFAULT_CHART = `graph TD
   A[Start Problem] --> B{Formulate Hypothesis}
@@ -12,6 +13,7 @@ const DEFAULT_CHART = `graph TD
   E --> F[Conclusion]`;
 
 export const MermaidWorkspace: React.FC = () => {
+  useLang();
   const [chartCode, setChartCode] = useState(DEFAULT_CHART);
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -40,7 +42,7 @@ export const MermaidWorkspace: React.FC = () => {
         });
       }
     } catch (err: any) {
-      setRenderError('Syntax error in diagram code. Please adjust notation.');
+      setRenderError(t('merm_syntax_error'));
     }
   };
 
@@ -77,14 +79,14 @@ export const MermaidWorkspace: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-[#141413] dark:text-[#FAF9F5]">
-                Mermaid Flowcharts &amp; Mindmaps
+                {t('merm_title')}
               </h2>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-50 text-pink-700 dark:bg-pink-950/60 dark:text-pink-300 border border-pink-300 dark:border-pink-800">
-                Text-to-Diagram
+                {t('merm_badge')}
               </span>
             </div>
             <p className="text-xs text-[#8C897F] mt-0.5">
-              Live markdown-to-diagram rendering with AI diagram generator
+              {t('merm_sub')}
             </p>
           </div>
         </div>
@@ -95,7 +97,7 @@ export const MermaidWorkspace: React.FC = () => {
             className="px-4 py-2 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-2xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copied ? 'Copied!' : 'Copy Code'}</span>
+            <span>{copied ? `${t('copied')}!` : t('merm_copy_code')}</span>
           </button>
         </div>
       </div>
@@ -106,7 +108,7 @@ export const MermaidWorkspace: React.FC = () => {
           type="text"
           value={aiPrompt}
           onChange={(e) => setAiPrompt(e.target.value)}
-          placeholder="Describe a diagram to generate (e.g. Photosynthesis light and dark reactions flowchart)..."
+          placeholder={t('merm_prompt_ph')}
           className="flex-1 px-4 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
         />
         <button
@@ -115,7 +117,7 @@ export const MermaidWorkspace: React.FC = () => {
           className="px-5 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-2xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span>{isGenerating ? 'Generating...' : 'Generate with AI'}</span>
+          <span>{isGenerating ? t('merm_generating') : t('merm_generate')}</span>
         </button>
       </form>
 
@@ -124,7 +126,7 @@ export const MermaidWorkspace: React.FC = () => {
         {/* Editor - 50% */}
         <div className="flex-1 md:w-1/2 bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs flex flex-col space-y-2">
           <span className="text-xs font-bold uppercase tracking-wider text-[#8C897F]">
-            Mermaid Code (Editor)
+            {t('merm_editor')}
           </span>
           <textarea
             rows={16}
@@ -137,7 +139,7 @@ export const MermaidWorkspace: React.FC = () => {
         {/* Live Diagram Render - 50% */}
         <div className="flex-1 md:w-1/2 bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs flex flex-col overflow-auto">
           <span className="text-xs font-bold uppercase tracking-wider text-[#8C897F] block mb-4">
-            Live Diagram Preview
+            {t('merm_preview')}
           </span>
           {renderError ? (
             <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs">

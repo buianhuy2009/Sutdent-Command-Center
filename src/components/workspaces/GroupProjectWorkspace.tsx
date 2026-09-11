@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Users, FolderPlus, CheckSquare } from 'lucide-react';
+import { t, useLang } from '../../services/i18n';
 
 export const GroupProjectWorkspace: React.FC = () => {
+  useLang();
   const [projects, setProjects] = useState<any[]>(()=>{ try{ const r=localStorage.getItem('scc_group_projects_v1'); return r?JSON.parse(r):[];}catch{return[];}});
   const [name, setName] = useState('');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -40,11 +42,11 @@ export const GroupProjectWorkspace: React.FC = () => {
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
       <div className="bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-card">
-        <h2 className="text-lg font-bold flex items-center gap-2"><Users className="w-5 h-5 text-[#D97757]" /> Group Project Hub</h2>
-        <p className="text-xs text-[#6B6860]">Shared Drive folder per course + member tasks + peer review. Creates Drive folder via API.</p>
+        <h2 className="text-lg font-bold flex items-center gap-2"><Users className="w-5 h-5 text-[#D97757]" /> {t('grp_title')}</h2>
+        <p className="text-xs text-[#6B6860]">{t('grp_sub')}</p>
         <div className="mt-4 flex gap-2">
-          <input value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&add()} placeholder="Project name e.g. Bio Group Presentation" className="flex-1 px-3 py-2 text-sm bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl" />
-          <button onClick={add} className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold flex items-center gap-1"><FolderPlus className="w-3.5 h-3.5" /> Create</button>
+          <input value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&add()} placeholder={t('grp_name_ph')} className="flex-1 px-3 py-2 text-sm bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl" />
+          <button onClick={add} className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold flex items-center gap-1"><FolderPlus className="w-3.5 h-3.5" /> {t('create')}</button>
         </div>
       </div>
       {projects.map(p=>{
@@ -52,11 +54,11 @@ export const GroupProjectWorkspace: React.FC = () => {
         const done = tasks.filter(t=>t.done).length;
         return (
         <div key={p.id} className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4">
-          <h4 className="font-bold text-sm flex items-center justify-between gap-2"><span>{p.name}</span><span className="text-xs font-normal text-[#6B6860]">{done}/{tasks.length} done</span></h4>
-          <p className="text-xs text-[#6B6860]">Add Drive folder + tasks via shareGoogleDriveFile (stubbed).</p>
+          <h4 className="font-bold text-sm flex items-center justify-between gap-2"><span>{p.name}</span><span className="text-xs font-normal text-[#6B6860]">{done}/{tasks.length} {t('done').toLowerCase()}</span></h4>
+          <p className="text-xs text-[#6B6860]">{t('grp_stub_note')}</p>
           <div className="mt-3 flex gap-2">
-            <input value={drafts[p.id] ?? ''} onChange={e=>setDrafts(d=>({ ...d, [p.id]: e.target.value }))} onKeyDown={e=>e.key==='Enter'&&addTask(p.id)} placeholder="Add a task e.g. Draft slides" className="flex-1 px-3 py-1.5 text-sm bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl" />
-            <button onClick={()=>addTask(p.id)} className="px-3 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold">Add</button>
+            <input value={drafts[p.id] ?? ''} onChange={e=>setDrafts(d=>({ ...d, [p.id]: e.target.value }))} onKeyDown={e=>e.key==='Enter'&&addTask(p.id)} placeholder={t('grp_task_ph')} className="flex-1 px-3 py-1.5 text-sm bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl" />
+            <button onClick={()=>addTask(p.id)} className="px-3 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold">{t('add')}</button>
           </div>
           <div className="mt-2 space-y-1">
             {tasks.map(t=>(
@@ -66,7 +68,7 @@ export const GroupProjectWorkspace: React.FC = () => {
               </label>
             ))}
           </div>
-          <div className="mt-2 flex items-center gap-2 text-xs"><CheckSquare className="w-3.5 h-3.5 text-emerald-600" /> Peer review placeholder</div>
+          <div className="mt-2 flex items-center gap-2 text-xs"><CheckSquare className="w-3.5 h-3.5 text-emerald-600" /> {t('grp_peer_review')}</div>
         </div>
         );
       })}

@@ -361,6 +361,46 @@ export async function fetchCanvasAssignmentsFromFeed(feedUrl: string): Promise<C
  * Fetch Canvas assignments directly via Canvas REST API (using Access Token)
  * Automatically fetches all active courses & favorites, inspecting authentic user-specific submission status
  */
+
+export type CanvasFailureKind = 'auth' | 'host' | 'network' | 'unknown';
+
+/** Thrown when no Canvas endpoint answered. `kind` lets the UI name the exact fix. Message is a bare reason — the UI composes the user-facing hint (never duplicated). */
+export class CanvasSyncError extends Error {
+  kind: CanvasFailureKind;
+  status?: number;
+  constructor(kind: CanvasFailureKind, message: string, status?: number) {
+    super(message);
+    this.name = 'CanvasSyncError';
+    this.kind = kind;
+    this.status = status;
+  }
+}
+
+const CANVAS_FETCH_TIMEOUT_MS = 15000;
+
+/** Same-origin proxy fetch with a timeout so a hung Canvas/proxy can't hang sync forever. */
+function canvasFetch(url: string, headers: Record<string, string>): Promise<Response> {
+  try {
+    const withTimeout = (AbortSignal as any)?.timeout;
+    if (typeof withTimeout === 'function') {
+      return fetch(url, { headers, signal: withTimeout.call(AbortSignal, CANVAS_FETCH_TIMEOUT_MS) });
+    }
+  } catch {}
+  return fetch(url, { headers });
+}
+
+interface CanvasProbeFailure { status: number | null; network: boolean }
+
+/** Read the proxy's error envelope (it mirrors Canvas' HTTP status) without throwing on non-JSON bodies. */
+async function readProxyFailure(res: Response): Promise<CanvasProbeFailure> {
+  let status: number | null = null;
+  try {
+    status = (res as any).status ?? null;
+    // Drain the body so connections reuse cleanly; the proxy's {error} string adds no signal beyond status.
+    await res.text().catch(() => {});
+  } catch {}
+  return { status, network: false };
+}
 export async function fetchCanvasAssignmentsFromApi(
   domain: string,
   token: string
@@ -378,13 +418,16 @@ export async function fetchCanvasAssignmentsFromApi(
   let sawCoursesOk = false;
   let sawPlannerOk = false;
   let sawUpcomingOk = false;
+  // First observed failure — recorded (never swallowed) so the UI can name the fix.
+  const probeFailures: CanvasProbeFailure[] = [];
+  const noteFailure = (f: CanvasProbeFailure) => { if (probeFailures.length === 0) probeFailures.push(f); };
 
   // 1. Fetch Canvas "To Do" list (authoritative pending homework list)
   const todoIds = new Set<string>();
   try {
     const todoUrl = `${cleanDomain}/api/v1/users/self/todo?per_page=100`;
     const proxyTodoUrl = `/api/canvas/proxy?url=${encodeURIComponent(todoUrl)}`;
-    const todoRes = await fetch(proxyTodoUrl, { headers });
+    const todoRes = await canvasFetch(proxyTodoUrl, headers);
     if (todoRes.ok) {
       sawTodoOk = true;
       const todoItems = await todoRes.json();
@@ -394,9 +437,12 @@ export async function fetchCanvasAssignmentsFromApi(
           if (id) todoIds.add(String(id));
         });
       }
+    } else {
+      noteFailure(await readProxyFailure(todoRes));
     }
   } catch (err) {
     console.warn('Canvas To Do list query error:', err);
+    noteFailure({ status: null, network: true });
   }
 
   // 2. Fetch all enrolled courses (combining /users/self/courses, /users/self/favorites/courses, and /courses)
@@ -411,7 +457,7 @@ export async function fetchCanvasAssignmentsFromApi(
     for (const ep of courseEndpoints) {
       try {
         const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(ep)}`;
-        const res = await fetch(proxyUrl, { headers });
+        const res = await canvasFetch(proxyUrl, headers);
         if (res.ok) {
           sawCoursesOk = true;
           const list = await res.json();
@@ -422,9 +468,12 @@ export async function fetchCanvasAssignmentsFromApi(
               }
             });
           }
+        } else {
+          noteFailure(await readProxyFailure(res));
         }
       } catch (e) {
-        // Continue to next endpoint
+        // Continue to next endpoint — but record the failure mode once.
+        noteFailure({ status: null, network: true });
       }
     }
   } catch (err) {
@@ -441,8 +490,11 @@ export async function fetchCanvasAssignmentsFromApi(
       try {
         const assignUrl = `${cleanDomain}/api/v1/courses/${course.id}/assignments?include[]=submission&per_page=100&order_by=due_at`;
         const proxyAssignUrl = `/api/canvas/proxy?url=${encodeURIComponent(assignUrl)}`;
-        const assignRes = await fetch(proxyAssignUrl, { headers });
-        if (!assignRes.ok) return [];
+        const assignRes = await canvasFetch(proxyAssignUrl, headers);
+        if (!assignRes.ok) {
+          noteFailure(await readProxyFailure(assignRes));
+          return [];
+        }
 
         const assignData = await assignRes.json();
         if (!Array.isArray(assignData)) return [];
@@ -521,9 +573,11 @@ export async function fetchCanvasAssignmentsFromApi(
     const startDate = new Date(Date.now() - 86400000 * 90).toISOString();
     const plannerUrl = `${cleanDomain}/api/v1/planner/items?start_date=${startDate}&order=desc&per_page=100`;
     const proxyPlannerUrl = `/api/canvas/proxy?url=${encodeURIComponent(plannerUrl)}`;
-    const plannerRes = await fetch(proxyPlannerUrl, { headers });
+    const plannerRes = await canvasFetch(proxyPlannerUrl, headers);
 
-    if (plannerRes.ok) {
+    if (!plannerRes.ok) {
+      noteFailure(await readProxyFailure(plannerRes));
+    } else {
       sawPlannerOk = true;
       const items = await plannerRes.json();
       if (Array.isArray(items) && items.length > 0) {
@@ -569,20 +623,24 @@ export async function fetchCanvasAssignmentsFromApi(
     }
   } catch (err) {
     console.warn('Planner items query failed:', err);
+    noteFailure({ status: null, network: true });
   }
 
   if (allAssignments.length > 0) {
     return allAssignments;
   }
 
-  // 5. Upcoming events fallback
-  const url = `${cleanDomain}/api/v1/users/self/upcoming_events?include[]=submission`;
-  const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(url)}`;
-  const res = await fetch(proxyUrl, { headers });
+  // 5. Upcoming events fallback (guarded like every other probe)
+  try {
+    const url = `${cleanDomain}/api/v1/users/self/upcoming_events?include[]=submission`;
+    const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(url)}`;
+    const res = await canvasFetch(proxyUrl, headers);
 
-  if (res.ok) {
-    sawUpcomingOk = true;
-    const events = await res.json();
+    if (!res.ok) {
+      noteFailure(await readProxyFailure(res));
+    } else {
+      sawUpcomingOk = true;
+      const events = await res.json();
     if (Array.isArray(events)) {
       return events
         .filter((e: any) => e.assignment || e.type === 'assignment')
@@ -610,13 +668,33 @@ export async function fetchCanvasAssignmentsFromApi(
           };
         });
     }
+    }
+  } catch (err) {
+    console.warn('Canvas upcoming-events query error:', err);
+    noteFailure({ status: null, network: true });
   }
 
-  // No endpoint answered at all — the host or token is wrong. Throw so the
-  // UI shows an error banner instead of an empty "all caught up" list.
+  // No endpoint answered at all — throw a TYPED error so the UI can name the
+  // exact fix. Message is a bare reason; the UI composes the hint (single copy).
   if (!sawTodoOk && !sawCoursesOk && !sawPlannerOk && !sawUpcomingOk) {
-    throw new Error(
-      'Canvas API did not respond — check that the Canvas URL is exactly your school host and the API token is valid (Canvas → Account → Settings → New Access Token), then retry.'
+    const failure: CanvasProbeFailure | null = probeFailures[0] ?? null;
+    const s = failure?.status ?? null;
+    if (s === 401) {
+      throw new CanvasSyncError('auth', 'Canvas rejected the API token (401 Unauthorized).', 401);
+    }
+    if (s === 400) {
+      throw new CanvasSyncError('host', 'The Canvas proxy refused this host (400).', 400);
+    }
+    if (s === 404) {
+      throw new CanvasSyncError('host', 'Canvas answered 404 — the host path looks wrong.', 404);
+    }
+    if (failure?.network) {
+      throw new CanvasSyncError('network', 'Could not reach Canvas (network error or timed out).', undefined);
+    }
+    throw new CanvasSyncError(
+      'unknown',
+      s ? `Canvas answered with status ${s} on every endpoint.` : 'Canvas API did not respond on any endpoint.',
+      s ?? undefined
     );
   }
 

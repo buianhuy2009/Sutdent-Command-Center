@@ -1695,7 +1695,7 @@ export default function App() {
     try {
       let apiFetched: CanvasAssignment[] = [];
       let feedFetched: CanvasAssignment[] = [];
-      let apiError: string | null = null;
+      let apiError: { message: string; kind?: string } | null = null;
       let feedError: string | null = null;
 
       // 1. Fetch via REST API if configured (requires BOTH Canvas URL + token)
@@ -1707,7 +1707,7 @@ export default function App() {
           );
         } catch (e: any) {
           console.warn('Canvas REST API query error:', e);
-          apiError = e?.message || 'Canvas API request failed.';
+          apiError = { message: e?.message || 'Canvas API request failed.', kind: (e as any)?.kind };
         }
       }
 
@@ -1760,11 +1760,37 @@ export default function App() {
       // Never toast the same message (that was the duplicate banner+toast bug),
       // and never overwrite the list with [] on failure — keep previous items.
       if (fetched.length === 0 && (apiError || feedError)) {
-        const combined = [apiError, feedError].filter(Boolean).join(' ');
-        const hint = /401|unauthorized/i.test(combined)
-          ? ` Check that the Canvas URL is exactly your school host and the API token is valid (Canvas → Account → Settings → New Access Token), then retry.`
-          : ` Check your Canvas URL and token, then retry.`;
-        setCanvasError(`Canvas sync failed: ${combined}.${hint}`);
+        // Message is composed here ONCE from the typed failure — the service
+        // throws bare reasons, so the hint can never duplicate (Image 1 bug).
+        let errMsg: string;
+        if (apiError && !feedError) {
+          switch (apiError.kind) {
+            case 'auth':
+              errMsg = 'Canvas rejected the API token (401). Regenerate a token at Canvas → Account → Settings → New Access Token, save it here, then retry.';
+              break;
+            case 'host':
+              errMsg = `Canvas host did not answer (${apiError.message}). Check the URL is exactly your school host, then retry.`;
+              break;
+            case 'network':
+              errMsg = 'Could not reach Canvas — network error or timed out after 15s. Check your connection, then retry.';
+              break;
+            default: {
+              const reason = (apiError.message || '').trim();
+              const needsHint = !/retr(y|ied)\.?$/i.test(reason);
+              errMsg = needsHint
+                ? `Canvas sync failed: ${reason} Check your Canvas URL and token, then retry.`
+                : `Canvas sync failed: ${reason}`;
+              break;
+            }
+          }
+        } else {
+          const combined = [apiError?.message, feedError].filter(Boolean).join(' ').trim();
+          const needsHint = !/retr(y|ied)\.?$/i.test(combined);
+          errMsg = needsHint
+            ? `Canvas sync failed: ${combined} Check your Canvas URL and token, then retry.`
+            : `Canvas sync failed: ${combined}`;
+        }
+        setCanvasError(errMsg);
         return;
       }
       // Configured but zero assignments and zero errors (e.g. all sources quietly
@@ -2706,7 +2732,7 @@ export default function App() {
         {/* Mobile drawer overlay with swipe to close + Esc */}
         {mobileNavOpen && !zenFocusMode && activeTab !== 'dashboard' && (
           <div className="md:hidden fixed inset-0 z-30 flex" onTouchStart={(e)=>{ (e.currentTarget as any)._sx = e.touches[0].clientX; }} onTouchEnd={(e)=>{ const sx=(e.currentTarget as any)._sx||0; const dx=e.changedTouches[0].clientX - sx; if(dx < -60 || dx > 60) setMobileNavOpen(false); }} onKeyDown={(e)=>{ if(e.key==='Escape') setMobileNavOpen(false); }}>
-            <div className="w-64 shrink-0 bg-[#E8E6DC] dark:bg-[#1A1917] border-r border-[#E8E6DC] dark:border-[#2C2B27] overflow-y-auto">
+            <div className="w-64 shrink-0 bg-[#F5F4ED] dark:bg-[#1A1917] border-r border-[#E8E6DC] dark:border-[#2C2B27] overflow-y-auto">
               <Sidebar
                 activeTab={activeTab}
                 onSelectTab={(t)=>{ handleTabTransition(t); setMobileNavOpen(false); }}
@@ -2737,7 +2763,7 @@ export default function App() {
         )}
 
         {/* Right Main Column with Top Header, Scrollable Content, and Bottom Status Bar */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#F5F4ED] dark:bg-[#141413]">
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#E8E6DC] dark:bg-[#141413]">
           {/* Top Header — simplified & error-guarded */}
           {activeTab !== 'dashboard' && (
             <ErrorBoundary fallback={<header className="h-12 bg-white dark:bg-[#141413] border-b border-[#E8E6DC] dark:border-[#2C2B27] px-4 sm:px-6 flex items-center justify-between z-20 text-xs font-semibold text-[#5E5D59]"><button onClick={() => window.dispatchEvent(new CustomEvent('scc-navigate', { detail: 'dashboard' }))} className="hover:text-[#C96442]">StudentOS / Dashboard</button></header>}>

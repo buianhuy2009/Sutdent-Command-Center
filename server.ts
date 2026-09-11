@@ -22,7 +22,7 @@ async function startServer() {
 
   // API Endpoints
   app.get("/api/health", handleHealth);
-  app.get("/api/canvas/proxy", handleCanvasProxy);
+  app.all("/api/canvas/proxy", handleCanvasProxy);
   app.post("/api/gemini/assistant", handleAssistant);
   app.post("/api/gemini/parse-assignment", handleParseAssignment);
   app.post("/api/gemini/summarize-emails", handleSummarizeEmails);

@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Eye,
 } from 'lucide-react';
+import { t, useLang } from '../../services/i18n';
 
 interface PdfAnnotation {
   id: string;
@@ -26,6 +27,7 @@ interface PdfAnnotation {
 }
 
 export const PdfReaderWorkspace: React.FC = () => {
+  useLang();
   const [pdfFileUrl, setPdfFileUrl] = useState<string | null>(null);
   const [pdfFileName, setPdfFileName] = useState<string>('');
   const [annotations, setAnnotations] = useState<PdfAnnotation[]>([]);
@@ -126,14 +128,14 @@ export const PdfReaderWorkspace: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-[#141413] dark:text-[#FAF9F5]">
-                PDF Document Reader &amp; Annotator
+                {t('pdf_title')}
               </h2>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
-                In-Browser Reader
+                {t('pdf_badge')}
               </span>
             </div>
             <p className="text-xs text-[#8C897F] mt-0.5">
-              Open local PDFs, take page-referenced study notes, and export markdown summaries
+              {t('pdf_sub')}
             </p>
           </div>
         </div>
@@ -153,7 +155,7 @@ export const PdfReaderWorkspace: React.FC = () => {
             className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-2xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
           >
             <Upload className="w-3.5 h-3.5" />
-            <span>{pdfFileUrl ? 'Open Another PDF' : 'Open PDF File'}</span>
+            <span>{pdfFileUrl ? t('pdf_open_another') : t('pdf_open_file')}</span>
           </button>
         </div>
       </div>
@@ -170,17 +172,17 @@ export const PdfReaderWorkspace: React.FC = () => {
           </div>
           <div>
             <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">
-              Select a PDF lecture, textbook, or syllabus
+              {t('pdf_empty_t')}
             </h3>
             <p className="text-xs text-[#8C897F] max-w-md mx-auto mt-1">
-              Files are rendered safely inside your browser. No files are uploaded to external servers.
+              {t('pdf_empty_sub')}
             </p>
           </div>
           <button
             type="button"
             className="px-5 py-2.5 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-2xl text-xs font-bold transition-colors"
           >
-            Browse from Computer
+            {t('pdf_browse')}
           </button>
         </div>
       ) : (
@@ -205,10 +207,10 @@ export const PdfReaderWorkspace: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-2.5 py-1 rounded-xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] text-xs font-semibold flex items-center gap-1"
-                  title="Open in new window"
+                  title={t('pdf_popout_title')}
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Pop Out</span>
+                  <span className="hidden sm:inline">{t('pdf_popout')}</span>
                 </a>
               </div>
             </div>
@@ -218,7 +220,7 @@ export const PdfReaderWorkspace: React.FC = () => {
               <iframe
                 src={`${pdfFileUrl}#toolbar=1&navpanes=0`}
                 className="w-full h-full min-h-[600px] border-none rounded-2xl"
-                title="PDF Document"
+                title={t('pdf_doc_title')}
               />
             </div>
           </div>
@@ -232,7 +234,7 @@ export const PdfReaderWorkspace: React.FC = () => {
                 <div className="flex items-center gap-1.5">
                   <Bookmark className="w-4 h-4 text-[#D97757]" />
                   <span className="text-xs font-bold uppercase tracking-wider text-[#8C897F]">
-                    Document Notes ({annotations.length})
+                    {t('pdf_notes')} ({annotations.length})
                   </span>
                 </div>
 
@@ -241,23 +243,23 @@ export const PdfReaderWorkspace: React.FC = () => {
                     <button
                       onClick={handleCopyNotes}
                       className="p-1 rounded text-[#8C897F] hover:text-[#D97757]"
-                      title="Copy notes"
+                      title={t('pdf_copy_notes')}
                     >
                       {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                     <button
                       onClick={handleExportNotesMarkdown}
                       className="p-1 rounded text-[#8C897F] hover:text-[#D97757]"
-                      title="Export to Markdown (.md)"
+                      title={t('pdf_export_md')}
                     >
                       <Download className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={handleExtractHighlights}
                       className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 text-[11px] font-bold border border-amber-200 dark:border-amber-800 hover:bg-amber-200"
-                      title="Extract highlights with page citations to Document Hub"
+                      title={t('pdf_extract_title')}
                     >
-                      Extract Highlights →
+                      {t('pdf_extract')}
                     </button>
                   </div>
                 )}
@@ -267,8 +269,8 @@ export const PdfReaderWorkspace: React.FC = () => {
               <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
                 {annotations.length === 0 ? (
                   <div className="py-12 text-center text-xs text-[#8C897F] space-y-1">
-                    <p className="font-semibold">No notes yet</p>
-                    <p className="text-[11px]">Type key points or formulas below to bookmark them.</p>
+                    <p className="font-semibold">{t('pdf_no_notes')}</p>
+                    <p className="text-[11px]">{t('pdf_no_notes_sub')}</p>
                   </div>
                 ) : (
                   annotations.map((ann) => (
@@ -278,7 +280,7 @@ export const PdfReaderWorkspace: React.FC = () => {
                     >
                       <div className="flex items-center justify-between text-[11px]">
                         <span className="px-2 py-0.5 rounded font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
-                          Page {ann.pageNumber}
+                          {t('pdf_page')} {ann.pageNumber}
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] text-[#8C897F]">{ann.timestamp}</span>
@@ -303,7 +305,7 @@ export const PdfReaderWorkspace: React.FC = () => {
             {/* Note Add Form */}
             <form onSubmit={handleAddAnnotation} className="pt-2 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]/60 space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-[#8C897F]">Page:</span>
+                <span className="text-[11px] font-bold text-[#8C897F]">{t('pdf_page')}:</span>
                 <input
                   type="number"
                   min={1}
@@ -316,7 +318,7 @@ export const PdfReaderWorkspace: React.FC = () => {
               <textarea
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
-                placeholder="Take a note, formula, or exam cue for this page..."
+                placeholder={t('pdf_note_ph')}
                 rows={3}
                 className="w-full p-2.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5] resize-none"
               />
@@ -327,7 +329,7 @@ export const PdfReaderWorkspace: React.FC = () => {
                 className="w-full py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add Note</span>
+                <span>{t('pdf_add_note')}</span>
               </button>
             </form>
 

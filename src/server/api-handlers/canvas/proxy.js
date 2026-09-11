@@ -20,10 +20,10 @@ export default async function handler(req, res) {
       const allowed = (process.env.CANVAS_ALLOWED_HOSTS || "instructure.com,canvaslms.com").split(",").map((s) => s.trim()).filter(Boolean);
       const ok = allowed.some((h) => u.hostname === h || u.hostname.endsWith("." + h));
       if (!ok) {
-        return res.status(400).json({ error: `Host not allowlisted for Canvas proxy: ${u.hostname}. Allowed: ${allowed.join(", ")}` });
+        return res.status(400).json({ error: `Host not allowlisted for Canvas proxy: ${u.hostname}. Allowed: ${allowed.join(", ")}`, code: "host-not-allowlisted", host: u.hostname });
       }
     } catch {
-      return res.status(400).json({ error: "Invalid target URL" });
+      return res.status(400).json({ error: "Invalid target URL", code: "invalid-url" });
     }
 
     const headers = {
@@ -35,10 +35,22 @@ export default async function handler(req, res) {
       headers["Authorization"] = `Bearer ${canvasToken}`;
     }
 
-    const response = await fetch(targetUrl, { headers });
+    // Forward method + JSON body so Canvas submissions (POST) work, not just GET sync.
+    const method = (req.method || "GET").toUpperCase();
+    const fetchInit = { headers, method };
+    if (method !== "GET" && method !== "HEAD" && req.body) {
+      try {
+        fetchInit.body = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
+        headers["Content-Type"] = "application/json";
+      } catch {}
+    }
+
+    const response = await fetch(targetUrl, fetchInit);
     if (!response.ok) {
       return res.status(response.status).json({
         error: `Canvas fetch failed with status ${response.status}: ${response.statusText}`,
+        code: response.status === 401 ? "canvas-unauthorized" : "canvas-upstream-error",
+        status: response.status,
       });
     }
 

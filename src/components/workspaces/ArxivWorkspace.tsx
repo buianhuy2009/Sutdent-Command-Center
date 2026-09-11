@@ -13,18 +13,20 @@ import {
   Save,
 } from 'lucide-react';
 import { searchArxiv, ArxivPaper } from '../../services/publicApis';
+import { t, useLang } from '../../services/i18n';
 
 const CATEGORIES = [
-  { id: 'all', label: 'All Subjects' },
-  { id: 'cs.AI', label: 'Computer Science (AI/ML)' },
-  { id: 'math', label: 'Mathematics' },
-  { id: 'physics', label: 'Physics' },
-  { id: 'q-bio', label: 'Quantitative Biology' },
-  { id: 'econ', label: 'Economics & Finance' },
-  { id: 'stat', label: 'Statistics' },
+  { id: 'all', key: 'arxiv_cat_all' },
+  { id: 'cs.AI', key: 'arxiv_cat_cs' },
+  { id: 'math', key: 'arxiv_cat_math' },
+  { id: 'physics', key: 'arxiv_cat_phys' },
+  { id: 'q-bio', key: 'arxiv_cat_bio' },
+  { id: 'econ', key: 'arxiv_cat_econ' },
+  { id: 'stat', key: 'arxiv_cat_stat' },
 ];
 
 export const ArxivWorkspace: React.FC = () => {
+  useLang();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
   const [papers, setPapers] = useState<ArxivPaper[]>([]);
@@ -85,10 +87,10 @@ export const ArxivWorkspace: React.FC = () => {
           </div>
           <div>
             <h2 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">
-              arXiv Research Paper Explorer
+              {t('arxiv_title')}
             </h2>
             <p className="text-xs text-[#8C897F]">
-              Live preprint index querying Cornell University arXiv API • 100% Genuine Papers
+              {t('arxiv_sub')}
             </p>
           </div>
         </div>
@@ -101,7 +103,7 @@ export const ArxivWorkspace: React.FC = () => {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search title, author, abstract..."
+              placeholder={t('arxiv_search_ph')}
               className="pl-9 pr-4 py-2 bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs text-[#141413] dark:text-[#FAF9F5] focus:outline-none focus:border-[#D97757] w-64"
             />
           </div>
@@ -113,7 +115,7 @@ export const ArxivWorkspace: React.FC = () => {
           >
             {CATEGORIES.map((cat) => (
               <option key={cat.id} value={cat.id}>
-                {cat.label}
+                {t(cat.key)}
               </option>
             ))}
           </select>
@@ -124,7 +126,7 @@ export const ArxivWorkspace: React.FC = () => {
             className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Search</span>
+            <span>{t('search')}</span>
           </button>
         </form>
       </div>
@@ -137,12 +139,12 @@ export const ArxivWorkspace: React.FC = () => {
           {isLoading ? (
             <div className="py-20 text-center text-[#8C897F] text-xs space-y-2">
               <RefreshCw className="w-7 h-7 text-[#D97757] animate-spin mx-auto opacity-70" />
-              <p>Fetching latest peer-reviewed research papers from arXiv...</p>
+              <p>{t('arxiv_loading')}</p>
             </div>
           ) : papers.length === 0 ? (
             <div className="py-20 text-center text-[#8C897F] text-xs space-y-2">
               <BookOpen className="w-8 h-8 mx-auto opacity-30" />
-              <p>No papers found. Try adjusting your query or subject filter.</p>
+              <p>{t('arxiv_empty')}</p>
             </div>
           ) : (
             papers.map((paper) => {
@@ -187,7 +189,7 @@ export const ArxivWorkspace: React.FC = () => {
                     {selectedPaper.primaryCategory}
                   </span>
                   <span className="text-[11px] text-[#8C897F]">
-                    Published: {selectedPaper.published}
+                    {t('arxiv_published')} {selectedPaper.published}
                   </span>
                 </div>
 
@@ -196,7 +198,7 @@ export const ArxivWorkspace: React.FC = () => {
                 </h2>
 
                 <p className="text-xs text-[#8C897F]">
-                  <span className="font-semibold text-[#141413] dark:text-[#FAF9F5]">Authors: </span>
+                  <span className="font-semibold text-[#141413] dark:text-[#FAF9F5]">{t('arxiv_authors')} </span>
                   {selectedPaper.authors.join(', ')}
                 </p>
               </div>
@@ -204,7 +206,7 @@ export const ArxivWorkspace: React.FC = () => {
               {/* Abstract */}
               <div className="space-y-1.5">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C897F] block">
-                  Paper Abstract
+                  {t('arxiv_abstract')}
                 </span>
                 <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB]/60 dark:border-[#2C2B27]/60 text-xs text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed max-h-72 overflow-y-auto">
                   {selectedPaper.summary}
@@ -218,7 +220,7 @@ export const ArxivWorkspace: React.FC = () => {
                   className="px-3 py-2 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
                 >
                   {copiedId === selectedPaper.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedId === selectedPaper.id ? 'Citation Copied' : 'Copy APA Citation'}</span>
+                  <span>{copiedId === selectedPaper.id ? t('arxiv_copied') : t('arxiv_copy')}</span>
                 </button>
 
                 <button
@@ -226,7 +228,7 @@ export const ArxivWorkspace: React.FC = () => {
                   className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer border transition-colors ${savedToNotesId === selectedPaper.id ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-white dark:bg-[#252422] border-[#DFDACB] dark:border-[#2C2B27] hover:border-violet-500 text-[#141413] dark:text-[#FAF9F5]'}`}
                 >
                   {savedToNotesId === selectedPaper.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Save className="w-3.5 h-3.5 text-violet-600" />}
-                  <span>{savedToNotesId === selectedPaper.id ? 'Saved to Notes!' : 'Save to Notes'}</span>
+                  <span>{savedToNotesId === selectedPaper.id ? t('arxiv_saved') : t('arxiv_save')}</span>
                 </button>
 
                 <a
@@ -236,7 +238,7 @@ export const ArxivWorkspace: React.FC = () => {
                   className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Open Official PDF</span>
+                  <span>{t('arxiv_open_pdf')}</span>
                   <ExternalLink className="w-3 h-3 ml-0.5 opacity-70" />
                 </a>
               </div>
@@ -244,13 +246,13 @@ export const ArxivWorkspace: React.FC = () => {
           ) : (
             <div className="my-auto text-center text-[#8C897F] text-xs py-16 space-y-2">
               <BookOpen className="w-10 h-10 mx-auto opacity-30" />
-              <p>Select a paper from the left to read abstract &amp; access full text PDF</p>
+              <p>{t('arxiv_select_hint')}</p>
             </div>
           )}
 
           <div className="pt-4 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]/60 text-[10px] text-[#8C897F] flex items-center justify-between">
-            <span>Direct Public API via Cornell University</span>
-            <span className="font-mono">Open Access Repository</span>
+            <span>{t('arxiv_footer_a')}</span>
+            <span className="font-mono">{t('arxiv_footer_b')}</span>
           </div>
         </div>
 

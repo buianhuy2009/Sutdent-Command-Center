@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Sparkles, Copy, Check, BookOpen, Layers } from 'lucide-react';
 import { feynmanExplainThreeTiers } from '../../services/gemini';
 import { ThreeTierFeynmanResult } from '../../types';
+import { t, useLang } from '../../services/i18n';
 
 export const FeynmanWorkspace: React.FC = () => {
+  useLang();
   const [concept, setConcept] = useState('Quantum Tunneling and Wavefunction Decay');
   const [isSimplifying, setIsSimplifying] = useState(false);
   const [tierResult, setTierResult] = useState<ThreeTierFeynmanResult | null>({
@@ -61,14 +63,14 @@ export const FeynmanWorkspace: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-[#141413] dark:text-[#FAF9F5]">
-                Feynman Concept Explainer
+                {t('feyn_title')}
               </h2>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
-                Pedagogy
+                {t('feyn_badge')}
               </span>
             </div>
             <p className="text-xs text-[#8C897F] mt-0.5">
-              Translate dense concepts into Simple, High School, and University explanations
+              {t('feyn_sub')}
             </p>
           </div>
         </div>
@@ -80,7 +82,7 @@ export const FeynmanWorkspace: React.FC = () => {
           type="text"
           value={concept}
           onChange={(e) => setConcept(e.target.value)}
-          placeholder="Enter concept to explain (e.g. Fourier Transform, Bayes Theorem, Central Limit Theorem)..."
+          placeholder={t('feyn_ph')}
           className="flex-1 px-4 py-2.5 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
         />
         <button
@@ -89,7 +91,7 @@ export const FeynmanWorkspace: React.FC = () => {
           className="px-6 py-2.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-2xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5 shrink-0"
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span>{isSimplifying ? 'Translating...' : 'Explain with Feynman'}</span>
+          <span>{isSimplifying ? t('feyn_translating') : t('feyn_explain')}</span>
         </button>
       </form>
 
@@ -99,9 +101,9 @@ export const FeynmanWorkspace: React.FC = () => {
           {/* Level Switcher */}
           <div className="flex items-center gap-2 pb-4 border-b border-[#DFDACB] dark:border-[#2C2B27]">
             {[
-              { id: 'eli5', label: 'Simple (ELI5)' },
-              { id: 'hs', label: 'High School' },
-              { id: 'uni', label: 'University Rigor' },
+              { id: 'eli5', label: t('feyn_simple') },
+              { id: 'hs', label: t('feyn_hs') },
+              { id: 'uni', label: t('feyn_uni') },
             ].map((tier) => (
               <button
                 key={tier.id}
@@ -116,7 +118,7 @@ export const FeynmanWorkspace: React.FC = () => {
                 </button>
               ))}
               <span className="ml-auto text-[11px] font-medium text-[#8C897F] dark:text-[#B5B2A8]">
-                ~{readMins} min read
+                ~{readMins} {t('feyn_read')}
               </span>
           </div>
 
@@ -132,7 +134,7 @@ export const FeynmanWorkspace: React.FC = () => {
             {/* Everyday Analogy */}
             {tierResult.analogy && (
               <div className="p-4 bg-amber-50/60 dark:bg-amber-950/20 rounded-2xl border border-amber-200 dark:border-amber-900/40 text-xs text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed">
-                <strong className="text-[#141413] dark:text-[#FAF9F5]">Real-World Analogy:</strong> {tierResult.analogy}
+                <strong className="text-[#141413] dark:text-[#FAF9F5]">{t('feyn_analogy')}</strong> {tierResult.analogy}
               </div>
             )}
           </div>

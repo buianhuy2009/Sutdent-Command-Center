@@ -13,8 +13,10 @@ import {
 import { WhyChip, InputAIOutput, EvidenceButton, VerifyEdit } from '../../components/DivisionAUI';
 import { saveEvidence } from '../../services/evidence';
 import { logPrompt } from '../../services/promptLog';
+import { t, useLang } from '../../services/i18n';
 
 export const FewShotLabWorkspace: React.FC = () => {
+  useLang();
   const [tab, setTab] = useState<'nlp' | 'email' | 'benchmark'>('nlp');
   const [nlpInput, setNlpInput] = useState('Làm bài tập Toán chương 3 nộp ngày mai');
   const [emailSubject, setEmailSubject] = useState('Thông báo nộp bài tập Giải tích chương 3');
@@ -82,29 +84,29 @@ export const FewShotLabWorkspace: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
       <div className="space-y-1">
-        <h2 className="text-lg font-extrabold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-2"><FlaskConical className="w-5 h-5 text-[#D97757]" /> Few-Shot Calibration Lab</h2>
-        <p className="text-xs text-[#6B6860]">Calibrate prompts with 2–5 examples. Every run is logged to the Prompt Log with your edit notes.</p>
+        <h2 className="text-lg font-extrabold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-2"><FlaskConical className="w-5 h-5 text-[#D97757]" /> {t('few_shot_lab')}</h2>
+        <p className="text-xs text-[#6B6860]">{t('few_sub')}</p>
       </div>
       <WhyChip text="Judges require your Prompt Log: system prompt + full history + what you changed and why. This lab writes it automatically." />
       <InputAIOutput input="2–5 Input → Output examples" process="Calibrated few-shot prompt" output="Better parse + accuracy %" />
 
-      <div className="flex gap-2" role="tablist" aria-label="Lab tabs">
-        {([['nlp', 'Task parser'], ['email', 'Email classifier'], ['benchmark', 'Benchmark']] as const).map(([id, label]) => (
+      <div className="flex gap-2" role="tablist" aria-label={t('few_tabs_label')}>
+        {([['nlp', t('few_task_parser')], ['email', t('few_email_cls')], ['benchmark', 'Benchmark']] as const).map(([id, label]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`px-3 py-2 rounded-xl text-xs font-bold min-h-[44px] cursor-pointer border ${tab === id ? 'bg-[#D97757] text-white border-[#D97757]' : 'bg-white dark:bg-[#1A1917] border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]'}`}>{label}</button>
         ))}
       </div>
 
       {tab === 'nlp' && (
         <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 space-y-3">
-          <label className="text-xs font-bold">Try input (Vietnamese)
+          <label className="text-xs font-bold">{t('few_try_input')}
             <input value={nlpInput} onChange={e => setNlpInput(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] text-sm" />
           </label>
           <div className="flex gap-2 flex-wrap">
-            <button onClick={showNlpPrompt} className="px-4 py-2.5 bg-[#D97757] text-white rounded-xl text-xs font-bold min-h-[44px] cursor-pointer inline-flex items-center gap-1.5"><Play className="w-3.5 h-3.5" /> Preview calibrated prompt</button>
-            <button onClick={() => setNlpInput('Nộp bài essay tiếng Anh Unit 4 trước thứ Sáu')} className="px-3 py-2.5 rounded-xl border text-xs font-bold min-h-[44px] cursor-pointer">Try Example</button>
+            <button onClick={showNlpPrompt} className="px-4 py-2.5 bg-[#D97757] text-white rounded-xl text-xs font-bold min-h-[44px] cursor-pointer inline-flex items-center gap-1.5"><Play className="w-3.5 h-3.5" /> {t('few_preview')}</button>
+            <button onClick={() => setNlpInput('Nộp bài essay tiếng Anh Unit 4 trước thứ Sáu')} className="px-3 py-2.5 rounded-xl border text-xs font-bold min-h-[44px] cursor-pointer">{t('few_example')}</button>
           </div>
           <details className="text-xs">
-            <summary className="cursor-pointer font-bold text-[#6B6860]">View training examples ({VIETNAMESE_NLP_TASK_DATASET.length})</summary>
+            <summary className="cursor-pointer font-bold text-[#6B6860]">{t('few_view_train')} ({VIETNAMESE_NLP_TASK_DATASET.length})</summary>
             <ul className="mt-2 space-y-1.5 max-h-48 overflow-y-auto">
               {VIETNAMESE_NLP_TASK_DATASET.slice(0, 8).map(s => (
                 <li key={s.id} className="p-2 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB]/50 text-[11px]">“{s.rawInput}” → {s.groundTruth.subject} · {s.groundTruth.assignmentName} [{s.groundTruth.priority}]</li>

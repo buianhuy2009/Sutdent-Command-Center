@@ -18,6 +18,7 @@ import { CalendarEvent, CanvasAssignment, ApiEnablementInfo, Assignment } from '
 import { ApiActivationBanner } from './ApiActivationBanner';
 import { toMobileDeepLink } from '../services/canvas';
 import { suggestStudySlots, StudySlotResult, StudySlotSuggestion } from '../services/gemini';
+import { t, useLang } from '../services/i18n';
 
 interface DailyRadarTabProps {
   events: CalendarEvent[];
@@ -50,6 +51,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
   pendingAssignments = [],
   onAddStudyBlock,
 }) => {
+  useLang();
   const now = new Date();
   
   // Format current date as YYYY-MM-DD in local time
@@ -153,7 +155,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
     : null;
 
   const formatEventTime = (isoString?: string) => {
-    if (!isoString) return 'All Day';
+    if (!isoString) return t('radar_all_day');
     try {
       return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch {
@@ -178,7 +180,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
               })}
             </h2>
             <p className="text-xs text-[#6B6860] mt-0.5">
-              {events.length} {events.length === 1 ? 'event' : 'events'} scheduled today
+              {events.length} {events.length === 1 ? t('radar_event_1') : t('radar_events')} {t('radar_scheduled_today')}
             </p>
           </div>
         </div>
@@ -191,10 +193,10 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                 ? 'bg-[#D97757] text-white border-[#D97757] shadow-xs'
                 : 'bg-[#D97757]/10 text-[#D97757] hover:bg-[#D97757]/20 border-[#D97757]/30'
             }`}
-            title="AI automatically finds calendar gaps and schedules study blocks based on your energy rhythm"
+            title={t('radar_chrono_title')}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>AI Chronotype Blocker</span>
+            <span>{t('radar_chrono')}</span>
           </button>
 
           <button
@@ -202,14 +204,14 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
             className="px-3.5 py-1.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Add Focus Block</span>
+            <span>{t('radar_add_focus')}</span>
           </button>
 
           <button
             id="btn-refresh-schedule-radar"
             onClick={onRefreshEvents}
             className="p-1.5 rounded-xl hover:bg-[#FAF9F5] dark:hover:bg-[#252422] text-[#8C897F] hover:text-[#D97757] transition-colors cursor-pointer border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27]"
-            title="Sync Schedule with Google Calendar"
+            title={t('radar_sync_title')}
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
@@ -221,10 +223,10 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] uppercase tracking-wider">
-                Select your peak cognitive hours
+                {t('radar_peak')}
               </h4>
               <p className="text-[10px] text-[#6B6860] mt-0.5">
-                AI schedules study blocks when your brain has the most energy.
+                {t('radar_peak_hint')}
               </p>
             </div>
 
@@ -238,7 +240,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                     : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B]'
                 }`}
               >
-                Morning (7am-12pm)
+                {t('radar_morning')}
               </button>
               <button
                 type="button"
@@ -249,7 +251,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                     : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B]'
                 }`}
               >
-                Balanced
+                {t('radar_balanced')}
               </button>
               <button
                 type="button"
@@ -260,13 +262,13 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                     : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#FAF9F5] dark:hover:bg-[#1F1E1B]'
                 }`}
               >
-                Night Owl (4pm-10pm)
+                {t('radar_night')}
               </button>
             </div>      </div>
 
           <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs text-[#6B6860] dark:text-[#B5B2A8]">
-              {pendingAssignments.length} pending tasks eligible • AI scans gaps & avoids classes
+              {pendingAssignments.length} {t('radar_pending_tasks')} • {t('radar_scans_gaps')}
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -275,7 +277,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                 className="px-3.5 py-1.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
               >
                 <Sparkles className={`w-3.5 h-3.5 ${isSuggestingSlots ? 'animate-spin' : ''}`} />
-                <span>{isSuggestingSlots ? 'Calculating…' : 'Generate Today'}</span>
+                <span>{isSuggestingSlots ? t('radar_calculating') : t('radar_generate')}</span>
               </button>
               <button
                 onClick={async ()=>{
@@ -303,7 +305,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                 className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
                 <CalendarIcon className="w-3.5 h-3.5" />
-                <span>Auto-Block My Week</span>
+                <span>{t('radar_autoblock')}</span>
               </button>
             </div>
           </div>
@@ -320,7 +322,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
 
               {studySlotResult.suggestedSlots.length === 0 ? (
                 <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] italic py-2">
-                  All suggested slots have been added to your calendar!
+                  {t('radar_all_added')}
                 </p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -353,7 +355,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                         className="w-full py-1.5 px-3 bg-[#D97757]/10 dark:bg-[#D97757]/15 hover:bg-[#D97757] text-[#D97757] hover:text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 border border-[#D97757]/30 transition-colors cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>{schedulingSlotIndex === idx ? 'Scheduling...' : 'Add to Calendar'}</span>
+                        <span>{schedulingSlotIndex === idx ? t('radar_scheduling') : t('radar_add_to_cal')}</span>
                       </button>
                     </div>
                   ))}
@@ -369,7 +371,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
         {/* Card Header */}
         <div className="flex justify-between items-center pb-3 border-b border-[#DFDACB] dark:border-[#2C2B27]">
           <h3 className="font-bold text-[#141413] dark:text-[#FAF9F5] text-xs uppercase tracking-wider">
-            Today's Timeline
+            {t('radar_timeline')}
           </h3>
         </div>
 
@@ -393,7 +395,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                 onClick={onConnectGoogle}
                 className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold shrink-0 cursor-pointer text-xs"
               >
-                Reconnect Calendar
+                {t('radar_reconnect')}
               </button>
             )}
           </div>
@@ -404,9 +406,9 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
           {!isGoogleConnected ? (
             <div className="py-12 px-4 text-center bg-[#FAF9F5] dark:bg-[#252422]/60 rounded-xl border border-dashed border-[#DFDACB] dark:border-[#2C2B27]">
               <CalendarIcon className="w-10 h-10 mx-auto text-[#D97757] mb-2 opacity-80" />
-              <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">Google Calendar Disconnected</h3>
+              <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">{t('radar_disconnected')}</h3>
               <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] mt-1 max-w-md mx-auto">
-                Connect your Google account to automatically sync your live daily class schedule, deadlines, and study blocks.
+                {t('radar_disconnected_hint')}
               </p>
               {onConnectGoogle && (
                 <button
@@ -414,7 +416,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                   className="mt-3 px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white text-xs font-semibold rounded-xl inline-flex items-center gap-2 cursor-pointer shadow-xs transition-colors"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Connect Google Calendar</span>
+                  <span>{t('radar_connect_cal')}</span>
                 </button>
               )}
             </div>
@@ -422,23 +424,23 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
             <div className="py-16 flex flex-col items-center justify-center text-[#6B6860] dark:text-[#B5B2A8]">
               <RefreshCw className="w-7 h-7 animate-spin text-[#D97757] mb-2" />
               <p className="text-xs font-semibold text-[#6B6860] dark:text-[#B5B2A8]">
-                Syncing today's calendar events...
+                {t('radar_syncing')}
               </p>
             </div>
           ) : combinedTimeline.length === 0 ? (
             <div className="py-16 text-center text-[#6B6860] dark:text-[#B5B2A8]">
               <CalendarIcon className="w-10 h-10 mx-auto text-[#DFDACB] dark:text-[#2C2B27] mb-2" />
               <p className="text-sm font-semibold text-[#141413] dark:text-[#FAF9F5]">
-                No Schedule Commitments Today
+                {t('radar_no_commit')}
               </p>
               <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] mt-1 max-w-sm mx-auto">
-                Your schedule is clear! You can use this free time to work on assignments or schedule a 45-minute focus session.
+                {t('radar_clear_hint')}
               </p>
               <button
                 onClick={() => onOpenScheduleModal()}
                 className="mt-4 px-4 py-2 text-xs font-semibold bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl transition-colors shadow-2xs"
               >
-                Schedule 45m Focus Block
+                {t('radar_schedule_45')}
               </button>
             </div>
           ) : (
@@ -505,7 +507,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                           )}
                           {event.isCanvas && (
                             <span className="px-1.5 py-0.2 text-[9px] font-bold bg-[#D97757] text-white rounded uppercase tracking-wider">
-                              LMS Deadline
+                              {t('radar_lms_deadline')}
                             </span>
                           )}
                         </div>
@@ -532,7 +534,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                             target="_blank"
                             rel="noreferrer"
                             className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-lg transition-colors"
-                            title="Join Google Meet"
+                            title={t('radar_join_meet')}
                           >
                             <Video className="w-4 h-4" />
                           </a>
@@ -547,7 +549,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                                   ? 'text-[#D97757] hover:bg-[#D97757]/10'
                                   : 'text-[#6B6860] hover:text-[#141413] dark:text-[#B5B2A8] dark:hover:text-[#FAF9F5]'
                               }`}
-                            title={event.isCanvas ? "Open Assignment in Canvas" : "Open in Google Calendar"}
+                            title={event.isCanvas ? t('radar_open_canvas') : t('radar_open_gcal')}
                           >
                             <ExternalLink className="w-4 h-4" />
                           </a>
@@ -568,7 +570,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
             className="font-semibold text-[#D97757] dark:text-[#E8A07E] hover:underline flex items-center gap-1 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Schedule Another Focus Session</span>
+            <span>{t('radar_schedule_another')}</span>
           </button>
           <a
             href="https://calendar.google.com"
@@ -576,7 +578,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
             rel="noreferrer"
             className="font-medium hover:text-[#D97757] inline-flex items-center gap-1"
           >
-            <span>Open Google Calendar</span>
+            <span>{t('radar_open_gcal_btn')}</span>
             <ExternalLink className="w-3 h-3" />
           </a>
         </div>
@@ -595,10 +597,10 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
               </div>
               <div>
                 <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                  Canvas Assignments
+                  {t('radar_canvas_title')}
                 </h4>
                 <p className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8]">
-                  Deadlines and coursework
+                  {t('radar_canvas_hint')}
                 </p>
               </div>
             </div>
@@ -615,10 +617,10 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
               </div>
               <div>
                 <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
-                  Gmail Scanner
+                  {t('radar_gmail_title')}
                 </h4>
                 <p className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8]">
-                  Teacher alerts and updates
+                  {t('radar_gmail_hint')}
                 </p>
               </div>
             </div>

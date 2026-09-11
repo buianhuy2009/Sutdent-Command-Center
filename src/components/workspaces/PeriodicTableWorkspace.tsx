@@ -12,19 +12,20 @@ import {
 } from 'lucide-react';
 
 import { ELEMENTS_DATA, ChemicalElement } from '../../data/elementsData';
+import { t, useLang } from '../../services/i18n';
 
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  'diatomic-nonmetal': { bg: 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800', text: 'text-emerald-700 dark:text-emerald-300', label: 'Reactive Nonmetal' },
-  'polyatomic-nonmetal': { bg: 'bg-teal-50 dark:bg-teal-950/50 border-teal-300 dark:border-teal-800', text: 'text-teal-700 dark:text-teal-300', label: 'Polyatomic Nonmetal' },
-  'noble-gas': { bg: 'bg-purple-50 dark:bg-purple-950/50 border-purple-300 dark:border-purple-800', text: 'text-purple-700 dark:text-purple-300', label: 'Noble Gas' },
-  'alkali-metal': { bg: 'bg-red-50 dark:bg-red-950/50 border-red-300 dark:border-red-800', text: 'text-red-700 dark:text-red-300', label: 'Alkali Metal' },
-  'alkaline-earth': { bg: 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800', text: 'text-amber-700 dark:text-amber-300', label: 'Alkaline Earth Metal' },
-  'metalloid': { bg: 'bg-cyan-50 dark:bg-cyan-950/50 border-cyan-300 dark:border-cyan-800', text: 'text-cyan-700 dark:text-cyan-300', label: 'Metalloid' },
-  'halogen': { bg: 'bg-indigo-50 dark:bg-indigo-950/50 border-indigo-300 dark:border-indigo-800', text: 'text-indigo-700 dark:text-indigo-300', label: 'Halogen' },
-  'post-transition-metal': { bg: 'bg-blue-50 dark:bg-blue-950/50 border-blue-300 dark:border-blue-800', text: 'text-blue-700 dark:text-blue-300', label: 'Post-Transition Metal' },
-  'transition-metal': { bg: 'bg-orange-50 dark:bg-orange-950/50 border-orange-300 dark:border-orange-800', text: 'text-orange-700 dark:text-orange-300', label: 'Transition Metal' },
-  'actinide': { bg: 'bg-rose-50 dark:bg-rose-950/50 border-rose-300 dark:border-rose-800', text: 'text-rose-700 dark:text-rose-300', label: 'Actinide' },
+  'diatomic-nonmetal': { bg: 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800', text: 'text-emerald-700 dark:text-emerald-300', label: t('ptab_cat_reactive') },
+  'polyatomic-nonmetal': { bg: 'bg-teal-50 dark:bg-teal-950/50 border-teal-300 dark:border-teal-800', text: 'text-teal-700 dark:text-teal-300', label: t('ptab_cat_poly') },
+  'noble-gas': { bg: 'bg-purple-50 dark:bg-purple-950/50 border-purple-300 dark:border-purple-800', text: 'text-purple-700 dark:text-purple-300', label: t('ptab_cat_noble') },
+  'alkali-metal': { bg: 'bg-red-50 dark:bg-red-950/50 border-red-300 dark:border-red-800', text: 'text-red-700 dark:text-red-300', label: t('ptab_cat_alkali') },
+  'alkaline-earth': { bg: 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800', text: 'text-amber-700 dark:text-amber-300', label: t('ptab_cat_alkaline') },
+  'metalloid': { bg: 'bg-cyan-50 dark:bg-cyan-950/50 border-cyan-300 dark:border-cyan-800', text: 'text-cyan-700 dark:text-cyan-300', label: t('ptab_cat_metalloid') },
+  'halogen': { bg: 'bg-indigo-50 dark:bg-indigo-950/50 border-indigo-300 dark:border-indigo-800', text: 'text-indigo-700 dark:text-indigo-300', label: t('ptab_cat_halogen') },
+  'post-transition-metal': { bg: 'bg-blue-50 dark:bg-blue-950/50 border-blue-300 dark:border-blue-800', text: 'text-blue-700 dark:text-blue-300', label: t('ptab_cat_post') },
+  'transition-metal': { bg: 'bg-orange-50 dark:bg-orange-950/50 border-orange-300 dark:border-orange-800', text: 'text-orange-700 dark:text-orange-300', label: t('ptab_cat_trans') },
+  'actinide': { bg: 'bg-rose-50 dark:bg-rose-950/50 border-rose-300 dark:border-rose-800', text: 'text-rose-700 dark:text-rose-300', label: t('ptab_cat_act') },
 };
 
 export const PeriodicTableWorkspace: React.FC = () => {

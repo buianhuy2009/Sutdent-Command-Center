@@ -3,6 +3,7 @@ import { Brain, Plus, Play, Download, Camera, Mic, Type, Trash2 } from 'lucide-r
 import { WhyChip, InputAIOutput, EvidenceButton, VerifyEdit, SocraticError } from '../../components/DivisionAUI';
 import { saveEvidence } from '../../services/evidence';
 import { logPrompt } from '../../services/promptLog';
+import { t, useLang } from '../../services/i18n';
 
 type ProjectType = 'text' | 'image' | 'audio';
 
@@ -73,6 +74,7 @@ function dist(a: number[], b: number[]): number {
 }
 
 export const ModelTrainingWorkspace: React.FC = () => {
+  useLang();
   const [projectType, setProjectType] = useState<ProjectType>('text');
   const [projectName, setProjectName] = useState('My homework sorter');
   const [labels, setLabels] = useState<LabelBucket[]>([
@@ -96,7 +98,7 @@ export const ModelTrainingWorkspace: React.FC = () => {
   const addLabel = () => {
     const n = newLabel.trim();
     if (!n) return;
-    if (labels.length >= 4) { setError('Keep 2–4 labels so training stays fast on a school Chromebook.'); return; }
+    if (labels.length >= 4) { setError(t('mdl_err_labels')); return; }
     setLabels([...labels, { name: n, texts: [], images: [], clips: [] }]);
     setNewLabel('');
     setError(null);
@@ -116,7 +118,7 @@ export const ModelTrainingWorkspace: React.FC = () => {
       setError(null);
     } else {
       setError(null);
-      setResult('Upload 2–3 photos per label first (e.g. notebook vs textbook), then press Train.');
+      setResult(t('mdl_need_photos'));
     }
   };
 
@@ -140,8 +142,8 @@ export const ModelTrainingWorkspace: React.FC = () => {
     setError(null);
     setResult(null);
     const counts = labels.map(l => (projectType === 'text' ? l.texts.length : l.images.length));
-    if (labels.length < 2) { setError('Create at least 2 labels first.'); return; }
-    if (counts.some(c => c < 2)) { setError('Add at least 2 examples per label (8+ is best). Small data = the model guesses — that is called overfitting.'); return; }
+    if (labels.length < 2) { setError(t('mdl_err_min_labels')); return; }
+    if (counts.some(c => c < 2)) { setError(t('mdl_err_min_examples')); return; }
     setTraining(true);
     setProgress(10);
     // Simulated stepped progress so students see training happen (<30s, honest local compute)
@@ -223,22 +225,22 @@ export const ModelTrainingWorkspace: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
       <div className="space-y-1">
-        <h2 className="text-lg font-extrabold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-2"><Brain className="w-5 h-5 text-[#D97757]" /> Train My Model Lab</h2>
-        <p className="text-xs text-[#6B6860]">Train a <strong>tiny</strong> classifier in your browser. No server, photos stay on your device.</p>
+        <h2 className="text-lg font-extrabold text-[#141413] dark:text-[#FAF9F5] flex items-center gap-2"><Brain className="w-5 h-5 text-[#D97757]" /> {t('train_model')}</h2>
+        <p className="text-xs text-[#6B6860]">{t('mdl_sub')}</p>
       </div>
-      <WhyChip text="Judges want to see you describe Input → AI processing → Output and show test iterations. This lab produces both." />
+      <WhyChip text={t('mdl_why')} />
       <p className="text-[11px] leading-relaxed text-[#6B6860]">Mô hình nhỏ luyện trên máy (không phải LLM lớn như Gemini). Máy học bằng ví dụ — càng nhiều ảnh đúng, máy đoán càng giỏi. Dữ liệu đầu vào → AI xử lý → Kết quả đầu ra.</p>
       <label className="flex items-start gap-2 text-[11px] font-medium text-[#6B6860] bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl p-3 cursor-pointer">
-        <input type="checkbox" required aria-label="Consent to use my photos for tiny-model training" className="w-5 h-5 mt-0.5 accent-[#D97757] shrink-0" />
+        <input type="checkbox" required aria-label={t('mdl_consent_label')} className="w-5 h-5 mt-0.5 accent-[#D97757] shrink-0" />
         <span>Tôi đồng ý dùng ảnh của mình để luyện mô hình nhỏ này. Không tải lên ảnh của bạn khác khi chưa được đồng ý.</span>
       </label>
-      <InputAIOutput input="Your examples (texts / photos)" process="Tiny local model learns patterns" output="Prediction + confidence %" />
+      <InputAIOutput input={t('mdl_input')} process={t('mdl_process')} output={t('mdl_output')} />
 
-      <div className="flex gap-2 flex-wrap" role="tablist" aria-label="Project type">
+      <div className="flex gap-2 flex-wrap" role="tablist" aria-label={t('mdl_project_type')}>
         {([
-          { id: 'text', label: 'Text sorter', icon: Type },
-          { id: 'image', label: 'Image sorter', icon: Camera },
-          { id: 'audio', label: 'Sound clips', icon: Mic },
+          { id: 'text', label: t('mdl_text_sorter'), icon: Type },
+          { id: 'image', label: t('mdl_image_sorter'), icon: Camera },
+          { id: 'audio', label: t('mdl_sound_clips'), icon: Mic },
         ] as const).map(t => (
           <button key={t.id} role="tab" aria-selected={projectType === t.id} onClick={() => setProjectType(t.id)} className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold min-h-[44px] cursor-pointer border ${projectType === t.id ? 'bg-[#D97757] text-white border-[#D97757]' : 'bg-white dark:bg-[#1A1917] border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]'}`}>
             <t.icon className="w-3.5 h-3.5" /> {t.label}
@@ -247,13 +249,13 @@ export const ModelTrainingWorkspace: React.FC = () => {
       </div>
 
       <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 space-y-3">
-        <label className="text-xs font-bold">Project name
+        <label className="text-xs font-bold">{t('mdl_project_name')}
           <input value={projectName} onChange={e => setProjectName(e.target.value)} className="mt-1 w-full px-3 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] text-sm" />
         </label>
         <div className="flex gap-2">
-          <input value={newLabel} onChange={e => setNewLabel(e.target.value)} onKeyDown={e => e.key === 'Enter' && addLabel()} placeholder="New label (e.g. Science)" aria-label="New label name" className="flex-1 px-3 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] text-sm" />
-          <button onClick={addLabel} className="px-3 py-2 bg-[#D97757] text-white rounded-xl text-xs font-bold min-h-[44px] cursor-pointer inline-flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Add</button>
-          <button onClick={tryExample} className="px-3 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs font-bold min-h-[44px] cursor-pointer">Try Example</button>
+          <input value={newLabel} onChange={e => setNewLabel(e.target.value)} onKeyDown={e => e.key === 'Enter' && addLabel()} placeholder={t('mdl_new_label_ph')} aria-label={t('mdl_new_label_label')} className="flex-1 px-3 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] text-sm" />
+          <button onClick={addLabel} className="px-3 py-2 bg-[#D97757] text-white rounded-xl text-xs font-bold min-h-[44px] cursor-pointer inline-flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> {t('add')}</button>
+          <button onClick={tryExample} className="px-3 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs font-bold min-h-[44px] cursor-pointer">{t('mdl_try_example')}</button>
         </div>
         {/* Dataset balance bar */}
         <div className="space-y-1.5">
@@ -271,28 +273,28 @@ export const ModelTrainingWorkspace: React.FC = () => {
         </div>
         {projectType === 'text' ? (
           <div className="flex gap-2">
-            <select value={textTarget} onChange={e => setTextTarget(Number(e.target.value))} aria-label="Label for example" className="px-2 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs bg-white dark:bg-[#1F1E1B]">
+            <select value={textTarget} onChange={e => setTextTarget(Number(e.target.value))} aria-label={t('mdl_label_for_example')} className="px-2 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs bg-white dark:bg-[#1F1E1B]">
               {labels.map((l, i) => <option key={i} value={i}>{l.name}</option>)}
             </select>
-            <input value={textInput} onChange={e => setTextInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTextExample()} placeholder="Type an example, Enter to add" className="flex-1 px-3 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] text-sm" />
-            <button onClick={addTextExample} className="px-3 py-2 bg-[#141413] dark:bg-[#FAF9F5] text-white dark:text-[#141413] rounded-xl text-xs font-bold min-h-[44px] cursor-pointer">Add</button>
+            <input value={textInput} onChange={e => setTextInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTextExample()} placeholder={t('mdl_example_ph')} className="flex-1 px-3 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] bg-[#FAF9F5] dark:bg-[#1F1E1B] text-sm" />
+            <button onClick={addTextExample} className="px-3 py-2 bg-[#141413] dark:bg-[#FAF9F5] text-white dark:text-[#141413] rounded-xl text-xs font-bold min-h-[44px] cursor-pointer">{t('add')}</button>
           </div>
         ) : projectType === 'image' ? (
           <div className="flex gap-2 items-center">
-            <select value={imgTarget} onChange={e => setImgTarget(Number(e.target.value))} aria-label="Label for photos" className="px-2 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs bg-white dark:bg-[#1F1E1B]">
+            <select value={imgTarget} onChange={e => setImgTarget(Number(e.target.value))} aria-label={t('mdl_label_for_photos')} className="px-2 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs bg-white dark:bg-[#1F1E1B]">
               {labels.map((l, i) => <option key={i} value={i}>{l.name}</option>)}
             </select>
             <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={e => handleImageUpload(e.target.files)} />
-            <button onClick={() => fileRef.current?.click()} className="px-3 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs font-bold min-h-[44px] cursor-pointer">Upload photos</button>
-            <span className="text-[11px] text-[#6B6860]">Only use photos you have permission to use.</span>
+            <button onClick={() => fileRef.current?.click()} className="px-3 py-2 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs font-bold min-h-[44px] cursor-pointer">{t('mdl_upload_photos')}</button>
+            <span className="text-[11px] text-[#6B6860]">{t('mdl_photos_note')}</span>
           </div>
         ) : (
-          <p className="text-[11px] text-[#6B6860]">Sound clips: record 1-second claps vs snaps with your microphone in the browser recorder, then compare energy patterns. (Microphone never uploads — all on-device.)</p>
+          <p className="text-[11px] text-[#6B6860]">{t('mdl_sound_note')}</p>
         )}
         {error && <SocraticError message={error} />}
         <div className="flex gap-2 flex-wrap items-center">
-          <button onClick={handleTrain} disabled={training} className="px-4 py-2.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold min-h-[44px] cursor-pointer inline-flex items-center gap-1.5"><Play className="w-3.5 h-3.5" /> {training ? `Training… ${progress}%` : 'Train (under 30s)'}</button>
-          <button onClick={handleExport} className="px-3 py-2.5 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs font-bold min-h-[44px] cursor-pointer inline-flex items-center gap-1.5"><Download className="w-3.5 h-3.5" /> Export model.json</button>
+          <button onClick={handleTrain} disabled={training} className="px-4 py-2.5 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold min-h-[44px] cursor-pointer inline-flex items-center gap-1.5"><Play className="w-3.5 h-3.5" /> {training ? `${t('mdl_training')} ${progress}%` : t('mdl_train')}</button>
+          <button onClick={handleExport} className="px-3 py-2.5 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] text-xs font-bold min-h-[44px] cursor-pointer inline-flex items-center gap-1.5"><Download className="w-3.5 h-3.5" /> {t('mdl_export')}</button>
           <EvidenceButton onSnap={() => result && saveEvidence('model-training', `Snapshot ${projectName}`, result)} />
         </div>
         {training && <div className="h-2 bg-[#EFECE2] dark:bg-[#252422] rounded-full overflow-hidden"><div className="h-full bg-[#D97757] transition-all" style={{ width: `${progress}%` }} /></div>}
@@ -303,7 +305,7 @@ export const ModelTrainingWorkspace: React.FC = () => {
           </div>
         )}
       </div>
-      <p className="text-[11px] text-[#6B6860]">Ethics: only train on photos/voices with permission. Anonymize classmates. This tiny model proves the Input → AI → Output idea — it does not train a big LLM.</p>
+      <p className="text-[11px] text-[#6B6860]">{t('mdl_ethics')}</p>
     </div>
   );
 };

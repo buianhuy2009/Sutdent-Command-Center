@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Zap, UploadCloud, Sparkles, Copy, Check, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { scribbleToLatex, debugHandwrittenMath } from '../../services/gemini';
 import { MathDebugResult } from '../../types';
+import { t, useLang } from '../../services/i18n';
 
 export const PhotoMathWorkspace: React.FC = () => {
+  useLang();
   const [scribbleImage, setScribbleImage] = useState<string | null>(null);
   const [isConverting, setIsConverting] = useState(false);
   const [extractedLatex, setExtractedLatex] = useState<{ latex: string; explanation: string } | null>(null);
@@ -54,14 +56,14 @@ export const PhotoMathWorkspace: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-[#141413] dark:text-[#FAF9F5]">
-                Photo Math OCR &amp; Step Checker
+                {t('pmath_title')}
               </h2>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-yellow-50 text-yellow-800 dark:bg-yellow-950/60 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-800">
-                Vision OCR
+                {t('pmath_badge')}
               </span>
             </div>
             <p className="text-xs text-[#8C897F] mt-0.5">
-              Upload handwritten math notes, extract LaTeX, and check derivation arithmetic
+              {t('pmath_sub')}
             </p>
           </div>
         </div>
@@ -74,12 +76,12 @@ export const PhotoMathWorkspace: React.FC = () => {
             <div className="space-y-4 w-full">
               <img
                 src={scribbleImage}
-                alt="Handwritten math"
+                alt={t('pmath_img_alt')}
                 className="max-h-64 mx-auto rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] object-contain shadow-xs"
               />
               <div className="flex justify-center gap-2">
                 <label className="px-4 py-2 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl text-xs font-bold cursor-pointer">
-                  Change Photo
+                  {t('pmath_change_photo')}
                   <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                 </label>
                 <button
@@ -88,7 +90,7 @@ export const PhotoMathWorkspace: React.FC = () => {
                   className="px-5 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>{isConverting ? 'Reading math...' : 'Extract & Verify'}</span>
+                  <span>{isConverting ? t('pmath_reading') : t('pmath_extract')}</span>
                 </button>
               </div>
             </div>
@@ -97,10 +99,10 @@ export const PhotoMathWorkspace: React.FC = () => {
               <UploadCloud className="w-10 h-10 text-[#D97757]" />
               <div>
                 <span className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] block">
-                  Click or drag photo of handwritten equations
+                  {t('pmath_drop_title')}
                 </span>
                 <span className="text-[10px] text-[#8C897F] block mt-0.5">
-                  Supports PNG, JPG, JPEG notes from your phone or camera
+                  {t('pmath_drop_sub')}
                 </span>
               </div>
               <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
@@ -112,7 +114,7 @@ export const PhotoMathWorkspace: React.FC = () => {
         <div className="bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 shadow-xs flex flex-col justify-between space-y-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-[#8C897F] block mb-3">
-              Extracted LaTeX &amp; Arithmetic Analysis
+              {t('pmath_results')}
             </span>
 
             {extractedLatex ? (
@@ -120,14 +122,14 @@ export const PhotoMathWorkspace: React.FC = () => {
                 <div className="p-4 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-[#8C897F] uppercase">
-                      LaTeX Formula
+                      {t('pmath_latex_formula')}
                     </span>
                     <button
                       onClick={handleCopy}
                       className="text-xs text-[#D97757] font-bold hover:underline flex items-center gap-1"
                     >
                       {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copied ? 'Copied' : 'Copy'}</span>
+                      <span>{copied ? t('copied') : t('copy')}</span>
                     </button>
                   </div>
                   <pre className="font-mono text-xs text-[#D97757] overflow-x-auto whitespace-pre-wrap">
@@ -143,17 +145,17 @@ export const PhotoMathWorkspace: React.FC = () => {
                   }`}>
                     <div className="flex items-center gap-1.5 font-bold">
                       {mathDebugResult.hasError ? <AlertTriangle className="w-4 h-4 text-rose-600" /> : <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
-                      <span>{mathDebugResult.hasError ? 'Calculation Issue Detected' : 'All Steps Algebraically Valid'}</span>
+                      <span>{mathDebugResult.hasError ? t('pmath_issue') : t('pmath_valid')}</span>
                     </div>
                     <p className="leading-relaxed">
-                      {mathDebugResult.errorDescription || mathDebugResult.socraticHint || 'All derivation lines match algebra rules.'}
+                      {mathDebugResult.errorDescription || mathDebugResult.socraticHint || t('pmath_all_match')}
                     </p>
                   </div>
                 )}
               </div>
             ) : (
               <div className="py-16 text-center text-xs text-[#8C897F]">
-                Upload an equation image to see extracted LaTeX and step verification.
+                {t('pmath_empty')}
               </div>
             )}
           </div>

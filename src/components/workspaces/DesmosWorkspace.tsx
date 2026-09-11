@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { ExternalLink, Maximize2, Minimize2, RefreshCw } from 'lucide-react';
 import { IframeErrorBoundary } from '../IframeErrorBoundary';
+import { t, useLang } from '../../services/i18n';
 
 interface DesmosWorkspaceProps {
   mode?: 'graphing' | 'scientific' | 'geometry' | '3d';
 }
 
 export const DesmosWorkspace: React.FC<DesmosWorkspaceProps> = ({ mode = 'graphing' }) => {
+  useLang();
   const [reloadKey, setReloadKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -35,7 +37,7 @@ export const DesmosWorkspace: React.FC<DesmosWorkspaceProps> = ({ mode = 'graphi
         <div className="flex items-center gap-2">
           <span className="font-bold text-[#141413] dark:text-[#FAF9F5]">{title}</span>
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-semibold">
-            Live Embedded Tool
+            {t('desm_live')}
           </span>
         </div>
 
@@ -43,7 +45,7 @@ export const DesmosWorkspace: React.FC<DesmosWorkspaceProps> = ({ mode = 'graphi
           <button
             onClick={() => setReloadKey((k) => k + 1)}
             className="p-1.5 rounded-lg bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] transition-colors cursor-pointer"
-            title="Reload Calculator"
+            title={t('desm_reload')}
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
@@ -51,7 +53,7 @@ export const DesmosWorkspace: React.FC<DesmosWorkspaceProps> = ({ mode = 'graphi
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
             className="p-1.5 rounded-lg bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] transition-colors cursor-pointer"
-            title={isFullscreen ? 'Exit Fullscreen' : 'Expand Fullscreen'}
+            title={isFullscreen ? t('desm_exit') : t('desm_expand')}
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
@@ -62,7 +64,7 @@ export const DesmosWorkspace: React.FC<DesmosWorkspaceProps> = ({ mode = 'graphi
             rel="noopener noreferrer"
             className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] font-bold flex items-center gap-1 transition-colors"
           >
-            <span>Open Tab</span>
+            <span>{t('desm_open_tab')}</span>
             <ExternalLink className="w-3 h-3" />
           </a>
         </div>

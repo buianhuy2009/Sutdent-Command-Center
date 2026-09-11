@@ -82,7 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           onClick={onOpenCommandPalette}
           data-tour="search"
-          className="w-full bg-[#F5F4ED] dark:bg-[#1A1917] border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442]/30 rounded-xl py-1.5 px-3 text-xs flex items-center justify-between text-[#5E5D59] hover:text-[#141413] dark:hover:text-[#F5F4ED] transition-colors cursor-pointer group"
+          className="w-full bg-[#E8E6DC] dark:bg-[#1A1917] border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442]/30 rounded-xl py-1.5 px-3 text-xs flex items-center justify-between text-[#5E5D59] hover:text-[#141413] dark:hover:text-[#F5F4ED] transition-colors cursor-pointer group"
         >
           <div className="flex items-center gap-2">
             <Search className="w-3.5 h-3.5 text-[#5E5D59] group-hover:text-[#C96442] transition-colors" strokeWidth={1.75} />
@@ -106,7 +106,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
               isGoogleConnected
                 ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:border-emerald-400'
-                : 'bg-[#F5F4ED] dark:bg-[#1F1E1B] text-[#5E5D59] dark:text-[#B5B2A8] border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442]'
+                : 'bg-[#E8E6DC] dark:bg-[#1F1E1B] text-[#5E5D59] dark:text-[#B5B2A8] border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442]'
             }`}
             title="Google Workspace Sync Hub"
           >
@@ -140,7 +140,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               setHasDismissedBadge(true);
             }}
             onKeyDown={(e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); setShowNotifications(!showNotifications); setHasDismissedBadge(true);} if(e.key==='Escape') setShowNotifications(false); }}
-            className="p-1.5 text-[#5E5D59] hover:text-[#C96442] hover:bg-[#F5F4ED] dark:hover:bg-[#1F1E1B] rounded-xl transition-colors cursor-pointer relative"
+            className="p-1.5 text-[#5E5D59] hover:text-[#C96442] hover:bg-[#E8E6DC] dark:hover:bg-[#1F1E1B] rounded-xl transition-colors cursor-pointer relative"
             title="Notifications"
           >
             <Bell className="w-4 h-4" aria-hidden="true" strokeWidth={1.75} />
@@ -161,7 +161,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div className="p-4 text-center text-[#5E5D59]">No new notifications</div>
                 ) : (
                   notifications.map((n, i) => (
-                    <button key={n.id || i} onClick={()=>{ setShowNotifications(false); onNotificationClick?.(n); if(n.link && n.link !== '#'){ window.open(n.link,'_blank'); } }} className="w-full text-left p-3 hover:bg-[#F5F4ED] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer">
+                    <button key={n.id || i} onClick={()=>{ setShowNotifications(false); onNotificationClick?.(n); if(n.link && n.link !== '#'){ window.open(n.link,'_blank'); } }} className="w-full text-left p-3 hover:bg-[#E8E6DC] dark:hover:bg-[#1F1E1B] transition-colors cursor-pointer">
                       <div className="font-semibold text-[#141413] dark:text-[#F5F4ED] flex items-center gap-1.5">{n.title} {n.tier==='urgent' && <span className="px-1 py-0.5 rounded text-[9px] bg-rose-100 text-rose-700">Urgent</span>}</div>
                       <div className="text-[11px] text-[#5E5D59]">{n.description}</div>
                       <span className="text-[10px] text-[#C96442] font-bold">Go → {n.source || 'Tracker'}</span>

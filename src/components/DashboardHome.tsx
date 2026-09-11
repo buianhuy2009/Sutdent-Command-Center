@@ -17,6 +17,7 @@ import { getTodayQuote, QUOTE_BANK, DailyQuote } from '../data/quotes';
 import { useNasaApod } from '../hooks/useNasaApod';
 import { usePomodoroStore } from '../stores/pomodoroStore';
 import { EmptyAssignments } from './EmptyState';
+import { t, useLang } from '../services/i18n';
 
 const LOCAL_STORAGE_NAME_KEY = 'scc_user_preferred_name';
 const LOCAL_STORAGE_INTENTION_KEY = 'scc_user_daily_intention';
@@ -52,13 +53,15 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   emailAlerts = [],
   isLoadingEvents = false,
 }) => {
+  useLang();
   // Time-aware greeting prefix
-  const greetingPrefix = useMemo(() => {
+  const greetingKey = useMemo(() => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return 'dash_greet_morning';
+    if (hour < 17) return 'dash_greet_afternoon';
+    return 'dash_greet_evening';
   }, []);
+  const greetingPrefix = t(greetingKey);
 
   // Personalized Preferred Name
   const [studentName, setStudentName] = useState<string>(() => {
@@ -169,15 +172,23 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
       const absMs = -diffMs;
       const days = Math.floor(absMs / 86400000);
       const hours = Math.floor((absMs % 86400000) / 3600000);
-      if (days > 0) return { text: `Overdue by ${days}d ${hours}h`, isOverdue: true };
-      return { text: `Overdue by ${Math.max(hours, 1)}h`, isOverdue: true };
+      if (days > 0) return { days, hours, isOverdue: true as const, ltHour: false as const };
+      return { days: 0, hours: Math.max(hours, 1), isOverdue: true as const, ltHour: false as const };
     }
     const days = Math.floor(diffMs / 86400000);
     const hours = Math.floor((diffMs % 86400000) / 3600000);
-    if (days > 0) return { text: `due in ${days}d ${hours}h`, isOverdue: false };
-    if (hours > 0) return { text: `due in ${hours}h`, isOverdue: false };
-    return { text: `due in <1h`, isOverdue: false };
+    if (days > 0) return { days, hours, isOverdue: false as const, ltHour: false as const };
+    if (hours > 0) return { days: 0, hours, isOverdue: false as const, ltHour: false as const };
+    return { days: 0, hours: 0, isOverdue: false as const, ltHour: true as const };
   }, [nextDeadline]);
+
+  const formatDeadline = (info: { days: number; hours: number; isOverdue: boolean; ltHour: boolean }) => {
+    if (info.ltHour) return t('dash_due_lt_hour');
+    const span = info.days > 0
+      ? `${info.days}${t('dash_day_unit')} ${info.hours}${t('dash_hour_unit')}`
+      : `${info.hours}${t('dash_hour_unit')}`;
+    return info.isOverdue ? `${t('dash_overdue_by')} ${span}` : `${t('dash_due_in')} ${span}`;
+  };
 
   // todayFormattedDate kept for potential use but not shown above fold (moved to navbar)
   const todayFormattedDate = useMemo(() => {
@@ -274,8 +285,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                     setIsEditingName(true);
                   }}
                   className="p-1.5 rounded-lg bg-white dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-[#6B6860] hover:text-[#D97757] hover:border-[#D97757]/40 transition-colors shrink-0"
-                  aria-label="Edit name"
-                  title="Edit name"
+                  aria-label={t('dash_edit_name')}
+                  title={t('dash_edit_name')}
                 >
                   <Edit2 className="w-3.5 h-3.5" strokeWidth={1.75} />
                 </button>
@@ -292,7 +303,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                   value={intentionInput}
                   onChange={(e) => setIntentionInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSaveIntention()}
-                  placeholder="What is your focus priority today?"
+                  placeholder={t('dash_intention_ph')}
                   className="w-full px-4 py-1.5 text-sm bg-white dark:bg-[#1F1E1B] border border-[#D97757] rounded-xl focus:outline-none text-[#141413] dark:text-[#FAF9F5] text-center"
                   autoFocus
                 />
@@ -310,9 +321,9 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                   setIsEditingIntention(true);
                 }}
                 className="text-xs sm:text-sm text-[#8C897F] hover:text-[#D97757] transition-colors cursor-pointer italic leading-relaxed"
-                title="Click to update focus intention"
+                title={t('dash_intention_title')}
               >
-                {dailyIntention ? `"${dailyIntention}"` : 'Set today\'s focus intention...'}
+                {dailyIntention ? `"${dailyIntention}"` : t('dash_intention_empty')}
               </p>
             )}
           </div>
@@ -343,7 +354,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                       }`}
                     />
                   </span>
-                  <span className="font-bold text-[#141413] dark:text-[#FAF9F5] shrink-0">Next Up:</span>
+                  <span className="font-bold text-[#141413] dark:text-[#FAF9F5] shrink-0">{t('dash_next_up')}</span>
                   <span className="font-semibold text-[#141413] dark:text-[#FAF9F5] truncate">{nextDeadline.assignmentName}</span>
                   <span className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8] truncate hidden sm:inline">• {nextDeadline.subject}</span>
                 </span>
@@ -353,14 +364,14 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                       nextDeadlineInfo.isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-[#D97757]'
                     }`}
                   >
-                    {nextDeadlineInfo.text}
+                    {nextDeadlineInfo ? formatDeadline(nextDeadlineInfo) : ''}
                   </span>
                   <button
                     type="button"
                     onClick={() => onNavigateWorkspace('tracker')}
                     className="px-3 py-1.5 rounded-xl bg-[#D97757] hover:bg-[#C86646] text-white text-[11px] font-bold transition-colors min-h-[32px] cursor-pointer"
                   >
-                    View
+                    {t('view')}
                   </button>
                 </span>
               </div>
@@ -382,7 +393,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                 <>
                   {overdue.length>0 && (
                     <div className="space-y-1.5">
-                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-rose-600">Overdue • {overdue.length}</h4>
+                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-rose-600">{t('overdue')} • {overdue.length}</h4>
                       {sorted(overdue).slice(0,2).map(a=>(
                         <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-xs">
                           <span className="font-semibold truncate flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0" />{a.assignmentName}</span>
@@ -393,29 +404,29 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                   )}
                   {dueToday.length>0 && (
                     <div className="space-y-1.5">
-                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Due Today • {dueToday.length}</h4>
+                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-700">{t('due_today')} • {dueToday.length}</h4>
                       {sorted(dueToday).slice(0,2).map(a=>(
                         <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs">
                           <span className="font-semibold truncate flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />{a.assignmentName}</span>
-                          <span className="text-[11px] text-amber-800 ml-2 shrink-0">{a.subject} • Today</span>
+                          <span className="text-[11px] text-amber-800 ml-2 shrink-0">{a.subject} • {t('today')}</span>
                         </div>
                       ))}
                     </div>
                   )}
                   <div className="space-y-1.5">
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#6B6860] flex items-center gap-1.5"><Clock className="w-3 h-3 text-[#D97757]" />Upcoming</h4>
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#6B6860] flex items-center gap-1.5"><Clock className="w-3 h-3 text-[#D97757]" />{t('upcoming')}</h4>
                     {sorted(upcoming).slice(0,3).map(a=>(
                       <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB]/40 text-xs">
                         <span className="font-semibold truncate flex items-center gap-1.5"><span className={`w-1.5 h-1.5 rounded-full shrink-0 ${a.priority==='High'?'bg-rose-500': a.priority==='Med'?'bg-amber-500':'bg-emerald-500'}`} />{a.assignmentName}</span>
                         <span className="text-[11px] text-[#6B6860] ml-2 shrink-0">{a.subject} • Due {a.dueDate} {a.priority==='High' && <span className="ml-1 px-1 py-0.5 rounded bg-rose-100 text-rose-700 text-[9px] font-bold">HIGH</span>}</span>
                       </div>
                     ))}
-                    {upcoming.length===0 && overdue.length===0 && dueToday.length===0 && <div className="text-xs text-[#6B6860] italic">All caught up — no upcoming tasks.</div>}
+                    {upcoming.length===0 && overdue.length===0 && dueToday.length===0 && <div className="text-xs text-[#6B6860] italic">{t('dash_all_caught_up')}</div>}
                   </div>
                 </>
               );
             })()}
-            <button onClick={()=>onNavigateWorkspace('tracker')} className="w-full py-2.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 min-h-[44px]">Open Assignment Tracker <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} /></button>
+            <button onClick={()=>onNavigateWorkspace('tracker')} className="w-full py-2.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 min-h-[44px]">{t('dash_open_tracker')} <ArrowRight className="w-3.5 h-3.5" strokeWidth={1.75} /></button>
           </div>
         ) : (
           <div className="bg-white/70 dark:bg-[#1C1B19]/60 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 text-center">
@@ -429,20 +440,20 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           open={(() => { try { const v=localStorage.getItem('scc_dashboard_personalize_open'); return v===null ? true : v==='true'; } catch { return true; } })()}
           onToggle={(e)=>{ try{ localStorage.setItem('scc_dashboard_personalize_open', String((e.currentTarget as HTMLDetailsElement).open)); }catch{} }}
         >
-          <summary className="list-none flex items-center justify-between cursor-pointer font-bold text-[#6B6860] uppercase tracking-wider">Personalize <span className="flex items-center gap-1.5 text-[10px] bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] px-2 py-0.5 rounded-full">Edit <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" strokeWidth={1.75} /></span></summary>
+          <summary className="list-none flex items-center justify-between cursor-pointer font-bold text-[#6B6860] uppercase tracking-wider">{t('dash_personalize')} <span className="flex items-center gap-1.5 text-[10px] bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] px-2 py-0.5 rounded-full">{t('edit')} <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" strokeWidth={1.75} /></span></summary>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           {/* Left: Vibe / Ambient Light Selection */}
           <div className="space-y-2">
             <span className="font-bold text-[#6B6860] uppercase tracking-wider block">
-              Personalized Vibe &amp; Glow
+              {t('dash_vibe_title')}
             </span>
             <div className="flex items-center gap-1.5 flex-wrap">
               {(
                 [
-                  { id: 'focus', label: 'Study Focus', color: 'bg-[#D97757] text-white border-[#D97757]' },
-                  { id: 'calm', label: 'Mindful Calm', color: 'bg-blue-500 text-white border-blue-500' },
-                  { id: 'creative', label: 'Creative flow', color: 'bg-violet-500 text-white border-violet-500' },
-                  { id: 'recharge', label: 'Recharge rest', color: 'bg-emerald-500 text-white border-emerald-500' },
+                  { id: 'focus', label: t('dash_vibe_focus'), color: 'bg-[#D97757] text-white border-[#D97757]' },
+                  { id: 'calm', label: t('dash_vibe_calm'), color: 'bg-blue-500 text-white border-blue-500' },
+                  { id: 'creative', label: t('dash_vibe_creative'), color: 'bg-violet-500 text-white border-violet-500' },
+                  { id: 'recharge', label: t('dash_vibe_recharge'), color: 'bg-emerald-500 text-white border-emerald-500' },
                 ] as const
               ).map((vibe) => (
                 <button
@@ -463,26 +474,26 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           {/* Right: Daily Sprint Target Goal */}
           <div className="space-y-2 flex flex-col justify-center">
             <span className="font-bold text-[#6B6860] uppercase tracking-wider block">
-              Daily Pomodoro Target
+              {t('dash_pomodoro_target')}
             </span>
             <div className="flex items-center gap-3">
               <div className="flex items-center bg-white/70 dark:bg-[#1E1D1B]/50 border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl px-3 py-1 font-bold">
                 <span className="font-mono text-sm text-[#141413] dark:text-[#FAF9F5]">
-                  {completedFocusSessions} / {sprintGoal} Sprints
+                  {completedFocusSessions} / {sprintGoal} {t('dash_sprints')}
                 </span>
               </div>
               <div className="flex items-center gap-1 bg-white/70 dark:bg-[#1E1D1B]/50 border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl p-0.5">
                 <button
                   onClick={() => handleAdjustSprintGoal(-1)}
                   className="p-1 text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors"
-                  title="Decrease target"
+                  title={t('dash_decrease')}
                 >
                   <ChevronDown className="w-4 h-4" strokeWidth={1.75} />
                 </button>
                 <button
                   onClick={() => handleAdjustSprintGoal(1)}
                   className="p-1 text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors"
-                  title="Increase target"
+                  title={t('dash_increase')}
                 >
                   <ChevronUp className="w-4 h-4" strokeWidth={1.75} />
                 </button>
@@ -495,7 +506,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
         {/* Habit Streak — memoized via streakMap (single JSON.parse) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card text-left">
-            <h4 className="text-xs font-bold text-[#6B6860] uppercase tracking-wider flex items-center gap-1.5"><Timer className="w-3.5 h-3.5 text-[#D97757]" strokeWidth={1.75} /> Habit Streak • Last 28 days</h4>
+            <h4 className="text-xs font-bold text-[#6B6860] uppercase tracking-wider flex items-center gap-1.5"><Timer className="w-3.5 h-3.5 text-[#D97757]" strokeWidth={1.75} /> {t('dash_streak_title')}</h4>
             <div className="mt-3 grid grid-cols-7 gap-1">
               {Array.from({length:28}).map((_,i)=>{
                 const d=new Date(); d.setDate(d.getDate()-(27-i));
@@ -510,14 +521,14 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                 return <div key={i} className={`w-full aspect-square rounded-sm ${intensity}`} title={`${dateStr}: ${mins}m`} />
               })}
             </div>
-            <p className="text-[11px] text-[#6B6860] mt-2">{completedFocusSessions} focus sprints • {sprintGoal} daily target</p>
+            <p className="text-[11px] text-[#6B6860] mt-2">{completedFocusSessions} {t('dash_focus_sprints')} • {sprintGoal} {t('dash_daily_target')}</p>
           </div>
           <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card text-left">
-            <h4 className="text-xs font-bold text-[#6B6860] uppercase tracking-wider flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[#7C3AED]" strokeWidth={1.75} /> Focus Analytics</h4>
+            <h4 className="text-xs font-bold text-[#6B6860] uppercase tracking-wider flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[#7C3AED]" strokeWidth={1.75} /> {t('dash_focus_analytics')}</h4>
             <div className="mt-3 space-y-2">
-              <div className="flex items-center justify-between text-xs"><span>Deep work today</span><span className="font-mono font-bold">{completedFocusSessions * 25}m / {sprintGoal * 25}m</span></div>
+              <div className="flex items-center justify-between text-xs"><span>{t('dash_deep_work')}</span><span className="font-mono font-bold">{completedFocusSessions * 25}m / {sprintGoal * 25}m</span></div>
               <div className="h-2 bg-[#EFECE2] dark:bg-[#252422] rounded-full overflow-hidden"><div className="h-full bg-[#D97757]" style={{width: `${Math.min(100, (completedFocusSessions/sprintGoal)*100)}%`}} /></div>
-              <p className="text-[11px] text-[#6B6860]">Completion funnel: {assignments.filter(a=>a.status==='Done').length}/{assignments.length} tasks done</p>
+              <p className="text-[11px] text-[#6B6860]">{t('dash_completion_funnel')} {assignments.filter(a=>a.status==='Done').length}/{assignments.length} {t('dash_tasks_done')}</p>
             </div>
           </div>
         </div>
@@ -528,7 +539,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             onClick={() => onNavigateWorkspace('canvas')}
             className={`px-8 py-3.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-[#D97757]/15 hover:shadow-[#D97757]/30 hover:scale-[1.02] flex items-center gap-2 cursor-pointer group min-h-[44px]`}
           >
-            <span>Enter LMS Workspace</span>
+            <span>{t('dash_enter_lms')}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" strokeWidth={1.75} />
           </button>
 
@@ -538,7 +549,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
               className="px-2 py-2 text-xs font-semibold text-[#D97757] hover:text-[#C86646] hover:underline underline-offset-4 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" strokeWidth={1.75} />
-              <span>AI Daily Study Plan — text link</span>
+              <span>{t('dash_ai_plan')}</span>
             </button>
           )}
         </div>
@@ -550,7 +561,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             <button
               onClick={handleShuffleQuote}
               className="p-1 text-[#8C897F] hover:text-[#D97757] rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer absolute right-2"
-              title="Get another quote"
+              title={t('dash_another_quote')}
             >
               <Shuffle className="w-3.5 h-3.5" />
             </button>
@@ -567,14 +578,14 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
         {apodEnabled && (
           <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-card text-left space-y-3" aria-label="NASA Astronomy Picture of the Day">
             <div className="flex items-center justify-between gap-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6860]">NASA Image of the Day</h4>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6860]">{t('nasa_title')}</h4>
               <div className="flex items-center gap-1 text-[10px] font-bold" role="group" aria-label="APOD display mode">
-                <button type="button" onClick={() => handleApodMode('card')} aria-pressed={apodMode === 'card'} className={`px-2 py-1 rounded-lg min-h-[44px] min-w-[44px] cursor-pointer ${apodMode === 'card' ? 'bg-[#D97757] text-white' : 'text-[#6B6860] hover:text-[#D97757]'}`}>Card</button>
-                <button type="button" onClick={() => handleApodMode('wallpaper')} aria-pressed={apodMode === 'wallpaper'} className={`px-2 py-1 rounded-lg min-h-[44px] min-w-[44px] cursor-pointer ${apodMode === 'wallpaper' ? 'bg-[#D97757] text-white' : 'text-[#6B6860] hover:text-[#D97757]'}`}>Wallpaper</button>
+                <button type="button" onClick={() => handleApodMode('card')} aria-pressed={apodMode === 'card'} className={`px-2 py-1 rounded-lg min-h-[44px] min-w-[44px] cursor-pointer ${apodMode === 'card' ? 'bg-[#D97757] text-white' : 'text-[#6B6860] hover:text-[#D97757]'}`}>{t('dash_card')}</button>
+                <button type="button" onClick={() => handleApodMode('wallpaper')} aria-pressed={apodMode === 'wallpaper'} className={`px-2 py-1 rounded-lg min-h-[44px] min-w-[44px] cursor-pointer ${apodMode === 'wallpaper' ? 'bg-[#D97757] text-white' : 'text-[#6B6860] hover:text-[#D97757]'}`}>{t('dash_wallpaper')}</button>
               </div>
             </div>
             {apodLoading && !nasaApod && (
-              <div className="animate-pulse space-y-2" role="status" aria-live="polite" aria-label="Loading NASA image">
+              <div className="animate-pulse space-y-2" role="status" aria-live="polite" aria-label={t('dash_apod_loading')}>
                 <div className="h-40 bg-[#EFECE2] dark:bg-[#252422] rounded-xl" />
                 <div className="h-3 bg-[#EFECE2] dark:bg-[#252422] rounded w-2/3" />
                 <div className="h-3 bg-[#EFECE2] dark:bg-[#252422] rounded w-1/2" />
@@ -608,14 +619,14 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                     {apodExpanded || nasaApod.explanation.length <= 280 ? nasaApod.explanation : `${nasaApod.explanation.slice(0, 280)}… `}
                     {nasaApod.explanation.length > 280 && (
                       <button type="button" onClick={() => setApodExpanded(!apodExpanded)} className="font-bold text-[#D97757] hover:underline underline-offset-4 ml-1 cursor-pointer" aria-expanded={apodExpanded}>
-                        {apodExpanded ? 'Show less' : 'Read more'}
+                        {apodExpanded ? t('show_less') : t('dash_read_more')}
                       </button>
                     )}
                   </p>
                 )}
                 <div className="flex items-center justify-between gap-2 text-[10px] text-[#6B6860]">
-                  <span>Image credit: NASA APOD{nasaApod.copyright ? ` • © ${nasaApod.copyright}` : ''}</span>
-                  {nasaApod.hdurl && <a href={nasaApod.hdurl} target="_blank" rel="noreferrer" className="font-bold text-[#D97757] hover:underline underline-offset-4 shrink-0">Open HD</a>}
+                  <span>{t('dash_image_credit')}{nasaApod.copyright ? ` • © ${nasaApod.copyright}` : ''}</span>
+                  {nasaApod.hdurl && <a href={nasaApod.hdurl} target="_blank" rel="noreferrer" className="font-bold text-[#D97757] hover:underline underline-offset-4 shrink-0">{t('dash_open_hd')}</a>}
                 </div>
                 {apodError && <p className="text-[10px] text-amber-700" role="status">NASA giới hạn hoặc mất mạng. Hiện ảnh cũ — bấm Thử lại. <button type="button" onClick={reloadApod} className="font-bold underline underline-offset-4 cursor-pointer min-h-[44px] px-2">Thử lại • Retry</button></p>}
               </div>
