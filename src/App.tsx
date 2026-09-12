@@ -1768,6 +1768,10 @@ export default function App() {
       if (fetched.length === 0 && (apiError || feedError)) {
         // Message is composed here ONCE from the typed failure — the service
         // throws bare reasons, so the hint can never duplicate (Image 1 bug).
+        // hasHint matches anywhere (not just the ending) so older cached
+        // service messages that already embed guidance never get a 2nd copy.
+        const hasHint = (s: string) => /retr(y|ied)|check your canvas/i.test(s);
+        const cleanTail = (s: string) => s.trim().replace(/[\s.]+$/, '');
         let errMsg: string;
         if (apiError && !feedError) {
           switch (apiError.kind) {
@@ -1784,11 +1788,10 @@ export default function App() {
               errMsg = `Canvas sync is blocked: ${apiError.message}. This is a deployment issue, not your token — the app's /api functions are not serving JSON. Redeploy the latest main, then retry.`;
               break;
             default: {
-              const reason = (apiError.message || '').trim();
-              const needsHint = !/retr(y|ied)\.?$/i.test(reason);
-              errMsg = needsHint
-                ? `Canvas sync failed: ${reason} Check your Canvas URL and token, then retry.`
-                : `Canvas sync failed: ${reason}`;
+              const reason = cleanTail(apiError.message || '');
+              errMsg = hasHint(reason)
+                ? `Canvas sync failed: ${reason}.`
+                : `Canvas sync failed: ${reason}. Check your Canvas URL and token, then retry.`;
               break;
             }
           }
@@ -1796,11 +1799,10 @@ export default function App() {
           if (feedError?.kind === 'backend') {
             errMsg = `Canvas sync is blocked: ${feedError.message}. This is a deployment issue, not your feed URL — the app's /api functions are not serving JSON. Redeploy the latest main, then retry.`;
           } else {
-            const combined = [apiError?.message, feedError?.message].filter(Boolean).join(' ').trim();
-            const needsHint = !/retr(y|ied)\.?$/i.test(combined);
-            errMsg = needsHint
-              ? `Canvas sync failed: ${combined} Check your Canvas URL and token, then retry.`
-              : `Canvas sync failed: ${combined}`;
+            const combined = cleanTail([apiError?.message, feedError?.message].filter(Boolean).join(' ').trim());
+            errMsg = hasHint(combined)
+              ? `Canvas sync failed: ${combined}.`
+              : `Canvas sync failed: ${combined}. Check your Canvas URL and token, then retry.`;
           }
         }
         setCanvasError(errMsg);

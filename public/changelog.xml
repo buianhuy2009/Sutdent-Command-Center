@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.8.3 — Canvas Production Fix: Sync Works on Vercel + Single Error Message</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.8.3</link>
+      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Canvas /api routes now reach the serverless router on the live site so pasted keys actually sync, proxy error details are surfaced, and the banner never doubles the retry hint.</description>
+    </item>
+    <item>
       <title>v2.8.2 — Canvas Save &amp; Sync Fix: New Credentials Actually Sync</title>
       <link>https://student-command-center.vercel.app/?changelog=2.8.2</link>
       <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>

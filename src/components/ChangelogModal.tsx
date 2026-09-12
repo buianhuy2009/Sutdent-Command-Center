@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.8.2';
+export const CURRENT_VERSION = '2.8.3';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,23 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.8.3',
+    date: 'September 12, 2026',
+    title: 'Canvas Production Fix — Sync Works on Vercel + Single Error Message',
+    badge: 'Latest Update',
+    highlights: [
+      'Canvas sync now actually reaches the server on the live site — pasting your key and pressing load returns assignments',
+      'Failed syncs show one clean error with the real server detail, never a doubled “retry… retry” message',
+    ],
+    details: [
+      'Deployment (vercel.json + api/index.js): all /api/* requests are now rewritten to the single serverless router, and the router detects proxied Canvas calls even after the rewrite strips the path — previously /api/health and /api/canvas/proxy 404’d in production so every sync died before reaching Canvas. Find it in Canvas LMS tab → Save & Sync Canvas.',
+      'Errors (sync engine in services/canvas.ts + banner in App.tsx): the proxy’s real reply (e.g. bad host, bad token, deployment 404) is now included in the failure instead of discarded, and the banner strips trailing dots and skips the “check URL and token” suffix when the message already contains guidance — fixing the “then retry… Check your URL” duplication in your screenshot.',
+    ]
+  },
+  {
     version: '2.8.2',
     date: 'September 12, 2026',
     title: 'Canvas Save & Sync Fix — New Credentials Actually Sync',
-    badge: 'Latest Update',
     highlights: [
       'Pressing Save & Sync in Canvas now syncs with the credentials you just typed — no more empty list with no error',
     ],

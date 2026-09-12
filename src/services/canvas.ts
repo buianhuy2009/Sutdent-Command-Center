@@ -415,17 +415,28 @@ function canvasFetch(url: string, headers: Record<string, string>): Promise<Resp
   return fetch(url, { headers });
 }
 
-interface CanvasProbeFailure { status: number | null; network: boolean }
+interface CanvasProbeFailure { status: number | null; network: boolean; detail?: string }
 
-/** Read the proxy's error envelope (it mirrors Canvas' HTTP status) without throwing on non-JSON bodies. */
+/** Read the proxy's error envelope (it mirrors Canvas' HTTP status) and keep the
+ * first 300 chars of its message — that string is the actual fix signal
+ * ("Host not allowlisted", "Canvas fetch failed with status 401", Vercel
+ * NOT_FOUND, ...) and must never be swallowed. */
 async function readProxyFailure(res: Response): Promise<CanvasProbeFailure> {
   let status: number | null = null;
+  let detail = '';
   try {
     status = (res as any).status ?? null;
-    // Drain the body so connections reuse cleanly; the proxy's {error} string adds no signal beyond status.
-    await res.text().catch(() => {});
+    const raw = await res.text().catch(() => '');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        detail = String(parsed.error || parsed.message || raw).slice(0, 300);
+      } catch {
+        detail = raw.slice(0, 300);
+      }
+    }
   } catch {}
-  return { status, network: false };
+  return { status, network: false, detail };
 }
 export async function fetchCanvasAssignmentsFromApi(
   domain: string,
@@ -708,21 +719,23 @@ export async function fetchCanvasAssignmentsFromApi(
   if (!sawTodoOk && !sawCoursesOk && !sawPlannerOk && !sawUpcomingOk) {
     const failure: CanvasProbeFailure | null = probeFailures[0] ?? null;
     const s = failure?.status ?? null;
+    const detail = (failure?.detail || '').trim();
+    const withDetail = (bare: string) => (detail && !bare.includes(detail.slice(0, 60)) ? `${bare} Detail: ${detail}` : bare);
     if (s === 401) {
       throw new CanvasSyncError('auth', 'Canvas rejected the API token (401 Unauthorized).', 401);
     }
     if (s === 400) {
-      throw new CanvasSyncError('host', 'The Canvas proxy refused this host (400).', 400);
+      throw new CanvasSyncError('host', withDetail('The Canvas proxy refused this host (400).'), 400);
     }
     if (s === 404) {
-      throw new CanvasSyncError('host', 'Canvas answered 404 — the host path looks wrong.', 404);
+      throw new CanvasSyncError('host', withDetail('Canvas answered 404 — the host path looks wrong.'), 404);
     }
     if (failure?.network) {
       throw new CanvasSyncError('network', 'Could not reach Canvas (network error or timed out).', undefined);
     }
     throw new CanvasSyncError(
       'unknown',
-      s ? `Canvas answered with status ${s} on every endpoint.` : 'Canvas API did not respond on any endpoint.',
+      withDetail(s ? `Canvas answered with status ${s} on every endpoint.` : 'Canvas API did not respond on any endpoint.'),
       s ?? undefined
     );
   }

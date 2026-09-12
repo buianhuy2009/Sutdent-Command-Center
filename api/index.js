@@ -26,7 +26,11 @@ export default async function handler(req, res) {
   const rawUrl = req.headers["x-matched-path"] || req.url || "";
   const cleanPath = rawUrl.split("?")[0].replace(/^\/api/, "");
 
-  if (cleanPath === "/health" || cleanPath === "" || cleanPath === "/") {
+  if (cleanPath === "/health" || cleanPath === "" || cleanPath === "/" || cleanPath === "/index") {
+    // After the vercel.json rewrite /api/(.*) -> /api/index, nested routes
+    // arrive here as /api/index?url=... with the original path rewritten away.
+    // A `url` query param always means Canvas proxy (health never has one).
+    if (req.query?.url) return handleCanvasProxy(req, res);
     return handleHealth(req, res);
   }
   if (cleanPath === "/canvas/proxy") {
