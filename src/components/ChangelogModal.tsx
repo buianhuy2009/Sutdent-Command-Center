@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.8.3';
+export const CURRENT_VERSION = '2.8.4';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,23 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.8.4',
+    date: 'September 12, 2026',
+    title: 'Warmer Look — No Grey Wash, Lighter Sidebar',
+    badge: 'Latest Update',
+    highlights: [
+      'Dashboard background is now warm cream instead of grey — cards float on one clean canvas',
+      'Sidebar is a soft light orange with dark readable text, still a touch deeper than the main panel',
+    ],
+    details: [
+      'Dashboard (App.tsx main column + DashboardHome): the grey #E8E6DC page wash and the pale #FAF9F5 dashboard fill are gone — both now use the warm cream #F5F4ED so white cards sit directly on cream in light mode. Dark mode is unchanged.',
+      'Sidebar (Sidebar.tsx): deep burnt orange #A94E33 becomes light apricot #EFD2AC with a #DCB287 edge — a step darker than the cream main panel as asked — and all labels, icons rows, toggles and the profile switch from white to dark coffee (#4A2410 / #8A5A33) so everything stays readable. Active app still pops as a cream card.',
+    ]
+  },
+  {
     version: '2.8.3',
     date: 'September 12, 2026',
     title: 'Canvas Production Fix — Sync Works on Vercel + Single Error Message',
-    badge: 'Latest Update',
     highlights: [
       'Canvas sync now actually reaches the server on the live site — pasting your key and pressing load returns assignments',
       'Failed syncs show one clean error with the real server detail, never a doubled “retry… retry” message',

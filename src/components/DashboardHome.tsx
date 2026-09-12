@@ -232,7 +232,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-between items-center bg-[#FAF9F5] dark:bg-[#141413] px-6 py-12 text-center animate-in fade-in duration-300 select-none relative overflow-y-auto">
+    <div className="min-h-screen w-full flex flex-col justify-between items-center bg-transparent dark:bg-[#141413] px-6 py-12 text-center animate-in fade-in duration-300 select-none relative overflow-y-auto">
       
       {/* NASA APOD — reactive hook (Settings toggle updates instantly, no reload) */}
       {apodEnabled && nasaApod && nasaApod.mediaType === 'image' && (

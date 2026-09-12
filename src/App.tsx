@@ -2778,7 +2778,7 @@ export default function App() {
         )}
 
         {/* Right Main Column with Top Header, Scrollable Content, and Bottom Status Bar */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#E8E6DC] dark:bg-[#141413]">
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#F5F4ED] dark:bg-[#141413]">
           {/* Top Header — simplified & error-guarded */}
           {activeTab !== 'dashboard' && (
             <ErrorBoundary fallback={<header className="h-12 bg-white dark:bg-[#141413] border-b border-[#E8E6DC] dark:border-[#2C2B27] px-4 sm:px-6 flex items-center justify-between z-20 text-xs font-semibold text-[#5E5D59]"><button onClick={() => window.dispatchEvent(new CustomEvent('scc-navigate', { detail: 'dashboard' }))} className="hover:text-[#C96442]">StudentOS / Dashboard</button></header>}>

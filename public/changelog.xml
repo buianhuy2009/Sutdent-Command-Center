@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.8.4 — Warmer Look: No Grey Wash, Lighter Sidebar</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.8.4</link>
+      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Dashboard drops the grey wash for warm cream and the sidebar turns soft light orange with dark readable text.</description>
+    </item>
+    <item>
       <title>v2.8.3 — Canvas Production Fix: Sync Works on Vercel + Single Error Message</title>
       <link>https://student-command-center.vercel.app/?changelog=2.8.3</link>
       <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
