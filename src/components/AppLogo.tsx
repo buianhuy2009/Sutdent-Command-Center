@@ -44,8 +44,6 @@ import {
   FolderOpen,
   Presentation,
   ClipboardList,
-  Palette,
-  Atom,
 } from 'lucide-react';
 
 interface AppLogoProps {
@@ -661,4 +659,3 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
       );
   }
 };
-
