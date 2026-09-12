@@ -223,30 +223,9 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
 
   const { enabled: apodEnabled, apod: nasaApod, loading: apodLoading, error: apodError, reload: reloadApod } = useNasaApod();
   const [apodExpanded, setApodExpanded] = useState(false);
-  const [apodMode, setApodMode] = useState<'card' | 'wallpaper'>(() => {
-    try { return (localStorage.getItem('scc_nasa_apod_mode') as 'card' | 'wallpaper') || 'card'; } catch { return 'card'; }
-  });
-  const handleApodMode = (m: 'card' | 'wallpaper') => {
-    setApodMode(m);
-    try { localStorage.setItem('scc_nasa_apod_mode', m); } catch {}
-  };
 
   return (
     <div className="min-h-screen w-full flex flex-col justify-between items-center bg-transparent dark:bg-[#141413] px-6 py-12 text-center animate-in fade-in duration-300 select-none relative overflow-y-auto">
-      
-      {/* NASA APOD — reactive hook (Settings toggle updates instantly, no reload) */}
-      {apodEnabled && nasaApod && nasaApod.mediaType === 'image' && (
-        <img
-          src={nasaApod.url}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          decoding="async"
-          fetchPriority="low"
-          className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none transition-opacity duration-1000"
-          referrerPolicy="no-referrer"
-        />
-      )}
 
       {/* Dynamic Ambient Background Glow */}
       <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-br ${vibeGlowClass} via-transparent to-transparent rounded-full blur-3xl pointer-events-none transition-all duration-700`} />
@@ -579,10 +558,6 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-card text-left space-y-3" aria-label="NASA Astronomy Picture of the Day">
             <div className="flex items-center justify-between gap-2">
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6860]">{t('nasa_title')}</h4>
-              <div className="flex items-center gap-1 text-[10px] font-bold" role="group" aria-label="APOD display mode">
-                <button type="button" onClick={() => handleApodMode('card')} aria-pressed={apodMode === 'card'} className={`px-2 py-1 rounded-lg min-h-[44px] min-w-[44px] cursor-pointer ${apodMode === 'card' ? 'bg-[#D97757] text-white' : 'text-[#6B6860] hover:text-[#D97757]'}`}>{t('dash_card')}</button>
-                <button type="button" onClick={() => handleApodMode('wallpaper')} aria-pressed={apodMode === 'wallpaper'} className={`px-2 py-1 rounded-lg min-h-[44px] min-w-[44px] cursor-pointer ${apodMode === 'wallpaper' ? 'bg-[#D97757] text-white' : 'text-[#6B6860] hover:text-[#D97757]'}`}>{t('dash_wallpaper')}</button>
-              </div>
             </div>
             {apodLoading && !nasaApod && (
               <div className="animate-pulse space-y-2" role="status" aria-live="polite" aria-label={t('dash_apod_loading')}>
@@ -601,9 +576,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             {nasaApod && (
               <div className="space-y-2">
                 {nasaApod.mediaType === 'image' ? (
-                  apodMode === 'card' && (
-                    <img src={nasaApod.url} alt={nasaApod.title || 'NASA Astronomy Picture of the Day'} loading="lazy" decoding="async" fetchPriority="low" referrerPolicy="no-referrer" className="w-full max-h-72 object-cover rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]" />
-                  )
+                  <img src={nasaApod.url} alt={nasaApod.title || 'NASA Astronomy Picture of the Day'} loading="lazy" decoding="async" fetchPriority="low" referrerPolicy="no-referrer" className="w-full max-h-72 object-cover rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]" />
                 ) : (
                   <div className="p-3 rounded-xl bg-indigo-950 text-white text-xs space-y-2">
                     {nasaApod.thumbnailUrl && (

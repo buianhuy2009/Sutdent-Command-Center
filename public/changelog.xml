@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.9.1 — Plain Warm Cream Background: Starry Wash Removed</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.9.1</link>
+      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
+      <description>The grey starry wallpaper wash is removed entirely — the dashboard sits on plain Claude-sidebar warm cream with the sidebar a touch deeper, and the space photo stays as a card.</description>
+    </item>
+    <item>
       <title>v2.9.0 — Warm Cream Theme + Gentle Dark Mode + Lively Landing</title>
       <link>https://student-command-center.vercel.app/?changelog=2.9.0</link>
       <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>

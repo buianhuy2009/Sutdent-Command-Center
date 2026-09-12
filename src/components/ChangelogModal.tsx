@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.9.0';
+export const CURRENT_VERSION = '2.9.1';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,21 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.9.1',
+    date: 'September 12, 2026',
+    title: 'Plain Warm Cream Background — Starry Wash Removed',
+    badge: 'Latest Update',
+    highlights: [
+      'The grey starry wash on the dashboard is gone — plain Claude-sidebar warm cream behind everything',
+    ],
+    details: [
+      'Dashboard (DashboardHome.tsx + Settings): the NASA wallpaper full-screen background layer and its Card/Wallpaper switch are removed entirely — the daily space photo lives on as a normal card only, so the background stays clean warm cream #F0EEE6 with the sidebar a touch deeper. Anyone stuck on wallpaper mode automatically gets the card view.',
+    ]
+  },
+  {
     version: '2.9.0',
     date: 'September 12, 2026',
     title: 'Warm Cream Theme + Gentle Dark Mode + Lively Landing',
-    badge: 'Latest Update',
     highlights: [
       'Every screen is now warm cream — dashboard, sidebar and panels share one cozy canvas',
       'Dark mode is softer and easier to read, no more pitch-black surfaces',
