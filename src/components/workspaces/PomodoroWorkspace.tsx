@@ -291,6 +291,18 @@ export const PomodoroWorkspace: React.FC = () => {
     }
   };
 
+  // Onboarding ("Start Pomodoro") reads localStorage `scc_pomo_completed_v1`
+  // (see OnboardingChecklist + pomodoroStore). This workspace does not use the
+  // store, so mirror its format (integer string) with a minimal try/catch write.
+  // Start must not inflate stats: only ensure the key exists, completion still increments.
+  const markPomoOnboardingTouched = () => {
+    try {
+      if (!localStorage.getItem('scc_pomo_completed_v1')) {
+        localStorage.setItem('scc_pomo_completed_v1', '1');
+      }
+    } catch {}
+  };
+
   const handleToggleTimer = () => {
     if (!isRunning) {
       // 1. Auto-fullscreen if permitted
@@ -303,6 +315,14 @@ export const PomodoroWorkspace: React.FC = () => {
       // 2. Auto-turn on Brown Noise by default if silent
       if (activeSound === 'none') {
         startSynthesizer('brown');
+      }
+
+      // 3. Persist onboarding key when a focus (work-mode) session starts.
+      // Completion path (timer tick below) persists via increment; start only
+      // ensures the key exists so "Start Pomodoro" marks done without waiting
+      // 25 minutes. Break presets never touch the key.
+      if (mode === 'work') {
+        markPomoOnboardingTouched();
       }
 
       setIsRunning(true);
