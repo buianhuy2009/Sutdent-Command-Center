@@ -282,3 +282,63 @@ Remain `blocked`: 025 (superseded by 029+034), 041 (superseded by 044). Remain `
 - Rework rounds used: 014 (1, scope violation fixed), 023 (1, invalid Mermaid `vert` fixed) — both landed READY
 - Infra flakes absorbed: 039/040/042 attempt-1 transport timeouts (retried clean), 043 push timeout (commander retried), 016–020 stale empty worktrees from prior session (cleaned + re-dispatched, all landed)
 - Still OPEN / human actions: (1) merge READY branches sequentially + rebuild (029 BEFORE 034); (2) revive 006 conflict (`agent/006-creationstudio-svg-xss` — CreationStudioWorkspace:304 XSS sink still OPEN on main); (3) `npm ci` at convenience (tsc shim + missing jsdom/dompurify in main checkout); (4) consider follow-ups: 041-copy-reply (now unblocked), App-wide `?`-shortcut discoverability, human QA pass on Enter-hijack note in 019.
+
+## ⚠️ INCIDENT — 2026-09-12: uncommitted ledger wiped by worker `reset --hard`
+
+- What happened: cycle-12 section (046 golden-rule doc applied to AGENTS.md uncommitted; 047 stash-preserve plan; 048 review plan) + commander's cycle-13 ledger append lived only as uncommitted `M .opencode/ORDERS.md / M AGENTS.md`. Order-051 worker ran `git reset --hard` in the SHARED checkout during a branch repair → both files reverted to HEAD. Sibling session's 13 pushes (v2.8.2–v2.10.0, @4fae06f) are intact and absorbed via fast-forward (14 files, no conflicts).
+- Survived: `stash@{0}` (commander-temp gemini-detailed + theme-sync) intact; all 5 cycle-13 branches pushed (049/050/051/052/053); orphaned 2-line DashboardHome fragment saved to `Temp\opencode\orphan-dashboard.patch` then reverted (it referenced 049 vars on the wrong base — unbuildable if committed).
+- Lessons (STANDING RULES for all future workers): (1) NEVER run `git reset --hard`, `git checkout -- <file>`, or `git clean` in the shared checkout — use an isolated worktree under `.worktrees/` and commit early/often there. (2) Commander commits ledger to `commander/ledger-*` branches + pushes (never main) so it survives.
+- Lost work to redo: 046 golden-rule AGENTS.md section → re-issued below as worker order 046 (AGENTS.md only, own branch).
+
+## 🔄 CYCLE 13 — 2026-09-12: user bug-bash batch 1 (all 5 returned build 0 + pushed)
+
+| ID | Task | Plan / acceptance | Branch | Status | Attempts | Notes |
+|----|------|-------------------|--------|--------|----------|-------|
+| 049 | Home focus "NaNm/75m" → "0m/75m" | DashboardHome only: `completedFocusSessions` is undefined (store has `completedSessions`) → `undefined*25=NaN`. Guard finite-else-0. | `agent/049-focus-nan-guard` | in-review | 1 | Commit 42190a9. Also kills pre-existing TS2339. |
+| 050 | Focus Block never marks onboarding "Start Pomodoro" done | PomodoroWorkspace only (+20/-0): ensure `scc_pomo_completed_v1` on work-session start. | `agent/050-pomo-onboarding-key` | in-review | 1 | Commit 31086f3. |
+| 051 | Quiz yields 1 question though 20 chosen | QuizGeneratorWorkspace only: count+difficulty into prompt, full-array parser, local top-up to exact N. | `agent/051-quiz-count` | in-review | 1 | Commit 8dc8180, base 4fae06f. |
+| 052 | Rubric Pre-Check button dead | RubricCheckerWorkspace only: silent catch → local heuristic baseline + key-gated AI + visible errors. | `agent/052-rubric-precheck` | in-review | 1 | Commit 6764159. |
+| 053 | Feynman "Explain" dead | FeynmanWorkspace only: sync local 3-tier scaffold + key-gated AI enhance. | `agent/053-feynman-fallback` | in-review | 1 | Commit 896b3e5. |
+
+- Commander verification done 2026-09-12: `origin/agent/049|050|051|052|053` all exist remotely (ls-remote confirmed); local diffs vs origin/main show single-file scopes as ordered (049 DashboardHome +18/-10; 050 PomodoroWorkspace +20/-0; 051 QuizGeneratorWorkspace +287/-4; 052 RubricCheckerWorkspace +190/-3; 053 FeynmanWorkspace +98/-4). Worker-reported `npm run build` exit 0 on each; tsc shows zero errors in touched files (repo-wide pre-existing baseline only). Coherence: no shared-service signature changed; 051 keeps legacy `generateInteractiveQuiz` as secondary source (additive). → ALL 5 READY. Merge guidance: sequential 049→050→051→052→053, rebuild after each; watch 049 vs sibling DashboardHome restyle (same lines repainted in v2.10.0 — hunk may need hand-apply); changelog trio skipped per-branch BY DESIGN, consolidated entry lands as order 060 after merges.
+- Statuses 049–053 → `ready` (verdict recorded here; human merges on return).
+
+## 🔄 CYCLE 14 — 2026-09-12: user bug-bash batch 2 (5 parallel, distinct files)
+
+Standing rules: own branch from latest `origin/main`, ONE file scope each, isolated worktree under `.worktrees/` (NEVER reset/checkout/clean the shared tree), no changelog trio, `npm run build` exit 0, push branch.
+
+| ID | Task | Plan / acceptance | Branch | Status | Attempts | Notes |
+|----|------|-------------------|--------|--------|----------|-------|
+| 046 | Golden rule doc: pull-before-push in AGENTS.md (REDO — wiped, see incident) | `AGENTS.md` only: add `## 0. GOLDEN RULE` (finish → check remote → pull+merge if moved → push; never push blind; never commit tokens). No product code. | `agent/046-golden-rule-doc` | in-progress | 1 | Redo of lost cycle-12 work. |
+| 054 | Photo Math OCR slow/dead → Gemini vision flow | `PhotoMathWorkspace.tsx` ONLY: downscale client-side, Gemini vision when key present w/ timeout + progress; manual-entry fallback + honest errors, never hang. Accept: photo → steps or error in seconds. | `agent/054-photomath-vision` | in-progress | 1 | User: "too long, doesn't work". |
+| 055 | Mermaid live preview + AI mindmap dead | `MermaidWorkspace.tsx` ONLY (keep 002 SVG sanitize): fix preview init/render + prompt→mindmap codegen w/ template fallback. Accept: default diagram renders; prompt → mindmap + preview. | `agent/055-mermaid-revive` | in-progress | 1 | Mermaid syntax: no bare `vert` (see 023 lesson). |
+| 056 | NotebookLM Brief ParseError | `NotebookLMStudioTab.tsx` ONLY: harden brief parse (validate/try-catch + raw-section fallback, never throw to UI). Accept: generate → readable brief, zero ParseError. | `agent/056-brief-parse` | in-progress | 1 | Pairs with 038 download. |
+| 057 | Unit evaluator always "Syntax Error" | `UnitConverterWorkspace.tsx` ONLY: fix tokenizer/parse, per-error reasons with position, AI-calc button when key present. Accept: `2+2*3`→8; bad input names the problem. | `agent/057-evaluator-fix` | in-progress | 1 | Never bare "Syntax Error". |
+| 058 | Periodic Table bigger/fit/colors/select | `PeriodicTableWorkspace.tsx` ONLY (`elementsData.ts` read-only): larger cells, rounded-mass + truncated names, group color legend, detail ONLY on click. | `agent/058-periodic-polish` | queued | 1 | NOT dispatched — DRAIN arrived first; stays queued. |
+
+## ✅ REVIEW — cycle 14 / DRAIN (2026-09-12: all 5 active returned, 0 blocked, drain complete, loop halted)
+
+Commander verification (ls-remote + diff vs origin/main, worker build reports):
+- 046 `agent/046-golden-rule-doc` (4faabb5): AGENTS.md +3 only, docs-only per plan. Pushed. Acceptance (section present) met → READY.
+- 054 `agent/054-photomath-vision` (58a56e8): PhotoMathWorkspace only (+352/-23). Old double full-size parallel SDK calls → single downscaled vision call, 60s timeout, progress states, manual-entry fallback, spinner always resolves. Build 0, tsc zero in file. Pushed → READY. Note: new UI strings are English literals, not i18n keys (accepted — visible in all locales).
+- 055 `agent/055-mermaid-revive` (968dc05): MermaidWorkspace only (+161/-31). Root cause: error branch unmounted the render container (all later previews dead) + per-keystroke init. Fixed: always-mounted container, init-once, debounced v11 render w/ race guard, sanitize kept, local mindmap fallback, bare-`vert` strip. Build 0, tsc zero in file. Pushed → READY.
+- 056 `agent/056-brief-parse` (2ad1b48): NotebookLMStudioTab only (+153/-10). Parse path hardened (text-first, bracket-slice fallback, code-fence strip, field defaults, inline error state, guarded load/save); 038 download/copy intact. Build 0, tsc zero in file. Pushed → READY. Note: exact ParseError line was inferred (unguarded `res.json()` + assuming parses), hardening covers all three sites.
+- 057 `agent/057-evaluator-fix` (c10344b): UnitConverterWorkspace only (+334/-27). `Function()`-eval replaced with recursive-descent parser (precedence, implicit-mult, functions, domain checks), position-aware errors, "Ask AI" BYOK button; conversions untouched. Sample suite 9/9 + 8 error cases verified by worker. Build 0, tsc zero in file. Pushed → READY. Note: error positions are 0-based (accepted, flagged for human).
+- Coherence: 5 distinct files, no overlaps with each other or cycle-13 branches; no shared-service signature changed (direct Gemini REST fetches read existing key storage only). Merge guidance: sequential 046→054→055→056→057 after the 049–053 batch, rebuild after each per AGENTS.md.
+- DRAIN received before 058 dispatch: 058 stays `queued` (not blocked, attempts untouched). Changelog trio still skipped per-branch by design — consolidated release entry lands as order 060 after human merges.
+
+### Status flips
+049, 050, 051, 052, 053, 046, 054, 055, 056, 057 → `ready` (10 branches await human merge). 058 → `queued`. 0 `in-progress`. Consecutive BLOCKED: 0.
+
+## ✅ MERGE — 2026-09-12 (merger session, integrate/merge-2026-09-12 → main @7b36d54)
+
+Human ordered "merge them, remember to pull". Pull-first honored: `HEAD..origin/main` empty at start AND before push — remote never moved, no pull needed, no sibling commits absorbed.
+- Merged (10, EACH `git merge --no-ff` + `npm run build` exit 0, plus final build on main = 11 green builds): 049, 050, 051, 052, 053, 046, 054, 055, 056, 057.
+- Conflict (0): the feared 049-vs-v2.10.0 DashboardHome clash auto-merged clean via ort; post-merge tree holds BOTH sibling linen styling and 049's `safeCompletedFocusSessions/safeSprintGoal/focusProgressPct` guards. No `merge --abort` needed.
+- Coherence: 10 files (single-file UI/workspaces + AGENTS.md docs); zero diff under `src/services/`; no resurrected deletes. NOTE: `scc_pomo_completed_v1` now has two writers (pre-existing `stores/pomodoroStore.ts` + new 050 code writing `'1'` on focus-block start if absent) — semantics compatible, store's storage-event listener keeps sync; first place to look if pomo counts ever drift.
+- Pushed `4fae06f..7b36d54` to origin/main (no force). Integration branch also pushed for the record. Vercel will deploy main.
+- Untouched: stash@{0}, ORDERS.md, changelog trio (consolidated entry still pending as order 060).
+
+### Status flips (all → `merged` @7b36d54)
+049, 050, 051, 052, 053, 046, 054, 055, 056, 057.
+Remains `queued`: 058 (Periodic Table polish — dispatch when DRAIN lifts). Remain `blocked`: 025, 041 (superseded, historic). Remains `conflict`: 006 (CreationStudio XSS sink — still OPEN, needs manual revive).
