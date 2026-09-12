@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.9.4 — Claude-Sidebar Cream + Deeper Dashboard</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.9.4</link>
+      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Workspaces and sidebar move to Claude-sidebar cream with the dashboard one shade deeper and the sidebar selection kept visible.</description>
+    </item>
+    <item>
       <title>v2.9.3 — Warm Cream Everywhere: Background Fix That Applies</title>
       <link>https://student-command-center.vercel.app/?changelog=2.9.3</link>
       <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>

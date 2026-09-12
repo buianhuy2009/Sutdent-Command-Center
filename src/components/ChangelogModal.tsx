@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.9.3';
+export const CURRENT_VERSION = '2.9.4';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,21 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.9.4',
+    date: 'September 12, 2026',
+    title: 'Claude-Sidebar Cream + Deeper Dashboard',
+    badge: 'Latest Update',
+    highlights: [
+      'Workspaces and sidebar now wear Claude-sidebar cream, dashboard one shade deeper',
+    ],
+    details: [
+      'Palette (theme tokens in index.css + theme.ts, Sidebar.tsx, DashboardHome.tsx): canvas and sidebar settle on Claude-sidebar #F0EEE6 with a soft hairline edge, dashboard deepens to #E6DFCE, and sidebar active pills move to warm card #FDF6E7 so the selection stays visible on the pale rail. Verified in dist that the unlayered remaps win.',
+    ]
+  },
+  {
     version: '2.9.3',
     date: 'September 12, 2026',
     title: 'Warm Cream Everywhere — Background Fix That Actually Applies',
-    badge: 'Latest Update',
     highlights: [
       'Dashboard and every workspace finally show the warm cream background — the fix is verified in the built CSS',
       'Settings rows go deeper cream, cards go warm cream, sidebar stays one shade deeper',

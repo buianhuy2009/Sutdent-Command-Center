@@ -225,7 +225,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   const [apodExpanded, setApodExpanded] = useState(false);
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-between items-center bg-transparent dark:bg-[#141413] px-6 py-12 text-center animate-in fade-in duration-300 select-none relative overflow-y-auto">
+    <div className="min-h-screen w-full flex flex-col justify-between items-center bg-[#E6DFCE] dark:bg-[#141413] px-6 py-12 text-center animate-in fade-in duration-300 select-none relative overflow-y-auto">
 
       {/* Dynamic Ambient Background Glow */}
       <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-br ${vibeGlowClass} via-transparent to-transparent rounded-full blur-3xl pointer-events-none transition-all duration-700`} />

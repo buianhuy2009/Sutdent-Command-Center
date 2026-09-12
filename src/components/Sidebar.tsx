@@ -120,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       aria-label="Primary navigation"
       data-tour="sidebar"
       role="navigation"
-      className={`h-screen shrink-0 bg-[#ECD2A6] dark:bg-[#1A1917] border-r border-[#D2B380] dark:border-[#2C2B27] flex flex-col transition-all duration-300 z-30 select-none ${
+      className={`h-screen shrink-0 bg-[#F0EEE6] dark:bg-[#1A1917] border-r border-[#D9D2C2] dark:border-[#2C2B27] flex flex-col transition-all duration-300 z-30 select-none ${
         isExpanded ? 'w-64 p-4' : 'w-16 p-2'
       }`}
     >
@@ -134,7 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }`}
           title="Go to Dashboard Home"
         >
-          <div className="w-9 h-9 bg-[#F5F4ED] rounded-xl flex items-center justify-center text-[#A94E33] font-extrabold text-sm shadow-sm shrink-0" aria-hidden="true">
+          <div className="w-9 h-9 bg-[#FDF6E7] rounded-xl flex items-center justify-center text-[#A94E33] font-extrabold text-sm shadow-sm shrink-0" aria-hidden="true">
             S
           </div>
           {isExpanded && (
@@ -181,7 +181,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       isExpanded ? 'px-3 py-2.5 justify-between gap-3 min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'
                     } ${
                       isActive
-                        ? 'bg-[#F5F4ED] text-[#A94E33] shadow-sm font-bold'
+                        ? 'bg-[#FDF6E7] dark:bg-[#252422] text-[#A94E33] dark:text-[#E8A07E] shadow-sm font-bold'
                         : 'bg-white/40 hover:bg-white/70 dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#5C3317] dark:text-[#F5F4ED] border border-transparent'
                     }`}
                     title={app.name}
@@ -208,7 +208,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     ) : (
                       <>
                         {hasBadge && (
-                          <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#ECD2A6] dark:ring-[#282723] ${badgeColor}`} />
+                          <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#F0EEE6] dark:ring-[#282723] ${badgeColor}`} />
                         )}
                         <span className="absolute left-16 bg-[#141413] dark:bg-[#F5F4ED] text-[#F5F4ED] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#E8E6DC] dark:border-[#2C2B27]" role="tooltip">
                           {meta.label || app.name}
@@ -240,7 +240,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     key={`recent-${app.id}`}
                     onClick={() => onSelectTab(app.id)}
-                    className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative ${isExpanded ? 'px-3 py-2.5 justify-between gap-3 min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'} ${isActive ? 'bg-[#F5F4ED] text-[#A94E33] shadow-sm font-bold' : 'bg-white/40 hover:bg-white/70 dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#5C3317] dark:text-[#F5F4ED] border border-transparent'}`}
+                    className={`w-full rounded-xl flex items-center transition-all cursor-pointer relative ${isExpanded ? 'px-3 py-2.5 justify-between gap-3 min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'} ${isActive ? 'bg-[#FDF6E7] dark:bg-[#252422] text-[#A94E33] dark:text-[#E8A07E] shadow-sm font-bold' : 'bg-white/40 hover:bg-white/70 dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#5C3317] dark:text-[#F5F4ED] border border-transparent'}`}
                     title={app.name}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -329,7 +329,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
           ) : (
-            <div className="w-9 h-9 rounded-2xl bg-[#F5F4ED] text-[#A94E33] flex items-center justify-center text-xs font-bold shrink-0 shadow-xs">
+            <div className="w-9 h-9 rounded-2xl bg-[#FDF6E7] text-[#A94E33] flex items-center justify-center text-xs font-bold shrink-0 shadow-xs">
               <UserIcon className="w-4 h-4" strokeWidth={1.75} />
             </div>
           )}
