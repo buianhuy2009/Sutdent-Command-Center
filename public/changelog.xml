@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.9.0 — Warm Cream Theme + Gentle Dark Mode + Lively Landing</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.9.0</link>
+      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Warm cream canvas everywhere with a deeper-cream sidebar, softer readable dark mode, and a brighter logged-out homepage with floating glows and scroll-reveal animations.</description>
+    </item>
+    <item>
       <title>v2.8.4 — Warmer Look: No Grey Wash, Lighter Sidebar</title>
       <link>https://student-command-center.vercel.app/?changelog=2.8.4</link>
       <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>

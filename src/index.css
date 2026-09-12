@@ -4,9 +4,9 @@
 
 /* === Tokenized Theme Engine — Brand / Design System v2.0 === */
 :root {
-  --color-background: 245 244 237; /* #F5F4ED claude canvas */
-  --color-panel: 255 255 255;
-  --color-border: 232 230 220; /* #E8E6DC warm-sand */
+  --color-background: 247 240 222; /* #F7F0DE warm cream canvas */
+  --color-panel: 253 248 236; /* #FDF8EC warm card */
+  --color-border: 217 203 174; /* #D9CBAE warm sand */
   --color-accent: 201 100 66; /* #C96442 claude primary — CTA only */
   --color-secondary: 124 58 237; /* #7C3AED violet — secondary semantic */
   --color-success: 16 185 129; /* #10B981 emerald — success */
@@ -31,26 +31,26 @@
   --shadow-card: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.04);
   --shadow-card-hover: 0 4px 12px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.06);
 }
-/* Strict two-mode palette only — Claude Canvas #F5F4ED / Dark #141413 / Primary #C96442 */
+/* Warm cream light / soft charcoal dark — warm cream canvas #F7F0DE, never gray */
 :root, :root[data-theme="linen"], :root[data-theme="parchment"] {
-  --color-background: 245 244 237; /* #F5F4ED Claude canvas */
-  --color-panel: 255 255 255;
-  --color-border: 232 230 220; /* #E8E6DC warm-sand */
+  --color-background: 247 240 222; /* #F7F0DE warm cream canvas */
+  --color-panel: 253 248 236; /* #FDF8EC warm card */
+  --color-border: 217 203 174; /* #D9CBAE warm sand */
   --color-accent: 201 100 66; /* #C96442 Claude primary */
   --color-text: 20 20 19; /* #141413 */
   --color-muted: 94 93 89;
 }
 :root[data-theme="midnight"],
 html.dark {
-  --color-background: 20 20 19; /* #141413 Dark Charcoal — app canvas (unchanged per spec) */
-  --color-panel: 40 39 35; /* #282723 Elevated surface — visibly distinct from canvas */
-  --color-raised: 53 51 46; /* #35332E Raised/inner surface */
-  --color-well: 46 44 40; /* #2E2C28 Wells + inputs */
-  --color-border: 79 74 62; /* #4F4A3E Visible warm border */
-  --color-border-strong: 101 94 77; /* #655E4D Hover/emphasis border */
+  --color-background: 37 35 32; /* #252320 soft warm charcoal canvas — lifted for readability */
+  --color-panel: 53 50 43; /* #35322B Elevated surface — visibly distinct from canvas */
+  --color-raised: 65 60 51; /* #413C33 Raised/inner surface */
+  --color-well: 57 53 44; /* #39352C Wells + inputs */
+  --color-border: 94 86 70; /* #5E5646 Visible warm border */
+  --color-border-strong: 117 106 86; /* #756A56 Hover/emphasis border */
   --color-accent: 201 100 66; /* #C96442 Claude primary */
   --color-text: 245 244 237; /* #F5F4ED */
-  --color-muted: 181 178 168; /* #B5B2A8 */
+  --color-muted: 199 194 180; /* #C7C2B4 brightened muted for readability */
 }
 
 @layer base {
@@ -95,7 +95,7 @@ html.dark {
   html.dark .bg-slate-100,
   html.dark .bg-gray-50,
   html.dark .bg-gray-100 {
-    background-color: #282723;
+    background-color: #35322B;
   }
   html.dark .bg-slate-800,
   html.dark .bg-slate-900,
@@ -103,22 +103,22 @@ html.dark {
   html.dark .bg-gray-900,
   html.dark .bg-slate-950,
   html.dark .bg-black {
-    background-color: #282723;
+    background-color: #35322B;
   }
   html.dark .bg-slate-200,
   html.dark .bg-gray-200 {
-    background-color: #35332E;
+    background-color: #413C33;
   }
   html.dark .border-slate-100,
   html.dark .border-slate-200,
   html.dark .border-gray-200,
   html.dark .border-slate-800,
   html.dark .border-gray-800 {
-    border-color: #4F4A3E;
+    border-color: #5E5646;
   }
   html.dark .border-slate-700,
   html.dark .border-gray-700 {
-    border-color: #655E4D;
+    border-color: #756A56;
   }
   html.dark .text-slate-900,
   html.dark .text-gray-900,
@@ -128,13 +128,13 @@ html.dark {
     color: #F5F4ED;
   }
   html.dark .text-slate-300 {
-    color: #E6E4DC;
+    color: #D8D4C6;
   }
   html.dark .text-slate-400,
   html.dark .text-slate-500,
   html.dark .text-gray-400,
   html.dark .text-gray-500 {
-    color: #B5B2A8;
+    color: #C7C2B4;
   }
   html.dark .text-slate-600,
   html.dark .text-gray-600 {
@@ -144,7 +144,7 @@ html.dark {
   html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
   html.dark .divide-slate-700 > :not([hidden]) ~ :not([hidden]),
   html.dark .divide-slate-800 > :not([hidden]) ~ :not([hidden]) {
-    border-color: #4F4A3E;
+    border-color: #5E5646;
   }
   #root {
     background-color: rgb(var(--color-background));
@@ -152,12 +152,12 @@ html.dark {
     min-height: 100vh;
   }
   html.dark input, html.dark select, html.dark textarea {
-    border-color: #4F4A3E;
-    background-color: #2E2C28;
+    border-color: #5E5646;
+    background-color: #39352C;
     color: #F5F4ED;
   }
   html.dark input::placeholder, html.dark textarea::placeholder {
-    color: #8C897F;
+    color: #96907F;
   }
 }
 
@@ -217,37 +217,37 @@ html.dark {
 
 /* Glassmorphism Shell Utilities — unified blur with @supports fallback + mobile perf */
 .glass-panel {
-  background-color: rgba(250, 249, 246, 0.92);
+  background-color: rgba(253, 248, 236, 0.92);
 }
 @supports (backdrop-filter: blur(1px)) {
   .glass-panel {
-    background-color: rgba(250, 249, 246, 0.88);
+    background-color: rgba(253, 248, 236, 0.88);
     backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
     -webkit-backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
   }
   .dark .glass-panel {
-    background-color: rgba(20, 20, 19, 0.90);
+    background-color: rgba(37, 35, 32, 0.90);
     backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
     -webkit-backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
   }
 }
-.dark .glass-panel { background-color: rgba(20, 20, 19, 0.90); }
+.dark .glass-panel { background-color: rgba(37, 35, 32, 0.90); }
 .glass-card {
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(253, 248, 236, 0.9);
 }
 @supports (backdrop-filter: blur(1px)) {
   .glass-card {
-    background-color: rgba(255, 255, 255, 0.85);
+    background-color: rgba(253, 248, 236, 0.85);
     backdrop-filter: blur(var(--blur-glass-card));
     -webkit-backdrop-filter: blur(var(--blur-glass-card));
   }
   .dark .glass-card {
-    background-color: rgba(40, 39, 35, 0.92);
+    background-color: rgba(53, 50, 43, 0.92);
     backdrop-filter: blur(var(--blur-glass-card));
     -webkit-backdrop-filter: blur(var(--blur-glass-card));
   }
 }
-.dark .glass-card { background-color: rgba(40, 39, 35, 0.92); }
+.dark .glass-card { background-color: rgba(53, 50, 43, 0.92); }
 @media (max-width: 768px) {
   :root { --blur-glass-panel: 8px; --blur-glass-card: 6px; --saturate-glass: 130%; }
 }
@@ -367,17 +367,17 @@ html[data-density="spacious"] {
   --gap-4: 1.25rem;
 }
 
-/* Color Theme Palette Classes — strict two modes only */
+/* Color Theme Palette Classes — warm cream light / soft charcoal dark */
 html[data-theme="midnight"].dark,
 html[data-theme="midnight"].dark body,
 html.dark,
 html.dark body {
-  background-color: #141413;
+  background-color: #252320;
   color: #F5F4ED;
 }
 html:not(.dark),
 html:not(.dark) body {
-  background-color: #F5F4ED;
+  background-color: #F7F0DE;
   color: #141413;
 }
 
@@ -416,7 +416,7 @@ html:not(.dark) body {
   --shadow: var(--shadow-card);
   --shadow-lg: var(--shadow-card-hover);
   /* compat aliases for scattered hexes */
-  --linen: #F5F4ED; --linen-deep: #E8E6DC; --line: #E8E6DC;
+  --linen: #F7F0DE; --linen-deep: #E7D9BC; --line: #D9CBAE;
   --terracotta: #C96442; --terracotta-dark: #A94E33; --stone: #5E5D59;
 }
 .dark, :root[data-theme="midnight"] {
@@ -468,6 +468,57 @@ html[data-dyslexia="opendyslexic"] p, html[data-dyslexia="atkinson"] p { max-wid
 .scc-drag-spring { transition: transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.2s ease; }
 .scc-count-up { font-variant-numeric: tabular-nums; }
 
+/* === Landing page motion — warm floating blobs + scroll reveal === */
+@keyframes scc-drift-a {
+  0%, 100% { transform: translate(-8%, -4%) scale(1); }
+  50% { transform: translate(6%, 5%) scale(1.08); }
+}
+@keyframes scc-drift-b {
+  0%, 100% { transform: translate(6%, 6%) scale(1.05); }
+  50% { transform: translate(-6%, -5%) scale(0.96); }
+}
+@keyframes scc-float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.landing-blob-a { animation: scc-drift-a 14s ease-in-out infinite; }
+.landing-blob-b { animation: scc-drift-b 18s ease-in-out infinite; }
+.landing-float { animation: scc-float-soft 5s ease-in-out infinite; }
+/* Scroll reveal: JS adds .is-visible via IntersectionObserver; staggered via inline transition-delay */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible { opacity: 1; transform: none; }
+.reveal-lift { transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; }
+.reveal-lift.is-visible { opacity: 1; transform: none; }
+.reveal-lift.is-visible:hover { transform: translateY(-4px); }
+.landing-smooth { scroll-behavior: smooth; }
+/* Staggered grid reveal: observe the grid itself, children cascade in */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.reveal-stagger.is-visible > * { opacity: 1; transform: none; }
+.reveal-stagger.is-visible > *:nth-child(2) { transition-delay: 0.07s; }
+.reveal-stagger.is-visible > *:nth-child(3) { transition-delay: 0.14s; }
+.reveal-stagger.is-visible > *:nth-child(4) { transition-delay: 0.21s; }
+.reveal-stagger.is-visible > *:nth-child(5) { transition-delay: 0.28s; }
+.reveal-stagger.is-visible > *:nth-child(6) { transition-delay: 0.35s; }
+.reveal-stagger.is-visible > *:hover { transform: translateY(-4px); transition-delay: 0s; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-stagger > * { opacity: 1; transform: none; transition: opacity 0.2s ease; }
+  .landing-smooth { scroll-behavior: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-blob-a, .landing-blob-b, .landing-float { animation: none; }
+  .reveal, .reveal-lift { opacity: 1; transform: none; transition: opacity 0.2s ease; }
+  .landing-smooth { scroll-behavior: auto; }
+}
+
 /* === Print stylesheets — clean rubrics / study guides / timetable / citations === */
 @media print {
   .no-print, nav, aside, header, footer, .glass-panel, .scc-bottom-nav, .scc-fab,
@@ -489,9 +540,9 @@ html[data-dyslexia="opendyslexic"] p, html[data-dyslexia="atkinson"] p { max-wid
    warm charcoal panel unless a `dark:bg-*` utility overrides (utilities beat base). */
 @layer base {
   .bg-\[\#F5F4ED\] { background-color: var(--linen); }
-  html.dark .bg-\[\#F5F4ED\] { background-color: #282723; }
+  html.dark .bg-\[\#F5F4ED\] { background-color: #35322B; }
   .bg-\[\#E8E6DC\] { background-color: var(--linen-deep); }
-  html.dark .bg-\[\#E8E6DC\] { background-color: #282723; }
+  html.dark .bg-\[\#E8E6DC\] { background-color: #35322B; }
   .bg-\[\#C96442\] { background-color: var(--terracotta); }
   .text-\[\#C96442\] { color: var(--accent-text); }
   html.dark .text-\[\#C96442\] { color: #E8A07E; }
@@ -508,33 +559,37 @@ html[data-dyslexia="opendyslexic"] p, html[data-dyslexia="atkinson"] p { max-wid
 
 /* === Dark Elevation System (unlayered → beats layered Tailwind utilities) ===
    App-wide remap of legacy dark hexes so EVERY panel/card/sidebar/input is
-   visibly distinct from the #141413 canvas. Strict warm-charcoal tints only:
-   surface #282723 · raised #35332E · well #2E2C28 · border #4F4A3E. */
-html.dark .dark\:bg-\[\#1A1917\] { background-color: #282723; }
-html.dark .dark\:bg-\[\#1A1917\]\/90 { background-color: color-mix(in srgb, #282723 90%, transparent); }
-html.dark .dark\:bg-\[\#1A1917\]\/60 { background-color: color-mix(in srgb, #282723 60%, transparent); }
-html.dark .dark\:bg-\[\#1A1917\]\/50 { background-color: color-mix(in srgb, #282723 50%, transparent); }
-html.dark .dark\:bg-\[\#252422\] { background-color: #35332E; }
-html.dark .dark\:bg-\[\#252422\]\/60 { background-color: color-mix(in srgb, #35332E 60%, transparent); }
-html.dark .dark\:bg-\[\#252422\]\/50 { background-color: color-mix(in srgb, #35332E 50%, transparent); }
-html.dark .dark\:bg-\[\#252422\]\/40 { background-color: color-mix(in srgb, #35332E 40%, transparent); }
-html.dark .dark\:bg-\[\#1F1E1B\] { background-color: #2E2C28; }
-html.dark .dark\:bg-\[\#1F1E1B\]\/70 { background-color: color-mix(in srgb, #2E2C28 70%, transparent); }
-html.dark .dark\:bg-\[\#1F1E1B\]\/60 { background-color: color-mix(in srgb, #2E2C28 60%, transparent); }
-html.dark .dark\:bg-\[\#1F1E1B\]\/50 { background-color: color-mix(in srgb, #2E2C28 50%, transparent); }
-html.dark .dark\:bg-\[\#1F1E1B\]\/40 { background-color: color-mix(in srgb, #2E2C28 40%, transparent); }
-html.dark .dark\:border-\[\#2C2B27\] { border-color: #4F4A3E; }
-html.dark .dark\:border-\[\#2C2B27\]\/80 { border-color: color-mix(in srgb, #4F4A3E 80%, transparent); }
-html.dark .dark\:border-\[\#2C2B27\]\/60 { border-color: color-mix(in srgb, #4F4A3E 60%, transparent); }
-html.dark .dark\:border-\[\#2C2B27\]\/40 { border-color: color-mix(in srgb, #4F4A3E 40%, transparent); }
-html.dark .dark\:border-\[\#2C2B27\]\/30 { border-color: color-mix(in srgb, #4F4A3E 30%, transparent); }
-html.dark .dark\:divide-\[\#2C2B27\]\/40 > :not([hidden]) ~ :not([hidden]) { border-color: color-mix(in srgb, #4F4A3E 40%, transparent); }
-html.dark .dark\:ring-\[\#1A1917\] { --tw-ring-color: #282723; }
-html.dark .dark\:hover\:bg-\[\#252422\]:hover { background-color: #403D36; }
-html.dark .dark\:hover\:bg-\[\#2C2A26\]:hover { background-color: #403D36; }
-html.dark .dark\:hover\:bg-\[\#1F1E1B\]:hover { background-color: #38362F; }
-html.dark .dark\:hover\:bg-\[\#1A1917\]:hover { background-color: #322F2A; }
-html.dark .dark\:hover\:border-\[\#2C2B27\]:hover { border-color: #655E4D; }
+   visibly distinct from the soft #252320 canvas. Warm-charcoal tints only:
+   surface #35322B · raised #413C33 · well #39352C · border #5E5646. */
+html.dark .dark\:bg-\[\#141413\] { background-color: #252320; }
+html.dark .dark\:bg-\[\#1A1917\] { background-color: #35322B; }
+html.dark .dark\:bg-\[\#1A1917\]\/90 { background-color: color-mix(in srgb, #35322B 90%, transparent); }
+html.dark .dark\:bg-\[\#1A1917\]\/60 { background-color: color-mix(in srgb, #35322B 60%, transparent); }
+html.dark .dark\:bg-\[\#1A1917\]\/50 { background-color: color-mix(in srgb, #35322B 50%, transparent); }
+html.dark .dark\:bg-\[\#1A1917\]\/40 { background-color: color-mix(in srgb, #35322B 40%, transparent); }
+html.dark .dark\:bg-\[\#252422\] { background-color: #413C33; }
+html.dark .dark\:bg-\[\#252422\]\/60 { background-color: color-mix(in srgb, #413C33 60%, transparent); }
+html.dark .dark\:bg-\[\#252422\]\/50 { background-color: color-mix(in srgb, #413C33 50%, transparent); }
+html.dark .dark\:bg-\[\#252422\]\/40 { background-color: color-mix(in srgb, #413C33 40%, transparent); }
+html.dark .dark\:bg-\[\#1F1E1B\] { background-color: #39352C; }
+html.dark .dark\:bg-\[\#1F1E1B\]\/70 { background-color: color-mix(in srgb, #39352C 70%, transparent); }
+html.dark .dark\:bg-\[\#1F1E1B\]\/60 { background-color: color-mix(in srgb, #39352C 60%, transparent); }
+html.dark .dark\:bg-\[\#1F1E1B\]\/50 { background-color: color-mix(in srgb, #39352C 50%, transparent); }
+html.dark .dark\:bg-\[\#1F1E1B\]\/40 { background-color: color-mix(in srgb, #39352C 40%, transparent); }
+html.dark .dark\:border-\[\#2C2B27\] { border-color: #5E5646; }
+html.dark .dark\:border-\[\#2C2B27\]\/80 { border-color: color-mix(in srgb, #5E5646 80%, transparent); }
+html.dark .dark\:border-\[\#2C2B27\]\/60 { border-color: color-mix(in srgb, #5E5646 60%, transparent); }
+html.dark .dark\:border-\[\#2C2B27\]\/40 { border-color: color-mix(in srgb, #5E5646 40%, transparent); }
+html.dark .dark\:border-\[\#2C2B27\]\/30 { border-color: color-mix(in srgb, #5E5646 30%, transparent); }
+html.dark .dark\:divide-\[\#2C2B27\]\/40 > :not([hidden]) ~ :not([hidden]) { border-color: color-mix(in srgb, #5E5646 40%, transparent); }
+html.dark .dark\:ring-\[\#1A1917\] { --tw-ring-color: #35322B; }
+html.dark .dark\:hover\:bg-\[\#252422\]:hover { background-color: #4A4438; }
+html.dark .dark\:hover\:bg-\[\#2C2A26\]:hover { background-color: #4A4438; }
+html.dark .dark\:hover\:bg-\[\#1F1E1B\]:hover { background-color: #454034; }
+html.dark .dark\:hover\:bg-\[\#1A1917\]:hover { background-color: #3E392F; }
+html.dark .dark\:hover\:border-\[\#2C2B27\]:hover { border-color: #756A56; }
+/* Brighten dim secondary text in dark mode for readability */
+html.dark .dark\:text-\[\#B5B2A8\] { color: #C7C2B4; }
 
 /* === Strict-palette neutralization (decorative indigo/violet → terracotta) ===
    CTA buttons, links and glyphs follow the 3-color theme in both modes.
@@ -567,17 +622,17 @@ html.dark .dark\:text-violet-300 { color: #E8A07E; }
    Blue/cyan/sky/orange washes map to warm neutrals + terracotta text —
    brand tiles (AppLogo) and semantic status colors are untouched. */
 @layer base {
-  .bg-slate-50 { background-color: #F5F4ED; }
-  .bg-slate-100 { background-color: #E8E6DC; }
-  .bg-slate-200 { background-color: #E8E6DC; }
+  .bg-slate-50 { background-color: #F7F0DE; }
+  .bg-slate-100 { background-color: #EADFC6; }
+  .bg-slate-200 { background-color: #EADFC6; }
   .border-slate-100 { border-color: #E8E6DC; }
   .border-slate-200, .border-slate-300 { border-color: #E8E6DC; }
   .text-slate-400, .text-slate-500 { color: #5E5D59; }
   .text-slate-600, .text-slate-700 { color: #5C5A54; }
   .text-slate-800, .text-slate-900 { color: #141413; }
-  .hover\:bg-slate-50:hover { background-color: #F5F4ED; }
-  .hover\:bg-slate-100:hover, .hover\:bg-slate-200:hover { background-color: #E8E6DC; }
-  .hover\:bg-slate-300:hover { background-color: #E8E6DC; }
+  .hover\:bg-slate-50:hover { background-color: #F7F0DE; }
+  .hover\:bg-slate-100:hover, .hover\:bg-slate-200:hover { background-color: #EADFC6; }
+  .hover\:bg-slate-300:hover { background-color: #EADFC6; }
   .hover\:text-slate-600:hover, .hover\:text-slate-800:hover, .hover\:text-slate-900:hover { color: #141413; }
   .border-violet-200, .border-violet-300, .border-indigo-200 { border-color: #EAC4A8; }
   .bg-blue-50, .bg-cyan-50, .bg-sky-50, .bg-indigo-50 { background-color: #F9E9DF; }
@@ -587,18 +642,18 @@ html.dark .dark\:text-violet-300 { color: #E8A07E; }
   .hover\:border-blue-400:hover, .hover\:border-orange-400:hover, .hover\:border-indigo-400:hover { border-color: #C96442; }
   .hover\:bg-blue-50:hover, .hover\:bg-orange-50:hover { background-color: #F9E9DF; }
 }
-html.dark .dark\:bg-slate-900, html.dark .dark\:bg-slate-800 { background-color: #282723; }
-html.dark .dark\:bg-slate-800\/60 { background-color: color-mix(in srgb, #282723 60%, transparent); }
-html.dark .dark\:bg-slate-800\/50 { background-color: color-mix(in srgb, #282723 50%, transparent); }
-html.dark .dark\:bg-slate-800\/40 { background-color: color-mix(in srgb, #282723 40%, transparent); }
-html.dark .dark\:bg-slate-800\/20 { background-color: color-mix(in srgb, #282723 20%, transparent); }
-html.dark .dark\:bg-slate-700 { background-color: #35332E; }
+html.dark .dark\:bg-slate-900, html.dark .dark\:bg-slate-800 { background-color: #35322B; }
+html.dark .dark\:bg-slate-800\/60 { background-color: color-mix(in srgb, #35322B 60%, transparent); }
+html.dark .dark\:bg-slate-800\/50 { background-color: color-mix(in srgb, #35322B 50%, transparent); }
+html.dark .dark\:bg-slate-800\/40 { background-color: color-mix(in srgb, #35322B 40%, transparent); }
+html.dark .dark\:bg-slate-800\/20 { background-color: color-mix(in srgb, #35322B 20%, transparent); }
+html.dark .dark\:bg-slate-700 { background-color: #413C33; }
 html.dark .dark\:border-slate-800, html.dark .dark\:border-slate-700,
-html.dark .dark\:border-slate-600 { border-color: #4F4A3E; }
+html.dark .dark\:border-slate-600 { border-color: #5E5646; }
 html.dark .dark\:border-violet-800 { border-color: #7A4A34; }
 html.dark .dark\:text-slate-200 { color: #F5F4ED; }
-html.dark .dark\:text-slate-300 { color: #E6E4DC; }
-html.dark .dark\:text-slate-400 { color: #B5B2A8; }
+html.dark .dark\:text-slate-300 { color: #D8D4C6; }
+html.dark .dark\:text-slate-400 { color: #C7C2B4; }
 html.dark .dark\:bg-blue-950\/40, html.dark .dark\:bg-blue-950\/60,
 html.dark .dark\:bg-cyan-950\/40, html.dark .dark\:bg-sky-950\/30,
 html.dark .dark\:bg-indigo-950\/40, html.dark .dark\:bg-indigo-950\/60,
@@ -610,25 +665,25 @@ html.dark .dark\:text-orange-300, html.dark .dark\:text-orange-400 { color: #E8A
 html.dark .dark\:border-blue-800, html.dark .dark\:border-cyan-800,
 html.dark .dark\:border-indigo-800, html.dark .dark\:border-indigo-900\/60,
 html.dark .dark\:border-orange-800 { border-color: #7A4A34; }
-html.dark .dark\:bg-\[\#0B1120\] { background-color: #141413; }
-html.dark .dark\:hover\:bg-slate-800:hover, html.dark .dark\:hover\:bg-slate-700:hover { background-color: #403D36; }
-html.dark .dark\:hover\:bg-slate-600:hover { background-color: #4A473E; }
+html.dark .dark\:bg-\[\#0B1120\] { background-color: #252320; }
+html.dark .dark\:hover\:bg-slate-800:hover, html.dark .dark\:hover\:bg-slate-700:hover { background-color: #4A4438; }
+html.dark .dark\:hover\:bg-slate-600:hover { background-color: #544D3F; }
 html.dark .dark\:hover\:text-slate-200:hover { color: #F5F4ED; }
 
 /* === No pure-white surfaces (user requirement) ===
-   Opaque white panels → warm canvas; white inputs → sand wells so they stay
-   visible on cream cards. Translucent bg-white/* overlays (on terracotta/dark)
+   Opaque white panels → warm cream cards; white inputs → sand wells so they stay
+   visible on cream. Translucent bg-white/* overlays (on terracotta/dark)
    are intentional tints and are NOT remapped. Unlayered so it beats utilities;
-   dark branches preserve the warm-charcoal elevation system. */
-.bg-white { background-color: #F5F4ED; }
-html.dark .bg-white { background-color: #282723; }
-input[class*="bg-white"], select[class*="bg-white"], textarea[class*="bg-white"] { background-color: #E8E6DC; }
-html.dark input[class*="bg-white"], html.dark select[class*="bg-white"], html.dark textarea[class*="bg-white"] { background-color: #2E2C28; }
-/* Hairline borders stay visible on the sand main panel */
-[class*="border-[#E8E6DC]"] { border-color: #D6CFBD; }
-html.dark [class*="border-[#E8E6DC]"] { border-color: #4F4A3E; }
-[class*="divide-[#E8E6DC]"] > :not([hidden]) ~ :not([hidden]) { border-color: #D6CFBD; }
-html.dark [class*="divide-[#E8E6DC]"] > :not([hidden]) ~ :not([hidden]) { border-color: #4F4A3E; }
+   dark branches preserve the soft-charcoal elevation system. */
+.bg-white { background-color: #FDF8EC; }
+html.dark .bg-white { background-color: #35322B; }
+input[class*="bg-white"], select[class*="bg-white"], textarea[class*="bg-white"] { background-color: #EADFC6; }
+html.dark input[class*="bg-white"], html.dark select[class*="bg-white"], html.dark textarea[class*="bg-white"] { background-color: #39352C; }
+/* Hairline borders stay visible on the warm cream main panel */
+[class*="border-[#E8E6DC]"] { border-color: #D8C8A8; }
+html.dark [class*="border-[#E8E6DC]"] { border-color: #5E5646; }
+[class*="divide-[#E8E6DC]"] > :not([hidden]) ~ :not([hidden]) { border-color: #D8C8A8; }
+html.dark [class*="divide-[#E8E6DC]"] > :not([hidden]) ~ :not([hidden]) { border-color: #5E5646; }
 
 /* === Guided-tour spotlight — warm terracotta pulse on the real UI target === */
 .scc-tour-flash {

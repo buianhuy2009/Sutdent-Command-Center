@@ -1,6 +1,6 @@
-// Strict two-mode palette — Anthropic Claude official tokens:
-// Light = Canvas #F5F4ED / Ink #141413 / Primary #C96442 / Hairline #F0EEE6 / Muted #5E5D59
-// Dark  = Ink #141413 / Canvas text #F5F4ED / Primary #C96442 / Surface-dark #30302E
+// Warm cream light / soft charcoal dark:
+// Light = Warm cream #F7F0DE / Ink #141413 / Primary #C96442 / Sand #D9CBAE
+// Dark  = Soft charcoal #252320 / Canvas text #F5F4ED / Primary #C96442 / Surface #35322B
 export type ThemeId = 'linen' | 'midnight';
 
 const THEME_KEY = 'scc_color_theme_v1';
@@ -36,8 +36,8 @@ function migrateLegacyThemeKeyOnce() {
 }
 
 export const THEME_META: Record<ThemeId, { label: string; accent: string; bg: string }> = {
-  linen: { label: 'Claude Canvas (Light)', accent: '#C96442', bg: '#F5F4ED' },
-  midnight: { label: 'Dark Charcoal (Dark)', accent: '#C96442', bg: '#141413' },
+  linen: { label: 'Warm Cream (Light)', accent: '#C96442', bg: '#F7F0DE' },
+  midnight: { label: 'Soft Charcoal (Dark)', accent: '#C96442', bg: '#252320' },
 };
 
 // Legacy palettes (ocean/forest/nord/dracula/catppuccin/cyberpunk/parchment) were

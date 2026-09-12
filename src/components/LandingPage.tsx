@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   GraduationCap,
   Layers,
@@ -48,11 +48,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   setDarkMode,
 }) => {
   const [demoOpen, setDemoOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
   useLang();
+
+  // Scroll reveal: fade/slide sections and stagger grids in once via IntersectionObserver.
+  // Elements below the fold start hidden (.reveal/.reveal-stagger) and get .is-visible
+  // on first intersect; above-fold hero keeps its own entrance animation.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || typeof IntersectionObserver === 'undefined') {
+      root?.querySelectorAll('.reveal, .reveal-lift, .reveal-stagger').forEach((el) => el.classList.add('is-visible'));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('is-visible');
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' }
+    );
+    const els = root.querySelectorAll('.reveal, .reveal-lift, .reveal-stagger');
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   return (
-    <div className="min-h-screen w-full max-w-[100vw] overflow-x-clip bg-[#E8E6DC] dark:bg-[#141413] text-[#141413] dark:text-[#F5F4ED] transition-colors flex flex-col font-sans selection:bg-[#C96442] selection:text-white">
+    <div ref={rootRef} className="min-h-screen w-full max-w-[100vw] overflow-x-clip bg-[#FAF3E4] dark:bg-[#141413] text-[#141413] dark:text-[#F5F4ED] transition-colors flex flex-col font-sans selection:bg-[#C96442] selection:text-white landing-smooth">
       {/* Top Header — semantic role=banner */}
-      <header role="banner" className="sticky top-0 z-40 bg-[#E8E6DC]/90 dark:bg-[#141413]/90 backdrop-blur-md border-b border-[#E8E6DC] dark:border-[#2C2B27]">
+      <header role="banner" className="sticky top-0 z-40 bg-[#FAF3E4]/85 dark:bg-[#141413]/90 backdrop-blur-md border-b border-[#E8E6DC] dark:border-[#2C2B27]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#C96442] rounded-xl flex items-center justify-center text-white shadow-md shadow-[#C96442]/20" aria-hidden="true">
@@ -108,8 +135,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* Hero Section */}
       <main className="flex-1">
         <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28">
-          {/* Background Glow */}
+          {/* Background Glow + drifting warm blobs */}
           <div className="hero-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(600px,120vw)] h-[min(600px,120vw)] max-w-none bg-[#C96442]/10 dark:bg-[#C96442]/10 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+          <div className="landing-blob-a absolute -top-24 -left-24 w-[min(420px,80vw)] h-[min(420px,80vw)] bg-gradient-to-br from-[#E8A07E]/30 via-[#C96442]/15 to-transparent rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+          <div className="landing-blob-b absolute top-1/3 -right-28 w-[min(460px,85vw)] h-[min(460px,85vw)] bg-gradient-to-bl from-[#F2C94C]/20 via-[#E8A07E]/15 to-transparent rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
 
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
             {/* Pill Badge */}
@@ -135,7 +164,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 id="btn-landing-primary-signup"
                 onClick={onSignIn}
                 disabled={isLoggingIn}
-                className="w-full sm:w-auto max-w-full min-h-[48px] px-8 py-4 bg-[#C96442] hover:bg-[#A94E33] disabled:opacity-50 text-white rounded-2xl text-base font-bold shadow-lg shadow-[#C96442]/25 flex items-center justify-center gap-3 transition-all cursor-pointer hover:scale-[1.02]"
+                className="w-full sm:w-auto max-w-full min-h-[48px] px-8 py-4 bg-[#C96442] hover:bg-[#A94E33] disabled:opacity-50 text-white rounded-2xl text-base font-bold shadow-lg shadow-[#C96442]/25 flex items-center justify-center gap-3 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.99]"
               >
                 <GoogleIcon className="w-5 h-5 shrink-0" />
                 <span className="truncate">{isLoggingIn ? t('landing_connecting') : t('landing_signup')}</span>
@@ -183,7 +212,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             {/* LCP hero image */}
             <div className="mt-8 max-w-3xl mx-auto">
-              <img src="/screenshot-dashboard.png" alt="Student Command Center dashboard — Canvas + Workspace unified" width={1280} height={720} fetchPriority="high" loading="eager" decoding="async" className="w-full rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] shadow-xl" onError={(e)=>{ (e.currentTarget as HTMLImageElement).style.display='none'; }} />
+              <img src="/screenshot-dashboard.png" alt="Student Command Center dashboard — Canvas + Workspace unified" width={1280} height={720} fetchPriority="high" loading="eager" decoding="async" className="w-full rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] shadow-xl transition-transform duration-500 hover:scale-[1.01] hover:shadow-2xl" onError={(e)=>{ (e.currentTarget as HTMLImageElement).style.display='none'; }} />
             </div>
 
             {/* Trust Badges */}
@@ -216,9 +245,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         {/* Integrations at a glance */}
         <section aria-label="Integrations at a glance" className="border-t border-[#E8E6DC] dark:border-[#2C2B27] bg-white/60 dark:bg-[#1A1917]/40">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 text-center max-w-full">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 text-center max-w-full reveal">
             <p className="text-[11px] font-bold tracking-widest uppercase text-[#5E5D59] dark:text-[#B5B2A8]">{t('landing_strip_title')}</p>
-            <dl className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 text-left">
+            <dl className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 text-left reveal-stagger">
               <div className="min-w-0 px-4 py-3 bg-white dark:bg-[#1A1917] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl">
                 <dt className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">{t('landing_card_canvas_t')}</dt>
                 <dd className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">{t('landing_card_canvas_d')}</dd>
@@ -237,9 +266,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         {/* Why — honest product facts, not testimonials */}
         <section aria-label="Why StudentOS" className="py-10 bg-[#E8E6DC]/40 dark:bg-[#1A1917]/60 border-b border-[#E8E6DC] dark:border-[#2C2B27]">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 reveal">
             <h2 className="text-center text-2xl sm:text-3xl font-extrabold tracking-tight mb-8">{t('landing_why_title')}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 reveal-stagger">
               {WHY_CARDS.map((c, i)=>{
                 const Icon = c.icon;
                 return (
@@ -260,7 +289,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* Feature Grid Section */}
         <section id="features" className="py-12 bg-white dark:bg-[#141413] border-y border-[#E8E6DC] dark:border-[#2C2B27] scroll-mt-16">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-12">
+            <div className="text-center max-w-3xl mx-auto mb-12 reveal">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-[#141413] dark:text-[#F5F4ED] tracking-tight">
                 {t('landing_features_title')}
               </h2>
@@ -269,7 +298,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 reveal-stagger">
               {/* Feature 1: Canvas LMS */}
               <div className="bg-[#E8E6DC] dark:bg-[#1A1917] p-6 rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] dark:hover:border-[#C96442] transition-all shadow-card flex flex-col justify-between">
                 <div>
@@ -377,9 +406,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         {/* How it works — real setup flow, no fiction */}
         <section id="how" className="py-12 bg-[#E8E6DC] dark:bg-[#141413] border-b border-[#E8E6DC] dark:border-[#2C2B27] scroll-mt-16">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6 reveal">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-center tracking-tight">{t('landing_how_title')}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 reveal-stagger">
               <div className="p-5 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-2">
                 <h3 className="text-sm font-bold">{t('landing_how_1t')}</h3>
                 <p className="text-xs text-[#5E5D59] dark:text-[#B5B2A8] leading-relaxed">{t('landing_how_1d')}</p>
@@ -398,7 +427,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         {/* Comparison vs Notion/Canvas/Motion + Pricing anchor */}
         <section id="comparison" className="py-12 bg-[#E8E6DC] dark:bg-[#141413] border-b border-[#E8E6DC] dark:border-[#2C2B27] scroll-mt-16">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6 reveal">
             <h2 className="text-lg font-extrabold text-center">{t('landing_compare_title')}</h2>
             <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
               <table className="w-full text-xs border-collapse">
@@ -426,7 +455,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </section>
         {/* Privacy & Scopes Transparency — consolidated single disclosure */}
         <section id="privacy" className="py-10 bg-white dark:bg-[#141413] border-b border-[#E8E6DC] dark:border-[#2C2B27] scroll-mt-16">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-3">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-3 reveal">
             <h3 className="text-sm font-bold text-[#141413] dark:text-[#F5F4ED] flex items-center justify-center gap-2"><ShieldCheck className="w-4 h-4 text-[#C96442]" /> {t('landing_privacy_title')}</h3>
             <p className="text-xs text-[#5E5D59] dark:text-[#B5B2A8] leading-relaxed">Student Command Center requests <code className="font-mono bg-[#E8E6DC] dark:bg-[#252422] px-1 py-0.5 rounded">calendar.readonly</code>, <code className="font-mono bg-[#E8E6DC] dark:bg-[#252422] px-1 py-0.5 rounded">gmail.readonly</code>, <code className="font-mono bg-[#E8E6DC] dark:bg-[#252422] px-1 py-0.5 rounded">drive.readonly</code>, <code className="font-mono bg-[#E8E6DC] dark:bg-[#252422] px-1 py-0.5 rounded">spreadsheets</code> and 7 other scopes <em>only</em> to sync your own data locally. No data leaves your browser except for Gemini AI summaries (truncated snippets). Tokens stay in IndexedDB, never logged. Revoke anytime in Google Account.</p>
             <div className="overflow-x-auto text-left">
@@ -444,7 +473,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         {/* Bottom CTA Banner */}
         <section className="py-16 sm:py-20 bg-[#C96442] text-white text-center relative overflow-hidden">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 space-y-6">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 space-y-6 reveal">
             <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
               {t('landing_cta_title')}
             </h2>

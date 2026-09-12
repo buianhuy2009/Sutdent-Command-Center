@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.8.4';
+export const CURRENT_VERSION = '2.9.0';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,25 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.9.0',
+    date: 'September 12, 2026',
+    title: 'Warm Cream Theme + Gentle Dark Mode + Lively Landing',
+    badge: 'Latest Update',
+    highlights: [
+      'Every screen is now warm cream — dashboard, sidebar and panels share one cozy canvas',
+      'Dark mode is softer and easier to read, no more pitch-black surfaces',
+      'Logged-out homepage glows brighter with floating warmth and scroll-reveal animations',
+    ],
+    details: [
+      'Palette (theme tokens in index.css + theme.ts, Sidebar.tsx): light canvas warms to #F7F0DE with cards at #FDF8EC and sand borders #D9CBAE; the sidebar settles into a deeper warm cream #E7D9BC with dark-coffee text. One token change flows everywhere — dashboard, tracker, Canvas, settings — via the existing remap layers.',
+      'Dark mode (elevation system in index.css): canvas lifts from near-black #141413 to soft warm charcoal #252320, surfaces/borders/inputs step up to match, and dim secondary text brightens to #C7C2B4 so small labels stay legible. Find the toggle in the sidebar footer or landing header.',
+      'Landing (logged-out homepage): brighter #FAF3E4 wash, two slowly drifting warm gradient blobs behind the hero, buttery scroll-reveal with staggered card cascades and hover lifts, smooth anchor scrolling, and a press-down feel on the main CTA. All motion respects prefers-reduced-motion.',
+    ]
+  },
+  {
     version: '2.8.4',
     date: 'September 12, 2026',
     title: 'Warmer Look — No Grey Wash, Lighter Sidebar',
-    badge: 'Latest Update',
     highlights: [
       'Dashboard background is now warm cream instead of grey — cards float on one clean canvas',
       'Sidebar is a soft light orange with dark readable text, still a touch deeper than the main panel',
