@@ -4,8 +4,8 @@
 
 /* === Tokenized Theme Engine — Brand / Design System v2.0 === */
 :root {
-  --color-background: 244 229 198; /* #F4E5C6 warm orange cream canvas */
-  --color-panel: 253 248 236; /* #FDF8EC warm card */
+  --color-background: 245 231 198; /* #F5E7C6 warm cream canvas */
+  --color-panel: 253 246 231; /* #FDF6E7 warm card */
   --color-border: 217 203 174; /* #D9CBAE warm sand */
   --color-accent: 201 100 66; /* #C96442 claude primary — CTA only */
   --color-secondary: 124 58 237; /* #7C3AED violet — secondary semantic */
@@ -31,10 +31,10 @@
   --shadow-card: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.04);
   --shadow-card-hover: 0 4px 12px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.06);
 }
-/* Warm orange cream light / soft charcoal dark — canvas #F4E5C6, never gray */
+/* Warm orange cream light / soft charcoal dark — canvas #F5E7C6, never gray */
 :root, :root[data-theme="linen"], :root[data-theme="parchment"] {
-  --color-background: 244 229 198; /* #F4E5C6 warm orange cream canvas */
-  --color-panel: 253 248 236; /* #FDF8EC warm card */
+  --color-background: 245 231 198; /* #F5E7C6 warm cream canvas */
+  --color-panel: 253 246 231; /* #FDF6E7 warm card */
   --color-border: 217 203 174; /* #D9CBAE warm sand */
   --color-accent: 201 100 66; /* #C96442 Claude primary */
   --color-text: 20 20 19; /* #141413 */
@@ -162,11 +162,12 @@ html.dark {
 }
 
 /* WCAG contrast fix: map legacy #8C897F to AA compliant muted (dark-aware var).
-   Layered without !important so explicit dark:text-* utilities still win. */
-@layer base {
-  .text-\[\#8C897F\] { color: rgb(var(--color-muted)); }
-  .text-slate-500 { color: rgb(var(--color-muted)); }
-}
+   UNLAYERED (not @layer base): Tailwind v4 generates utilities in the `utilities`
+   layer, which beats `base` on equal specificity — a layered remap would be dead
+   code and the old hex would render. Dark `dark:text-*` utilities use
+   higher-specificity `html.dark` selectors below, so they still win. */
+.text-\[\#8C897F\] { color: rgb(var(--color-muted)); }
+.text-slate-500 { color: rgb(var(--color-muted)); }
 
 /* Native View Transitions API Styling */
 ::view-transition-old(root),
@@ -217,11 +218,11 @@ html.dark {
 
 /* Glassmorphism Shell Utilities — unified blur with @supports fallback + mobile perf */
 .glass-panel {
-  background-color: rgba(253, 248, 236, 0.92);
+  background-color: rgba(253, 246, 231, 0.92);
 }
 @supports (backdrop-filter: blur(1px)) {
   .glass-panel {
-    background-color: rgba(253, 248, 236, 0.88);
+    background-color: rgba(253, 246, 231, 0.88);
     backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
     -webkit-backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
   }
@@ -233,11 +234,11 @@ html.dark {
 }
 .dark .glass-panel { background-color: rgba(37, 35, 32, 0.90); }
 .glass-card {
-  background-color: rgba(253, 248, 236, 0.9);
+  background-color: rgba(253, 246, 231, 0.9);
 }
 @supports (backdrop-filter: blur(1px)) {
   .glass-card {
-    background-color: rgba(253, 248, 236, 0.85);
+    background-color: rgba(253, 246, 231, 0.85);
     backdrop-filter: blur(var(--blur-glass-card));
     -webkit-backdrop-filter: blur(var(--blur-glass-card));
   }
@@ -377,7 +378,7 @@ html.dark body {
 }
 html:not(.dark),
 html:not(.dark) body {
-  background-color: #F4E5C6;
+  background-color: #F5E7C6;
   color: #141413;
 }
 
@@ -416,7 +417,7 @@ html:not(.dark) body {
   --shadow: var(--shadow-card);
   --shadow-lg: var(--shadow-card-hover);
   /* compat aliases for scattered hexes */
-  --linen: #F4E5C6; --linen-deep: #ECD3AC; --line: #D9CBAE;
+  --linen: #F5E7C6; --linen-deep: #EAD0A2; --line: #D9CBAE;
   --terracotta: #C96442; --terracotta-dark: #A94E33; --stone: #5E5D59;
 }
 .dark, :root[data-theme="midnight"] {
@@ -534,28 +535,26 @@ html[data-dyslexia="opendyslexic"] p, html[data-dyslexia="atkinson"] p { max-wid
 /* Container queries applied helpers */
 .cq-card { container-type: inline-size; }
 
-/* Token aliases — layered (no !important) so Tailwind `dark:` variants always win.
-   Root cause of mixed dark mode was unlayered `!important` forcing #F5F4ED/#E8E6DC
-   even when `.dark` was active. Now: light maps to linen, dark falls back to
-   warm charcoal panel unless a `dark:bg-*` utility overrides (utilities beat base). */
-@layer base {
-  .bg-\[\#F5F4ED\] { background-color: var(--linen); }
-  html.dark .bg-\[\#F5F4ED\] { background-color: #35322B; }
-  .bg-\[\#E8E6DC\] { background-color: var(--linen-deep); }
-  html.dark .bg-\[\#E8E6DC\] { background-color: #35322B; }
-  .bg-\[\#C96442\] { background-color: var(--terracotta); }
-  .text-\[\#C96442\] { color: var(--accent-text); }
-  html.dark .text-\[\#C96442\] { color: #E8A07E; }
-  .text-\[\#5E5D59\] { color: var(--stone); }
-  html.dark .text-\[\#5E5D59\] { color: #B5B2A8; }
-  .border-\[\#E8E6DC\] { border-color: var(--line); }
-  html.dark .border-\[\#E8E6DC\] { border-color: #2C2B27; }
-  .hover\:bg-\[\#A94E33\]:hover { background-color: var(--terracotta-dark); }
-  .hover\:bg-\[\#E8E6DC\]:hover { background-color: var(--linen-deep); }
-  html.dark .hover\:bg-\[\#E8E6DC\]:hover { background-color: #252422; }
-  .focus\:ring-\[\#C96442\]:focus { --tw-ring-color: var(--terracotta); }
-  .border-\[\#C96442\] { border-color: var(--terracotta); }
-}
+/* Token aliases — UNLAYERED (not @layer base) so they beat Tailwind v4 utilities.
+   Root cause of "background never changes" reports: the same selectors in `base`
+   lose to the generated utilities every time. Dark branches use
+   higher-specificity `html.dark` selectors, so `dark:` variants always win. */
+.bg-\[\#F5F4ED\] { background-color: var(--linen); }
+html.dark .bg-\[\#F5F4ED\] { background-color: #35322B; }
+.bg-\[\#E8E6DC\] { background-color: var(--linen-deep); }
+html.dark .bg-\[\#E8E6DC\] { background-color: #35322B; }
+.bg-\[\#C96442\] { background-color: var(--terracotta); }
+.text-\[\#C96442\] { color: var(--accent-text); }
+html.dark .text-\[\#C96442\] { color: #E8A07E; }
+.text-\[\#5E5D59\] { color: var(--stone); }
+html.dark .text-\[\#5E5D59\] { color: #B5B2A8; }
+.border-\[\#E8E6DC\] { border-color: var(--line); }
+html.dark .border-\[\#E8E6DC\] { border-color: #5E5646; }
+.hover\:bg-\[\#A94E33\]:hover { background-color: var(--terracotta-dark); }
+.hover\:bg-\[\#E8E6DC\]:hover { background-color: var(--linen-deep); }
+html.dark .hover\:bg-\[\#E8E6DC\]:hover { background-color: #413C33; }
+.focus\:ring-\[\#C96442\]:focus { --tw-ring-color: var(--terracotta); }
+.border-\[\#C96442\] { border-color: var(--terracotta); }
 
 /* === Dark Elevation System (unlayered → beats layered Tailwind utilities) ===
    App-wide remap of legacy dark hexes so EVERY panel/card/sidebar/input is
@@ -593,18 +592,17 @@ html.dark .dark\:text-\[\#B5B2A8\] { color: #C7C2B4; }
 
 /* === Strict-palette neutralization (decorative indigo/violet → terracotta) ===
    CTA buttons, links and glyphs follow the 3-color theme in both modes.
-   Semantic status colors (emerald/rose/amber alerts, badges) are untouched. */
-@layer base {
-  .bg-indigo-600, .bg-violet-600 { background-color: #C96442; }
-  .hover\:bg-indigo-700:hover, .hover\:bg-violet-700:hover { background-color: #A94E33; }
-  .text-indigo-600, .text-violet-600, .text-indigo-500 { color: var(--accent-text); }
-  html.dark .text-indigo-600, html.dark .text-violet-600, html.dark .text-indigo-500 { color: #E8A07E; }
-  .text-indigo-700, .text-violet-700, .text-violet-800 { color: #A94E33; }
-  .bg-indigo-50 { background-color: #F9E9DF; }
-  .bg-indigo-100, .bg-violet-100 { background-color: #F5E2D5; }
-  .border-indigo-200, .border-violet-200 { border-color: #EAC4A8; }
-  .bg-indigo-500\/15 { background-color: rgba(201, 100, 66, 0.15); }
-}
+   Semantic status colors (emerald/rose/amber alerts, badges) are untouched.
+   UNLAYERED: must beat Tailwind v4 utilities (see note above). */
+.bg-indigo-600, .bg-violet-600 { background-color: #C96442; }
+.hover\:bg-indigo-700:hover, .hover\:bg-violet-700:hover { background-color: #A94E33; }
+.text-indigo-600, .text-violet-600, .text-indigo-500 { color: var(--accent-text); }
+html.dark .text-indigo-600, html.dark .text-violet-600, html.dark .text-indigo-500 { color: #E8A07E; }
+.text-indigo-700, .text-violet-700, .text-violet-800 { color: #A94E33; }
+.bg-indigo-50 { background-color: #F9E9DF; }
+.bg-indigo-100, .bg-violet-100 { background-color: #F5E2D5; }
+.border-indigo-200, .border-violet-200 { border-color: #EAC4A8; }
+.bg-indigo-500\/15 { background-color: rgba(201, 100, 66, 0.15); }
 html.dark .dark\:bg-indigo-950\/60, html.dark .dark\:bg-indigo-950\/40,
 html.dark .dark\:bg-violet-950\/30, html.dark .dark\:bg-violet-950\/40,
 html.dark .dark\:bg-violet-950\/60, html.dark .dark\:bg-violet-950\/70,
@@ -620,28 +618,27 @@ html.dark .dark\:text-violet-300 { color: #E8A07E; }
    Straggler components (QuickDraft, OAuthGuide, Landing, Drive fallback)
    instantly follow the 3-color theme without per-file rewrites.
    Blue/cyan/sky/orange washes map to warm neutrals + terracotta text —
-   brand tiles (AppLogo) and semantic status colors are untouched. */
-@layer base {
-  .bg-slate-50 { background-color: #F4E5C6; }
-  .bg-slate-100 { background-color: #EADFC6; }
-  .bg-slate-200 { background-color: #EADFC6; }
-  .border-slate-100 { border-color: #E8E6DC; }
-  .border-slate-200, .border-slate-300 { border-color: #E8E6DC; }
-  .text-slate-400, .text-slate-500 { color: #5E5D59; }
-  .text-slate-600, .text-slate-700 { color: #5C5A54; }
-  .text-slate-800, .text-slate-900 { color: #141413; }
-  .hover\:bg-slate-50:hover { background-color: #F4E5C6; }
-  .hover\:bg-slate-100:hover, .hover\:bg-slate-200:hover { background-color: #EADFC6; }
-  .hover\:bg-slate-300:hover { background-color: #EADFC6; }
-  .hover\:text-slate-600:hover, .hover\:text-slate-800:hover, .hover\:text-slate-900:hover { color: #141413; }
-  .border-violet-200, .border-violet-300, .border-indigo-200 { border-color: #EAC4A8; }
-  .bg-blue-50, .bg-cyan-50, .bg-sky-50, .bg-indigo-50 { background-color: #F9E9DF; }
-  .bg-blue-100, .bg-cyan-100, .bg-sky-100, .bg-orange-100 { background-color: #F5E2D5; }
-  .border-blue-200, .border-cyan-200, .border-sky-200, .border-indigo-300, .border-orange-200, .border-orange-300 { border-color: #EAC4A8; }
-  .text-blue-600, .text-blue-700, .text-cyan-700, .text-cyan-800, .text-sky-900, .text-indigo-500, .text-indigo-600, .text-orange-600, .text-orange-700 { color: #A94E33; }
-  .hover\:border-blue-400:hover, .hover\:border-orange-400:hover, .hover\:border-indigo-400:hover { border-color: #C96442; }
-  .hover\:bg-blue-50:hover, .hover\:bg-orange-50:hover { background-color: #F9E9DF; }
-}
+   brand tiles (AppLogo) and semantic status colors are untouched.
+   UNLAYERED: must beat Tailwind v4 utilities (see note above). */
+.bg-slate-50 { background-color: #F5E7C6; }
+.bg-slate-100 { background-color: #E9D6AC; }
+.bg-slate-200 { background-color: #E9D6AC; }
+.border-slate-100 { border-color: #E8E6DC; }
+.border-slate-200, .border-slate-300 { border-color: #E8E6DC; }
+.text-slate-400, .text-slate-500 { color: #5E5D59; }
+.text-slate-600, .text-slate-700 { color: #5C5A54; }
+.text-slate-800, .text-slate-900 { color: #141413; }
+.hover\:bg-slate-50:hover { background-color: #F5E7C6; }
+.hover\:bg-slate-100:hover, .hover\:bg-slate-200:hover { background-color: #E9D6AC; }
+.hover\:bg-slate-300:hover { background-color: #E9D6AC; }
+.hover\:text-slate-600:hover, .hover\:text-slate-800:hover, .hover\:text-slate-900:hover { color: #141413; }
+.border-violet-200, .border-violet-300, .border-indigo-200 { border-color: #EAC4A8; }
+.bg-blue-50, .bg-cyan-50, .bg-sky-50, .bg-indigo-50 { background-color: #F9E9DF; }
+.bg-blue-100, .bg-cyan-100, .bg-sky-100, .bg-orange-100 { background-color: #F5E2D5; }
+.border-blue-200, .border-cyan-200, .border-sky-200, .border-indigo-300, .border-orange-200, .border-orange-300 { border-color: #EAC4A8; }
+.text-blue-600, .text-blue-700, .text-cyan-700, .text-cyan-800, .text-sky-900, .text-indigo-500, .text-indigo-600, .text-orange-600, .text-orange-700 { color: #A94E33; }
+.hover\:border-blue-400:hover, .hover\:border-orange-400:hover, .hover\:border-indigo-400:hover { border-color: #C96442; }
+.hover\:bg-blue-50:hover, .hover\:bg-orange-50:hover { background-color: #F9E9DF; }
 html.dark .dark\:bg-slate-900, html.dark .dark\:bg-slate-800 { background-color: #35322B; }
 html.dark .dark\:bg-slate-800\/60 { background-color: color-mix(in srgb, #35322B 60%, transparent); }
 html.dark .dark\:bg-slate-800\/50 { background-color: color-mix(in srgb, #35322B 50%, transparent); }
@@ -675,9 +672,9 @@ html.dark .dark\:hover\:text-slate-200:hover { color: #F5F4ED; }
    visible on cream. Translucent bg-white/* overlays (on terracotta/dark)
    are intentional tints and are NOT remapped. Unlayered so it beats utilities;
    dark branches preserve the soft-charcoal elevation system. */
-.bg-white { background-color: #FDF8EC; }
+.bg-white { background-color: #FDF6E7; }
 html.dark .bg-white { background-color: #35322B; }
-input[class*="bg-white"], select[class*="bg-white"], textarea[class*="bg-white"] { background-color: #EADFC6; }
+input[class*="bg-white"], select[class*="bg-white"], textarea[class*="bg-white"] { background-color: #E9D6AC; }
 html.dark input[class*="bg-white"], html.dark select[class*="bg-white"], html.dark textarea[class*="bg-white"] { background-color: #39352C; }
 /* Hairline borders stay visible on the warm cream main panel */
 [class*="border-[#E8E6DC]"] { border-color: #D8C8A8; }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.9.2';
+export const CURRENT_VERSION = '2.9.3';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,23 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.9.3',
+    date: 'September 12, 2026',
+    title: 'Warm Cream Everywhere — Background Fix That Actually Applies',
+    badge: 'Latest Update',
+    highlights: [
+      'Dashboard and every workspace finally show the warm cream background — the fix is verified in the built CSS',
+      'Settings rows go deeper cream, cards go warm cream, sidebar stays one shade deeper',
+    ],
+    details: [
+      'Root cause (index.css): the cream remaps lived in @layer base, where Tailwind v4 utilities always beat them — every background silently rendered the old pale hex. They are now unlayered (verified: .bg-[#F5F4ED] resolves to var(--linen) #F5E7C6 in dist), so dashboard, all workspace tabs, Settings whites and sand rows show warm cream #F5E7C6 with deeper #EAD0A2 rows and #FDF6E7 cards.',
+      'Sidebar (Sidebar.tsx): softened to #ECD2A6 — lighter than before, still clearly deeper than the warm cream workspace.',
+    ]
+  },
+  {
     version: '2.9.2',
     date: 'September 12, 2026',
     title: 'Warmer Workspace + Richer Sidebar',
-    badge: 'Latest Update',
     highlights: [
       'Dashboard and workspace glow in a warmer orange cream, with the sidebar one shade richer',
     ],

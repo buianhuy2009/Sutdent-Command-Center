@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.9.3 — Warm Cream Everywhere: Background Fix That Applies</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.9.3</link>
+      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Fixed the CSS layer bug that kept backgrounds pale — dashboard and all tabs now show warm cream with deeper rows and a softer sidebar.</description>
+    </item>
+    <item>
       <title>v2.9.2 — Warmer Workspace + Richer Sidebar</title>
       <link>https://student-command-center.vercel.app/?changelog=2.9.2</link>
       <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
