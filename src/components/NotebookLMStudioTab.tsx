@@ -24,11 +24,113 @@ interface ResearchBrief {
 
 const LOCAL_BRIEFS_KEY = 'scc_research_briefs_v2';
 function loadBriefs(): ResearchBrief[] {
-  try { const s = localStorage.getItem(LOCAL_BRIEFS_KEY); if (s) return JSON.parse(s); } catch {}
-  return [];
+  try {
+    const s = localStorage.getItem(LOCAL_BRIEFS_KEY);
+    if (!s) return [];
+    const parsed = JSON.parse(s);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (b: any) => b && typeof b.id === 'string' && typeof b.brief === 'string',
+    ) as ResearchBrief[];
+  } catch { return []; }
 }
 function saveBriefs(list: ResearchBrief[]) {
   try { localStorage.setItem(LOCAL_BRIEFS_KEY, JSON.stringify(list)); } catch {}
+}
+
+/** Tolerant brief-parse hardening: never throws, always falls back to raw text. */
+function stripBriefCodeFences(s: string): string {
+  try {
+    let t = (s ?? '').trim();
+    if (/^```/.test(t)) {
+      t = t.replace(/^```(?:json|markdown|md)?\s*/i, '').replace(/\s*```\s*$/g, '').trim();
+    }
+    return t;
+  } catch { return s ?? ''; }
+}
+function bracketSliceJson(s: string): string {
+  try {
+    const t = (s ?? '').trim();
+    const firstBrace = t.indexOf('{');
+    const firstBracket = t.indexOf('[');
+    let start = -1;
+    let endChar = '';
+    if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) { start = firstBrace; endChar = '}'; }
+    else if (firstBracket !== -1) { start = firstBracket; endChar = ']'; }
+    else return t;
+    const end = t.lastIndexOf(endChar);
+    if (end > start) return t.slice(start, end + 1).trim();
+    return t;
+  } catch { return s ?? ''; }
+}
+function briefEnvelopeToMarkdown(env: any, fallbackRaw: string): string {
+  try {
+    if (typeof env === 'string') return env.trim() || fallbackRaw;
+    if (env == null || typeof env !== 'object') return fallbackRaw;
+    const pick = (...keys: string[]): string => {
+      for (const k of keys) {
+        const v = (env as any)[k];
+        if (typeof v === 'string' && v.trim()) return v.trim();
+        if (Array.isArray(v) && v.length) return v.map((x) => String(x)).join('\n');
+      }
+      return '';
+    };
+    const summary = pick('executiveSummary', 'summary', 'overview');
+    const concepts = pick('keyConcepts', 'concepts', 'definitions', 'key_concepts');
+    const evidence = pick('coreEvidence', 'evidence', 'principles', 'findings');
+    const analysis = pick('criticalAnalysis', 'analysis', 'counterpoints', 'limitations');
+    const takeaways = pick('examTakeaways', 'takeaways', 'exam', 'testable');
+    const outline = pick('outline', 'essayOutline', 'reportOutline');
+    if (!summary && !concepts && !evidence && !analysis && !takeaways && !outline) return fallbackRaw;
+    return [
+      '## 1. EXECUTIVE SUMMARY', summary || '—',
+      '\n## 2. KEY CONCEPTS', concepts || '—',
+      '\n## 3. CORE EVIDENCE', evidence || '—',
+      '\n## 4. CRITICAL ANALYSIS', analysis || '—',
+      '\n## 5. EXAM TAKEAWAYS', takeaways || '—',
+      '\n## 6. OUTLINE', outline || '—',
+    ].join('\n');
+  } catch { return fallbackRaw; }
+}
+function safeCoerceBriefText(raw: unknown): string {
+  try {
+    if (typeof raw !== 'string') return String(raw ?? '');
+    const stripped = stripBriefCodeFences(raw);
+    if (!stripped) return raw;
+    const head = stripped.trim().charAt(0);
+    if (head !== '{' && head !== '[') {
+      if (!/\"executiveSummary\"|\"summary\"|\"keyConcepts\"|\"brief\"/i.test(stripped)) return stripped;
+    }
+    let parsed: any = null;
+    try { parsed = JSON.parse(stripped); }
+    catch {
+      try { parsed = JSON.parse(bracketSliceJson(stripped)); }
+      catch { return stripped; }
+    }
+    try {
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        const nested = (parsed as any).reply ?? (parsed as any).brief ?? (parsed as any).text ?? (parsed as any).content ?? (parsed as any).markdown;
+        if (typeof nested === 'string' && nested.trim()) {
+          const inner = stripBriefCodeFences(nested);
+          if (/^\s*[{[]/.test(inner)) {
+            try { return briefEnvelopeToMarkdown(JSON.parse(inner), inner); }
+            catch {
+              try { return briefEnvelopeToMarkdown(JSON.parse(bracketSliceJson(inner)), inner); }
+              catch { return inner; }
+            }
+          }
+          return inner;
+        }
+      }
+      if (Array.isArray(parsed)) {
+        const joined = parsed.map((x) => (typeof x === 'string' ? x : JSON.stringify(x))).join('\n');
+        return joined || stripped;
+      }
+    } catch { return stripped; }
+    return briefEnvelopeToMarkdown(parsed, stripped);
+  } catch {
+    try { return String(raw ?? ''); } catch { return ''; }
+  }
 }
 
 export const NotebookLMStudioTab: React.FC = () => {
@@ -40,10 +142,12 @@ export const NotebookLMStudioTab: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeBrief, setActiveBrief] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [briefError, setBriefError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
     setIsGenerating(true);
+    setBriefError(null);
     try {
       const prompt = `You are Research Brief Studio - a fully self-contained academic synthesis engine (no external NotebookLM needed).
 Subject: ${subject || 'General'} | Topic: ${topic}
@@ -57,12 +161,43 @@ Produce a structured markdown research brief with sections:
 5. EXAM-FOCUS: 5 testable takeaways + 3 discussion questions
 6. OUTLINE: Suggested essay/report outline
 Keep dense, citation-ready, undergraduate level.`;
-      const res = await fetch('/api/gemini/assistant', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], context: { tool: 'research-brief-studio', topic } }),
-      });
       let briefText = '';
-      if (res.ok) { const d = await res.json(); briefText = d.reply || ''; }
+      try {
+        const res = await fetch('/api/gemini/assistant', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], context: { tool: 'research-brief-studio', topic } }),
+        });
+        // Read as text first so a non-JSON / truncated body never throws an uncaught ParseError.
+        let rawBody = '';
+        try { rawBody = await res.text(); } catch { rawBody = ''; }
+        if (rawBody) {
+          let replyCandidate = '';
+          try {
+            const d = JSON.parse(rawBody);
+            replyCandidate = (d && (d.reply || d.brief || d.text || d.content || d.markdown)) || '';
+            if (!replyCandidate && typeof d === 'string') replyCandidate = d;
+          } catch {
+            try {
+              const sliced = bracketSliceJson(rawBody);
+              const d2 = JSON.parse(sliced);
+              replyCandidate = (d2 && (d2.reply || d2.brief || d2.text || d2.content || d2.markdown)) || '';
+              if (!replyCandidate && typeof d2 === 'string') replyCandidate = d2;
+            } catch {
+              // Not JSON at all — treat the raw body as markdown/prose as-is.
+              replyCandidate = rawBody;
+            }
+          }
+          if (replyCandidate) {
+            try { briefText = safeCoerceBriefText(replyCandidate); }
+            catch { briefText = replyCandidate; }
+          }
+        }
+        if (!briefText && !res.ok) {
+          setBriefError('The AI response could not be parsed, showing a built-in template instead.');
+        }
+      } catch (e) {
+        setBriefError('Brief request failed — showing a built-in template instead. Your input is preserved.');
+      }
       if (!briefText) {
         briefText = `## 1. EXECUTIVE SUMMARY\nComprehensive synthesis of **${topic}** for ${subject || 'General'} — core thesis, mechanisms, and implications.\n\n## 2. KEY CONCEPTS\n- **Core Principle**: Foundational mechanism driving ${topic}\n- **Key Term 2**: Interdependent variable\n\n## 3. CORE EVIDENCE\n1. Foundational experiment/theorem\n2. Real-world application\n\n## 4. CRITICAL ANALYSIS\n- Counterpoint: alternative interpretation\n- Limitation: boundary conditions\n\n## 5. EXAM TAKEAWAYS\n1. Definition of ${topic}\n2. Equation/timeline\n\n## 6. OUTLINE\nI. Introduction — II. Evidence — III. Analysis — IV. Conclusion`;
       }
@@ -75,7 +210,8 @@ Keep dense, citation-ready, undergraduate level.`;
   const handleSaveToNotes = () => {
     if (!activeBrief) return;
     try {
-      const existing = JSON.parse(localStorage.getItem('scc_markdown_notes_v1') || '[]');
+      const rawExisting = JSON.parse(localStorage.getItem('scc_markdown_notes_v1') || '[]');
+      const existing = Array.isArray(rawExisting) ? rawExisting : [];
       const newNote = { id: `note-${Date.now()}`, title: `Research Brief: ${topic || 'Untitled'}`, subject: subject || 'Research', content: activeBrief, updatedAt: new Date().toLocaleDateString() };
       localStorage.setItem('scc_markdown_notes_v1', JSON.stringify([newNote, ...existing]));
     } catch {}
@@ -210,8 +346,15 @@ Keep dense, citation-ready, undergraduate level.`;
                 <p className="text-[11px] text-[#8C897F] max-w-sm">Enter a topic on the left and click Generate — your dense, structured brief appears here instantly, fully self-contained.</p>
               </div>
             ) : (
-              <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed">
-                <MathMarkdown>{activeBrief}</MathMarkdown>
+              <div className="space-y-3">
+                {briefError && (
+                  <div className="px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-[11px] text-amber-800 dark:text-amber-200">
+                    {briefError}
+                  </div>
+                )}
+                <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed">
+                  <MathMarkdown>{(() => { try { return safeCoerceBriefText(activeBrief); } catch { try { return String(activeBrief ?? ''); } catch { return ''; } } })()}</MathMarkdown>
+                </div>
               </div>
             )}
           </div>

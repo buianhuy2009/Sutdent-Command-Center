@@ -1,5 +1,8 @@
 # StudentOS Development & Agent Rules
 
+## 0. GOLDEN RULE
+Finish work → `git fetch origin` + check `HEAD..origin/main` → if remote moved, `git pull --no-rebase origin main` and merge/rebuild first → only then push. Never push blind. Never commit tokens/secrets.
+
 ## 1. TOKEN EFFICIENCY & CODE CONSTRAINTS
 - Make precise, surgical line edits. Do not rewrite full 200+ line files when modifying small functions.
 - Do not re-index the entire codebase unless explicitly instructed.

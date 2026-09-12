@@ -106,9 +106,17 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   };
 
   // Personalized Focus Sprint Goal — now via Zustand (prevents BroadcastChannel race), clamped floor 1
-  const { sprintGoal, setSprintGoal, completedFocusSessions, completedSessions } = usePomodoroStore();
+  const { sprintGoal, setSprintGoal, completedSessions } = usePomodoroStore();
+  // NaN guard: the store exposes `completedSessions`; a legacy `completedFocusSessions`
+  // read is undefined when there is no focus data yet (undefined * 25 = NaN → "NaNm/75m").
+  // Fall back to the live store value, then to 0. Finite real data passes through unchanged.
+  const storeState = usePomodoroStore.getState() as unknown as { completedFocusSessions?: unknown };
+  const rawFocusSessions: unknown = storeState.completedFocusSessions ?? completedSessions;
+  const safeCompletedFocusSessions = Number.isFinite(rawFocusSessions) ? (rawFocusSessions as number) : 0;
+  const safeSprintGoal = Number.isFinite(sprintGoal) ? (sprintGoal as number) : 0;
+  const focusProgressPct = safeSprintGoal > 0 ? Math.min(100, (safeCompletedFocusSessions / safeSprintGoal) * 100) : 0;
   const handleAdjustSprintGoal = (amount: number) => {
-    setSprintGoal(Math.max(1, sprintGoal + amount));
+    setSprintGoal(Math.max(1, (Number.isFinite(sprintGoal) ? (sprintGoal as number) : 0) + amount));
   };
 
   // Streak heatmap — memoized once per render (not 28 JSON.parse per cell)
@@ -118,13 +126,13 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
       const log: {date:string, minutes:number}[] = raw ? JSON.parse(raw) : [];
       const map = new Map<string, number>();
       log.forEach(e => map.set(e.date, (map.get(e.date)||0)+e.minutes));
-      if (map.size===0 && completedFocusSessions>0) {
+      if (map.size===0 && safeCompletedFocusSessions>0) {
         const today = new Date().toISOString().slice(0,10);
-        map.set(today, completedFocusSessions*25);
+        map.set(today, safeCompletedFocusSessions*25);
       }
       return map;
     } catch { return new Map<string, number>(); }
-  }, [completedFocusSessions]);
+  }, [safeCompletedFocusSessions]);
 
   // Today's quote — exclude current index on shuffle
   const [quote, setQuote] = useState<DailyQuote>(() => getTodayQuote());
@@ -458,7 +466,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             <div className="flex items-center gap-3">
               <div className="flex items-center bg-white/70 dark:bg-[#1E1D1B]/50 border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl px-3 py-1 font-bold">
                 <span className="font-mono text-sm text-[#141413] dark:text-[#FAF9F5]">
-                  {completedFocusSessions} / {sprintGoal} {t('dash_sprints')}
+                  {safeCompletedFocusSessions} / {safeSprintGoal} {t('dash_sprints')}
                 </span>
               </div>
               <div className="flex items-center gap-1 bg-white/70 dark:bg-[#1E1D1B]/50 border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl p-0.5">
@@ -491,7 +499,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                 const d=new Date(); d.setDate(d.getDate()-(27-i));
                 const dateStr=d.toISOString().slice(0,10);
                 let mins = streakMap.get(dateStr) || 0;
-                if(mins===0 && dateStr===new Date().toISOString().slice(0,10) && completedFocusSessions>0 && streakMap.size<=1) mins=completedFocusSessions*25;
+                if(mins===0 && dateStr===new Date().toISOString().slice(0,10) && safeCompletedFocusSessions>0 && streakMap.size<=1) mins=safeCompletedFocusSessions*25;
                 let intensity='bg-[#EFECE2] dark:bg-[#252422]';
                 if(mins>=60) intensity='bg-emerald-600';
                 else if(mins>=45) intensity='bg-emerald-500';
@@ -500,13 +508,13 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                 return <div key={i} className={`w-full aspect-square rounded-sm ${intensity}`} title={`${dateStr}: ${mins}m`} />
               })}
             </div>
-            <p className="text-[11px] text-[#6B6860] mt-2">{completedFocusSessions} {t('dash_focus_sprints')} • {sprintGoal} {t('dash_daily_target')}</p>
+            <p className="text-[11px] text-[#6B6860] mt-2">{safeCompletedFocusSessions} {t('dash_focus_sprints')} • {safeSprintGoal} {t('dash_daily_target')}</p>
           </div>
           <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card text-left hover-lift">
             <h4 className="text-xs font-bold text-[#6B6860] uppercase tracking-wider flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[#7C3AED]" strokeWidth={1.75} /> {t('dash_focus_analytics')}</h4>
             <div className="mt-3 space-y-2">
-              <div className="flex items-center justify-between text-xs"><span>{t('dash_deep_work')}</span><span className="font-mono font-bold">{completedFocusSessions * 25}m / {sprintGoal * 25}m</span></div>
-              <div className="h-2 bg-[#EFECE2] dark:bg-[#252422] rounded-full overflow-hidden"><div className="h-full bg-[#D97757]" style={{width: `${Math.min(100, (completedFocusSessions/sprintGoal)*100)}%`}} /></div>
+              <div className="flex items-center justify-between text-xs"><span>{t('dash_deep_work')}</span><span className="font-mono font-bold">{safeCompletedFocusSessions * 25}m / {safeSprintGoal * 25}m</span></div>
+              <div className="h-2 bg-[#EFECE2] dark:bg-[#252422] rounded-full overflow-hidden"><div className="h-full bg-[#D97757]" style={{width: `${focusProgressPct}%`}} /></div>
               <p className="text-[11px] text-[#6B6860]">{t('dash_completion_funnel')} {assignments.filter(a=>a.status==='Done').length}/{assignments.length} {t('dash_tasks_done')}</p>
             </div>
           </div>
