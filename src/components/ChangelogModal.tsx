@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.9.4';
+export const CURRENT_VERSION = '2.9.5';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,21 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.9.5',
+    date: 'September 12, 2026',
+    title: 'Your Exact Creams — #f7daa3 Canvas, #fcce77 Sidebar',
+    badge: 'Latest Update',
+    highlights: [
+      'Main workspace and the entire dashboard now use your #f7daa3, sidebar uses your #fcce77',
+    ],
+    details: [
+      'Palette (theme tokens in index.css + theme.ts, Sidebar.tsx, DashboardHome.tsx): canvas token moves to #f7daa3 across every workspace tab and the whole dashboard (its own deeper fill removed), sidebar rail moves to #fcce77 with matching edge. Verified in dist that the remaps win.',
+    ]
+  },
+  {
     version: '2.9.4',
     date: 'September 12, 2026',
     title: 'Claude-Sidebar Cream + Deeper Dashboard',
-    badge: 'Latest Update',
     highlights: [
       'Workspaces and sidebar now wear Claude-sidebar cream, dashboard one shade deeper',
     ],
