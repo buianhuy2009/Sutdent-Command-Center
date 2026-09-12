@@ -1,9 +1,74 @@
 import React, { useState } from 'react';
 import { Sparkles, Copy, Check, BookOpen, Layers } from 'lucide-react';
 import { MathMarkdown } from '../MathMarkdown';
-import { feynmanExplainThreeTiers } from '../../services/gemini';
+import { feynmanExplainThreeTiers, getClientGeminiApiKey, getClientGroqApiKey } from '../../services/gemini';
 import { ThreeTierFeynmanResult } from '../../types';
 import { t, useLang } from '../../services/i18n';
+
+const FEYNMAN_STOPWORDS = new Set([
+  'the', 'and', 'for', 'with', 'from', 'that', 'this', 'what', 'when', 'where',
+  'explain', 'concept', 'about', 'into', 'please', 'mean', 'means', 'does',
+  'how', 'why', 'are', 'was', 'were', 'has', 'have', 'had', 'its', 'our',
+  'your', 'their', 'they', 'them', 'then', 'than', 'also', 'very', 'will',
+  'would', 'could', 'should',
+]);
+
+function extractKeyTerms(concept: string): string[] {
+  const words = concept
+    .replace(/[^\p{L}\p{N}\s\-']/gu, ' ')
+    .split(/\s+/)
+    .map((w) => w.trim().replace(/^['-]+|['-]+$/g, ''))
+    .filter((w) => w.length > 2 && !FEYNMAN_STOPWORDS.has(w.toLowerCase()));
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const w of words) {
+    const key = w.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(w);
+    }
+  }
+  // Prefer capitalized / longer (likely topical) terms first.
+  unique.sort((a, b) => {
+    const cap = Number(/^[A-Z]/.test(b)) - Number(/^[A-Z]/.test(a));
+    return cap || b.length - a.length;
+  });
+  return unique.slice(0, 6);
+}
+
+function buildLocalFeynmanFallback(concept: string): ThreeTierFeynmanResult {
+  const clean = concept.trim().replace(/\s+/g, ' ');
+  const title = clean.length > 60 ? `${clean.slice(0, 60).trimEnd()}…` : clean;
+  const terms = extractKeyTerms(clean);
+  const keyLine = terms.length > 0 ? terms.join(', ') : clean;
+  const firstTerm = terms[0] ?? title;
+
+  return {
+    concept: title,
+    corePrinciple: `"${title}" in one sentence: it describes how ${firstTerm} behaves and what causes it to change.`,
+    tier1_eli5:
+      `Let's talk about "${title}" with super simple words.\n\n` +
+      `Imagine you have a toy you love. "${title}" is like learning the toy's one favorite trick — the main thing it does. ` +
+      `When you see ${firstTerm}, ask: "What is it doing right now?" Then ask: "What made it do that?" ` +
+      `That's the whole game: spot the thing, spot what pushes it, and watch what happens next.\n\n` +
+      `Say it back in your own tiny words: "I think ${title} means…" If you can tell it to a 5-year-old and they nod, you really get it!`,
+    tier2_highschool:
+      `High-school scaffold for "${title}".\n\n` +
+      `1) Definition: ${title} is the pattern of how ${firstTerm} works — its parts, its inputs, and its outputs.\n` +
+      `2) How it works: (a) start with the setup, (b) follow the cause → effect chain step by step, (c) check what stays the same and what changes.\n` +
+      `3) Key terms to nail down: ${keyLine}. Define each in one line without jargon, then reconnect them: which one drives the others?\n` +
+      `4) Worked check: pick one everyday example of "${title}", write the "before → action → after" chain, and name where someone could get confused. ` +
+      `If you can predict the "after" from the "before", you've got the high-school level down.`,
+    tier3_undergrad:
+      `Undergraduate scaffold for "${title}".\n\n` +
+      `1) Formalize: state the governing principle behind ${firstTerm} (law, theorem, model, or mechanism) and its boundary conditions — when does it hold, when does it break?\n` +
+      `2) Derive: decompose "${title}" into variables and relations: identify state variables, parameters, and the governing equation or stepwise mechanism linking them. ` +
+      `Key vocabulary: ${keyLine}.\n` +
+      `3) Analyze: test edge cases and limiting behavior (what happens at extremes?), compare with one adjacent theory, and name the standard counterargument or misconception.\n` +
+      `4) Feynman close: compress the above into a 3-sentence rigorous summary you could defend in a tutorial — claim, justification, qualification.`,
+    analogy: `Think of "${title}" like learning a recipe: the ingredients are ${keyLine} — once you know what each one does, the steps stop feeling like magic.`,
+  };
+}
 
 export const FeynmanWorkspace: React.FC = () => {
   useLang();
@@ -19,17 +84,39 @@ export const FeynmanWorkspace: React.FC = () => {
   });
   const [activeTier, setActiveTier] = useState<'eli5' | 'hs' | 'uni'>('hs');
   const [copied, setCopied] = useState(false);
+  const [explainError, setExplainError] = useState<string | null>(null);
 
   const handleSimplify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!concept.trim()) return;
+    const trimmed = concept.trim();
+    if (!trimmed) return;
 
     setIsSimplifying(true);
+    setExplainError(null);
+    // Local template fallback: always render 3 tiers instantly with zero network / zero key.
+    setTierResult(buildLocalFeynmanFallback(trimmed));
     try {
-      const res = await feynmanExplainThreeTiers(concept.trim());
-      setTierResult(res);
+      // AI-enhance only when a key is configured; otherwise the offline scaffold is the answer.
+      let hasKey = false;
+      try {
+        hasKey = Boolean(getClientGeminiApiKey() || getClientGroqApiKey());
+      } catch {
+        hasKey = false;
+      }
+      if (!hasKey) return;
+      const res = await feynmanExplainThreeTiers(trimmed);
+      if (res?.tier1_eli5 && res?.tier2_highschool && res?.tier3_undergrad) {
+        setTierResult(res);
+      } else {
+        setExplainError('AI returned an incomplete explanation — showing the built-in study scaffold instead.');
+      }
     } catch (err) {
       console.error('Feynman simplification error:', err);
+      setExplainError(
+        err instanceof Error
+          ? `AI enhancement failed (${err.message}) — showing the built-in study scaffold instead.`
+          : 'AI enhancement failed — showing the built-in study scaffold instead.',
+      );
     } finally {
       setIsSimplifying(false);
     }
@@ -95,6 +182,13 @@ export const FeynmanWorkspace: React.FC = () => {
           <span>{isSimplifying ? t('feyn_translating') : t('feyn_explain')}</span>
         </button>
       </form>
+
+      {/* Error (never silent) */}
+      {explainError && (
+        <div role="alert" className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-3xl px-5 py-3.5 text-xs text-rose-700 dark:text-rose-300 leading-relaxed">
+          {explainError}
+        </div>
+      )}
 
       {/* Result Cards */}
       {tierResult && (
