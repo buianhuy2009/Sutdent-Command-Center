@@ -329,3 +329,16 @@ Commander verification (ls-remote + diff vs origin/main, worker build reports):
 
 ### Status flips
 049, 050, 051, 052, 053, 046, 054, 055, 056, 057 → `ready` (10 branches await human merge). 058 → `queued`. 0 `in-progress`. Consecutive BLOCKED: 0.
+
+## ✅ MERGE — 2026-09-12 (merger session, integrate/merge-2026-09-12 → main @7b36d54)
+
+Human ordered "merge them, remember to pull". Pull-first honored: `HEAD..origin/main` empty at start AND before push — remote never moved, no pull needed, no sibling commits absorbed.
+- Merged (10, EACH `git merge --no-ff` + `npm run build` exit 0, plus final build on main = 11 green builds): 049, 050, 051, 052, 053, 046, 054, 055, 056, 057.
+- Conflict (0): the feared 049-vs-v2.10.0 DashboardHome clash auto-merged clean via ort; post-merge tree holds BOTH sibling linen styling and 049's `safeCompletedFocusSessions/safeSprintGoal/focusProgressPct` guards. No `merge --abort` needed.
+- Coherence: 10 files (single-file UI/workspaces + AGENTS.md docs); zero diff under `src/services/`; no resurrected deletes. NOTE: `scc_pomo_completed_v1` now has two writers (pre-existing `stores/pomodoroStore.ts` + new 050 code writing `'1'` on focus-block start if absent) — semantics compatible, store's storage-event listener keeps sync; first place to look if pomo counts ever drift.
+- Pushed `4fae06f..7b36d54` to origin/main (no force). Integration branch also pushed for the record. Vercel will deploy main.
+- Untouched: stash@{0}, ORDERS.md, changelog trio (consolidated entry still pending as order 060).
+
+### Status flips (all → `merged` @7b36d54)
+049, 050, 051, 052, 053, 046, 054, 055, 056, 057.
+Remains `queued`: 058 (Periodic Table polish — dispatch when DRAIN lifts). Remain `blocked`: 025, 041 (superseded, historic). Remains `conflict`: 006 (CreationStudio XSS sink — still OPEN, needs manual revive).
