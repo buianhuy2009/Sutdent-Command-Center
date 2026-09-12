@@ -2867,8 +2867,8 @@ export default function App() {
           ) : (
             <main id="main-content" className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 min-h-0" aria-label="Workspace content">
               <ErrorBoundary fallback={<div className="p-6 rounded-2xl border border-rose-200 bg-rose-50 text-rose-900 text-sm">Workspace failed to load. Try refreshing or switching tabs.</div>}>
-              <Suspense fallback={<div className="p-8 flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#C96442] border-t-transparent rounded-full animate-spin" /><span className="ml-2 text-xs text-[#8C897F]">Loading workspace…</span></div>}>
-              <div className="max-w-7xl mx-auto space-y-6">
+              <Suspense fallback={<div className="p-8 flex items-center justify-center"><div className="w-6 h-6 border-2 border-[#D97757] border-t-transparent rounded-full animate-spin" /><span className="ml-2 text-xs text-[#8C897F]">Loading workspace…</span></div>}>
+              <div className="max-w-7xl mx-auto space-y-6 enter">
                 {/* Google Workspace Connection Banner: only when no usable grant
                     exists. Access renews silently via the offline grant, so no
                     expiry state is ever surfaced — reconnecting once upgrades

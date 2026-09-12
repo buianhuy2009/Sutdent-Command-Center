@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.9.7';
+export const CURRENT_VERSION = '2.9.8';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,21 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.9.8',
+    date: 'September 12, 2026',
+    title: '#f7e4c6 Canvas + Motion & Feel Polish',
+    badge: 'Latest Update',
+    highlights: [
+      'Background is now your #f7e4c6, and the whole app feels alive: cascading entrances, tactile buttons, lift-on-hover cards',
+    ],
+    details: [
+      'Canvas (theme tokens in index.css + theme.ts): background token moves to #f7e4c6 everywhere. Feel (new polish layer in index.css): dashboard hub and stat cards cascade in with a staggered rise, the workspace gently rises on load, cards lift with a soft shadow on hover, every button has a tactile press-down, links/focus rings/scrollbars are brand-toned, and prefers-reduced-motion fully disables it all for accessibility. Verified in dist.',
+    ]
+  },
+  {
     version: '2.9.7',
     date: 'September 12, 2026',
     title: '#f2eac7 Canvas + Swatch-Matched Sidebar',
-    badge: 'Latest Update',
     highlights: [
       'Background moves to your #f2eac7, sidebar matched to your swatch',
     ],

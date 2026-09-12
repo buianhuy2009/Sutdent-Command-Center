@@ -231,7 +231,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
       <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-br ${vibeGlowClass} via-transparent to-transparent rounded-full blur-3xl pointer-events-none transition-all duration-700`} />
 
       {/* Main Centered Personalization Hub — above-fold tightened (clock moved to navbar) */}
-      <div className="max-w-3xl w-full space-y-8 my-auto py-6 z-10">
+      <div className="max-w-3xl w-full space-y-8 my-auto py-6 z-10 stagger">
         
         {/* Large Typographic Piece: The Personalized Greeting — explicit edit button only */}
         <div className="space-y-4">
@@ -483,8 +483,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
         </details>
 
         {/* Habit Streak — memoized via streakMap (single JSON.parse) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card text-left">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger">
+          <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card text-left hover-lift">
             <h4 className="text-xs font-bold text-[#6B6860] uppercase tracking-wider flex items-center gap-1.5"><Timer className="w-3.5 h-3.5 text-[#D97757]" strokeWidth={1.75} /> {t('dash_streak_title')}</h4>
             <div className="mt-3 grid grid-cols-7 gap-1">
               {Array.from({length:28}).map((_,i)=>{
@@ -502,7 +502,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             </div>
             <p className="text-[11px] text-[#6B6860] mt-2">{completedFocusSessions} {t('dash_focus_sprints')} • {sprintGoal} {t('dash_daily_target')}</p>
           </div>
-          <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card text-left">
+          <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card text-left hover-lift">
             <h4 className="text-xs font-bold text-[#6B6860] uppercase tracking-wider flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[#7C3AED]" strokeWidth={1.75} /> {t('dash_focus_analytics')}</h4>
             <div className="mt-3 space-y-2">
               <div className="flex items-center justify-between text-xs"><span>{t('dash_deep_work')}</span><span className="font-mono font-bold">{completedFocusSessions * 25}m / {sprintGoal * 25}m</span></div>
