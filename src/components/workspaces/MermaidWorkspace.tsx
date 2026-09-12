@@ -2,8 +2,93 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Network, Sparkles, Copy, Check, Download, RefreshCw } from 'lucide-react';
 import mermaid from 'mermaid';
 import DOMPurify from 'dompurify';
-import { generateMermaidDiagram } from '../../services/gemini';
+import { generateMermaidDiagram, getClientGeminiApiKey, getClientGroqApiKey } from '../../services/gemini';
 import { t, useLang } from '../../services/i18n';
+
+const VALID_FIRST_LINE =
+  /^(graph|flowchart|mindmap|sequenceDiagram|classDiagram|stateDiagram-v2|stateDiagram|erDiagram|gantt|pie|gitGraph|journey|timeline|quadrantChart|requirementDiagram|sankey-beta)\b/i;
+
+function stripCodeFences(code: string): string {
+  return code
+    .trim()
+    .replace(/^```(?:mermaid)?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+}
+
+function dropBareVertLines(code: string): string {
+  // A bare `vert` line is a task TAG, not a mermaid statement — it blanks the whole diagram.
+  return code
+    .split(/\r?\n/)
+    .filter((line) => line.trim().toLowerCase() !== 'vert')
+    .join('\n');
+}
+
+function cleanMindmapLabel(raw: string): string {
+  const cleaned = raw
+    .replace(/[#(){}\[\]"'`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80);
+  return cleaned || 'Idea';
+}
+
+// Local fallback: converts indented / plain-text input into a valid `mindmap` block.
+// No network, no API key — always produces renderable mermaid.
+function buildLocalMindmap(topic: string): string {
+  const rawLines = topic
+    .split(/\r?\n/)
+    .map((l) => l.replace(/\t/g, '  ').replace(/\s+$/g, ''))
+    .filter((l) => l.trim().length > 0);
+  if (rawLines.length === 0) {
+    return 'mindmap\n  root((New Mindmap))\n    Overview\n    Key points\n    Examples';
+  }
+  // Single-line prompt: split on list separators when present, else use generic branches.
+  if (rawLines.length === 1) {
+    const single = rawLines[0].trim();
+    const parts = single
+      .split(/[,;|]|\s+-\s+|\s*>\s*/)
+      .map((p) => cleanMindmapLabel(p))
+      .filter(Boolean);
+    const root = cleanMindmapLabel(single.slice(0, 60));
+    if (parts.length >= 2 && parts.length <= 8) {
+      return ['mindmap', `  root((${root}))`, ...parts.map((p) => `    ${p}`)].join('\n');
+    }
+    return [
+      'mindmap',
+      `  root((${root}))`,
+      '    Definition',
+      `      ${cleanMindmapLabel(single.slice(0, 50))}`,
+      '    Key points',
+      '      Point 1',
+      '      Point 2',
+      '    Examples',
+    ].join('\n');
+  }
+  const root = cleanMindmapLabel(rawLines[0]);
+  const out: string[] = ['mindmap', `  root((${root}))`];
+  for (const line of rawLines.slice(1)) {
+    const indent = line.match(/^ */)?.[0].length ?? 0;
+    const level = Math.min(3, Math.floor(indent / 2) + 1);
+    out.push(`${'  '.repeat(level + 1)}${cleanMindmapLabel(line)}`);
+  }
+  return dropBareVertLines(out.join('\n'));
+}
+
+function ensureValidMermaid(code: string, fallbackTopic: string): string {
+  const cleaned = dropBareVertLines(stripCodeFences(code)).trim();
+  if (!cleaned) return buildLocalMindmap(fallbackTopic);
+  const firstLine = cleaned.split(/\r?\n/).find((l) => l.trim().length > 0)?.trim() ?? '';
+  if (!VALID_FIRST_LINE.test(firstLine)) {
+    // AI returned prose or an unknown block — fall back to a guaranteed-valid mindmap.
+    return buildLocalMindmap(fallbackTopic);
+  }
+  if (/^mindmap/i.test(firstLine) && !/^\s*root\s*\(/im.test(cleaned)) {
+    const root = cleanMindmapLabel(fallbackTopic.split(/\r?\n/)[0]?.slice(0, 60) || 'Topic');
+    return cleaned.replace(/^mindmap[^\n]*\n/i, `mindmap\n  root((${root}))\n`);
+  }
+  return cleaned;
+}
 
 const DEFAULT_CHART = `graph TD
   A[Start Problem] --> B{Formulate Hypothesis}
@@ -19,30 +104,53 @@ export const MermaidWorkspace: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [renderError, setRenderError] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
   const renderContainerRef = useRef<HTMLDivElement>(null);
+  const renderSeqRef = useRef(0);
 
+  // mermaid v11: initialize once, render via `mermaid.render(id, code) -> { svg }`.
   useEffect(() => {
     mermaid.initialize({
       startOnLoad: false,
       theme: 'default',
       securityLevel: 'loose',
     });
-    renderDiagram(chartCode);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void renderDiagram(chartCode);
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chartCode]);
 
   const renderDiagram = async (code: string) => {
+    const seq = ++renderSeqRef.current;
     setRenderError(null);
-    if (!renderContainerRef.current) return;
+    const container = renderContainerRef.current;
+    if (!container) return;
+    if (!code.trim()) {
+      container.innerHTML = '';
+      return;
+    }
     try {
-      const id = `mermaid-svg-${Date.now()}`;
+      const id = `mermaid-svg-${Date.now()}-${seq}`;
+      // Await the v11 render promise; a unique id avoids collisions across rapid edits.
       const { svg } = await mermaid.render(id, code);
-      if (renderContainerRef.current) {
-        renderContainerRef.current.innerHTML = DOMPurify.sanitize(svg, {
+      if (seq !== renderSeqRef.current) return; // stale render — a newer keystroke won
+      const el = renderContainerRef.current;
+      if (el) {
+        // KEEP: sanitize-then-render (order 002) — never innerHTML raw SVG.
+        el.innerHTML = DOMPurify.sanitize(svg, {
           USE_PROFILES: { svg: true },
         });
       }
     } catch (err: any) {
-      setRenderError(t('merm_syntax_error'));
+      if (seq !== renderSeqRef.current) return;
+      const detail = err?.message ? String(err.message) : String(err);
+      // Surface the real render error as text so users can fix their syntax.
+      setRenderError(`${t('merm_syntax_error')}: ${detail}`);
     }
   };
 
@@ -50,13 +158,29 @@ export const MermaidWorkspace: React.FC = () => {
     e.preventDefault();
     if (!aiPrompt.trim()) return;
     setIsGenerating(true);
+    setAiError(null);
+    const promptText = aiPrompt.trim();
+    const hasKey = Boolean(
+      getClientGeminiApiKey()?.trim() || getClientGroqApiKey()?.trim()
+    );
     try {
-      const res = await generateMermaidDiagram(aiPrompt);
-      if (res?.code) {
-        setChartCode(res.code);
+      if (hasKey) {
+        try {
+          const res = await generateMermaidDiagram(promptText);
+          if (res?.code?.trim()) {
+            setChartCode(ensureValidMermaid(res.code, promptText));
+            return;
+          }
+        } catch (err) {
+          console.error('Error generating diagram:', err);
+        }
       }
-    } catch (err) {
+      // No key (or AI failed/empty) — local template always yields a valid mindmap.
+      setChartCode(buildLocalMindmap(promptText));
+    } catch (err: any) {
       console.error('Error generating diagram:', err);
+      setAiError(err?.message ? String(err.message) : 'AI generation failed — used local mindmap instead.');
+      setChartCode(buildLocalMindmap(promptText));
     } finally {
       setIsGenerating(false);
     }
@@ -103,22 +227,29 @@ export const MermaidWorkspace: React.FC = () => {
       </div>
 
       {/* AI Generator Input */}
-      <form onSubmit={handleGenerateAI} className="bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-xs flex gap-2">
-        <input
-          type="text"
-          value={aiPrompt}
-          onChange={(e) => setAiPrompt(e.target.value)}
-          placeholder={t('merm_prompt_ph')}
-          className="flex-1 px-4 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
-        />
-        <button
-          type="submit"
-          disabled={isGenerating}
-          className="px-5 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-2xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>{isGenerating ? t('merm_generating') : t('merm_generate')}</span>
-        </button>
+      <form onSubmit={handleGenerateAI} className="bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-xs flex flex-col gap-2">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            placeholder={t('merm_prompt_ph')}
+            className="flex-1 px-4 py-2 text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
+          />
+          <button
+            type="submit"
+            disabled={isGenerating}
+            className="px-5 py-2 bg-[#D97757] hover:bg-[#C86646] disabled:opacity-50 text-white rounded-2xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{isGenerating ? t('merm_generating') : t('merm_generate')}</span>
+          </button>
+        </div>
+        {aiError ? (
+          <div className="px-4 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-2xl text-xs">
+            {aiError}
+          </div>
+        ) : null}
       </form>
 
       {/* Side-by-Side Split Editor / Preview */}
@@ -142,12 +273,11 @@ export const MermaidWorkspace: React.FC = () => {
             {t('merm_preview')}
           </span>
           {renderError ? (
-            <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs">
+            <div className="mb-4 p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs whitespace-pre-wrap break-words">
               {renderError}
             </div>
-          ) : (
-            <div ref={renderContainerRef} className="flex-1 flex justify-center items-center py-6 overflow-auto bg-[#FAF9F5]/50 dark:bg-[#1F1E1B]/50 rounded-xl border border-[#DFDACB]/40 dark:border-[#2C2B27]/40" />
-          )}
+          ) : null}
+          <div ref={renderContainerRef} className="flex-1 flex justify-center items-center py-6 overflow-auto bg-[#FAF9F5]/50 dark:bg-[#1F1E1B]/50 rounded-xl border border-[#DFDACB]/40 dark:border-[#2C2B27]/40 min-h-[240px]" />
         </div>
       </div>
     </div>
