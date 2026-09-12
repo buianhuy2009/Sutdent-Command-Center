@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.9.2 — Warmer Workspace + Richer Sidebar</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.9.2</link>
+      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Dashboard and workspace move to a warmer orange cream with the sidebar one shade richer.</description>
+    </item>
+    <item>
       <title>v2.9.1 — Plain Warm Cream Background: Starry Wash Removed</title>
       <link>https://student-command-center.vercel.app/?changelog=2.9.1</link>
       <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>

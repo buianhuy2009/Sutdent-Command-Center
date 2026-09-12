@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.9.1';
+export const CURRENT_VERSION = '2.9.2';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,21 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.9.2',
+    date: 'September 12, 2026',
+    title: 'Warmer Workspace + Richer Sidebar',
+    badge: 'Latest Update',
+    highlights: [
+      'Dashboard and workspace glow in a warmer orange cream, with the sidebar one shade richer',
+    ],
+    details: [
+      'Palette (theme tokens in index.css + theme.ts, Sidebar.tsx): canvas warms from #F0EEE6 to orange cream #F4E5C6 and the sidebar deepens to #E9CDA0 with a matching edge — cards, borders and dark mode follow the existing tokens untouched.',
+    ]
+  },
+  {
     version: '2.9.1',
     date: 'September 12, 2026',
     title: 'Plain Warm Cream Background — Starry Wash Removed',
-    badge: 'Latest Update',
     highlights: [
       'The grey starry wash on the dashboard is gone — plain Claude-sidebar warm cream behind everything',
     ],

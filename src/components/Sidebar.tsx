@@ -120,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       aria-label="Primary navigation"
       data-tour="sidebar"
       role="navigation"
-      className={`h-screen shrink-0 bg-[#E7D9BC] dark:bg-[#1A1917] border-r border-[#C9B489] dark:border-[#2C2B27] flex flex-col transition-all duration-300 z-30 select-none ${
+      className={`h-screen shrink-0 bg-[#E9CDA0] dark:bg-[#1A1917] border-r border-[#CFA96F] dark:border-[#2C2B27] flex flex-col transition-all duration-300 z-30 select-none ${
         isExpanded ? 'w-64 p-4' : 'w-16 p-2'
       }`}
     >
@@ -208,7 +208,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     ) : (
                       <>
                         {hasBadge && (
-                          <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#E7D9BC] dark:ring-[#282723] ${badgeColor}`} />
+                          <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[#E9CDA0] dark:ring-[#282723] ${badgeColor}`} />
                         )}
                         <span className="absolute left-16 bg-[#141413] dark:bg-[#F5F4ED] text-[#F5F4ED] dark:text-[#141413] text-xs font-semibold px-2.5 py-1 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity delay-100 whitespace-nowrap z-50 shadow-md border border-[#E8E6DC] dark:border-[#2C2B27]" role="tooltip">
                           {meta.label || app.name}
