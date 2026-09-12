@@ -120,6 +120,8 @@ export const UnitConverterWorkspace: React.FC = () => {
   // Scientific quick calculator
   const [calcInput, setCalcInput] = useState('');
   const [calcResult, setCalcResult] = useState<string | null>(null);
+  const [aiResult, setAiResult] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const currentCategoryData = UNIT_CATEGORIES[category];
 
@@ -170,30 +172,312 @@ export const UnitConverterWorkspace: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // --- Instant Math Evaluator: tokenizer + recursive-descent parser (no eval/Function) ---
+  // Supports +-*/^% parentheses, decimals, implicit-mult like 2(3+4) / 2pi,
+  // functions sqrt/sin/cos/tan/log(base-10)/ln, constants pi/e.
+  // Precedence: parens/functions > ^ (right-assoc) > unary > implicit/explicit */% > +-.
+  type MathToken =
+    | { kind: 'num'; value: number; pos: number; raw: string }
+    | { kind: 'op'; op: string; pos: number }
+    | { kind: 'lparen'; pos: number }
+    | { kind: 'rparen'; pos: number }
+    | { kind: 'ident'; name: string; pos: number };
+
+  const tokenizeMath = (input: string): MathToken[] => {
+    const tokens: MathToken[] = [];
+    let i = 0;
+    while (i < input.length) {
+      const ch = input[i];
+      const pos = i;
+      if (/\s/.test(ch)) {
+        i += 1;
+        continue;
+      }
+      if (ch === '(') {
+        tokens.push({ kind: 'lparen', pos });
+        i += 1;
+        continue;
+      }
+      if (ch === ')') {
+        tokens.push({ kind: 'rparen', pos });
+        i += 1;
+        continue;
+      }
+      if ('+-*/^%'.includes(ch)) {
+        tokens.push({ kind: 'op', op: ch, pos });
+        i += 1;
+        continue;
+      }
+      if (ch === ',') {
+        throw new Error(`Unexpected ',' at position ${pos} — functions take a single argument, e.g. sqrt(16)`);
+      }
+      if (/[0-9.]/.test(ch)) {
+        let j = i;
+        while (j < input.length && /[0-9.]/.test(input[j])) j += 1;
+        let raw = input.slice(i, j);
+        // Scientific notation: 1e3 / 1E-3 / 2.5e+4 (keeps 'e' constant unambiguous)
+        const sci = /^([0-9]*\.?[0-9]+)[eE]([+-]?[0-9]+)$/.exec(input.slice(i, j + 6));
+        if (sci) {
+          raw = sci[0];
+          j = i + raw.length;
+        }
+        if (!/^(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(raw) || raw === '.') {
+          throw new Error(`Invalid number '${raw}' at position ${pos}`);
+        }
+        const value = Number(raw);
+        if (!Number.isFinite(value)) {
+          throw new Error(`Invalid number '${raw}' at position ${pos}`);
+        }
+        tokens.push({ kind: 'num', value, pos, raw });
+        i = j;
+        continue;
+      }
+      if (/[a-zA-Zπ]/.test(ch)) {
+        let j = i;
+        while (j < input.length && /[a-zA-Zπ]/.test(input[j])) j += 1;
+        const name = input.slice(i, j).toLowerCase();
+        tokens.push({ kind: 'ident', name, pos });
+        i = j;
+        continue;
+      }
+      throw new Error(`Unexpected character '${ch}' at position ${pos}`);
+    }
+    return tokens;
+  };
+
+  const evaluateMathExpression = (input: string): number => {
+    const tokens = tokenizeMath(input);
+    if (tokens.length === 0) throw new Error('Empty expression at position 0 — try e.g. 2+2*3');
+    let idx = 0;
+    const peek = () => tokens[idx];
+    const SUPPORTED_FUNCS = ['sqrt', 'sin', 'cos', 'tan', 'log', 'ln'];
+
+    const parseExpression = (): number => {
+      let left = parseTerm();
+      for (;;) {
+        const t = peek();
+        if (t && t.kind === 'op' && (t.op === '+' || t.op === '-')) {
+          idx += 1;
+          const next = peek();
+          if (!next) throw new Error(`Unexpected end of expression at position ${input.length} — expected a number or '(' after '${t.op}'`);
+          if (next.kind === 'op' && (next.op === '*' || next.op === '/' || next.op === '^' || next.op === '%' || next.op === ')')) {
+            throw new Error(`Unexpected '${(next.kind === 'op' ? next.op : ')')}' at position ${next.pos} — expected a number or '(' after '${t.op}'`);
+          }
+          if (next.kind === 'rparen') throw new Error(`Unexpected ')' at position ${next.pos} — expected a value after '${t.op}'`);
+          const right = parseTerm();
+          left = t.op === '+' ? left + right : left - right;
+        } else break;
+      }
+      return left;
+    };
+
+    const isImplicitStart = (t: MathToken | undefined): boolean =>
+      !!t && (t.kind === 'num' || t.kind === 'lparen' || t.kind === 'ident');
+
+    const parseTerm = (): number => {
+      let left = parseUnary();
+      for (;;) {
+        const t = peek();
+        if (t && t.kind === 'op' && (t.op === '*' || t.op === '/' || t.op === '%')) {
+          const opPos = t.pos;
+          idx += 1;
+          const next = peek();
+          if (!next) throw new Error(`Unexpected end of expression at position ${input.length} — expected a value after '${t.op}'`);
+          if (next.kind === 'rparen') throw new Error(`Unexpected ')' at position ${next.pos} — expected a value after '${t.op}'`);
+          if (next.kind === 'op') throw new Error(`Unexpected '${next.op}' at position ${next.pos} — expected a value after '${t.op}'`);
+          const right = parseUnary();
+          if (t.op === '*') left = left * right;
+          else if (t.op === '/') {
+            if (right === 0) throw new Error(`Division by zero at position ${opPos}`);
+            left = left / right;
+          } else {
+            if (right === 0) throw new Error(`Modulo by zero at position ${opPos}`);
+            left = left % right;
+          }
+        } else if (isImplicitStart(t)) {
+          // Implicit multiplication: 2(3+4), (2+3)(4+5), 2pi, 2sqrt(4)
+          const right = parseUnary();
+          left = left * right;
+        } else break;
+      }
+      return left;
+    };
+
+    const parseUnary = (): number => {
+      const t = peek();
+      if (t && t.kind === 'op' && (t.op === '+' || t.op === '-')) {
+        idx += 1;
+        const operand = parseUnary();
+        return t.op === '+' ? operand : -operand;
+      }
+      return parsePower();
+    };
+
+    const parsePower = (): number => {
+      const base = parsePrimary();
+      const t = peek();
+      if (t && t.kind === 'op' && t.op === '^') {
+        const opPos = t.pos;
+        idx += 1;
+        const next = peek();
+        if (!next) throw new Error(`Unexpected end of expression at position ${input.length} — expected an exponent after '^'`);
+        if (next.kind === 'rparen') throw new Error(`Unexpected ')' at position ${next.pos} — expected an exponent after '^'`);
+        if (next.kind === 'op' && (next.op === '*' || next.op === '/' || next.op === '^' || next.op === '%' || next.op === ')')) {
+          throw new Error(`Unexpected '${next.op}' at position ${next.pos} — expected an exponent after '^' (hint: use 2^${next.op === '^' ? '3' : '2'}) at position ${opPos}`);
+        }
+        const exponent = parseUnary(); // allows 2^-3 and right-assoc 2^3^2
+        const result = Math.pow(base, exponent);
+        if (!Number.isFinite(result)) throw new Error(`Result is not finite at position ${opPos} (overflow, e.g. 0^negative or huge exponent)`);
+        return result;
+      }
+      return base;
+    };
+
+    const parsePrimary = (): number => {
+      const t = peek();
+      if (!t) throw new Error(`Unexpected end of expression at position ${input.length} — expected a number, function, or '('`);
+      if (t.kind === 'num') {
+        idx += 1;
+        return t.value;
+      }
+      if (t.kind === 'ident') {
+        const name = t.name;
+        const namePos = t.pos;
+        if (name === 'pi' || name === 'π') {
+          idx += 1;
+          return Math.PI;
+        }
+        if (name === 'e') {
+          idx += 1;
+          return Math.E;
+        }
+        if (SUPPORTED_FUNCS.includes(name)) {
+          idx += 1;
+          const open = peek();
+          if (!open || open.kind !== 'lparen') {
+            throw new Error(`Expected '(' after '${name}' at position ${namePos} — try ${name}(…)`);
+          }
+          idx += 1; // consume '('
+          const arg = parseExpression();
+          const close = peek();
+          if (!close) throw new Error(`Missing closing ')' for '${name}(' opened at position ${open.pos}`);
+          if (close.kind !== 'rparen') throw new Error(`Unexpected '${close.kind === 'op' ? close.op : close.kind}' at position ${close.pos} — expected ')' to close '${name}('`);
+          idx += 1;
+          if (name === 'sqrt') {
+            if (arg < 0) throw new Error(`sqrt() domain error at position ${namePos}: negative input ${arg}`);
+            return Math.sqrt(arg);
+          }
+          if (name === 'sin') return Math.sin(arg);
+          if (name === 'cos') return Math.cos(arg);
+          if (name === 'tan') return Math.tan(arg);
+          if (name === 'log') {
+            if (arg <= 0) throw new Error(`log() domain error at position ${namePos}: input must be > 0 (base-10)`);
+            return Math.log10(arg);
+          }
+          // ln
+          if (arg <= 0) throw new Error(`ln() domain error at position ${namePos}: input must be > 0`);
+          return Math.log(arg);
+        }
+        throw new Error(`Unknown function '${name}' at position ${namePos} (supported: sqrt, sin, cos, tan, log, ln; constants: pi, e)`);
+      }
+      if (t.kind === 'lparen') {
+        const openPos = t.pos;
+        idx += 1;
+        // Empty parens "()" check
+        if (peek() && peek()!.kind === 'rparen') {
+          throw new Error(`Empty parentheses '()' at position ${openPos} — add a value inside`);
+        }
+        const value = parseExpression();
+        const close = peek();
+        if (!close) throw new Error(`Missing closing ')' for '(' opened at position ${openPos}`);
+        if (close.kind !== 'rparen') throw new Error(`Unexpected '${close.kind === 'op' ? close.op : close.kind}' at position ${close.pos} — expected ')' to match '(' at position ${openPos}`);
+        idx += 1;
+        return value;
+      }
+      if (t.kind === 'rparen') throw new Error(`Unexpected ')' at position ${t.pos} — no matching '('`);
+      throw new Error(`Unexpected '${t.op}' at position ${t.pos} — expected a number, function, or '('`);
+    };
+
+    const value = parseExpression();
+    const leftover = peek();
+    if (leftover) {
+      if (leftover.kind === 'rparen') throw new Error(`Unexpected ')' at position ${leftover.pos} — no matching '('`);
+      if (leftover.kind === 'op') throw new Error(`Unexpected '${leftover.op}' at position ${leftover.pos} — expected end of expression`);
+      throw new Error(`Unexpected '${leftover.kind === 'ident' ? leftover.name : leftover.kind}' at position ${leftover.pos} — expected an operator (+-*/^%) or end`);
+    }
+    if (!Number.isFinite(value)) throw new Error('Result is not finite (overflow or invalid operation)');
+    return value;
+  };
+
+  const formatMathResult = (n: number): string => {
+    if (!Number.isFinite(n)) return 'Error: Result is not finite (overflow or invalid operation)';
+    const snapped = Math.abs(n) < 1e-12 ? 0 : n;
+    if (Number.isInteger(snapped)) return snapped.toString();
+    return parseFloat(snapped.toPrecision(12)).toString();
+  };
+
   const handleEvaluateExpression = (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmed = calcInput.trim();
+    if (!trimmed) {
+      setCalcResult('Enter an expression, e.g. 2+2*3');
+      return;
+    }
     try {
-      // Safe math expression evaluation (clean sanitizer)
-      const sanitized = calcInput
-        .replace(/sqrt\(([^)]+)\)/g, 'Math.sqrt($1)')
-        .replace(/sin\(([^)]+)\)/g, 'Math.sin($1)')
-        .replace(/cos\(([^)]+)\)/g, 'Math.cos($1)')
-        .replace(/tan\(([^)]+)\)/g, 'Math.tan($1)')
-        .replace(/log\(([^)]+)\)/g, 'Math.log10($1)')
-        .replace(/ln\(([^)]+)\)/g, 'Math.log($1)')
-        .replace(/pi/gi, 'Math.PI')
-        .replace(/\^/g, '**');
+      const value = evaluateMathExpression(trimmed);
+      setCalcResult(formatMathResult(value));
+    } catch (err: any) {
+      setCalcResult(`Error: ${err?.message || 'invalid expression'}`);
+    }
+  };
 
-      if (!/^[0-9+\-*/()., MathPIsqrtincoaglnet\s]+$/.test(sanitized)) {
-        setCalcResult('Invalid expression characters');
-        return;
-      }
-
-      // eslint-disable-next-line no-new-func
-      const res = Function(`'use strict'; return (${sanitized})`)();
-      setCalcResult(typeof res === 'number' ? res.toString() : 'Error');
+  const getGeminiKeyInline = (): string => {
+    try {
+      return (
+        sessionStorage.getItem('scc_gemini_api_key_session') ||
+        localStorage.getItem('scc_gemini_api_key') ||
+        (import.meta as any).env?.VITE_GEMINI_API_KEY ||
+        ''
+      );
     } catch {
-      setCalcResult('Syntax Error');
+      return '';
+    }
+  };
+
+  const handleAskAi = async () => {
+    const trimmed = calcInput.trim();
+    if (!trimmed) {
+      setAiResult('Enter an expression first.');
+      return;
+    }
+    const key = getGeminiKeyInline();
+    if (!key) {
+      setAiResult('No Gemini API key found. Add one in Settings → AI (BYOK) to use Ask AI.');
+      return;
+    }
+    setAiLoading(true);
+    setAiResult(null);
+    try {
+      const prompt =
+        `Evaluate this math expression and explain briefly: ${trimmed}\n` +
+        'Rules: ^ is exponent (right-associative), % is modulo, log() is base-10, ln() is natural log, trig in radians, pi ≈ 3.14159, e ≈ 2.71828. Support implicit multiplication like 2(3+4). ' +
+        'Return the first line as "Result: <number>" then a 1-2 sentence explanation.';
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(key)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        }
+      );
+      if (!res.ok) throw new Error(`Gemini request failed (${res.status})`);
+      const data = await res.json().catch(() => ({} as any));
+      const text = data?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text || '').join('').trim();
+      setAiResult(text || 'No answer returned from Gemini.');
+    } catch (err: any) {
+      setAiResult(`AI request failed: ${err?.message || 'unknown error'}`);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -337,7 +621,7 @@ export const UnitConverterWorkspace: React.FC = () => {
                 </h3>
               </div>
               <span className="text-[10px] text-[#8C897F] font-mono">
-                Supports sqrt, sin, cos, ln, pi
+                Supports sqrt, sin, cos, log, pi, ^, %
               </span>
             </div>
 
@@ -350,13 +634,25 @@ export const UnitConverterWorkspace: React.FC = () => {
                 className="w-full px-4 py-3 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-2xl text-xs font-mono text-[#141413] dark:text-[#FAF9F5] focus:outline-none focus:border-[#D97757]"
               />
 
-              <button
-                type="submit"
-                className="w-full py-2.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <Equal className="w-3.5 h-3.5" />
-                <span>Calculate Result</span>
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Equal className="w-3.5 h-3.5" />
+                  <span>Calculate Result</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAskAi}
+                  disabled={aiLoading}
+                  title="Explain / double-check with Gemini (needs API key)"
+                  className="px-3.5 py-2.5 bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] rounded-xl text-xs font-bold text-[#8C897F] hover:text-[#D97757] transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{aiLoading ? 'Asking…' : 'Ask AI'}</span>
+                </button>
+              </div>
             </form>
 
             {calcResult !== null && (
@@ -366,6 +662,17 @@ export const UnitConverterWorkspace: React.FC = () => {
                 </span>
                 <div className="text-lg font-mono font-extrabold text-[#D97757]">
                   {calcResult}
+                </div>
+              </div>
+            )}
+
+            {aiResult !== null && (
+              <div className="p-4 rounded-2xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C897F]">
+                  AI Explanation (Gemini)
+                </span>
+                <div className="text-xs font-mono text-[#141413] dark:text-[#FAF9F5] whitespace-pre-wrap">
+                  {aiResult}
                 </div>
               </div>
             )}
