@@ -4,15 +4,18 @@
 
 /* === Tokenized Theme Engine — Brand / Design System v2.0 === */
 :root {
-  --color-background: 247 228 198; /* #f7e4c6 warm cream canvas */
-  --color-panel: 253 246 231; /* #FDF6E7 warm card */
-  --color-border: 217 203 174; /* #D9CBAE warm sand */
-  --color-accent: 215 119 87; /* #D97757 Terracotta Orange — CTA only */
+  --color-background: 248 246 240; /* #F8F6F0 warm linen canvas */
+  --color-panel: 255 255 255; /* #FFFFFF crisp cards */
+  --color-sidebar: 241 236 225; /* #F1ECE1 warm sand sidebar */
+  --color-border: 231 223 211; /* #E7DFD3 warm separation line */
+  --color-accent: 224 93 56; /* #E05D38 Terracotta burnt orange — CTA only */
+  --color-accent-hover: 201 79 45; /* #C94F2D CTA hover */
+  --color-accent-pill: 252 238 232; /* #FCEEE8 active sidebar pill */
   --color-secondary: 124 58 237; /* #7C3AED violet — secondary semantic */
   --color-success: 16 185 129; /* #10B981 emerald — success */
-  --color-text: 20 20 19;
-  --color-muted: 94 93 89; /* #5E5D59 claude muted AA on #F5F4ED */
-  --color-muted-aa: 94 93 89;
+  --color-text: 43 38 33;
+  --color-muted: 112 105 94; /* #70695E muted clay */
+  --color-muted-aa: 112 105 94;
   --text-display: 600 2.5rem/1.1 Inter, ui-sans-serif, system-ui;
   --text-body: 400 0.875rem/1.6 Inter, ui-sans-serif, system-ui;
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -31,24 +34,30 @@
   --shadow-card: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.04);
   --shadow-card-hover: 0 4px 12px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.06);
 }
-/* Warm cream light / soft charcoal dark — canvas #f7e4c6, accent #D97757, never gray */
+/* Warm linen light / soft charcoal dark — canvas #F8F6F0, accent #E05D38, never gray */
 :root, :root[data-theme="linen"], :root[data-theme="parchment"] {
-  --color-background: 247 228 198; /* #f7e4c6 Warm Cream canvas */
-  --color-panel: 253 246 231; /* #FDF6E7 warm card */
-  --color-border: 217 203 174; /* #D9CBAE warm sand */
-  --color-accent: 215 119 87; /* #D97757 Terracotta Orange */
-  --color-text: 20 20 19; /* #141413 */
-  --color-muted: 94 93 89;
+  --color-background: 248 246 240; /* #F8F6F0 Warm Linen canvas */
+  --color-panel: 255 255 255; /* #FFFFFF crisp cards */
+  --color-sidebar: 241 236 225; /* #F1ECE1 warm sand sidebar */
+  --color-border: 231 223 211; /* #E7DFD3 warm separation */
+  --color-accent: 224 93 56; /* #E05D38 Terracotta burnt orange */
+  --color-accent-hover: 201 79 45; /* #C94F2D */
+  --color-accent-pill: 252 238 232; /* #FCEEE8 */
+  --color-text: 43 38 33; /* #2B2621 */
+  --color-muted: 112 105 94;
 }
 :root[data-theme="midnight"],
 html.dark {
   --color-background: 37 35 32; /* #252320 soft warm charcoal canvas — lifted for readability */
   --color-panel: 53 50 43; /* #35322B Elevated surface — visibly distinct from canvas */
+  --color-sidebar: 43 40 36;
   --color-raised: 65 60 51; /* #413C33 Raised/inner surface */
   --color-well: 57 53 44; /* #39352C Wells + inputs */
   --color-border: 94 86 70; /* #5E5646 Visible warm border */
   --color-border-strong: 117 106 86; /* #756A56 Hover/emphasis border */
-  --color-accent: 215 119 87; /* #D97757 Terracotta Orange */
+  --color-accent: 224 93 56; /* #E05D38 Terracotta burnt orange */
+  --color-accent-hover: 201 79 45; /* #C94F2D */
+  --color-accent-pill: 66 44 34;
   --color-text: 245 244 237; /* #F5F4ED */
   --color-muted: 199 194 180; /* #C7C2B4 brightened muted for readability */
 }
@@ -76,7 +85,7 @@ html.dark {
     color: rgb(var(--color-text));
   }
   ::selection {
-    background-color: #D97757;
+    background-color: #E05D38;
     color: #FFFFFF;
   }
   h1, h2, h3, h4, h5 {
@@ -218,11 +227,11 @@ html.dark {
 
 /* Glassmorphism Shell Utilities — unified blur with @supports fallback + mobile perf */
 .glass-panel {
-  background-color: rgba(253, 246, 231, 0.92);
+  background-color: rgba(255, 255, 255, 0.92);
 }
 @supports (backdrop-filter: blur(1px)) {
   .glass-panel {
-    background-color: rgba(253, 246, 231, 0.88);
+    background-color: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
     -webkit-backdrop-filter: blur(var(--blur-glass-panel)) saturate(var(--saturate-glass));
   }
@@ -234,11 +243,11 @@ html.dark {
 }
 .dark .glass-panel { background-color: rgba(37, 35, 32, 0.90); }
 .glass-card {
-  background-color: rgba(253, 246, 231, 0.9);
+  background-color: rgba(255, 255, 255, 0.9);
 }
 @supports (backdrop-filter: blur(1px)) {
   .glass-card {
-    background-color: rgba(253, 246, 231, 0.85);
+    background-color: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(var(--blur-glass-card));
     -webkit-backdrop-filter: blur(var(--blur-glass-card));
   }
@@ -368,7 +377,7 @@ html[data-density="spacious"] {
   --gap-4: 1.25rem;
 }
 
-/* Color Theme Palette Classes — warm cream light / soft charcoal dark */
+/* Color Theme Palette Classes — warm linen light / soft charcoal dark */
 html[data-theme="midnight"].dark,
 html[data-theme="midnight"].dark body,
 html.dark,
@@ -378,8 +387,8 @@ html.dark body {
 }
 html:not(.dark),
 html:not(.dark) body {
-  background-color: #f7e4c6;
-  color: #141413;
+  background-color: #F8F6F0;
+  color: #2B2621;
 }
 
 /* semantic secondary / success utilities — keep terracotta CTA-only */
@@ -406,10 +415,13 @@ html:not(.dark) body {
 :root {
   --bg: rgb(var(--color-background));
   --surface: rgb(var(--color-panel));
+  --sidebar: rgb(var(--color-sidebar));
   --border: rgb(var(--color-border));
   --accent: rgb(var(--color-accent));
-  --accent-text: #A94E33; /* AA-safe claude primary for small text on white. Bright #C96442 stays for fills/buttons only. */
-  --accent-soft: rgba(217, 119, 87, 0.12);
+  --accent-hover: rgb(var(--color-accent-hover));
+  --accent-text: #C94F2D;
+  --accent-soft: rgba(224, 93, 56, 0.12);
+  --accent-pill: rgb(var(--color-accent-pill));
   --ink: rgb(var(--color-text));
   --muted: rgb(var(--color-muted));
   --radius: var(--radius-card);
@@ -417,12 +429,12 @@ html:not(.dark) body {
   --shadow: var(--shadow-card);
   --shadow-lg: var(--shadow-card-hover);
   /* compat aliases for scattered hexes */
-  --linen: #f7e4c6; --linen-deep: #EAD0A2; --line: #D9CBAE;
-  --terracotta: #D97757; --terracotta-dark: #A94E33; --stone: #5E5D59;
+  --linen: #F8F6F0; --linen-deep: #F1ECE1; --line: #E7DFD3;
+  --terracotta: #E05D38; --terracotta-dark: #C94F2D; --stone: #70695E;
 }
 .dark, :root[data-theme="midnight"] {
-  --accent-text: #E8A07E; /* lighter terracotta passes on dark surfaces */
-  --accent-soft: rgba(217, 119, 87, 0.22);
+  --accent-text: #F0916E; /* lighter terracotta passes on dark surfaces */
+  --accent-soft: rgba(224, 93, 56, 0.22);
 }
 /* Token utility classes — prefer these over arbitrary hexes */
 .bg-token { background-color: var(--bg); }
@@ -684,7 +696,7 @@ html.dark [class*="divide-[#E8E6DC]"] > :not([hidden]) ~ :not([hidden]) { border
 
 /* === Guided-tour spotlight — warm terracotta pulse on the real UI target === */
 .scc-tour-flash {
-  outline: 3px solid #D97757 !important;
+  outline: 3px solid #E05D38 !important;
   outline-offset: 3px;
   border-radius: 12px;
   animation: scc-tour-pulse 1.6s ease-in-out;
@@ -694,8 +706,8 @@ html.dark [class*="divide-[#E8E6DC]"] > :not([hidden]) ~ :not([hidden]) { border
   pointer-events: none;
 }
 @keyframes scc-tour-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 87, 0.45); }
-  50% { box-shadow: 0 0 0 8px rgba(217, 119, 87, 0.12); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(224, 93, 56, 0.45); }
+  50% { box-shadow: 0 0 0 8px rgba(224, 93, 56, 0.12); }
 }
 @media (prefers-reduced-motion: reduce) {
   .scc-tour-flash { animation: none; }
@@ -799,13 +811,13 @@ button {
 button:active:not(:disabled):not([aria-disabled="true"]) { transform: scale(.965); }
 a { transition: color .2s ease, background-color .2s ease, border-color .2s ease; }
 /* Visible keyboard focus in brand terracotta */
-:focus-visible { outline: 2px solid #D97757; outline-offset: 2px; border-radius: 6px; }
+:focus-visible { outline: 2px solid #E05D38; outline-offset: 2px; border-radius: 6px; }
 /* Slim warm scrollbars */
-* { scrollbar-width: thin; scrollbar-color: #D9CBAE transparent; }
+* { scrollbar-width: thin; scrollbar-color: #E7DFD3 transparent; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #D9CBAE; border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
-::-webkit-scrollbar-thumb:hover { background: #D97757; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb { background: #E7DFD3; border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: #E05D38; border: 2px solid transparent; background-clip: content-box; }
 .dark ::-webkit-scrollbar-thumb, html.dark ::-webkit-scrollbar-thumb { background: #4A463C; border: 2px solid transparent; background-clip: content-box; }
 /* Entrance: single hero rise */
 @keyframes scc-rise-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
@@ -824,8 +836,110 @@ a { transition: color .2s ease, background-color .2s ease, border-color .2s ease
 .pop { animation: scc-pop-in .3s cubic-bezier(.22,.8,.32,1) both; }
 /* Hover lift for cards */
 .hover-lift { transition: transform .28s cubic-bezier(.22,.8,.32,1), box-shadow .28s ease; }
-.hover-lift:hover { transform: translateY(-4px); box-shadow: 0 16px 32px -16px rgba(20,20,19,.28); }
+.hover-lift:hover { transform: translateY(-4px); box-shadow: 0 16px 32px -16px rgba(43,38,33,.22); }
 /* Respect users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* ============ Warm Linen remap — user palette #F8F6F0/#F1ECE1/#FFFFFF/#E7DFD3/#E05D38/#FCEEE8/#2B2621/#70695E ============
+   Unlayered + last-in-file so it beats Tailwind v4 utilities AND older remaps above.
+   Every legacy cream/terracotta hex instantly follows the new tokens without per-file rewrites. */
+.bg-\[\#F5F4ED\], .bg-slate-50, .hover\:bg-slate-50:hover { background-color: #F8F6F0; }
+.bg-\[\#FAF9F5\] { background-color: #F8F6F0; }
+.bg-\[\#E8E6DC\], .bg-slate-100, .bg-slate-200, .hover\:bg-slate-100:hover, .hover\:bg-slate-200:hover { background-color: #F1ECE1; }
+.bg-white { background-color: #FFFFFF; }
+html.dark .bg-white { background-color: #35322B; }
+.bg-\[\#FDF6E7\], .bg-\[\#EACB8D\] { background-color: #F1ECE1; }
+.border-\[\#E8E6DC\], .border-slate-100, .border-slate-200, .border-slate-300,
+[class*="border-[#E8E6DC]"], [class*="border-[#DFDACB]"], [class*="border-[#D4AF6E]"] { border-color: #E7DFD3; }
+[class*="divide-[#E8E6DC]"] > :not([hidden]) ~ :not([hidden]) { border-color: #E7DFD3; }
+.text-\[\#141413\], .text-slate-800, .text-slate-900 { color: #2B2621; }
+.text-\[\#5E5D59\], .text-\[\#5C5A54\], .text-\[\#8C897F\], .text-slate-400, .text-slate-500, .text-slate-600, .text-slate-700 { color: #70695E; }
+/* Terracotta CTA + text remap → #E05D38 / hover #C94F2D */
+.bg-\[\#C96442\], .bg-\[\#D97757\], .bg-indigo-600, .bg-violet-600 { background-color: #E05D38; }
+.hover\:bg-\[\#A94E33\]:hover, .hover\:bg-\[\#C86646\]:hover, .hover\:bg-indigo-700:hover, .hover\:bg-violet-700:hover { background-color: #C94F2D; }
+.text-\[\#C96442\], .text-\[\#D97757\], .text-\[\#A94E33\] { color: #E05D38; }
+.border-\[\#C96442\], .border-\[\#D97757\] { border-color: #E05D38; }
+.focus\:ring-\[\#C96442\]:focus, .focus\:ring-\[\#D97757\]:focus { --tw-ring-color: #E05D38; }
+.ring-\[\#A94E33\]\/30 { --tw-ring-color: rgba(224,93,56,.3); }
+[class*="bg-[#D97757]/"], [class*="bg-[#C96442]/"] { --tw-bg-opacity: 1; }
+.bg-\[\#D97757\]\/10, .bg-\[\#C96442\]\/10 { background-color: #FCEEE8; }
+.bg-\[\#D97757\]\/15 { background-color: #FCEEE8; }
+.text-\[\#A94E33\]\/70 { color: rgba(224,93,56,.75); }
+.border-\[\#D97757\]\/20, .border-\[\#D97757\]\/30, .border-\[\#D97757\]\/40 { border-color: rgba(224,93,56,.3); }
+/* Sidebar active pill → #FCEEE8 / #E05D38 */
+.bg-\[\#FDF6E7\] { background-color: #FCEEE8; }
+html.dark .bg-\[\#FDF6E7\] { background-color: #35322B; }
+
+/* ============ Smooth UX motion system v2 — buttery transitions everywhere ============ */
+:root {
+  --ease-out-expo: cubic-bezier(.22,1,.36,1);
+  --ease-spring: cubic-bezier(.34,1.45,.5,1);
+  --dur-instant: .14s; --dur-fast: .22s; --dur-med: .34s; --dur-slow: .55s;
+  --shadow-card: 0 1px 2px rgba(43,38,33,.05), 0 10px 30px -12px rgba(43,38,33,.12);
+  --shadow-card-hover: 0 2px 4px rgba(43,38,33,.06), 0 20px 44px -16px rgba(43,38,33,.22);
+  --shadow-cta: 0 6px 18px -6px rgba(224,93,56,.5);
+  --shadow-cta-hover: 0 10px 26px -6px rgba(224,93,56,.55);
+}
+/* App-wide silky base: every color/border change eases, layout stays GPU-cheap */
+#root, #root * { -webkit-tap-highlight-color: transparent; }
+#root button, #root a, #root input, #root select, #root textarea,
+#root [role="button"], #root [role="tab"] {
+  transition: transform var(--dur-instant) var(--ease-out-expo), background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease, color var(--dur-fast) ease, box-shadow var(--dur-med) ease, filter var(--dur-fast) ease, opacity var(--dur-fast) ease;
+}
+/* Cards drift up + deepen shadow — opacity/transform only (60fps) */
+.card-micro, [data-card], .glass-card {
+  transition: transform var(--dur-med) var(--ease-out-expo), box-shadow var(--dur-med) ease, border-color var(--dur-fast) ease, background-color var(--dur-fast) ease;
+}
+.card-micro:hover, [data-card]:hover { transform: translateY(-3px); box-shadow: var(--shadow-card-hover); border-color: #DED3C0; }
+/* CTA buttons: terracotta fill, lift + glow + shine sweep */
+button[class*="bg-[#E05D38]"], button[class*="bg-[#D97757]"], button[class*="bg-[#C96442]"],
+.bg-\[\#E05D38\], .bg-\[\#D97757\], .bg-\[\#C96442\] {
+  background-color: #E05D38; box-shadow: var(--shadow-cta);
+  position: relative; overflow: hidden; isolation: isolate;
+}
+button[class*="bg-[#E05D38]"]:hover, button[class*="bg-[#D97757]"]:hover, button[class*="bg-[#C96442]"]:hover {
+  background-color: #C94F2D; box-shadow: var(--shadow-cta-hover); transform: translateY(-1px);
+}
+button[class*="bg-[#E05D38]"]::after, button[class*="bg-[#D97757]"]::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.35) 50%, transparent 60%);
+  transform: translateX(-120%); transition: transform .7s var(--ease-out-expo);
+}
+button[class*="bg-[#E05D38]"]:hover::after, button[class*="bg-[#D97757]"]:hover::after { transform: translateX(120%); }
+/* Sidebar items: pill slides in, icon nudges */
+aside[aria-label="Primary navigation"] button {
+  transition: transform var(--dur-fast) var(--ease-out-expo), background-color var(--dur-fast) ease, color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+aside[aria-label="Primary navigation"] button:hover { transform: translateX(2px); }
+aside[aria-label="Primary navigation"] button[aria-current="page"] { background-color: #FCEEE8; color: #E05D38; box-shadow: var(--shadow-card); }
+/* Tab / page content crossfade-slide on switch */
+@keyframes scc-page-in { from { opacity: 0; transform: translateY(10px); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+.scc-tab-enter, main > div:first-child { animation: scc-page-in var(--dur-med) var(--ease-out-expo) both; }
+/* Modals + popovers spring */
+@keyframes scc-modal-in { from { opacity: 0; transform: scale(.96) translateY(12px); } to { opacity: 1; transform: none; } }
+dialog, [role="dialog"], .pop { animation: scc-modal-in var(--dur-med) var(--ease-spring) both; }
+dialog::backdrop, .backdrop\:bg-black\/60::backdrop { background: rgba(43,38,33,.45); backdrop-filter: blur(6px); }
+/* Inputs breathe on focus */
+input:focus, select:focus, textarea:focus {
+  border-color: #E05D38 !important; box-shadow: 0 0 0 3px rgba(224,93,56,.18);
+  transform: translateY(-1px);
+}
+/* Loading shimmer in brand tint */
+.scc-skeleton {
+  background: linear-gradient(90deg, #F1ECE1 25%, #FCEEE8 37%, #F1ECE1 63%);
+  background-size: 800px 100%; animation: scc-shimmer 1.5s ease-in-out infinite;
+}
+/* Active pulse dot for live badges */
+@keyframes scc-glow-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(224,93,56,.5);} 50% { box-shadow: 0 0 0 6px rgba(224,93,56,0);} }
+.animate-pulse[class*="bg-"], span[class*="bg-amber"] { animation: scc-glow-pulse 2s ease-in-out infinite; }
+/* Native view transitions get a touch slower + smoother */
+::view-transition-old(root), ::view-transition-new(root) {
+  animation-duration: .3s; animation-timing-function: var(--ease-out-expo);
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-micro:hover, [data-card]:hover { transform: none; }
+  button[class*="bg-[#E05D38]"]::after { display: none; }
 }

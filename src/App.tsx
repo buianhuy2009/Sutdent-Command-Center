@@ -292,7 +292,7 @@ export default function App() {
     syncDarkToTheme(v);
     setDarkModeState(v);
     try {
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', v ? '#141413' : '#F5F4ED');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', v ? '#252320' : '#F8F6F0');
     } catch {}
   }, []);
 
@@ -320,7 +320,7 @@ export default function App() {
       }
       const isDarkNow = document.documentElement.classList.contains('dark');
       setDarkModeState(isDarkNow);
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDarkNow ? '#141413' : '#F5F4ED');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', isDarkNow ? '#252320' : '#F8F6F0');
     } catch (e) {
       console.error('Theme init error:', e);
     }
@@ -2681,7 +2681,7 @@ export default function App() {
 
   // reducedMotion already handled via CSS prefers-reduced-motion + index.css; MotionConfig not required (motion 12 export issue avoided)
   return (
-    <div className="h-screen max-h-screen overflow-hidden bg-[#F5F4ED] dark:bg-[#141413] text-[#141413] dark:text-[#F5F4ED] transition-colors flex flex-col font-sans selection:bg-[#C96442] selection:text-white">
+    <div className="h-screen max-h-screen overflow-hidden bg-[#F8F6F0] dark:bg-[#252320] text-[#2B2621] dark:text-[#F5F4ED] transition-colors duration-300 ease-[cubic-bezier(.22,1,.36,1)] flex flex-col font-sans selection:bg-[#E05D38] selection:text-white">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-white dark:focus:bg-[#1A1917] focus:border focus:rounded-xl">Skip to content</a>
       {/* Demo Mode Top Alert */}
       {!user && isDemoMode && (
@@ -2778,7 +2778,7 @@ export default function App() {
         )}
 
         {/* Right Main Column with Top Header, Scrollable Content, and Bottom Status Bar */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#F5F4ED] dark:bg-[#141413]">
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#F8F6F0] dark:bg-[#252320]">
           {/* Top Header — simplified & error-guarded */}
           {activeTab !== 'dashboard' && (
             <ErrorBoundary fallback={<header className="h-12 bg-white dark:bg-[#141413] border-b border-[#E8E6DC] dark:border-[#2C2B27] px-4 sm:px-6 flex items-center justify-between z-20 text-xs font-semibold text-[#5E5D59]"><button onClick={() => window.dispatchEvent(new CustomEvent('scc-navigate', { detail: 'dashboard' }))} className="hover:text-[#C96442]">StudentOS / Dashboard</button></header>}>

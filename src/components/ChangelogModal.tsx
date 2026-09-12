@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.9.8';
+export const CURRENT_VERSION = '2.10.0';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,21 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.10.0',
+    date: 'September 12, 2026',
+    title: 'Warm Linen Theme + Buttery Motion',
+    badge: 'Latest Update',
+    highlights: [
+      'New warm linen look: soft #F8F6F0 canvas, sand sidebar, crisp white cards, burnt-orange buttons — plus a smoother, more alive feel everywhere',
+    ],
+    details: [
+      'Theme (index.css tokens + theme.ts + Sidebar.tsx + App.tsx): canvas moves to #F8F6F0, sidebar to #F1ECE1, cards to pure white, borders to #E7DFD3, CTAs to #E05D38 (hover #C94F2D), selected menu to #FCEEE8 tint, text to #2B2621 / #70695E — old cream/terracotta hexes remapped globally so every tab follows. Motion: cards drift up on hover, buttons lift with a shine sweep and glow, sidebar pills slide, pages crossfade-slide, modals spring in, inputs breathe on focus, view-transitions eased to 0.3s. Verified in build.',
+    ]
+  },
+  {
     version: '2.9.8',
     date: 'September 12, 2026',
     title: '#f7e4c6 Canvas + Motion & Feel Polish',
-    badge: 'Latest Update',
     highlights: [
       'Background is now your #f7e4c6, and the whole app feels alive: cascading entrances, tactile buttons, lift-on-hover cards',
     ],

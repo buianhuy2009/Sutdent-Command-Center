@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.10.0 — Warm Linen Theme + Buttery Motion</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.10.0</link>
+      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
+      <description>New warm linen palette (#F8F6F0 canvas, #F1ECE1 sidebar, white cards, #E05D38 buttons) with smoother hovers, page transitions, and button shine across the app.</description>
+    </item>
+    <item>
       <title>v2.9.8 — #f7e4c6 Canvas + Motion &amp; Feel Polish</title>
       <link>https://student-command-center.vercel.app/?changelog=2.9.8</link>
       <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
