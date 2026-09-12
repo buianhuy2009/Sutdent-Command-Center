@@ -1,5 +1,5 @@
 // Warm Cream / Dark Charcoal / Terracotta Orange:
-// Light = #FAF9F5 / Ink #141413 / Accent #D97757 / Sand #D9CBAE
+// Light = #f2eac7 / Ink #141413 / Accent #D97757 / Sand #D9CBAE
 // Dark  = Soft charcoal #252320 / Canvas text #F5F4ED / Accent #D97757 / Surface #35322B
 export type ThemeId = 'linen' | 'midnight';
 
@@ -36,7 +36,7 @@ function migrateLegacyThemeKeyOnce() {
 }
 
 export const THEME_META: Record<ThemeId, { label: string; accent: string; bg: string }> = {
-  linen: { label: 'Warm Cream (Light)', accent: '#D97757', bg: '#FAF9F5' },
+  linen: { label: 'Warm Cream (Light)', accent: '#D97757', bg: '#f2eac7' },
   midnight: { label: 'Soft Charcoal (Dark)', accent: '#D97757', bg: '#252320' },
 };
 

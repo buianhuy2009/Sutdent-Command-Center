@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.9.6';
+export const CURRENT_VERSION = '2.9.7';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,21 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.9.7',
+    date: 'September 12, 2026',
+    title: '#f2eac7 Canvas + Swatch-Matched Sidebar',
+    badge: 'Latest Update',
+    highlights: [
+      'Background moves to your #f2eac7, sidebar matched to your swatch',
+    ],
+    details: [
+      'Palette (theme tokens in index.css + theme.ts, Sidebar.tsx): canvas token is now #f2eac7 everywhere; the sidebar rail is set to my best read of your swatch (#EACB8D, edge #D4AF6E) — reply with a hex if your swatch differs and I will set it exactly. Verified in dist.',
+    ]
+  },
+  {
     version: '2.9.6',
     date: 'September 12, 2026',
     title: 'Your Exact Palette — #FAF9F5, #141413, #D97757',
-    badge: 'Latest Update',
     highlights: [
       'Background is now exactly #FAF9F5 warm cream with #D97757 terracotta accents everywhere',
     ],
