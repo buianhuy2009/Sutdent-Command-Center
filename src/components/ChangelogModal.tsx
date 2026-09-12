@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.9.5';
+export const CURRENT_VERSION = '2.9.6';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,21 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.9.6',
+    date: 'September 12, 2026',
+    title: 'Your Exact Palette — #FAF9F5, #141413, #D97757',
+    badge: 'Latest Update',
+    highlights: [
+      'Background is now exactly #FAF9F5 warm cream with #D97757 terracotta accents everywhere',
+    ],
+    details: [
+      'Palette (theme tokens in index.css + theme.ts): canvas moves to your #FAF9F5, text stays #141413 dark charcoal, and every CTA/fill/glow that used the old terracotta now uses your #D97757 (small-text accents keep the darker AA-safe shade for readability). Verified in dist.',
+    ]
+  },
+  {
     version: '2.9.5',
     date: 'September 12, 2026',
     title: 'Your Exact Creams — #f7daa3 Canvas, #fcce77 Sidebar',
-    badge: 'Latest Update',
     highlights: [
       'Main workspace and the entire dashboard now use your #f7daa3, sidebar uses your #fcce77',
     ],

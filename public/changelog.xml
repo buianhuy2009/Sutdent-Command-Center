@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.9.6 — Your Exact Palette: #FAF9F5, #141413, #D97757</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.9.6</link>
+      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Background is exactly #FAF9F5 warm cream with #D97757 terracotta accents on every button and glow.</description>
+    </item>
+    <item>
       <title>v2.9.5 — Your Exact Creams: #f7daa3 Canvas, #fcce77 Sidebar</title>
       <link>https://student-command-center.vercel.app/?changelog=2.9.5</link>
       <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
