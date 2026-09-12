@@ -60,7 +60,7 @@ interface CanvasSyncTabProps {
   isLoading: boolean;
   errorMessage?: string | null;
   lastSyncedAt?: Date | null;
-  onFetchCanvas: () => void;
+  onFetchCanvas: (settingsOverride?: CanvasSettings) => void;
   onSyncToSheet: (assignment: CanvasAssignment) => Promise<void>;
   onSyncAllPending: () => Promise<void>;
   recentFiles?: any[];
@@ -162,9 +162,12 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
     };
     setApiDomain(normalizedDomain);
     onSaveSettings(updated);
+    // Pass `updated` explicitly: the parent's fetch callback would otherwise
+    // close over the previous settings state and sync with empty credentials,
+    // clearing the list with no error (silent "load none" bug).
     setTimeout(() => {
       setIsSaving(false);
-      onFetchCanvas();
+      onFetchCanvas(updated);
       setShowSettingsDrawer(false);
     }, 300);
   };
@@ -265,7 +268,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             <p className="text-[11px] text-[#5E5D59] dark:text-[#B5B2A8] mt-1">{t('canvas_kept_below')}</p>
           </div>
           <button
-            onClick={onFetchCanvas}
+            onClick={() => onFetchCanvas()}
             className="px-3 py-2 bg-[#C96442] hover:bg-[#A94E33] text-white rounded-xl text-xs font-bold shrink-0 min-h-[44px] inline-flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" /> {t('retry')}

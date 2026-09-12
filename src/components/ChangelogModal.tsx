@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.8.1';
+export const CURRENT_VERSION = '2.8.2';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,21 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.8.2',
+    date: 'September 12, 2026',
+    title: 'Canvas Save & Sync Fix — New Credentials Actually Sync',
+    badge: 'Latest Update',
+    highlights: [
+      'Pressing Save & Sync in Canvas now syncs with the credentials you just typed — no more empty list with no error',
+    ],
+    details: [
+      'Canvas (Canvas LMS tab in App.tsx + CanvasSyncTab.tsx): Save & Sync now passes the freshly-saved URL, token and feed link directly to the sync engine instead of re-reading stale state, so first-time setup no longer hits the empty-credentials early return that cleared the list and showed no red error banner. Retry buttons call the same path without arguments.',
+    ]
+  },
+  {
     version: '2.8.1',
     date: 'September 11, 2026',
     title: 'Canvas Sync Fix — Honest Errors When the Server API Is Down',
-    badge: 'Latest Update',
     highlights: [
       'Canvas sync now tells you when the problem is the deployment itself — not your token or feed link',
       'No more misleading “bad token” or “network” errors when the site’s API is actually unreachable',

@@ -1670,18 +1670,24 @@ export default function App() {
   }, [addToast]);
 
   // Fetch Canvas assignments (Zero fake data)
-  const loadCanvasData = useCallback(async (isSilent = false) => {
-    const feedUrl = canvasSettings.calendarFeedUrl?.trim() || '';
-    const apiToken = canvasSettings.apiToken?.trim() || '';
-    const apiDomain = canvasSettings.apiDomain?.trim()
-      ? normalizeCanvasDomain(canvasSettings.apiDomain)
+  // NOTE: accepts an optional settings override so Save & Sync in CanvasSyncTab
+  // can fetch with freshly-typed credentials immediately. Without this, the
+  // callback closes over the *previous* canvasSettings state, sees empty
+  // credentials, hits the early-return below, clears the list and shows no
+  // error — the silent "load none, no red flag" bug.
+  const loadCanvasData = useCallback(async (isSilent = false, settingsOverride?: CanvasSettings) => {
+    const effectiveSettings = settingsOverride ?? canvasSettings;
+    const feedUrl = effectiveSettings.calendarFeedUrl?.trim() || '';
+    const apiToken = effectiveSettings.apiToken?.trim() || '';
+    const apiDomain = effectiveSettings.apiDomain?.trim()
+      ? normalizeCanvasDomain(effectiveSettings.apiDomain)
       : '';
     const isApiConfigured = Boolean(apiToken && apiDomain);
     if (!feedUrl && !isApiConfigured) {
       setCanvasAssignments([]);
       // If user saved a custom URL but no token yet, explain what's missing
       // instead of silently showing an empty tab.
-      if (canvasSettings.apiDomain?.trim() && !apiToken && !feedUrl) {
+      if (effectiveSettings.apiDomain?.trim() && !apiToken && !feedUrl) {
         setCanvasError(
           'Canvas URL saved, but no API token yet — open Settings and add your token (Canvas → Account → Settings → New Access Token), or paste a Calendar Feed URL.'
         );
@@ -2904,7 +2910,7 @@ export default function App() {
                     isLoading={isLoadingCanvas}
                     errorMessage={canvasError}
                     lastSyncedAt={lastSyncedAt}
-                    onFetchCanvas={() => loadCanvasData(false)}
+                    onFetchCanvas={(override?: CanvasSettings) => loadCanvasData(false, override)}
                     onSyncToSheet={handleSyncCanvasToSheet}
                     onSyncAllPending={handleSyncAllPendingCanvas}
                     recentFiles={recentFiles}
