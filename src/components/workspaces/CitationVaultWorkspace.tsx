@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookMarked, Search, Copy, Check } from 'lucide-react';
 import { generateCitations, AcademicCitationResult } from '../../services/gemini';
 import { saveBibliographyEntry, loadBibliography } from '../../services/bibliography';
 import { t, useLang } from '../../services/i18n';
+
+function vaultDisplayApa(v: any): string {
+  if (v?.apa && typeof v.apa === 'string' && v.apa.trim()) return v.apa;
+  const authors = v?.authors || 'Unknown Author';
+  const year = v?.year || 'n.d.';
+  const title = v?.title || 'Untitled';
+  const source = v?.source || v?.url || '';
+  return `${authors} (${year}). ${title}.${source ? ` ${source}` : ''}`;
+}
 
 export const CitationVaultWorkspace: React.FC = () => {
   useLang();
@@ -10,7 +19,22 @@ export const CitationVaultWorkspace: React.FC = () => {
   const [result, setResult] = useState<AcademicCitationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState('');
-  const vault = loadBibliography();
+  const [vault, setVault] = useState(loadBibliography);
+  const refreshVault = () => {
+    try { setVault(loadBibliography()); } catch { /* keep existing vault on read failure */ }
+  };
+  useEffect(() => {
+    refreshVault();
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key || e.key === 'scc_bibliography_v1') refreshVault();
+    };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', refreshVault);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('focus', refreshVault);
+    };
+  }, []);
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true);
@@ -18,6 +42,7 @@ export const CitationVaultWorkspace: React.FC = () => {
       const res = await generateCitations(query);
       setResult(res);
       saveBibliographyEntry({ id: Date.now().toString(), title: res.title, authors: res.authors, year: res.year, apa: res.apa, mla: res.mla, chicago: res.chicago, bibtex: res.bibtex, source: query, createdAt: new Date().toISOString() });
+      refreshVault();
     } finally { setLoading(false); }
   };
   const copy = async (text: string, key: string) => {
@@ -64,16 +89,22 @@ export const CitationVaultWorkspace: React.FC = () => {
           <p className="text-[11px] text-[#6B6860]">{t('cite_intext')} {result.inText} {t('cite_verify')}</p>
         </div>
       )}
-      {vault.length>0 && (
+      {vault.length>0 ? (
         <div className="bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6">
           <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6860]">{t('cite_vault')} ({vault.length})</h4>
           <div className="mt-3 space-y-2 max-h-64 overflow-y-auto">
-            {vault.slice(0,20).map(v=>(
+            {vault.filter((v: any) => v && typeof v === 'object' && !Array.isArray(v) && v.title).slice(0,20).map(v=>(
               <div key={v.id} className="p-2.5 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-xs">
-                <div className="flex items-center justify-between gap-2"><div className="font-bold truncate">{v.title}</div><button onClick={()=>copy(v.apa, `vault-${v.id}`)} className="shrink-0 px-2 py-1 text-[11px] bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg flex items-center gap-1">{copied===`vault-${v.id}`?<><Check className="w-3 h-3 text-emerald-600" /> {t('copied')}</>:<><Copy className="w-3 h-3" /> {t('copy')}</>}</button></div><div className="text-[11px] text-[#6B6860] truncate">{v.apa.slice(0,120)}...</div>
+                <div className="flex items-center justify-between gap-2"><div className="font-bold truncate">{v.title}</div><button onClick={()=>copy(vaultDisplayApa(v), `vault-${v.id}`)} className="shrink-0 px-2 py-1 text-[11px] bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg flex items-center gap-1">{copied===`vault-${v.id}`?<><Check className="w-3 h-3 text-emerald-600" /> {t('copied')}</>:<><Copy className="w-3 h-3" /> {t('copy')}</>}</button></div><div className="text-[11px] text-[#6B6860] truncate">{vaultDisplayApa(v).slice(0,120)}...</div>
               </div>
             ))}
           </div>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-6 text-center space-y-2">
+          <BookMarked className="w-8 h-8 mx-auto text-[#8C897F] opacity-40" />
+          <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6860]">{t('cite_vault')} (0)</h4>
+          <p className="text-xs text-[#6B6860]">No saved citations yet. Generate one above, or save papers from arXiv Explorer and books from Find Books — they will appear here.</p>
         </div>
       )}
     </div>
