@@ -392,9 +392,11 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
           </div>
 
           {/* View Mode Toggle: Table vs Kanban (timeline removed — Gantt lives in its own workspace) */}
-          <div className="flex items-center bg-[#E8E6DC] dark:bg-[#1F1E1B] p-0.5 rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27]">
+          <div className="flex items-center bg-[#E8E6DC] dark:bg-[#1F1E1B] p-0.5 rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27]" role="group" aria-label="View mode selection">
             <button
               onClick={() => setViewMode('table')}
+              aria-label="Table View"
+              aria-pressed={viewMode === 'table'}
               className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'table'
                   ? 'bg-white dark:bg-[#252422] text-[#C96442] shadow-2xs'
@@ -406,6 +408,8 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             </button>
             <button
               onClick={() => setViewMode('kanban')}
+              aria-label="Kanban View"
+              aria-pressed={viewMode === 'kanban'}
               className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'kanban'
                   ? 'bg-white dark:bg-[#252422] text-[#C96442] shadow-2xs'
@@ -420,6 +424,8 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
           {/* Filters toggle — opens subject/status/priority + Export CSV + Open Sheet */}
           <button
             onClick={() => setShowFilters(!showFilters)}
+            aria-label="Toggle filters, export and sheet options"
+            aria-expanded={showFilters}
             className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
               showFilters
                 ? 'bg-[#C96442] text-white border-[#C96442]'
@@ -444,6 +450,8 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
           {/* Smart Add Toggle (AI Rank lives inside the expanded bar) */}
           <button
             onClick={() => setShowAiAdd(!showAiAdd)}
+            aria-label={t('smart_add')}
+            aria-expanded={showAiAdd}
             className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors flex items-center gap-1.5 cursor-pointer ${
               showAiAdd
                 ? 'bg-[#C96442] text-white border-[#C96442] shadow-xs'
@@ -768,6 +776,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                         <td className="py-1.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => handleStatusClick(assignment)}
+                            aria-label={`Mark "${assignment.assignmentName}" as ${isDone ? 'incomplete' : 'done'}`}
                             className="text-[#8C897F] hover:text-[#C96442] transition-colors"
                           >
                             {isDone ? (
@@ -826,6 +835,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                         <td className="py-1.5 px-3 text-right" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => setSelectedAssignment(assignment)}
+                            aria-label={`Inspect details for "${assignment.assignmentName}"`}
                             className="p-1 text-[#8C897F] hover:text-[#C96442] rounded-lg hover:bg-[#E8E6DC] dark:hover:bg-[#252422]"
                             title="Inspect Details"
                           >
@@ -856,6 +866,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
 
             <button
               onClick={() => setSelectedAssignment(null)}
+              aria-label="Close details inspector"
               className="p-1.5 text-[#8C897F] hover:bg-[#E8E6DC] dark:hover:bg-[#252422] rounded-lg cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -982,6 +993,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
               <h3 className="text-sm font-bold text-[#141413] dark:text-[#F5F4ED]">New Assignment</h3>
               <button
                 onClick={() => setShowAddModal(false)}
+                aria-label="Close modal"
                 className="text-[#8C897F] hover:text-[#141413] dark:hover:text-[#F5F4ED]"
               >
                 <X className="w-4 h-4" />
