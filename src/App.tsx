@@ -62,6 +62,7 @@ const GroupProjectWorkspace = lazyRetry(() => import('./components/workspaces/Gr
 const PeerQAWorkspace = lazyRetry(() => import('./components/workspaces/PeerQAWorkspace').then(m => ({ default: m.PeerQAWorkspace })));
 const NotionImportWorkspace = lazyRetry(() => import('./components/workspaces/NotionImportWorkspace').then(m => ({ default: m.NotionImportWorkspace })));
 const DeadlineGanttWorkspace = lazyRetry(() => import('./components/workspaces/DeadlineGanttWorkspace').then(m => ({ default: m.DeadlineGanttWorkspace })));
+const AIPlannerWorkspace = lazyRetry(() => import('./components/workspaces/AIPlannerWorkspace').then(m => ({ default: m.AIPlannerWorkspace })));
 const GradeForecasterWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.GradeForecasterWorkspace })));
 const ExamModeWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.ExamModeWorkspace })));
 const InternshipTrackerWorkspace = lazyRetry(() => import('./components/workspaces/NewAppsWorkspaces').then(m => ({ default: m.InternshipTrackerWorkspace })));
@@ -3130,6 +3131,10 @@ export default function App() {
 
                 {activeTab === 'deadline-gantt' && (
                   <DeadlineGanttWorkspace assignments={assignments} canvasAssignments={canvasAssignments} />
+                )}
+
+                {activeTab === 'ai-planner' && (
+                  <AIPlannerWorkspace assignments={assignments} canvasAssignments={canvasAssignments} meetings={calendarEvents} />
                 )}
 
                 {activeTab === 'grade-forecaster' && (
