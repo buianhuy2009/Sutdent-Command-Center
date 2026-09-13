@@ -171,10 +171,35 @@ export const TimetableOptimizerWorkspace: React.FC = () => {
 
 /* ---------- CREATE ---------- */
 
+// Pyodide (in-browser Python) loads lazily via dynamic import() so the main
+// bundle stays lean — same precedent as the Excalidraw heavy-canvas chunk.
+// The npm `pyodide` package ships the JS loader; the WASM + stdlib assets
+// load at runtime from the pinned CDN matching the installed version.
+const PYODIDE_VERSION = '314.0.6';
+const PYODIDE_INDEX_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+type PyodideAPI = Awaited<ReturnType<typeof import('pyodide').loadPyodide>>;
+let pyodideReady: Promise<PyodideAPI> | null = null;
+function getPyodide(): Promise<PyodideAPI> {
+  if (!pyodideReady) {
+    pyodideReady = (async () => {
+      const { loadPyodide } = await import('pyodide');
+      return loadPyodide({ indexURL: PYODIDE_INDEX_URL });
+    })();
+    // Don't cache a rejection forever — a failed init (offline, blocked WASM)
+    // clears so Retry can attempt a fresh load.
+    pyodideReady.catch(() => { pyodideReady = null; });
+  }
+  return pyodideReady;
+}
+
 export const CodeRunnerWorkspace: React.FC = () => {
   const [code, setCode] = useState('print("Hello, StudentOS!")\nfor i in range(3):\n    print("study block", i+1)');
   const [lang, setLang] = useState<'python' | 'js'>('python');
   const [output, setOutput] = useState('');
+  const [pyStatus, setPyStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [pyError, setPyError] = useState('');
+  const [pyRunning, setPyRunning] = useState(false);
+  const runIdRef = useRef(0);
   const sandboxHostRef = useRef<HTMLDivElement | null>(null);
   const sandboxCleanupRef = useRef<(() => void) | null>(null);
   useEffect(() => () => { sandboxCleanupRef.current?.(); }, []);
@@ -226,6 +251,50 @@ window.addEventListener('error', function (e) { parent.postMessage({ type: 'scc-
     window.addEventListener('message', onMessage);
     host.appendChild(iframe);
   };
+  const runPython = async () => {
+    const runId = ++runIdRef.current;
+    setPyRunning(true);
+    setPyError('');
+    setPyStatus((s) => (s === 'ready' ? s : 'loading'));
+    setOutput('Loading Python runtime… (first run downloads ~12 MB, then it is cached)');
+    try {
+      const py = await getPyodide();
+      if (runId !== runIdRef.current) return;
+      setPyStatus('ready');
+      setOutput('Running…');
+      let out = '';
+      py.setStdout({ batched: (s: string) => { out += s + '\n'; } });
+      py.setStderr({ batched: (s: string) => { out += s + '\n'; } });
+      try {
+        await py.runPythonAsync(code);
+        if (runId !== runIdRef.current) return;
+        const text = out.replace(/\n$/, '');
+        setOutput(text ? text : '(no output)');
+      } catch (err) {
+        if (runId !== runIdRef.current) return;
+        // Python-level failure: partial stdout + full traceback go to the
+        // output pane (never a blank hang) — a code error, not a crash.
+        const msg = err instanceof Error ? err.message : String(err);
+        const text = (out + msg).replace(/\n$/, '');
+        setOutput(text ? text : 'Error: unknown Python failure');
+      }
+    } catch (err) {
+      if (runId !== runIdRef.current) return;
+      // Runtime-level failure (WASM blocked, CDN unreachable, offline):
+      // honest error card with an Open-in-Tab fallback, never blank.
+      setPyStatus('error');
+      setPyError(err instanceof Error ? err.message : String(err));
+      setOutput('');
+    } finally {
+      if (runId === runIdRef.current) setPyRunning(false);
+    }
+  };
+  const openPythonInTab = () => {
+    const esc = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>StudentOS Python snippet</title></head><body style="font-family:monospace;padding:24px"><h1>Python snippet (Code Runner fallback)</h1><p>The in-browser runtime could not start. Paste the code into the <a href="https://pyodide.org/en/stable/console.html" target="_blank" rel="noreferrer">Pyodide console</a>:</p><pre style="background:#f4f4f4;padding:16px;border-radius:8px;white-space:pre-wrap">${esc}</pre></body></html>`;
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    window.open(url, '_blank', 'noopener');
+  };
   return (
     <Shell title="Code Runner" sub="Python (in-browser via Pyodide) and JavaScript run with no backend. Snippets save to Drive.">
       <div className="flex gap-2">
@@ -236,7 +305,24 @@ window.addEventListener('error', function (e) { parent.postMessage({ type: 'scc-
         className="w-full text-xs font-mono rounded-xl border bg-transparent p-3" style={{ borderColor: 'var(--line)' }} aria-label="Code editor" />
       {lang === 'js'
         ? <div className="space-y-2"><Btn primary onClick={runJS}>Run JavaScript</Btn><div ref={sandboxHostRef} aria-hidden="true" /><pre className="text-xs p-3 rounded-xl border whitespace-pre-wrap" style={{ borderColor: 'var(--line)' }}>{output || 'Output appears here.'}</pre></div>
-        : <iframe title="Python runner (Pyodide)" src="https://pyodide.org/en/stable/console.html" className="w-full rounded-xl border" style={{ height: 320, borderColor: 'var(--line)' }} loading="lazy" />}
+        : <div className="space-y-2">
+            <div className="flex gap-2 items-center flex-wrap">
+              <Btn primary onClick={runPython} disabled={pyRunning}>{pyRunning ? 'Running…' : pyStatus === 'loading' ? 'Loading Python…' : 'Run Python'}</Btn>
+              {pyStatus === 'loading' && <span className="text-[11px] opacity-60">Loading Python runtime… first run downloads ~12 MB.</span>}
+              {pyStatus === 'ready' && <span className="text-[11px] font-semibold text-emerald-600">Python ready — runs in your browser.</span>}
+            </div>
+            {pyStatus === 'error' && (
+              <div className="p-3 rounded-xl border text-xs space-y-2" style={{ borderColor: 'var(--line)' }} role="alert">
+                <p className="font-bold">Python couldn't start in this browser.</p>
+                <p className="opacity-70 break-words">{pyError || 'The Python runtime failed to load (offline, blocked WebAssembly, or unreachable CDN).'}</p>
+                <div className="flex gap-2 flex-wrap">
+                  <Btn onClick={runPython}>Retry</Btn>
+                  <Btn onClick={openPythonInTab}>Open in new tab</Btn>
+                </div>
+              </div>
+            )}
+            <pre className="text-xs p-3 rounded-xl border whitespace-pre-wrap" style={{ borderColor: 'var(--line)' }}>{output || 'Output appears here.'}</pre>
+          </div>}
       <p className="text-[11px] opacity-60">Tip: paste starter code from class, run, then save the snippet to Drive from the file menu.</p>
     </Shell>
   );

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Assignment } from '../types';
 import { generateDailyStudyPlan } from '../services/gemini';
+import { t, useLang } from '../services/i18n';
 
 export interface PlannedBlock {
   timeRange: string;
@@ -57,6 +58,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
   const [planBlocks, setPlanBlocks] = useState<PlannedBlock[]>([]);
   const [planSummary, setPlanSummary] = useState<string>('');
   const [copied, setCopied] = useState(false);
+  useLang();
 
   const pendingAssignments = useMemo(() => {
     return assignments.filter((a) => a.status !== 'Done');
@@ -181,17 +183,17 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
             </div>
             <div>
               <h2 className="text-base font-extrabold text-[#141413] dark:text-[#FAF9F5]">
-                AI Daily Study Plan Generator
+                {t('plan_title')}
               </h2>
-              <p className="text-xs text-[#8C897F]">
-                Input your deadlines and let AI construct a prioritised hour-by-hour plan
+              <p className="text-xs text-[#8C897F] dark:text-[#B5B2A8]">
+                {t('plan_sub')}
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] hover:border-[#D97757] transition-all cursor-pointer"
+            className="p-2 rounded-xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[#8C897F] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#FAF9F5] hover:border-[#D97757] transition-all cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -205,12 +207,12 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
             
             {/* Start Time & Target Duration */}
             <div className="space-y-3">
-              <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F] block">
-                Session Timing
+              <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F] dark:text-[#B5B2A8] block">
+                {t('plan_session_timing')}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <div className="p-3 bg-white dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-1">
-                  <span className="text-[10px] text-[#8C897F] font-bold block">Start Time</span>
+                  <span className="text-[10px] text-[#8C897F] dark:text-[#B5B2A8] font-bold block">{t('plan_start_time')}</span>
                   <input
                     type="time"
                     value={startTime}
@@ -220,17 +222,17 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                 </div>
 
                 <div className="p-3 bg-white dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-1">
-                  <span className="text-[10px] text-[#8C897F] font-bold block">Total Hours</span>
+                  <span className="text-[10px] text-[#8C897F] dark:text-[#B5B2A8] font-bold block">{t('plan_total_hours')}</span>
                   <select
                     value={targetHours}
                     onChange={(e) => setTargetHours(Number(e.target.value))}
                     className="w-full bg-transparent text-xs font-bold text-[#141413] dark:text-[#FAF9F5] focus:outline-none cursor-pointer"
                   >
-                    <option value={2}>2 Hours</option>
-                    <option value={3}>3 Hours</option>
-                    <option value={4}>4 Hours</option>
-                    <option value={5}>5 Hours</option>
-                    <option value={6}>6 Hours</option>
+                    <option value={2}>2 {t('plan_hours')}</option>
+                    <option value={3}>3 {t('plan_hours')}</option>
+                    <option value={4}>4 {t('plan_hours')}</option>
+                    <option value={5}>5 {t('plan_hours')}</option>
+                    <option value={6}>6 {t('plan_hours')}</option>
                   </select>
                 </div>
               </div>
@@ -238,14 +240,14 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
 
             {/* Pacing & Strategy */}
             <div className="space-y-3">
-              <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F] block">
-                Pacing &amp; Rhythm
+              <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F] dark:text-[#B5B2A8] block">
+                {t('plan_pacing')}
               </label>
               <div className="grid grid-cols-3 gap-1.5 bg-[#EFECE2]/50 dark:bg-[#252422]/50 p-1.5 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
                 {[
-                  { id: 'pomo', label: '25 / 5m', desc: 'Sprint' },
-                  { id: 'deep', label: '50 / 10m', desc: 'Deep' },
-                  { id: 'flow', label: '90 / 15m', desc: 'Flow' },
+                  { id: 'pomo', label: '25 / 5m', desc: 'plan_pace_sprint' },
+                  { id: 'deep', label: '50 / 10m', desc: 'plan_pace_deep' },
+                  { id: 'flow', label: '90 / 15m', desc: 'plan_pace_flow' },
                 ].map((p) => (
                   <button
                     key={p.id}
@@ -254,11 +256,11 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                     className={`py-1.5 px-2 rounded-lg text-center transition-all cursor-pointer ${
                       studyPacing === p.id
                         ? 'bg-[#D97757] text-white shadow-xs'
-                        : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#141413]'
+                        : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#FAF9F5]'
                     }`}
                   >
                     <div className="text-xs font-bold">{p.label}</div>
-                    <div className="text-[9px] opacity-80">{p.desc}</div>
+                    <div className="text-[9px] opacity-80">{t(p.desc)}</div>
                   </button>
                 ))}
               </div>
@@ -267,14 +269,14 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
             {/* Select Target Deadlines */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F]">
-                  Target Deadlines ({selectedAssignmentIds.length})
+                <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F] dark:text-[#B5B2A8]">
+                  {t('plan_targets')} ({selectedAssignmentIds.length})
                 </label>
               </div>
 
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {pendingAssignments.length === 0 ? (
-                  <p className="text-xs text-[#8C897F] py-2">No pending assignments loaded.</p>
+                  <p className="text-xs text-[#8C897F] dark:text-[#B5B2A8] py-2">{t('plan_no_pending')}</p>
                 ) : (
                   pendingAssignments.map((a) => {
                     const isSelected = selectedAssignmentIds.includes(a.id);
@@ -292,15 +294,15 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                           <p className="font-bold text-[#141413] dark:text-[#FAF9F5] truncate">
                             {a.assignmentName}
                           </p>
-                          <span className="text-[10px] text-[#8C897F]">
-                            {a.subject || 'Course'} • Due {a.dueDate || 'Soon'}
+                          <span className="text-[10px] text-[#8C897F] dark:text-[#B5B2A8]">
+                            {a.subject || t('plan_course')} • {t('plan_due')} {a.dueDate || t('plan_soon')}
                           </span>
                         </div>
                         <input
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => {}}
-                          className="w-3.5 h-3.5 rounded text-[#D97757] focus:ring-[#D97757] pointer-events-none"
+                          className="w-3.5 h-3.5 rounded text-[#D97757] dark:text-[#E59A7C] focus:ring-[#D97757] pointer-events-none"
                         />
                       </div>
                     );
@@ -316,7 +318,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
               className="w-full py-3 bg-[#D97757] hover:bg-[#C86646] text-white rounded-2xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               <Sparkles className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
-              <span>{isGenerating ? 'Synthesizing Plan...' : 'Generate Hour-by-Hour Plan'}</span>
+              <span>{isGenerating ? t('plan_synthesizing') : t('plan_generate')}</span>
             </button>
           </div>
 
@@ -325,14 +327,14 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
             
             {planBlocks.length === 0 ? (
               <div className="my-auto text-center space-y-3 py-16">
-                <div className="w-12 h-12 rounded-3xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-center mx-auto text-[#D97757]">
+                <div className="w-12 h-12 rounded-3xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-center mx-auto text-[#D97757] dark:text-[#E59A7C]">
                   <Clock className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">
-                  Ready to optimize today's study blocks
+                  {t('plan_ready_title')}
                 </h3>
-                <p className="text-xs text-[#8C897F] max-w-sm mx-auto leading-relaxed">
-                  Select your available timing and target deadlines on the left, then click Generate to get an hour-by-hour breakdown.
+                <p className="text-xs text-[#8C897F] dark:text-[#B5B2A8] max-w-sm mx-auto leading-relaxed">
+                  {t('plan_ready_hint')}
                 </p>
               </div>
             ) : (
@@ -341,9 +343,9 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                 {/* Summary Banner */}
                 <div className="p-4 rounded-2xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] flex items-start justify-between gap-4">
                   <div className="space-y-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#D97757] flex items-center gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#D97757] dark:text-[#E59A7C] flex items-center gap-1">
                       <Brain className="w-3.5 h-3.5" />
-                      <span>Optimized Cognitive Flow</span>
+                      <span>{t('plan_flow_title')}</span>
                     </span>
                     <p className="text-xs text-[#141413] dark:text-[#FAF9F5] font-medium leading-relaxed">
                       {planSummary}
@@ -352,10 +354,10 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
 
                   <button
                     onClick={handleCopyPlan}
-                    className="p-2 rounded-xl bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors cursor-pointer shrink-0"
-                    title="Copy Schedule"
+                    className="p-2 rounded-xl bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[#8C897F] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors cursor-pointer shrink-0"
+                    title={t('plan_copy')}
                   >
-                    {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                    {copied ? <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
 
@@ -379,7 +381,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                             <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
                               {block.assignmentTitle}
                             </h4>
-                            <span className="text-[10px] font-semibold text-[#8C897F]">
+                            <span className="text-[10px] font-semibold text-[#8C897F] dark:text-[#B5B2A8]">
                               ({block.courseName})
                             </span>
                           </div>
@@ -392,7 +394,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                       {block.isBreak ? (
                         <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 shrink-0">
                           <Coffee className="w-3.5 h-3.5" />
-                          <span>Rest</span>
+                          <span>{t('plan_rest')}</span>
                         </div>
                       ) : (
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
@@ -400,7 +402,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                             ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
                             : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
                         }`}>
-                          {block.intensity} FOCUS
+                          {block.intensity} {t('plan_focus')}
                         </span>
                       )}
                     </div>
@@ -413,8 +415,8 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
             {/* Bottom Actions Bar */}
             {planBlocks.length > 0 && (
               <div className="pt-4 border-t border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between gap-3 shrink-0">
-                <span className="text-xs text-[#8C897F]">
-                  {planBlocks.filter((b) => !b.isBreak).length} Focus Blocks • {planBlocks.filter((b) => b.isBreak).length} Rest Breaks
+                <span className="text-xs text-[#8C897F] dark:text-[#B5B2A8]">
+                  {planBlocks.filter((b) => !b.isBreak).length} {t('plan_focus_blocks')} • {planBlocks.filter((b) => b.isBreak).length} {t('plan_rest_breaks')}
                 </span>
 
                 <div className="flex items-center gap-2">
@@ -427,7 +429,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                       className="px-4 py-2 bg-[#141413] dark:bg-[#FAF9F5] text-white dark:text-[#141413] rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>Start 1st Block</span>
+                      <span>{t('plan_start_first')}</span>
                     </button>
                   )}
 
@@ -435,7 +437,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                     onClick={onClose}
                     className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1"
                   >
-                    <span>Done</span>
+                    <span>{t('done')}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
