@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Mail,
   Sparkles,
@@ -22,6 +22,15 @@ import {
 import { EmailAlert, EmailMessage, EmailCategory, ApiEnablementInfo } from '../types';
 import { ApiActivationBanner } from './ApiActivationBanner';
 import { t, useLang } from '../services/i18n';
+import {
+  trySilentRestore,
+  signInWithAccountSelect,
+  isConnected,
+  wasPreviouslyConnected,
+  clearGoogleGrant,
+  googleFetch,
+} from '../services/googleAuth';
+import { auth } from '../services/firebase';
 
 interface GmailRadarTabProps {
   emailAlerts: EmailAlert[];
@@ -34,6 +43,9 @@ interface GmailRadarTabProps {
   onConnectGoogle?: () => void;
   emailError?: string | null;
   gmailApiInfo?: ApiEnablementInfo | null;
+  connectedEmail?: string | null;
+  onDisconnectGoogle?: () => void | Promise<void>;
+  onUseAnotherAccount?: () => void | Promise<void>;
 }
 
 export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
@@ -47,11 +59,176 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
   onConnectGoogle,
   emailError,
   gmailApiInfo,
+  connectedEmail = null,
+  onDisconnectGoogle,
+  onUseAnotherAccount,
 }) => {
   useLang();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('ALL');
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
+  const [switching, setSwitching] = useState(false);
+  const [accountEmail, setAccountEmail] = useState<string | null>(connectedEmail);
+  const [liveConnected, setLiveConnected] = useState<boolean>(isGoogleConnected);
+  const autoTriedRef = useRef(false);
+
+  // Keep the displayed account in sync with the explicit prop + Firebase user.
+  useEffect(() => {
+    if (connectedEmail) {
+      setAccountEmail(connectedEmail);
+      return;
+    }
+    try {
+      const fbEmail = auth?.currentUser?.email || null;
+      if (fbEmail) {
+        setAccountEmail((prev) => prev || fbEmail);
+        return;
+      }
+    } catch {}
+    try {
+      const cached = localStorage.getItem('scc_google_email_v1');
+      if (cached && cached.includes('@')) setAccountEmail((prev) => prev || cached);
+    } catch {}
+  }, [connectedEmail]);
+
+  useEffect(() => {
+    setLiveConnected(isGoogleConnected);
+  }, [isGoogleConnected]);
+
+  // Instant Workspace restore: on mount, silently resume a prior grant and
+  // load Gmail data without requiring a click. Failures fall back quietly to
+  // the manual Connect button (no error spam).
+  useEffect(() => {
+    if (autoTriedRef.current) return;
+    autoTriedRef.current = true;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!wasPreviouslyConnected() && !isConnected()) return;
+      } catch {
+        return;
+      }
+      setRestoring(true);
+      try {
+        const token = await trySilentRestore({ gmail: true });
+        if (cancelled) return;
+        if (token) {
+          setLiveConnected(true);
+          // Best-effort: resolve the Gmail address for the status line.
+          try {
+            const res = await googleFetch('https://gmail.googleapis.com/gmail/v1/users/me/profile');
+            if (res?.ok) {
+              const data = await res.json().catch(() => ({}));
+              const gmail = typeof data?.emailAddress === 'string' ? data.emailAddress : null;
+              if (gmail && !cancelled) {
+                setAccountEmail(gmail);
+                try {
+                  localStorage.setItem('scc_google_email_v1', gmail);
+                } catch {}
+              }
+            }
+          } catch {}
+          try {
+            onRefreshEmails(true);
+          } catch {}
+        }
+      } catch {
+        // Silent fallback to the manual Connect button.
+      } finally {
+        if (!cancelled) setRestoring(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Mount-only: restore once per view, never loop on parent re-renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleConnectClick = async () => {
+    if (onConnectGoogle) {
+      await onConnectGoogle();
+      try {
+        setLiveConnected(isConnected());
+      } catch {}
+      return;
+    }
+    setRestoring(true);
+    try {
+      const token = await trySilentRestore({ gmail: true });
+      if (!token) {
+        const fresh = await signInWithAccountSelect({ gmail: true }).catch(() => null);
+        if (fresh) {
+          setLiveConnected(true);
+          try {
+            onRefreshEmails(true);
+          } catch {}
+        }
+      } else {
+        setLiveConnected(true);
+        try {
+          onRefreshEmails(true);
+        } catch {}
+      }
+    } catch {
+      // Manual fallback stays visible; no toast spam from auto paths.
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  const handleUseAnotherAccount = async () => {
+    if (onUseAnotherAccount) {
+      await onUseAnotherAccount();
+      return;
+    }
+    setSwitching(true);
+    try {
+      const token = await signInWithAccountSelect({ gmail: true }).catch(() => null);
+      if (token) {
+        setLiveConnected(true);
+        try {
+          const res = await googleFetch('https://gmail.googleapis.com/gmail/v1/users/me/profile');
+          if (res?.ok) {
+            const data = await res.json().catch(() => ({}));
+            const gmail = typeof data?.emailAddress === 'string' ? data.emailAddress : null;
+            if (gmail) {
+              setAccountEmail(gmail);
+              try {
+                localStorage.setItem('scc_google_email_v1', gmail);
+              } catch {}
+            }
+          }
+        } catch {}
+        try {
+          onRefreshEmails(true);
+        } catch {}
+      }
+    } catch {
+      // Dismissals stay silent; the current session is untouched.
+    } finally {
+      setSwitching(false);
+    }
+  };
+
+  const handleDisconnectClick = async () => {
+    if (onDisconnectGoogle) {
+      await onDisconnectGoogle();
+      setLiveConnected(false);
+      return;
+    }
+    try {
+      await clearGoogleGrant(auth?.currentUser?.uid || null);
+    } catch {}
+    try {
+      localStorage.removeItem('scc_google_email_v1');
+    } catch {}
+    setAccountEmail(null);
+    setLiveConnected(false);
+  };
+
+  const showConnected = liveConnected || isGoogleConnected;
 
   const matchesCategory = (alert: EmailAlert, cat: string) => {
     if (cat === 'ALL') return true;
@@ -118,6 +295,62 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Gmail connection status: silent auto-restore on mount, manual
+          Connect fallback, explicit account switching, email + Disconnect. */}
+      <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] px-3 py-2 flex flex-wrap items-center justify-between gap-2 shadow-xs text-xs">
+        {restoring ? (
+          <span className="flex items-center gap-2 text-[#5C5A54] dark:text-[#B5B2A8] font-semibold">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#D97757]" />
+            {t('gmail_scanning') === 'gmail_scanning' ? 'Reconnecting Gmail…' : t('gmail_scanning')}
+          </span>
+        ) : showConnected ? (
+          <span className="flex items-center gap-2 min-w-0">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span className="font-bold text-[#141413] dark:text-[#FAF9F5] truncate">
+              {accountEmail ? `Connected as ${accountEmail}` : t('gmail_connected_fallback') === 'gmail_connected_fallback' ? 'Gmail connected' : t('gmail_connected_fallback')}
+            </span>
+          </span>
+        ) : (
+          <span className="font-semibold text-[#5C5A54] dark:text-[#B5B2A8]">
+            {t('gmail_not_connected') === 'gmail_not_connected' ? 'Gmail is not connected.' : t('gmail_not_connected')}
+          </span>
+        )}
+        <div className="flex items-center gap-2">
+          {showConnected && !restoring ? (
+            <>
+              <button
+                onClick={handleUseAnotherAccount}
+                disabled={switching}
+                className="px-2.5 py-1 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-lg font-semibold cursor-pointer disabled:opacity-60"
+              >
+                {switching ? 'Switching…' : 'Use another account'}
+              </button>
+              <button
+                onClick={handleDisconnectClick}
+                className="px-2.5 py-1 bg-transparent border border-[#DFDACB] dark:border-[#2C2B27] text-[#5C5A54] dark:text-[#B5B2A8] hover:text-rose-600 hover:border-rose-300 rounded-lg font-semibold cursor-pointer"
+              >
+                Disconnect
+              </button>
+            </>
+          ) : !restoring ? (
+            <>
+              <button
+                onClick={handleConnectClick}
+                className="px-2.5 py-1 bg-[#D97757] hover:bg-[#C86646] text-white rounded-lg font-semibold cursor-pointer"
+              >
+                {t('gmail_connect')}
+              </button>
+              <button
+                onClick={handleUseAnotherAccount}
+                disabled={switching}
+                className="px-2.5 py-1 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-lg font-semibold cursor-pointer disabled:opacity-60"
+              >
+                {switching ? 'Switching…' : 'Use another account'}
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
       {/* Top Filter Bar */}
       <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
         
@@ -200,11 +433,9 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
       ) : emailError ? (
         <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200">
           <span>{emailError}</span>
-          {onConnectGoogle && (
-            <button onClick={onConnectGoogle} className="px-2.5 py-1 bg-amber-600 text-white rounded-lg font-semibold cursor-pointer">
-              {t('gmail_connect')}
-            </button>
-          )}
+          <button onClick={handleConnectClick} className="px-2.5 py-1 bg-amber-600 text-white rounded-lg font-semibold cursor-pointer">
+            {t('gmail_connect')}
+          </button>
         </div>
       ) : null}
 
