@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   FileText,
   Upload,
@@ -34,7 +34,45 @@ export const PdfReaderWorkspace: React.FC = () => {
   const [newNote, setNewNote] = useState('');
   const [notePage, setNotePage] = useState<number>(1);
   const [copied, setCopied] = useState(false);
+  const [viewerFailed, setViewerFailed] = useState(false);
+  const [viewerAttempt, setViewerAttempt] = useState(0);
+  const viewerTimerRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Blocked-viewer fallback: blob/CDN iframes can die silently where embedded
+  // PDFs are blocked, so treat "no load event within ~9s" (or an error event)
+  // as a failure and offer a working path instead of hanging blank.
+  useEffect(() => {
+    if (!pdfFileUrl) return;
+    setViewerFailed(false);
+    if (viewerTimerRef.current !== null) {
+      window.clearTimeout(viewerTimerRef.current);
+    }
+    viewerTimerRef.current = window.setTimeout(() => {
+      setViewerFailed(true);
+    }, 9000);
+    return () => {
+      if (viewerTimerRef.current !== null) {
+        window.clearTimeout(viewerTimerRef.current);
+      }
+    };
+  }, [pdfFileUrl, viewerAttempt]);
+
+  const handleViewerLoad = () => {
+    setViewerFailed(false);
+    if (viewerTimerRef.current !== null) {
+      window.clearTimeout(viewerTimerRef.current);
+    }
+  };
+
+  const handleViewerError = () => {
+    setViewerFailed(true);
+  };
+
+  const handleViewerRetry = () => {
+    setViewerFailed(false);
+    setViewerAttempt((prev) => prev + 1);
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -217,11 +255,61 @@ export const PdfReaderWorkspace: React.FC = () => {
 
             {/* Embedded PDF Canvas */}
             <div className="flex-1 bg-stone-100 dark:bg-stone-900 rounded-2xl overflow-hidden min-h-[600px] border border-[#DFDACB]/40 flex items-center justify-center">
-              <iframe
-                src={`${pdfFileUrl}#toolbar=1&navpanes=0`}
-                className="w-full h-full min-h-[600px] border-none rounded-2xl"
-                title={t('pdf_doc_title')}
-              />
+              {viewerFailed ? (
+                <div className="w-full p-10 text-center space-y-4">
+                  <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 mx-auto flex items-center justify-center">
+                    <FileText className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">
+                      Embedded preview is blocked here
+                    </h3>
+                    <p className="text-xs text-[#8C897F] max-w-md mx-auto mt-1">
+                      Your browser blocked the inline PDF viewer. Open it in a new tab or download it — your notes on the right are untouched.
+                    </p>
+                    {pdfFileName ? (
+                      <p className="text-[11px] text-[#8C897F] max-w-md mx-auto mt-2 truncate">
+                        {pdfFileName}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    <a
+                      href={pdfFileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-2xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open in new tab</span>
+                    </a>
+                    <a
+                      href={pdfFileUrl}
+                      download={pdfFileName || 'document.pdf'}
+                      className="px-4 py-2 bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#141413] dark:text-[#FAF9F5] rounded-2xl text-xs font-bold transition-colors flex items-center gap-1.5"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={handleViewerRetry}
+                      className="px-4 py-2 bg-transparent border border-[#DFDACB] dark:border-[#2C2B27] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] rounded-2xl text-xs font-bold transition-colors"
+                    >
+                      Try inline again
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <iframe
+                  key={`${pdfFileUrl}#attempt-${viewerAttempt}`}
+                  src={`${pdfFileUrl}#toolbar=1&navpanes=0`}
+                  className="w-full h-full min-h-[600px] border-none rounded-2xl"
+                  title={t('pdf_doc_title')}
+                  onLoad={handleViewerLoad}
+                  onError={handleViewerError}
+                />
+              )}
             </div>
           </div>
 
