@@ -342,3 +342,74 @@ Human ordered "merge them, remember to pull". Pull-first honored: `HEAD..origin/
 ### Status flips (all → `merged` @7b36d54)
 049, 050, 051, 052, 053, 046, 054, 055, 056, 057.
 Remains `queued`: 058 (Periodic Table polish — dispatch when DRAIN lifts). Remain `blocked`: 025, 041 (superseded, historic). Remains `conflict`: 006 (CreationStudio XSS sink — still OPEN, needs manual revive).
+
+## CYCLE 15 — 2026-09-13: user bug-bash batch 3 (branch prefix commander/20260913-*)
+
+User directive: all branches for these bugs named commander/20260913. Per-order isolation via suffix (commander/20260913-<id>-<slug>); human merges sequentially, rebuilds after each.
+Already-fixed yesterday (DO NOT REDO — merged @7b36d54): 049 NaN guard, 050 pomo onboarding, 051 quiz count, 052 rubric, 053 feynman, 054 photomath, 055 mermaid, 056 brief parse, 057 evaluator.
+Preflight 2026-09-13: native task+implementer probe (commander/probe-20260913) — create/commit/delete/push ALL OK. No STOP/DRAIN. Pulled origin/main (ledger-only fast-forward to c6cb434), remote in sync.
+Triage (commander reads): CSP connect-src lacks export.arxiv.org/openlibrary.org/covers/archive.org so Library+arXiv die on Vercel (code fine); frame-src lacks blob: plus object-src none so PDF blob-iframe blocked; PhET search state exists but NO visible input; NotionImport handles .md but promises .zip it cannot open; GeoGebra/Excalidraw embeds rely on remote framing (remote X-Frame/CSP is the blocker class).
+Standing rules (cycle-15+ workers): own branch from origin/main, isolated worktree under .worktrees/ (NEVER reset/checkout/clean shared tree), listed files ONLY, NO i18n* touches (068 owns them), NO vercel.json touches (062 owns it), NO changelog trio (consolidated order at end BY DESIGN), npm run build exit 0, push branch, no merge to main.
+
+| ID | Task | Plan / acceptance | Branch | Status | Attempts | Notes |
+|----|------|-------------------|--------|--------|----------|-------|
+| 058 | Periodic Table bigger/fit/colors/click-only | PeriodicTableWorkspace.tsx ONLY (elementsData.ts read-only): larger cells, rounded masses + ellipsis names w/ tooltip, group color legend (Alkali/Alkaline/Transition/Post-transition/Metalloids/Nonmetals/Halogens/Noble/Lanthanides/Actinides), detail ONLY on click. Accept: build 0; numbers+names fit; no hover-open. | commander/20260913-058-periodic | in-progress | 1 | Queued since 09-12. |
+| 059 | PhET: search box + 24+ sims + embed fallback | PhETWorkspace.tsx ONLY: visible search input wired to existing search state; expand catalog 8 to 24+ real published slugs (omit uncertain); Math chip; loading+error fallback w/ Open Tab. Accept: build 0; search filters live. | commander/20260913-059-phet | in-progress | 1 | |
+| 060 | GeoGebra via official GGBApplet embed | GeoGebraWorkspace.tsx ONLY: dynamic deployggb.js + per-tab GGBApplet; fallback iframe, then error card + Open-in-Tab. Accept: build 0; interactive app renders; never blank-hang. | commander/20260913-060-geogebra | in-progress | 1 | Needs 062 CSP script-src at runtime (not for build). |
+| 061 | Excalidraw local whiteboard (npm package) | ExcalidrawWorkspace.tsx + package.json deps ONLY (npm i @excalidraw/excalidraw): local Excalidraw w/ debounced localStorage autosave, reload/clear, Open-in-Tab fallback. Accept: build 0; strokes persist reload. | commander/20260913-061-excalidraw | in-progress | 1 | Only pkg-adding order this cycle. |
+| 062 | CSP allowlist: APIs + blob frames + geogebra scripts | vercel.json ONLY: connect-src += export.arxiv.org/openlibrary.org/covers.openlibrary.org/archive.org/api.crossref.org; frame-src += blob:; script-src += www.geogebra.org cdn.geogebra.org. Accept: build 0; header valid. | commander/20260913-062-csp | in-progress | 1 | Merge FIRST (runtime-unblocks 060/063/073). |
+
+Queued next: 063-067 DISPATCHED cycle 16 (table below); queued wave 2: 068 theme-text+i18n audit, 069 Gantt scan-all+preview, 070 flashcard deck count, 071 pomo+oral sounds, 072 Code Runner; wave 3: 073 PDF fallback, 074 Notion zip, 075 AI Planner, 076 changelog consolidation (LAST), 077 006-XSS revive. Human order 2026-09-13: finish all, then pull+merge+push (merger merges to main on completion).
+
+## REVIEW — cycle 15 (2026-09-13: all 5 READY, 0 rework; diffs verified vs origin/main)
+
+- 058 `commander/20260913-058-periodic` (e04d711): 1 file +102/-37, build 0, zero tsc in file. Click-only detail, legend, fit fixes per plan. READY.
+- 059 `commander/20260913-059-phet` (aacde6f): 1 file +192/-2, build 0. Search box live, 8→29 sims, Math chip. READY.
+- 060 `commander/20260913-060-geogebra` (04ffb81): 1 file +252/-11, build 0. deployggb + fallbacks. READY (needs 062 at runtime).
+- 061 `commander/20260913-061-excalidraw` (e6b0675): workspace + pkg + lockfile, build 0. Lockfile has floating-range drift; consistent + green. READY (merge note: npm ci + rebuild after 061).
+- 062 `commander/20260913-062-csp` (83d091a): vercel.json 1-line exact additive CSP per plan, build 0. READY, merge FIRST.
+- Coherence: no shared-service touched, no overlaps. Merge order: 062→058→059→060→061.
+
+## CYCLE 16 — 2026-09-13: 063-067 dispatched (user: run all, then merge+push)
+
+| ID | Task | Branch | Status | Attempts | Notes |
+|----|------|--------|--------|----------|-------|
+| 063 | Research search hardening (Library+arXiv+Cite) | commander/20260913-063-research | in-progress | 1 | Runtime needs 062. |
+| 064 | Gemini key fix + edit/expire UI | commander/20260913-064-gemini-keys | in-progress | 1 | Shared svc additive only. |
+| 065 | Google auto-connect + switch account | commander/20260913-065-google-auth | in-progress | 1 | Shared svc additive only. |
+| 066 | Canvas triage + fix | commander/20260913-066-canvas | in-progress | 1 | Keep 001 sanitizer intact. |
+| 067 | Dossier Bang A formal + typos | commander/20260913-067-dossier | redo | 2 | Turn-1 worker killed pre-commit; stale dir dead (no procs), cleaned, re-dispatched. |
+
+## REVIEW — cycle 16 partial (2026-09-13: 065+066 READY, 064 complete-unpushed, 063/067 killed pre-commit)
+
+- 065 `commander/20260913-065-google-auth` (c0a39e3, pushed, base == origin/main bccc4de): googleAuth additive (trySilentRestore/isConnected/select_account/flag helpers) + GmailRadarTab auto-restore + Use-another-account + Disconnect. Worker post-merge build failure was ENVIRONMENTAL (merged tree lacked npm install for excalidraw — not a code break; 066 proved the same tree builds green with complete node_modules). Deletions benign (unused import, replaced manual-only button). → READY.
+- 066 `commander/20260913-066-canvas` (65e898e+d52240e, pushed): canvas.ts keeps SUPERSET of main's hardened APIs (CanvasSyncError 19v10, normalize 10v7, AbortController added); CanvasSyncTab DOMPurify block byte-identical to main (verified line-by-line); worker build 0. Commit mixes turn-1 partial work (attribution muddy, content reviewed OK). → READY.
+- 064: worker completed code (59ff802: 2.5-flash default + Detailed test + masked manager + expiry meta in new providers.ts; old boolean testGeminiApiKey kept as wrapper in both files — AccountSettingsModal caller safe) + absorbed main (9e0a206) but killed before build/push. → verify+push order (attempt 2, same branch/worktree).
+- 063/067: turn-1/2 workers killed pre-commit, no remote branches, stale dirs confirmed dead (node_modules writes 12:58-12:59, zero node/npm/git procs). Stale branch refs deleted. → clean re-dispatch (attempt 2, -r2 worktree paths).
+- Human merged 061 direct to main (PR #44, bccc4de). Shared main pulled to bccc4de, in sync. Remote excalidraw-CSS scare = false alarm (exports map has ./index.css w/ dev/prod conditions; failure was missing npm install, not bad import). Merger MUST run `npm ci` after any lockfile merge, then build.
+- Standing rule ADDED: if assigned worktree path exists with foreign content, do NOT reuse — use `-r2` suffix path and report.
+
+### Status flips
+065, 066 → `ready`. 064 → `verify` (same branch). 063, 067 → `redo-2`.
+
+## CYCLE 17 — 2026-09-13: 063r+067r+064v+068+069 (5 slots)
+
+| ID | Task | Branch | Status | Attempts | Notes |
+|----|------|--------|--------|----------|-------|
+| 063 | REDO research search hardening | commander/20260913-063-research | in-progress | 2 | -r2 worktree path. |
+| 067 | REDO dossier formal | commander/20260913-067-dossier | in-progress | 2 | -r2 worktree path. |
+| 064 | VERIFY build + push (same branch) | commander/20260913-064-gemini-keys | verify | 2 | Resume existing worktree; fix-forward max 1. |
+| 068 | Theme text visibility + i18n completeness | commander/20260913-068-i18n-theme | in-progress | 1 | Owns i18n*.ts; color fixes ONLY in files with no active order (forbidden list in prompt). |
+| 069 | Gantt scan-all assignments + in-app preview | commander/20260913-069-gantt | deferred | — | Parked per human order (another day). NOTE: stray remote branch `commander/20260913-069-gantt-r2` exists (interrupted worker pushed partial work?) — left untouched, do NOT merge without review. 068 has no remote branch. |
+
+## MERGE — 2026-09-13 (commander session, main @50d87df, pushed)
+
+Human order: park 068/069, pull+merge 058→067, push. Pull honored: remote static at bccc4de (incl. human's PR #44 excalidraw), no pull needed.
+- Merged 9 (EACH `git merge --no-ff`, ALL auto-clean, zero conflicts — file sets disjoint): 062 CSP → 058 periodic → 059 phet → 060 geogebra → 063 research → 064 gemini-keys → 065 google-auth → 066 canvas → 067 dossier. (061 already on main via PR #44.)
+- Verified: `npm ci` + `npm run build` exit 0 on merged tree (vite 59.85s + server.cjs + PWA). No new deps in these 9 (node_modules change came only from 061's lockfile, already absorbed).
+- Pushed `bccc4de..50d87df` to origin/main (no force). Vercel will deploy main.
+- Coherence: no shared-service signature broken (064 keeps boolean wrapper; 065/066 additive; 063 fixed nonexistent addBibEntry writes); 001 DOMPurify block byte-identical post-066; no resurrected deletes.
+- Left for another day: 068 i18n+theme, 069 gantt (+ stray 069-gantt-r2 remote branch untouched). Still open from before: 006 CreationStudio XSS (conflict), 070-077 queue (flashcards, sounds, coderunner, PDF, notion, AI planner, changelog, 006-revive), changelog-trio consolidation (076).
+
+### Status flips (all → `merged` @50d87df)
+058, 059, 060, 062, 063, 064, 065, 066, 067. 068, 069 → `deferred`.
