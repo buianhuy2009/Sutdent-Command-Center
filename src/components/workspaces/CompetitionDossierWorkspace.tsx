@@ -11,15 +11,26 @@ const STORE_KEY = 'scc_dossier_v1';
 // Sec 8 canonical draft key (Appendix B): new writes mirror here; legacy scc_dossier_v1 still read for backward compat.
 const DRAFT_KEY = 'scc_dossier_draft_v1';
 
+// Formal uppercase labels for the Team tab fill-in fields (display only; store keys unchanged).
+const TEAM_FIELD_LABELS: Record<string, string> = {
+  name: 'FULL NAME',
+  dob: 'DATE OF BIRTH',
+  className: 'CLASS',
+  school: 'SCHOOL',
+  phone: 'PHONE',
+  email: 'EMAIL',
+  unit: 'SCHOOL / UNIT',
+};
+
 const SECTION_TITLES = [
   '1. Vấn đề cần giải quyết (Problem)',
   '2. Đối tượng sử dụng (Users)',
   '3. Dữ liệu, câu lệnh, công cụ AI đã dùng (Data & Tools)',
   '4. Sơ đồ Input → AI → Output (Diagram)',
-  '5. Hình ảnh quá trình thử nghiệm (Testing photos)',
-  '6. Kết quả trình diễn sản phẩm (Demo results)',
-  '7. Hạn chế và hướng cải tiến (Limits & next steps)',
-  '8. Lịch sử câu lệnh & minh chứng (Prompt history + Drive link)',
+  '5. Hình ảnh quá trình thử nghiệm (Testing Photos)',
+  '6. Kết quả trình diễn sản phẩm (Demo Results)',
+  '7. Hạn chế và hướng cải tiến (Limits & Next Steps)',
+  '8. Lịch sử câu lệnh & minh chứng (Prompt History + Drive Link)',
 ];
 
 const DEFAULT_SECTIONS = [
@@ -27,9 +38,9 @@ const DEFAULT_SECTIONS = [
   'Students in grades 6–9 and teachers who assign homework…',
   'Self-collected homework photos (with permission), Gemini few-shot prompts, open-source Mermaid diagrams…',
   'Input: homework photo → AI: text sorter (few-shot) → Output: subject-tagged task list.',
-  'See Evidence gallery snapshots below with captions and dates.',
+  'See the Evidence gallery snapshots below with captions and dates.',
   'Main functions: snap → sort → remind. Tested on 30 homework notes, 27 correct.',
-  'Limit: handwriting in low light fails. Next: add more night photos, confirm dialog.',
+  'Limit: handwriting recognition fails in low light. Next: add more night photos and a confirmation dialog.',
   'Prompt Log exported below. Drive folder (open access): paste link here.',
 ];
 
@@ -92,7 +103,7 @@ export const CompetitionDossierWorkspace: React.FC = () => {
     if (videoKind === '3min') {
       return `DEMO (3 min)\n[0:00] ${m1}: Open product, show main screen.\n[1:00] ${m2}: Run main function #1 live.\n[2:00] ${m3}: Show main function #2 + result.\n[2:40] ${m1}: Results + where evidence lives.`;
     }
-    return `REGIONAL 10-MIN (all members appear)\n[0:00] ${m1}: Problem + users + why we chose it.\n[2:30] ${m2}: My tasks — features I built + AI process I can explain.\n[5:00] ${m3}: My tasks — tests I ran, errors I fixed (before → after).\n[7:30] ${m1}: Prompt Log — show 3 prompts and what we changed.\n[9:00] All: Live demo + improvement plan. Thank you.`;
+    return `REGIONAL 10-MIN (All Members Appear)\n[0:00] ${m1}: Problem + users + why we chose it.\n[2:30] ${m2}: My tasks — features I built + AI process I can explain.\n[5:00] ${m3}: My tasks — tests I ran, errors I fixed (before → after).\n[7:30] ${m1}: Prompt Log — show 3 prompts and what we changed.\n[9:00] All: Live demo + improvement plan. Thank you.`;
   };
 
   const pingNow = async () => {
@@ -105,7 +116,7 @@ export const CompetitionDossierWorkspace: React.FC = () => {
   const exportDossierHTML = () => {
     const logs = getPromptLogs();
     const ev = getEvidence();
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Division A Dossier — ${new Date().toISOString().slice(0, 10)}</title><style>body{font-family:system-ui,sans-serif;max-width:720px;margin:32px auto;padding:0 16px;line-height:1.6}h1,h2{color:#1a1a1a}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px;font-size:13px}.cover{background:#FAF9F5;border:1px solid #DFDACB;border-radius:12px;padding:20px}</style></head><body><div class="cover"><h1>Bảng A — Project Dossier (Mẫu 1, 8 sections)</h1><p>Team: ${(store.students || []).map((s: any) => s.name).filter(Boolean).join(', ') || '(fill Team tab)'} · Teacher: ${store.teacher?.name || ''}</p><p>Page estimate: ${pageEstimate}/8 ${pageEstimate > 8 ? '— OVER LIMIT, trim before submit' : ''}</p></div>${SECTION_TITLES.map((t, i) => `<h2>${t}</h2><p>${String(store.sections[i] || '').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</p>`).join('')}<h2>Evidence (${ev.length})</h2><ul>${ev.map(e => `<li>${e.timestamp} — ${e.title}: ${e.detail}</li>`).join('')}</ul><h2>Prompt Log (${logs.length})</h2><pre>${exportPromptLogMarkdown().replace(/</g, '&lt;').slice(0, 8000)}</pre><p>Signatures: ______________ (students) · ______________ (teacher)</p></body></html>`;
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Division A Dossier — ${new Date().toISOString().slice(0, 10)}</title><style>body{font-family:system-ui,sans-serif;max-width:720px;margin:32px auto;padding:0 16px;line-height:1.6}h1,h2{color:#1a1a1a}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px;font-size:13px}.cover{background:#FAF9F5;border:1px solid #DFDACB;border-radius:12px;padding:20px}.cover h1{text-transform:uppercase;letter-spacing:.04em}.cover p{margin:4px 0}</style></head><body><div class="cover"><h1>BẢNG A — PROJECT DOSSIER (MẪU 1, 8 SECTIONS)</h1><p><strong>TEAM:</strong> ${(store.students || []).map((s: any) => s.name).filter(Boolean).join(', ') || '(fill in the Team tab)'}</p><p><strong>TEACHER:</strong> ${store.teacher?.name || '(not set)'}</p><p><strong>DATE:</strong> ${new Date().toISOString().slice(0, 10)}</p><p><strong>PAGE ESTIMATE:</strong> ${pageEstimate}/8 ${pageEstimate > 8 ? '— OVER LIMIT, TRIM BEFORE SUBMISSION' : ''}</p></div>${SECTION_TITLES.map((t, i) => `<h2>${t}</h2><p>${String(store.sections[i] || '').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</p>`).join('')}<h2>Evidence (${ev.length})</h2><ul>${ev.map(e => `<li>${e.timestamp} — ${e.title}: ${e.detail}</li>`).join('')}</ul><h2>Prompt Log (${logs.length})</h2><pre>${exportPromptLogMarkdown().replace(/</g, '&lt;').slice(0, 8000)}</pre><p>Signatures: ______________ (students) · ______________ (teacher)</p></body></html>`;
     const w = window.open('', '_blank');
     if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 400); }
     saveEvidence('dossier', 'Dossier exported to PDF-ready HTML', `Sections estimate ${pageEstimate}/8 pages.`);
@@ -124,9 +135,9 @@ export const CompetitionDossierWorkspace: React.FC = () => {
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
       <div className="space-y-1">
         <h2 className="text-lg font-extrabold flex items-center gap-2 text-[#141413] dark:text-[#FAF9F5]"><Trophy className="w-5 h-5 text-[#D97757]" /> Competition Dossier — Bảng A</h2>
-        <p className="text-xs text-[#6B6860]">National Youth AI Creativity Contest 2026 · ages 12–15 · max 3 students + 1 teacher. Everything here maps to the 8-section Mẫu 1 dossier.</p>
+        <p className="text-xs text-[#6B6860]">National Youth AI Creativity Contest 2026 · ages 12–15 · Max 3 students + 1 teacher. Everything here maps to the 8-section Mẫu 1 dossier.</p>
       </div>
-      <WhyChip text="Provincial dossiers close 30-9-2026. Regionals: South 10-10, North/Central 17-10. Final Hanoi 20–22 Nov. Score = 40% dossier + 60% regional." />
+      <WhyChip text="Provincial dossiers close 30-9-2026. Regionals: South 10-10, North/Central 17-10. Final in Hanoi, 20–22 Nov. Score = 40% dossier + 60% regional." />
 
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Dossier tabs">
         {tabs.map(t => (
@@ -138,11 +149,11 @@ export const CompetitionDossierWorkspace: React.FC = () => {
 
       {tab === 'team' && (
         <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 space-y-3">
-          <h3 className="text-sm font-bold">Team (1–3 students + 1 teacher guide)</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wide">Team (1–3 Students + 1 Guiding Teacher)</h3>
           {store.students.map((s: any, i: number) => (
             <div key={i} className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB]/60">
               {(['name', 'dob', 'className', 'school', 'phone', 'email'] as const).map(f => (
-                <label key={f} className="text-[11px] font-bold">{f === 'className' ? 'class' : f}
+                <label key={f} className="text-[11px] font-semibold uppercase tracking-wide text-[#6B6860]">{TEAM_FIELD_LABELS[f]}
                   <input value={s[f] || ''} onChange={e => {
                     const next = [...store.students];
                     next[i] = { ...next[i], [f]: e.target.value };
@@ -151,18 +162,18 @@ export const CompetitionDossierWorkspace: React.FC = () => {
                 </label>
               ))}
               {store.students.length > 1 && (
-                <button onClick={() => set({ students: store.students.filter((_: any, j: number) => j !== i) })} className="text-[11px] font-bold text-rose-600 underline underline-offset-4 cursor-pointer col-span-full text-left min-h-[32px]">Remove member</button>
+                <button onClick={() => set({ students: store.students.filter((_: any, j: number) => j !== i) })} className="text-[11px] font-bold text-rose-600 underline underline-offset-4 cursor-pointer col-span-full text-left min-h-[32px]">REMOVE MEMBER</button>
               )}
             </div>
           ))}
           {store.students.length < 3 && (
-            <button onClick={() => set({ students: [...store.students, { name: '', dob: '', className: '', school: '', phone: '', email: '' }] })} className="px-3 py-2 rounded-xl border text-xs font-bold min-h-[44px] cursor-pointer">+ Add student (max 3)</button>
+            <button onClick={() => set({ students: [...store.students, { name: '', dob: '', className: '', school: '', phone: '', email: '' }] })} className="px-3 py-2 rounded-xl border text-xs font-bold min-h-[44px] cursor-pointer">+ ADD STUDENT (MAX 3)</button>
           )}
           <div className="p-3 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB]/60 space-y-2">
-            <h4 className="text-xs font-bold">Teacher guide (max 1)</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wide">Guiding Teacher (Max 1)</h4>
             <div className="grid grid-cols-2 gap-2">
               {(['name', 'unit', 'phone', 'email'] as const).map(f => (
-                <label key={f} className="text-[11px] font-bold">{f}
+                <label key={f} className="text-[11px] font-semibold uppercase tracking-wide text-[#6B6860]">{TEAM_FIELD_LABELS[f]}
                   <input value={store.teacher[f] || ''} onChange={e => set({ teacher: { ...store.teacher, [f]: e.target.value } })} className="mt-0.5 w-full px-2 py-1.5 rounded-lg border border-[#DFDACB] dark:border-[#2C2B27] text-xs font-medium bg-white dark:bg-[#1A1917]" />
                 </label>
               ))}
@@ -170,7 +181,7 @@ export const CompetitionDossierWorkspace: React.FC = () => {
           </div>
           <label className="flex items-start gap-2 text-xs cursor-pointer">
             <input type="checkbox" checked={!!store.pledge} onChange={e => set({ pledge: e.target.checked })} className="mt-0.5 w-4 h-4 accent-[#D97757]" />
-            <span>Single-team pledge: each contestant joins only <strong>one team, one division</strong> this season. We will bring valid IDs to every round.</span>
+            <span>Single-Team Pledge: Each contestant joins only <strong>one team in one division</strong> this season. We will bring valid IDs to every round.</span>
           </label>
         </div>
       )}
@@ -178,9 +189,9 @@ export const CompetitionDossierWorkspace: React.FC = () => {
       {tab === 'dossier' && (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <p className="text-xs font-bold">Page estimate: <span className={pageEstimate > 8 ? 'text-rose-600' : 'text-emerald-600'}>{pageEstimate}/8 pages</span> {pageEstimate > 8 && '— trim before submit!'}</p>
+            <p className="text-xs font-bold">Page estimate: <span className={pageEstimate > 8 ? 'text-rose-600' : 'text-emerald-600'}>{pageEstimate}/8 pages</span> {pageEstimate > 8 && '— Trim before submitting!'}</p>
             <div className="flex gap-2">
-              <button onClick={prefillExample} className="px-3 py-2 rounded-xl border text-xs font-bold min-h-[44px] cursor-pointer">Fill school example</button>
+              <button onClick={prefillExample} className="px-3 py-2 rounded-xl border text-xs font-bold min-h-[44px] cursor-pointer">Fill School Example</button>
               <button onClick={exportDossierHTML} className="px-3 py-2 bg-[#D97757] text-white rounded-xl text-xs font-bold min-h-[44px] cursor-pointer inline-flex items-center gap-1.5"><Printer className="w-3.5 h-3.5" /> Export PDF-ready</button>
             </div>
           </div>
@@ -205,11 +216,11 @@ export const CompetitionDossierWorkspace: React.FC = () => {
               )}
               {i === 7 && (
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold">Google Drive folder link (must be “Anyone with the link” before submit)
+                  <label className="text-[11px] font-bold">Google Drive folder link (must be “Anyone with the link” before submission)
                     <input value={store.driveLink || ''} onChange={e => set({ driveLink: e.target.value })} placeholder="https://drive.google.com/drive/folders/…" className="mt-1 w-full px-3 py-2 rounded-xl border text-xs bg-white dark:bg-[#1F1E1B]" />
                   </label>
-                  <p className={`text-[11px] font-bold ${driveValid ? 'text-emerald-600' : 'text-amber-700'}`}>{driveValid ? 'Looks like a Drive link ✓ — still open it in incognito to confirm “Anyone with the link”.' : 'Paste a drive.google.com link.'}</p>
-                  <label className="flex items-center gap-2 text-[11px] cursor-pointer"><input type="checkbox" checked={!!store.driveOpen} onChange={e => set({ driveOpen: e.target.checked })} className="w-4 h-4 accent-[#D97757]" /> I confirmed sharing is “Anyone with the link”.</label>
+                  <p className={`text-[11px] font-bold ${driveValid ? 'text-emerald-600' : 'text-amber-700'}`}>{driveValid ? 'Looks like a Drive link ✓ — still open it in an incognito window to confirm “Anyone with the link”.' : 'Paste a drive.google.com link.'}</p>
+                  <label className="flex items-center gap-2 text-[11px] cursor-pointer"><input type="checkbox" checked={!!store.driveOpen} onChange={e => set({ driveOpen: e.target.checked })} className="w-4 h-4 accent-[#D97757]" /> I have confirmed sharing is set to “Anyone with the link”.</label>
                 </div>
               )}
             </div>
@@ -242,9 +253,9 @@ export const CompetitionDossierWorkspace: React.FC = () => {
             </div>
           </div>
           <div className="p-3 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border text-xs space-y-2">
-            <h4 className="font-bold">Honesty declaration — self-built vs AI-assisted vs open-source (%)</h4>
+            <h4 className="font-bold">Honesty Declaration — Self-Built vs AI-Assisted vs Open-Source (%)</h4>
             {(['self', 'ai', 'oss'] as const).map(k => (
-              <label key={k} className="flex items-center gap-2 text-[11px] font-bold">{k === 'self' ? 'Self-built' : k === 'ai' ? 'AI-assisted' : 'Open-source'}
+              <label key={k} className="flex items-center gap-2 text-[11px] font-bold">{k === 'self' ? 'Self-Built' : k === 'ai' ? 'AI-Assisted' : 'Open-Source'}
                 <input type="range" min={0} max={100} value={store.honesty[k]} onChange={e => set({ honesty: { ...store.honesty, [k]: Number(e.target.value) } })} className="flex-1 accent-[#D97757]" />
                 <span className="font-mono w-10 text-right">{store.honesty[k]}%</span>
               </label>
@@ -272,12 +283,12 @@ export const CompetitionDossierWorkspace: React.FC = () => {
               <button key={id} role="tab" aria-selected={videoKind === id} onClick={() => setVideoKind(id)} className={`px-3 py-2 rounded-xl text-xs font-bold min-h-[44px] cursor-pointer border ${videoKind === id ? 'bg-[#D97757] text-white border-[#D97757]' : 'border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]'}`}>{label}</button>
             ))}
           </div>
-          <label className="text-[11px] font-bold">Speaking members (comma-separated, 10-min script gives everyone lines)
+          <label className="text-[11px] font-bold">Speaking Members (comma-separated; the 10-min script gives everyone lines)
             <input value={store.videoMembers.join(', ')} onChange={e => set({ videoMembers: e.target.value.split(',').map((s: string) => s.trim()).slice(0, 3) })} className="mt-1 w-full px-3 py-2 rounded-xl border text-xs bg-[#FAF9F5] dark:bg-[#1F1E1B]" />
           </label>
           <pre className="whitespace-pre-wrap text-xs leading-relaxed p-3 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border">{genScript()}</pre>
           <div className="flex gap-2">
-            <button onClick={() => setTele(genScript())} className="px-3 py-2 bg-[#141413] dark:bg-[#FAF9F5] text-white dark:text-[#141413] rounded-xl text-xs font-bold min-h-[44px] cursor-pointer">Teleprompter mode</button>
+            <button onClick={() => setTele(genScript())} className="px-3 py-2 bg-[#141413] dark:bg-[#FAF9F5] text-white dark:text-[#141413] rounded-xl text-xs font-bold min-h-[44px] cursor-pointer">Teleprompter Mode</button>
             <EvidenceButton onSnap={() => saveEvidence('dossier-video', `${videoKind} script generated`, genScript().slice(0, 300))} />
           </div>
           {tele && (
@@ -291,11 +302,11 @@ export const CompetitionDossierWorkspace: React.FC = () => {
 
       {tab === 'testing' && (
         <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 space-y-3">
-          <h3 className="text-sm font-bold">Test iterations (before → after proves improvement)</h3>
+          <h3 className="text-sm font-bold">Test Iterations (Before → After Proves Improvement)</h3>
           {store.tests.map((t: any, i: number) => (
             <div key={i} className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-2 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border">
               {(['date', 'input', 'expected', 'actual', 'fix'] as const).map(f => (
-                <label key={f} className="text-[10px] font-bold">{f}
+                <label key={f} className="text-[10px] font-bold capitalize">{f}
                   <input value={t[f] || ''} onChange={e => {
                     const next = [...store.tests];
                     next[i] = { ...next[i], [f]: e.target.value };
@@ -306,7 +317,7 @@ export const CompetitionDossierWorkspace: React.FC = () => {
             </div>
           ))}
           <div className="flex gap-2">
-            <button onClick={() => set({ tests: [...store.tests, { date: new Date().toISOString().slice(0, 10), input: '', expected: '', actual: '', fix: '' }] })} className="px-3 py-2 rounded-xl border text-xs font-bold min-h-[44px] cursor-pointer">+ Add test row</button>
+            <button onClick={() => set({ tests: [...store.tests, { date: new Date().toISOString().slice(0, 10), input: '', expected: '', actual: '', fix: '' }] })} className="px-3 py-2 rounded-xl border text-xs font-bold min-h-[44px] cursor-pointer">+ Add Test Row</button>
             <EvidenceButton onSnap={() => saveEvidence('dossier-testing', 'Testing log snapshot', `${store.tests.length} iterations logged`)} />
           </div>
           <p className="text-[11px] text-[#6B6860]">Narrative helper: “Our first test failed because <em>…</em>. We fixed it by <em>…</em> and the retest showed <em>…</em>.” Write one sentence per row in Dossier §7.</p>
@@ -315,23 +326,23 @@ export const CompetitionDossierWorkspace: React.FC = () => {
 
       {tab === 'checklist' && (
         <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 space-y-3 text-xs">
-          <h3 className="text-sm font-bold">Timeline & submission checklist</h3>
+          <h3 className="text-sm font-bold">Timeline & Submission Checklist</h3>
           <ul className="space-y-1.5">
             {[
-              'Province dossier at ai.tainangviet.vn — before 30-9-2026 (team list, dossier Mẫu 1, 5-min talk video, 3-min demo video, dispatch letter)',
+              'Provincial dossier at ai.tainangviet.vn — before 30-9-2026 (team list, Mẫu 1 dossier, 5-min talk video, 3-min demo video, dispatch letter)',
               'Free-team qualifier (online dossier + Prompt Log + evidence) — 10-7 → 20-9-2026',
               'Regional South (HCMC) — 10-10-2026 · North (Hanoi) + Central (Da Nang) — 17-10-2026 · 6-hour sprint + 10-min video (all members appear)',
-              'Final Hanoi — 20 → 22-11-2026 · 12-hour challenge + defense · keep demo stable 48h before judging',
-              'Score: 40% dossier + 60% regional. Re-evaluation within 2 working days (scores/technical/process only — final).',
+              'Final in Hanoi — 20 → 22-11-2026 · 12-hour challenge + defense · keep the demo stable for 48h before judging',
+              'Score: 40% dossier + 60% regional. Re-evaluation within 2 working days (scores/technical/process only — decision is final).',
             ].map((s, i) => <li key={i} className="p-2 rounded-xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border">• {s}</li>)}
           </ul>
           <div className="p-3 rounded-xl border space-y-2">
-            <div className="flex items-center justify-between"><h4 className="font-bold">48-hour stability monitor</h4><button onClick={pingNow} className="px-3 py-2 bg-[#D97757] text-white rounded-xl text-[11px] font-bold min-h-[44px] cursor-pointer">Ping now</button></div>
-            <ul className="max-h-24 overflow-y-auto space-y-1 font-mono text-[10px]">{pingLog.map((p, i) => <li key={i}>{p}</li>)}{pingLog.length === 0 && <li className="text-[#6B6860]">No pings yet — press Ping now, keep 48h of green before judging.</li>}</ul>
+            <div className="flex items-center justify-between"><h4 className="font-bold">48-Hour Stability Monitor</h4><button onClick={pingNow} className="px-3 py-2 bg-[#D97757] text-white rounded-xl text-[11px] font-bold min-h-[44px] cursor-pointer">Ping Now</button></div>
+            <ul className="max-h-24 overflow-y-auto space-y-1 font-mono text-[10px]">{pingLog.map((p, i) => <li key={i}>{p}</li>)}{pingLog.length === 0 && <li className="text-[#6B6860]">No pings yet — press Ping Now and keep 48h of green before judging.</li>}</ul>
           </div>
-          <label className="flex items-center gap-2 cursor-pointer font-bold"><input type="checkbox" checked={!!store.anonymize} onChange={e => set({ anonymize: e.target.checked })} className="w-4 h-4 accent-[#D97757]" /> Anonymize children data (blur faces, redact names/IDs) — ON by default</label>
+          <label className="flex items-center gap-2 cursor-pointer font-bold"><input type="checkbox" checked={!!store.anonymize} onChange={e => set({ anonymize: e.target.checked })} className="w-4 h-4 accent-[#D97757]" /> Anonymize Children&apos;s Data (blur faces, redact names/IDs) — ON by default</label>
           <div className="space-y-1.5">
-            <h4 className="font-bold">License table (every dataset/photo/voice/model needs origin + permission)</h4>
+            <h4 className="font-bold">License Table (every dataset/photo/voice/model needs its origin + permission)</h4>
             {store.licenses.map((l: any, i: number) => (
               <div key={i} className="grid grid-cols-3 gap-2">
                 {(['item', 'origin', 'permission'] as const).map(f => (
@@ -343,11 +354,11 @@ export const CompetitionDossierWorkspace: React.FC = () => {
                 ))}
               </div>
             ))}
-            <button onClick={() => set({ licenses: [...store.licenses, { item: '', origin: '', permission: '' }] })} className="px-3 py-2 rounded-xl border text-[11px] font-bold min-h-[44px] cursor-pointer">+ Add resource</button>
+            <button onClick={() => set({ licenses: [...store.licenses, { item: '', origin: '', permission: '' }] })} className="px-3 py-2 rounded-xl border text-[11px] font-bold min-h-[44px] cursor-pointer">+ Add Resource</button>
           </div>
           <div className="space-y-1.5">
-            <h4 className="font-bold">Prohibited-behavior self-check (all must be checked)</h4>
-            {['No ghost/hired work — teachers did not build it for us', 'No copied product without credit', 'No faked Prompt Log, commits, test data or demo video', 'No hidden code/dataset/API sources', 'No illegal personal-data use; consents collected', 'No law/ethics/privacy violations', 'Truthful declaration of self-built vs AI-assisted vs open-source'].map((label, i) => (
+            <h4 className="font-bold">Prohibited-Behavior Self-Check (all must be checked)</h4>
+            {['No ghost/hired work — teachers did not build it for us', 'No copied products without credit', 'No faked Prompt Log, commits, test data, or demo videos', 'No hidden code/dataset/API sources', 'No illegal personal-data use; all consents collected', 'No law/ethics/privacy violations', 'Truthful Declaration of Self-Built vs AI-Assisted vs Open-Source'].map((label, i) => (
               <label key={i} className="flex items-start gap-2 cursor-pointer text-[11px]"><input type="checkbox" checked={!!store.prohibited[i]} onChange={e => {
                 const next = [...store.prohibited];
                 next[i] = e.target.checked;
