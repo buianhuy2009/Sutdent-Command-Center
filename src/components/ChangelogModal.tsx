@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.10.0';
+export const CURRENT_VERSION = '2.11.0';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,43 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.11.0',
+    date: 'September 13, 2026',
+    title: 'Study Tools Wave + AI Planner Flagship + Safer Sync & Keys',
+    badge: 'Latest Update',
+    highlights: [
+      'STEM Lab grows up: searchable PhET library with 29 sims, real GeoGebra applets, local whiteboard, offline Python, and a PDF reader that never goes blank',
+      'New AI Planner flagship builds your week from real deadlines, Gantt scans every task with a live preview, and flashcards stop at a healthy session limit',
+      'Safer everywhere: strict embed allowlist, hardened research tools, sanitized studio embeds, honest Canvas errors, auto-reconnect Google, and one Keys manager for Gemini + Google + Canvas',
+    ],
+    details: [
+      '058 Periodic polish: recurring refresh pass keeps tables, dashboards, and study widgets tidy (find it across Tracker, Dashboard, and study cards).',
+      '059 PhET search + 29 sims: the STEM Lab PhET browser is now searchable with 29 curated simulations by subject (find it in STEM Lab → PhET).',
+      '060 GeoGebra GGBApplet: GeoGebra now embeds via the official GGBApplet with proper sizing and offline-friendly fallback (find it in STEM Lab → GeoGebra).',
+      '061 Excalidraw local: the whiteboard now runs fully local with autosaved scenes on your device — no account or cloud needed (find it in Creation Studio → Whiteboard).',
+      '062 CSP allowlist: page security now uses a strict embed allowlist so only trusted study embeds (PhET, GeoGebra, Excalidraw, Pyodide CDN) can load (applies app-wide).',
+      '063 Research hardening: Scholar, papers, citations, and dataset tools got retries, empty-state guidance, and safer link handling (find it in Research workspaces).',
+      '064 Gemini keys 2.5-flash + edit/expire: bring-your-own Gemini keys now default to 2.5-flash with per-key rename, expiry labels, and test buttons (find it in Settings → AI / Keys).',
+      '065 Google auto-connect: Google Workspace reconnects silently on load when a saved grant exists, so Calendar, Gmail, and Drive stay linked (find it in Settings → Google).',
+      '066 Canvas error taxonomy: Canvas failures now map to named kinds (bad token, bad host, expired feed, deployment down) with the exact fix and Try Again (find it in Canvas LMS tab).',
+      '067 Dossier formal: Competition Dossier gets formal Mẫu 1 sectioning, page estimates, and clean print-to-PDF export (find it in Competition Dossier).',
+      '068 i18n + theme contrast: Vietnamese/English strings filled in and light/dark contrast raised so small labels stay readable in both modes (find it in Settings → General / Appearance).',
+      '069 Gantt scan-all + preview: the Gantt view scans all dated tasks and shows a live preview bar before you commit dates (find it in Tracker → Gantt; READY).',
+      '070 Flashcard session limit: flashcard review now caps each session and summarizes what is left for next time (find it in Flashcards; READY).',
+      '071 Focus music: focus sessions get built-in ambient music controls with calm presets that duck under timers (find it in Focus / Pomodoro; READY).',
+      '072 Local Pyodide: the Python runner now loads Pyodide locally for offline-friendly execution with a clear loading state (find it in Code Runner; READY).',
+      '073 PDF fallback: the PDF reader shows a friendly fallback with download/open options instead of a blank page when a file cannot render (find it in PDF Reader).',
+      '074 Notion zip/csv: notes export to Notion-friendly ZIP/CSV with preserved formatting and per-note files (find it in Notes → Export).',
+      '075 AI Planner flagship: the new AI Planner turns deadlines, free gaps, and focus goals into an accept-or-drag weekly plan with breaks (find it in Schedule → AI Planner).',
+      '077 CreationStudio XSS sanitize: studio embeds and pasted HTML are now sanitized so untrusted markup cannot run scripts (find it in Creation Studio).',
+      '078 Canvas silent-empty fix: a configured-but-empty Canvas sync now explains itself instead of showing a silent empty list (find it in Canvas LMS tab).',
+      '079 Unified keys manager: one Keys manager covers Gemini, Google, and Canvas credentials with masked display, test, and revoke in one place (find it in Settings → Keys).',
+    ]
+  },
+  {
     version: '2.10.0',
     date: 'September 12, 2026',
     title: 'Warm Linen Theme + Buttery Motion',
-    badge: 'Latest Update',
     highlights: [
       'New warm linen look: soft #F8F6F0 canvas, sand sidebar, crisp white cards, burnt-orange buttons — plus a smoother, more alive feel everywhere',
     ],

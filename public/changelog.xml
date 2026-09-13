@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.11.0 — Study Tools Wave + AI Planner Flagship + Safer Sync &amp; Keys</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.11.0</link>
+      <pubDate>Sun, 13 Sep 2026 00:00:00 GMT</pubDate>
+      <description>Searchable PhET library with 29 sims, official GeoGebra embeds, local whiteboard and offline Python, strict embed allowlist, Gemini 2.5-flash keys with edit and expiry, Google auto-connect, named Canvas errors, formal Dossier, VI/EN contrast fixes, Gantt scan-all with preview, flashcard session limits, focus music, PDF fallback, Notion ZIP/CSV export, flagship AI Planner, sanitized studio embeds, silent-empty Canvas fix, and a unified keys manager.</description>
+    </item>
+    <item>
       <title>v2.10.0 — Warm Linen Theme + Buttery Motion</title>
       <link>https://student-command-center.vercel.app/?changelog=2.10.0</link>
       <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
