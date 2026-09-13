@@ -16,6 +16,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import mermaid from 'mermaid';
+import DOMPurify from 'dompurify';
 import { IframeErrorBoundary } from '../IframeErrorBoundary';
 import { CanvaStudioTab } from '../CanvaStudioTab';
 import { generateMermaidDiagram } from '../../services/gemini';
@@ -93,7 +94,8 @@ export const CreationStudioWorkspace: React.FC = () => {
       try {
         const id = `mermaid-svg-${Date.now()}`;
         const { svg } = await mermaid.render(id, diagramResult.code);
-        setSvgContent(svg);
+        // KEEP: sanitize-then-render (order 002 SVG profile) — never innerHTML raw SVG.
+        setSvgContent(DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true } }));
       } catch (err) {
         console.error('Mermaid render error:', err);
         setSvgContent(`<div class="p-4 text-xs text-rose-500 font-mono">Syntax parsing error. Click Copy Code to inspect.</div>`);
