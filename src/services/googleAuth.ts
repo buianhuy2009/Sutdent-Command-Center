@@ -388,7 +388,7 @@ export async function requestOfflineGrant(opts: { gmail?: boolean } = {}): Promi
   await loadGisScript();
   const clientId = getGoogleOAuthClientId();
   const scopes = opts.gmail ? WORKSPACE_SCOPES : CORE_WORKSPACE_SCOPES;
-  const code: string = await new Promise((resolve, reject) => {
+  const code: string = await new Promise<string>((resolve, reject) => {
     try {
       const client = (window as any).google.accounts.oauth2.initCodeClient({
         client_id: clientId,
@@ -432,6 +432,7 @@ export async function requestOfflineGrant(opts: { gmail?: boolean } = {}): Promi
     } catch {}
     await persistGrant({ rt: data.refresh_token, at: Date.now(), scope: data.scope || scopes.join(' ') }, uid);
   }
+  markGoogleConnected();
   try {
     window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token: data.access_token } }));
   } catch {}
@@ -446,4 +447,212 @@ export async function clearGoogleGrant(uid?: string | null): Promise<void> {
     clearStoredGoogleToken(resolved);
   } catch {}
   await clearRefreshGrant(resolved);
+  try {
+    clearGoogleConnectedFlag();
+  } catch {}
+}
+
+// ---- Instant Workspace restore + explicit account switching (additive) ----
+
+const GOOGLE_CONNECTED_FLAG_KEY = 'scc_google_connected_v1';
+
+/** True when this browser previously completed a Google grant (fast boot hint). */
+export function wasPreviouslyConnected(): boolean {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage?.getItem(GOOGLE_CONNECTED_FLAG_KEY) === '1') return true;
+  } catch {}
+  try {
+    if (hasRefreshToken()) return true;
+  } catch {}
+  try {
+    // Any cached access token (mirror or vault copy) counts as a prior grant.
+    if (typeof localStorage !== 'undefined' && (localStorage.getItem('google_workspace_access_token') || '').length > 5) return true;
+    if (typeof sessionStorage !== 'undefined' && (sessionStorage.getItem('google_workspace_access_token') || '').length > 5) return true;
+  } catch {}
+  return false;
+}
+
+/** Remember a successful grant so next launch can silent-restore instantly. */
+export function markGoogleConnected(): void {
+  try {
+    if (typeof window !== 'undefined') window.localStorage?.setItem(GOOGLE_CONNECTED_FLAG_KEY, '1');
+  } catch {}
+}
+
+/** Forget the boot hint (called on explicit disconnect). */
+export function clearGoogleConnectedFlag(): void {
+  try {
+    if (typeof window !== 'undefined') window.localStorage?.removeItem(GOOGLE_CONNECTED_FLAG_KEY);
+  } catch {}
+}
+
+/**
+ * Synchronous liveness check: fresh access token OR a stored offline grant
+ * that can mint one. Never throws; safe to call during render/boot.
+ */
+export function isConnected(uid?: string | null): boolean {
+  try {
+    if (getValidGoogleToken()) return true;
+  } catch {}
+  try {
+    if (hasRefreshToken(uid)) return true;
+  } catch {}
+  return false;
+}
+
+/**
+ * One-shot GIS silent token attempt (prompt 'none'): resolves an access token
+ * when the browser still holds a Google session, otherwise null. Never throws
+ * and never shows UI — failures stay silent for the caller to fall back.
+ */
+function requestSilentGisToken(scopes: string[]): Promise<string | null> {
+  return new Promise((resolve) => {
+    try {
+      const w = window as any;
+      const oauth2 = w?.google?.accounts?.oauth2;
+      if (!oauth2?.initTokenClient) return resolve(null);
+      const clientId = getGoogleOAuthClientId();
+      if (!clientId) return resolve(null);
+      let settled = false;
+      const done = (token: string | null) => {
+        if (!settled) {
+          settled = true;
+          resolve(token);
+        }
+      };
+      const timer = setTimeout(() => done(null), 8000);
+      try {
+        const client = oauth2.initTokenClient({
+          client_id: clientId,
+          scope: scopes.join(' '),
+          prompt: 'none',
+          callback: (resp: any) => {
+            clearTimeout(timer);
+            done(typeof resp?.access_token === 'string' && resp.access_token.length > 5 ? resp.access_token : null);
+          },
+          error_callback: () => {
+            clearTimeout(timer);
+            done(null);
+          },
+        });
+        client.requestAccessToken({ prompt: 'none' });
+      } catch {
+        clearTimeout(timer);
+        done(null);
+      }
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Silent session restore for app launch: fresh cached token first, then the
+ * stored offline grant (server refresh), then a GIS prompt-'none' attempt.
+ * Resolves a usable access token or null. Never throws and never shows UI —
+ * callers fall back to the manual Connect button quietly on null.
+ */
+export async function trySilentRestore(opts: { gmail?: boolean; uid?: string | null } = {}): Promise<string | null> {
+  try {
+    const fresh = getValidGoogleToken();
+    if (fresh) {
+      markGoogleConnected();
+      return fresh;
+    }
+  } catch {}
+  try {
+    const hydrated = await hydrateRefreshGrant(opts.uid);
+    void hydrated;
+  } catch {}
+  try {
+    const refreshed = await refreshGoogleAccessToken(true);
+    if (refreshed) {
+      const token = getStoredGoogleToken();
+      if (token) {
+        markGoogleConnected();
+        return token;
+      }
+    }
+  } catch {}
+  // Last resort: GIS silent (prompt 'none') when a Google session persists.
+  try {
+    if (!isOfflineGrantSupported()) return null;
+    await loadGisScript().catch(() => {});
+    const scopes = opts.gmail ? WORKSPACE_SCOPES : CORE_WORKSPACE_SCOPES;
+    const silent = await requestSilentGisToken(scopes);
+    if (silent) {
+      setStoredGoogleToken(silent);
+      markGoogleConnected();
+      try {
+        window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token: silent } }));
+      } catch {}
+      return silent;
+    }
+  } catch {}
+  return null;
+}
+
+async function requestOfflineGrantWithPrompt(prompt: string, opts: { gmail?: boolean } = {}): Promise<string | null> {
+  if (!isOfflineGrantSupported()) return null;
+  await loadGisScript();
+  const clientId = getGoogleOAuthClientId();
+  const scopes = opts.gmail ? WORKSPACE_SCOPES : CORE_WORKSPACE_SCOPES;
+  const code: string = await new Promise<string>((resolve, reject) => {
+    try {
+      const client = (window as any).google.accounts.oauth2.initCodeClient({
+        client_id: clientId,
+        scope: scopes.join(' '),
+        access_type: 'offline',
+        prompt,
+        ux_mode: 'popup',
+        callback: (resp: any) => {
+          if (resp?.code) resolve(resp.code);
+          else reject(new Error(resp?.error || 'Google consent was dismissed.'));
+        },
+        error_callback: (err: any) => {
+          reject(new Error(err?.message || err?.type || 'Google consent failed.'));
+        },
+      });
+      client.requestCode();
+    } catch (e) {
+      reject(e);
+    }
+  }).catch((e: any) => {
+    const msg = String(e?.message || e || '');
+    if (/dismiss|closed|popup_closed|cancel/i.test(msg)) return null as unknown as string;
+    throw e;
+  });
+  if (!code) return null;
+  const res = await fetch('/api/auth/google/exchange', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, redirect_uri: 'postmessage' }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data?.access_token) {
+    throw new Error(data?.error || 'Could not complete Google connection.');
+  }
+  setStoredGoogleToken(data.access_token);
+  if (data.refresh_token) {
+    let uid: string | null = null;
+    try {
+      uid = (await import('./firebase')).auth?.currentUser?.uid || null;
+    } catch {}
+    await persistGrant({ rt: data.refresh_token, at: Date.now(), scope: data.scope || scopes.join(' ') }, uid);
+  }
+  markGoogleConnected();
+  try {
+    window.dispatchEvent(new CustomEvent('scc-google-token-updated', { detail: { token: data.access_token } }));
+  } catch {}
+  return data.access_token as string;
+}
+
+/**
+ * Explicit account switching: forces the Google account chooser
+ * (prompt 'select_account') and persists the new offline grant. Returns the
+ * fresh access token, or null when the user dismisses. Existing sessions are
+ * left untouched on dismiss.
+ */
+export async function signInWithAccountSelect(opts: { gmail?: boolean } = {}): Promise<string | null> {
+  return requestOfflineGrantWithPrompt('select_account', opts);
 }
