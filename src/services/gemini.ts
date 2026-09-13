@@ -61,18 +61,134 @@ export function setClientGeminiApiKey(key: string, opts?: { sessionOnly?: boolea
   }
 }
 
-export async function testGeminiApiKey(key: string): Promise<boolean> {
+// Current default model (2.5-flash current; 2.0-flash fallback). Retired 1.5-* must NOT be default.
+export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash';
+export const GEMINI_FALLBACK_MODEL = 'gemini-2.0-flash';
+
+/** Mask a key for display (never log full keys). e.g. "AIza...****" */
+export function maskApiKey(key: string): string {
   try {
-    const ai = new GoogleGenAI({ apiKey: key.trim() });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: 'Respond with "pong".',
-    });
-    return (response.text || '').toLowerCase().includes('pong');
-  } catch (err) {
-    console.error('Test Gemini API Key failed:', err);
-    return false;
+    const t = (key || '').trim();
+    if (!t) return '';
+    if (t.length <= 8) return '****';
+    return `${t.slice(0, 4)}...****`;
+  } catch { return '****'; }
+}
+
+// --- Optional per-key expiration metadata (stored SEPARATELY from key value) ---
+const GEMINI_META_KEY = 'scc_gemini_api_key_meta';
+const GROQ_META_KEY = 'scc_groq_api_key_meta';
+export interface ApiKeyMeta { expiresAt?: string }
+function readKeyMeta(storageKey: string): ApiKeyMeta {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return {};
+    const data = JSON.parse(raw);
+    return typeof data === 'object' && data !== null ? { expiresAt: data.expiresAt } : {};
+  } catch { return {}; }
+}
+function writeKeyMeta(storageKey: string, meta: ApiKeyMeta): void {
+  try {
+    if (!meta.expiresAt) localStorage.removeItem(storageKey);
+    else localStorage.setItem(storageKey, JSON.stringify(meta));
+  } catch {}
+}
+export function getGeminiKeyMeta(): ApiKeyMeta { return readKeyMeta(GEMINI_META_KEY); }
+export function setGeminiKeyExpiry(dateStr: string | null): void {
+  writeKeyMeta(GEMINI_META_KEY, dateStr ? { expiresAt: dateStr } : {});
+}
+export function getGroqKeyMeta(): ApiKeyMeta { return readKeyMeta(GROQ_META_KEY); }
+export function setGroqKeyExpiry(dateStr: string | null): void {
+  writeKeyMeta(GROQ_META_KEY, dateStr ? { expiresAt: dateStr } : {});
+}
+export function getExpiryStatus(expiresAt?: string): { state: 'none' | 'valid' | 'expiring' | 'expired'; daysLeft: number | null; label: string } {
+  if (!expiresAt) return { state: 'none', daysLeft: null, label: '' };
+  try {
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const exp = new Date(`${expiresAt}T00:00:00`);
+    if (isNaN(exp.getTime())) return { state: 'none', daysLeft: null, label: '' };
+    const daysLeft = Math.round((exp.getTime() - now.getTime()) / 86400000);
+    if (daysLeft < 0) return { state: 'expired', daysLeft, label: 'Expired' };
+    if (daysLeft <= 7) return { state: 'expiring', daysLeft, label: daysLeft === 0 ? 'Expires today' : `Expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}` };
+    return { state: 'valid', daysLeft, label: `Expires in ${daysLeft} days` };
+  } catch { return { state: 'none', daysLeft: null, label: '' }; }
+}
+
+function extractGeminiErrorText(err: any): string {
+  const status = err?.status ?? err?.code ?? err?.response?.status;
+  const rawMsg: string =
+    err?.message || err?.error?.message || err?.response?.data?.error?.message || String(err ?? 'Unknown error');
+  const msg = rawMsg.slice(0, 500);
+  if (status === 400 || /API key not valid|API_KEY_INVALID|invalid/i.test(msg)) {
+    return `Invalid API key (400). Check the key was copied fully from Google AI Studio, no extra spaces. Details: ${msg}`;
   }
+  if (status === 403 || /PERMISSION_DENIED|forbidden/i.test(msg)) {
+    return `Key forbidden (403): the key lacks Gemini API access or the API is disabled in Google Cloud. Details: ${msg}`;
+  }
+  if (status === 404 || /NOT_FOUND|not found|Retired|deprecated|model/i.test(msg)) {
+    return `Model not found (404): the requested model may be retired. Try ${GEMINI_DEFAULT_MODEL} / ${GEMINI_FALLBACK_MODEL}. Details: ${msg}`;
+  }
+  if (status === 429 || /429|RESOURCE_EXHAUSTED|quota|rate/i.test(msg)) {
+    return `Rate limited / quota exhausted (429). Wait a minute or use your own key. Details: ${msg}`;
+  }
+  return status ? `Gemini error (${status}): ${msg}` : `Gemini error: ${msg}`;
+}
+
+export async function testGeminiApiKeyDetailed(key: string): Promise<{ ok: boolean; error?: string; model?: string }> {
+  const trimmed = (key || '').trim();
+  if (!trimmed) return { ok: false, error: 'Please enter an API key first.' };
+  const candidates = [GEMINI_DEFAULT_MODEL, GEMINI_FALLBACK_MODEL];
+  let lastError = '';
+  for (const model of candidates) {
+    try {
+      const ai = new GoogleGenAI({ apiKey: trimmed });
+      const response = await ai.models.generateContent({
+        model,
+        contents: 'Respond with "pong".',
+      });
+      if ((response.text || '').toLowerCase().includes('pong')) return { ok: true, model };
+      lastError = `Model ${model} responded but did not return "pong". Check key permissions and model access.`;
+    } catch (err) {
+      lastError = extractGeminiErrorText(err);
+      // Retry the fallback model only on model-not-found; surface other errors immediately.
+      const isModelNotFound =
+        (err as any)?.status === 404 || /NOT_FOUND|not found|Retired|deprecated/i.test(String((err as any)?.message || ''));
+      if (!isModelNotFound) return { ok: false, error: lastError, model };
+    }
+  }
+  return { ok: false, error: lastError || 'Connection failed. Please check your API key.', model: candidates[0] };
+}
+
+export async function testGroqApiKeyDetailed(key: string): Promise<{ ok: boolean; error?: string }> {
+  const trimmed = (key || '').trim();
+  if (!trimmed) return { ok: false, error: 'Please enter a Groq API key first.' };
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${trimmed}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages: [{ role: 'user', content: 'Respond with "pong".' }], temperature: 0 }),
+    });
+    if (!res.ok) {
+      let detail = res.statusText;
+      try { const data = await res.json(); detail = data?.error?.message || detail; } catch {}
+      if (res.status === 401) return { ok: false, error: `Invalid Groq key (401). ${detail}`.slice(0, 500) };
+      if (res.status === 429) return { ok: false, error: `Groq rate limited (429). ${detail}`.slice(0, 500) };
+      return { ok: false, error: `Groq error (${res.status}): ${detail}`.slice(0, 500) };
+    }
+    const data = await res.json();
+    const text: string = data.choices?.[0]?.message?.content || '';
+    if (text.toLowerCase().includes('pong')) return { ok: true };
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: `Groq test failed: ${(err?.message || String(err)).slice(0, 500)}` };
+  }
+}
+
+export async function testGeminiApiKey(key: string): Promise<boolean> {
+  // Backward-compatible boolean wrapper; use testGeminiApiKeyDetailed for real error text.
+  const result = await testGeminiApiKeyDetailed(key);
+  if (!result.ok) console.error('Test Gemini API Key failed:', result.error);
+  return result.ok;
 }
 
 // -------------------------------------------------------------
@@ -311,24 +427,36 @@ export async function callGemini(params: {
   return rateLimiter.execute(async () => {
     incrementQuota();
     const clientKey = getClientGeminiApiKey();
-    const targetModel = params.model || 'gemini-2.0-flash';
+    const targetModel = params.model || GEMINI_DEFAULT_MODEL;
 
-    // 1. Client-side user key priority
+    // 1. Client-side user key priority (fallback to 2.0-flash if 2.5-flash is unavailable for the key)
     if (clientKey) {
-      try {
-        const ai = new GoogleGenAI({ apiKey: clientKey });
-        const res = await ai.models.generateContent({
-          model: targetModel,
-          contents: params.contents,
-          config: params.config,
-        });
-        return res.text || '';
-      } catch (clientErr: any) {
-        if (clientErr?.status === 429 || clientErr?.message?.includes('429')) {
-          throw clientErr; // Allow rate limiter to backoff
+      const modelCandidates = targetModel === GEMINI_DEFAULT_MODEL
+        ? [GEMINI_DEFAULT_MODEL, GEMINI_FALLBACK_MODEL]
+        : [targetModel];
+      let clientSucceeded = false;
+      let lastClientErr: any = null;
+      for (const modelAttempt of modelCandidates) {
+        try {
+          const ai = new GoogleGenAI({ apiKey: clientKey });
+          const res = await ai.models.generateContent({
+            model: modelAttempt,
+            contents: params.contents,
+            config: params.config,
+          });
+          return res.text || '';
+        } catch (clientErr: any) {
+          lastClientErr = clientErr;
+          if (clientErr?.status === 429 || clientErr?.message?.includes('429')) {
+            throw clientErr; // Allow rate limiter to backoff
+          }
+          const isModelNotFound =
+            clientErr?.status === 404 || /NOT_FOUND|not found|Retired|deprecated/i.test(String(clientErr?.message || ''));
+          if (!isModelNotFound) break;
+          // else retry with the fallback model
         }
-        console.warn('Client-side Gemini call failed, trying server proxy fallback...', clientErr);
       }
+      console.warn('Client-side Gemini call failed, trying server proxy fallback...', lastClientErr);
     }
 
     // 2. Server proxy fallback (handles server Gemini + server Groq)
