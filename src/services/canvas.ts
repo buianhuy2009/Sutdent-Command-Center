@@ -445,11 +445,13 @@ export type CanvasFailureKind = 'auth' | 'host' | 'network' | 'backend' | 'unkno
 export class CanvasSyncError extends Error {
   kind: CanvasFailureKind;
   status?: number;
-  constructor(kind: CanvasFailureKind, message: string, status?: number) {
+  code?: string;
+  constructor(kind: CanvasFailureKind, message: string, status?: number, code?: string) {
     super(message);
     this.name = 'CanvasSyncError';
     this.kind = kind;
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -505,15 +507,18 @@ function canvasFetch(url: string, headers: Record<string, string>, init?: Reques
   return fetchWithTimeout(url, { ...(init || {}), headers });
 }
 
-interface CanvasProbeFailure { status: number | null; network: boolean; detail?: string }
+interface CanvasProbeFailure { status: number | null; network: boolean; detail?: string; code?: string }
 
 /** Read the proxy's error envelope (it mirrors Canvas' HTTP status) and keep the
  * first 300 chars of its message — that string is the actual fix signal
  * ("Host not allowlisted", "Canvas fetch failed with status 401", Vercel
- * NOT_FOUND, ...) and must never be swallowed. */
+ * NOT_FOUND, ...) and must never be swallowed. The envelope `code`
+ * (e.g. "host-not-allowlisted", "canvas-unauthorized") is preserved alongside
+ * so the UI can name the exact fix. */
 async function readProxyFailure(res: Response): Promise<CanvasProbeFailure> {
   let status: number | null = null;
   let detail = '';
+  let code = '';
   try {
     status = (res as any).status ?? null;
     const raw = await res.text().catch(() => '');
@@ -521,12 +526,13 @@ async function readProxyFailure(res: Response): Promise<CanvasProbeFailure> {
       try {
         const parsed = JSON.parse(raw);
         detail = String(parsed.error || parsed.message || raw).slice(0, 300);
+        if (parsed.code) code = String(parsed.code).slice(0, 80);
       } catch {
         detail = raw.slice(0, 300);
       }
     }
   } catch {}
-  return { status, network: false, detail };
+  return { status, network: false, detail, code };
 }
 export async function fetchCanvasAssignmentsFromApi(
   domain: string,
@@ -550,24 +556,31 @@ export async function fetchCanvasAssignmentsFromApi(
   // Detect a broken/missing deployment before blaming the user's token or URL.
   await probeBackend();
 
-  // Tracks whether ANY Canvas endpoint answered — if none did, the URL/token
-  // is wrong and we must throw (never return a silent [] that looks "caught up").
-  let sawTodoOk = false;
-  let sawCoursesOk = false;
-  let sawPlannerOk = false;
-  let sawUpcomingOk = false;
   // First observed failure — recorded (never swallowed) so the UI can name the fix.
+  // Priority order below (todo, courses, planner, per-course, upcoming) matches
+  // the old sequential order, so the surfaced fix is stable across retries.
   const probeFailures: CanvasProbeFailure[] = [];
   const noteFailure = (f: CanvasProbeFailure) => { if (probeFailures.length === 0) probeFailures.push(f); };
 
+  // Phase A — three independent probes (To Do list, course roster, planner
+  // window). They used to be awaited one-by-one, stacking ~20s timeouts into a
+  // 60s+ perceived hang before any typed error could surface; now they run
+  // concurrently. Each probe reports its first failure (or null) so the merged
+  // priority stays deterministic.
   // 1. Fetch Canvas "To Do" list (authoritative pending homework list)
   const todoIds = new Set<string>();
-  try {
-    const todoUrl = `${cleanDomain}/api/v1/users/self/todo?per_page=100`;
-    const proxyTodoUrl = `/api/canvas/proxy?url=${encodeURIComponent(todoUrl)}`;
-    const todoRes = await canvasFetch(proxyTodoUrl, headers);
-    if (todoRes.ok) {
-      sawTodoOk = true;
+  const courseMap = new Map<number, any>();
+  const pendingPlannerItems: any[] = [];
+
+  const probeTodo = (async (): Promise<CanvasProbeFailure | null> => {
+    try {
+      const todoUrl = `${cleanDomain}/api/v1/users/self/todo?per_page=100`;
+      const proxyTodoUrl = `/api/canvas/proxy?url=${encodeURIComponent(todoUrl)}`;
+      const todoRes = await canvasFetch(proxyTodoUrl, headers);
+      if (!todoRes.ok) return await readProxyFailure(todoRes);
+      // Count the endpoint as answered only AFTER the body parses as JSON — a
+      // misrouted deployment answers 200 with the SPA's index.html, and the old
+      // flag-before-parse produced the silent-[] "caught up" state.
       const todoItems = await todoRes.json();
       if (Array.isArray(todoItems)) {
         todoItems.forEach((t: any) => {
@@ -575,50 +588,81 @@ export async function fetchCanvasAssignmentsFromApi(
           if (id) todoIds.add(String(id));
         });
       }
-    } else {
-      noteFailure(await readProxyFailure(todoRes));
+      return null;
+    } catch (err) {
+      console.warn('Canvas To Do list query error:', err);
+      return { status: null, network: true };
     }
-  } catch (err) {
-    console.warn('Canvas To Do list query error:', err);
-    noteFailure({ status: null, network: true });
-  }
+  })();
 
   // 2. Fetch all enrolled courses (combining /users/self/courses, /users/self/favorites/courses, and /courses)
-  const courseMap = new Map<number, any>();
-  try {
-    const courseEndpoints = [
-      `${cleanDomain}/api/v1/users/self/courses?enrollment_state=active&include[]=term&include[]=total_scores&per_page=100`,
-      `${cleanDomain}/api/v1/users/self/favorites/courses?include[]=term&per_page=50`,
-      `${cleanDomain}/api/v1/courses?enrollment_state=active&per_page=50`,
-    ];
+  const probeCourses = (async (): Promise<CanvasProbeFailure | null> => {
+    try {
+      const courseEndpoints = [
+        `${cleanDomain}/api/v1/users/self/courses?enrollment_state=active&include[]=term&include[]=total_scores&per_page=100`,
+        `${cleanDomain}/api/v1/users/self/favorites/courses?include[]=term&per_page=50`,
+        `${cleanDomain}/api/v1/courses?enrollment_state=active&per_page=50`,
+      ];
 
-    for (const ep of courseEndpoints) {
-      try {
-        const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(ep)}`;
-        const res = await canvasFetch(proxyUrl, headers);
-        if (res.ok) {
-          sawCoursesOk = true;
-          const list = await res.json();
-          if (Array.isArray(list)) {
-            list.forEach((c: any) => {
-              // Tolerate nameless courses (missing name/course_code): keep by
-              // id and fall back to 'Canvas Course' later, so their
-              // assignments are still fetched instead of dropped.
-              if (c && c.id != null) {
-                courseMap.set(c.id, c);
-              }
-            });
+      // The three roster endpoints are independent — fetch together so one slow
+      // Canvas route can't triple the wait. Results merge in endpoint order so
+      // the recorded failure (if any) stays deterministic.
+      const perEndpoint = await Promise.all(
+        courseEndpoints.map(async (ep): Promise<CanvasProbeFailure | null> => {
+          try {
+            const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(ep)}`;
+            const res = await canvasFetch(proxyUrl, headers);
+            if (!res.ok) return await readProxyFailure(res);
+            const list = await res.json();
+            if (Array.isArray(list)) {
+              list.forEach((c: any) => {
+                // Tolerate nameless courses (missing name/course_code): keep by
+                // id and fall back to 'Canvas Course' later, so their
+                // assignments are still fetched instead of dropped.
+                if (c && c.id != null) {
+                  courseMap.set(c.id, c);
+                }
+              });
+            }
+            return null;
+          } catch {
+            return { status: null, network: true };
           }
-        } else {
-          noteFailure(await readProxyFailure(res));
-        }
-      } catch (e) {
-        // Continue to next endpoint — but record the failure mode once.
-        noteFailure({ status: null, network: true });
-      }
+        })
+      );
+      return perEndpoint.find((f) => f !== null) ?? null;
+    } catch (err) {
+      console.warn('Error fetching courses list:', err);
+      return { status: null, network: true };
     }
-  } catch (err) {
-    console.warn('Error fetching courses list:', err);
+  })();
+
+  // Planner window probe (items are merged in step 4 after the roster pass).
+  const probePlanner = (async (): Promise<CanvasProbeFailure | null> => {
+    try {
+      const startDate = new Date(Date.now() - 86400000 * 90).toISOString();
+      const plannerUrl = `${cleanDomain}/api/v1/planner/items?start_date=${startDate}&order=desc&per_page=100`;
+      const proxyPlannerUrl = `/api/canvas/proxy?url=${encodeURIComponent(plannerUrl)}`;
+      const plannerRes = await canvasFetch(proxyPlannerUrl, headers);
+      if (!plannerRes.ok) return await readProxyFailure(plannerRes);
+      const items = await plannerRes.json();
+      if (Array.isArray(items) && items.length > 0) {
+        items
+          .filter((item: any) => item.plannable_type === 'assignment' || item.plannable_type === 'quiz' || item.plannable)
+          .forEach((item: any) => {
+            pendingPlannerItems.push(item);
+          });
+      }
+      return null;
+    } catch (err) {
+      console.warn('Planner items query failed:', err);
+      return { status: null, network: true };
+    }
+  })();
+
+  const [todoFailure, coursesFailure, plannerFailure] = await Promise.all([probeTodo, probeCourses, probePlanner]);
+  for (const f of [todoFailure, coursesFailure, plannerFailure]) {
+    if (f) noteFailure(f);
   }
 
   const courses = Array.from(courseMap.values());
@@ -696,6 +740,10 @@ export async function fetchCanvasAssignmentsFromApi(
         });
       } catch (err) {
         console.warn(`Error fetching assignments for course ${course.id}:`, err);
+        // Record transport failures here too — a roster that lists but never
+        // yields (e.g. token without assignment scope) must throw a typed
+        // error below, never a silent [].
+        noteFailure({ status: null, network: true });
         return [];
       }
     });
@@ -709,63 +757,44 @@ export async function fetchCanvasAssignmentsFromApi(
     });
   }
 
-  // 4. Planner items query (6-month range) to capture any additional assignments/quizzes
-  try {
-    const startDate = new Date(Date.now() - 86400000 * 90).toISOString();
-    const plannerUrl = `${cleanDomain}/api/v1/planner/items?start_date=${startDate}&order=desc&per_page=100`;
-    const proxyPlannerUrl = `/api/canvas/proxy?url=${encodeURIComponent(plannerUrl)}`;
-    const plannerRes = await canvasFetch(proxyPlannerUrl, headers);
+  // 4. Merge planner items (fetched concurrently in Phase A) over the course
+  // results, capturing any additional assignments/quizzes the roster pass missed.
+  pendingPlannerItems.forEach((item: any) => {
+    const p = item.plannable || {};
+    const sub = item.submissions || {};
+    const aid = `canvas-assign-${item.plannable_id || item.id}`;
 
-    if (!plannerRes.ok) {
-      noteFailure(await readProxyFailure(plannerRes));
-    } else {
-      sawPlannerOk = true;
-      const items = await plannerRes.json();
-      if (Array.isArray(items) && items.length > 0) {
-        items
-          .filter((item: any) => item.plannable_type === 'assignment' || item.plannable_type === 'quiz' || item.plannable)
-          .forEach((item: any) => {
-            const p = item.plannable || {};
-            const sub = item.submissions || {};
-            const aid = `canvas-assign-${item.plannable_id || item.id}`;
+    const isSubmitted = Boolean(
+      sub.submitted ||
+      sub.submitted_at ||
+      item.user_submitted ||
+      (sub.workflow_state === 'submitted' || sub.workflow_state === 'pending_review')
+    );
 
-            const isSubmitted = Boolean(
-              sub.submitted ||
-              sub.submitted_at ||
-              item.user_submitted ||
-              (sub.workflow_state === 'submitted' || sub.workflow_state === 'pending_review')
-            );
-
-            let directUrl = item.html_url || p.html_url || '';
-            if (directUrl && !directUrl.startsWith('http')) {
-              directUrl = `${cleanDomain}${directUrl.startsWith('/') ? '' : '/'}${directUrl}`;
-            }
-            if (!directUrl && item.course_id && item.plannable_id) {
-              directUrl = `${cleanDomain}/courses/${item.course_id}/assignments/${item.plannable_id}`;
-            }
-
-            if (!assignmentIdSet.has(aid)) {
-              assignmentIdSet.add(aid);
-              allAssignments.push({
-                id: aid,
-                name: p.title || item.plannable_title || 'Canvas Assignment',
-                courseName: item.context_name || 'Canvas Course',
-                courseId: item.course_id ? String(item.course_id) : undefined,
-                dueAt: (p.due_at || item.plannable_date || '').split('T')[0] || '',
-                pointsPossible: p.points_possible,
-                htmlUrl: directUrl,
-                description: p.details || p.description || '',
-                isSynced: false,
-                isCompleted: isSubmitted,
-              });
-            }
-          });
-      }
+    let directUrl = item.html_url || p.html_url || '';
+    if (directUrl && !directUrl.startsWith('http')) {
+      directUrl = `${cleanDomain}${directUrl.startsWith('/') ? '' : '/'}${directUrl}`;
     }
-  } catch (err) {
-    console.warn('Planner items query failed:', err);
-    noteFailure({ status: null, network: true });
-  }
+    if (!directUrl && item.course_id && item.plannable_id) {
+      directUrl = `${cleanDomain}/courses/${item.course_id}/assignments/${item.plannable_id}`;
+    }
+
+    if (!assignmentIdSet.has(aid)) {
+      assignmentIdSet.add(aid);
+      allAssignments.push({
+        id: aid,
+        name: p.title || item.plannable_title || 'Canvas Assignment',
+        courseName: item.context_name || 'Canvas Course',
+        courseId: item.course_id ? String(item.course_id) : undefined,
+        dueAt: (p.due_at || item.plannable_date || '').split('T')[0] || '',
+        pointsPossible: p.points_possible,
+        htmlUrl: directUrl,
+        description: p.details || p.description || '',
+        isSynced: false,
+        isCompleted: isSubmitted,
+      });
+    }
+  });
 
   if (allAssignments.length > 0) {
     return allAssignments;
@@ -780,7 +809,8 @@ export async function fetchCanvasAssignmentsFromApi(
     if (!res.ok) {
       noteFailure(await readProxyFailure(res));
     } else {
-      sawUpcomingOk = true;
+      // Parse-before-count (see Phase A): a 200 with a non-JSON body must not
+      // read as a successful answer.
       const events = await res.json();
     if (Array.isArray(events)) {
       return events
@@ -815,23 +845,35 @@ export async function fetchCanvasAssignmentsFromApi(
     noteFailure({ status: null, network: true });
   }
 
-  // No endpoint answered at all — throw a TYPED error so the UI can name the
+  // Zero assignments at this point is either genuine ("nothing due") or proof
+  // something blocked us. Any recorded failure means we cannot honestly claim
+  // "connected with 0" — throw the first TYPED failure so the UI names the
   // exact fix. Message is a bare reason; the UI composes the hint (single copy).
-  if (!sawTodoOk && !sawCoursesOk && !sawPlannerOk && !sawUpcomingOk) {
-    const failure: CanvasProbeFailure | null = probeFailures[0] ?? null;
+  // Only a failure-free run returns [] (the UI then says so explicitly).
+  const failure: CanvasProbeFailure | null = probeFailures[0] ?? null;
+  if (failure) {
     const s = failure?.status ?? null;
     const detail = (failure?.detail || '').trim();
+    const code = (failure?.code || '').trim();
     const withDetail = (bare: string) => (detail && !bare.includes(detail.slice(0, 60)) ? `${bare} Detail: ${detail}` : bare);
-    if (s === 401 || s === 403) {
+    if (s === 401 || s === 403 || code === 'canvas-unauthorized') {
       // 403 via the proxy is the same user-facing problem as 401: Canvas
       // refused these credentials (bad/expired token or token without scope).
-      throw new CanvasSyncError('auth', `Canvas rejected the API token (${s} ${s === 401 ? 'Unauthorized' : 'Forbidden'}).`, s);
+      const label = s ? `${s} ${s === 403 ? 'Forbidden' : 'Unauthorized'}` : 'Unauthorized';
+      throw new CanvasSyncError('auth', `Canvas rejected the API token (${label}).`, s ?? undefined, code || undefined);
+    }
+    if (code === 'host-not-allowlisted' || /not allowlisted/i.test(detail)) {
+      // Valid token, wrong server config: the school host is not on the proxy
+      // allowlist (common for vanity domains like canvas.school.edu outside
+      // instructure.com/canvaslms.com). The token is fine — the deployment
+      // must allowlist the host.
+      throw new CanvasSyncError('host', withDetail('The app server refused to contact this Canvas host (proxy allowlist).'), 400, 'host-not-allowlisted');
     }
     if (s === 400) {
-      throw new CanvasSyncError('host', withDetail('The Canvas proxy refused this host (400).'), 400);
+      throw new CanvasSyncError('host', withDetail('The Canvas proxy refused this host (400).'), 400, code || undefined);
     }
     if (s === 404) {
-      throw new CanvasSyncError('host', withDetail('Canvas answered 404 — the host path looks wrong.'), 404);
+      throw new CanvasSyncError('host', withDetail('Canvas answered 404 — the host path looks wrong.'), 404, code || undefined);
     }
     if (failure?.network) {
       throw new CanvasSyncError('network', 'Could not reach Canvas (network error or timed out).', undefined);
@@ -839,7 +881,8 @@ export async function fetchCanvasAssignmentsFromApi(
     throw new CanvasSyncError(
       'unknown',
       withDetail(s ? `Canvas answered with status ${s} on every endpoint.` : 'Canvas API did not respond on any endpoint.'),
-      s ?? undefined
+      s ?? undefined,
+      code || undefined
     );
   }
 
