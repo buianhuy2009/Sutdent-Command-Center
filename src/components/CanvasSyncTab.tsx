@@ -95,6 +95,8 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+  // Inline action errors (sync-all / Drive submit): never throw raw to the UI.
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Keep drawer inputs in sync if settings are loaded/updated externally
   useEffect(() => {
@@ -146,7 +148,20 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
           ? 'Canvas URL saved — now add your API access token to enable live sync (Canvas → Account → Settings → New Access Token).'
           : 'Paste either your Calendar Feed URL or your Canvas URL + API token to connect.'
       );
-      if (!isCustomDomain) return;
+      // Persist a custom URL so typed progress isn't lost, but never fire a
+      // fetch with known-incomplete credentials — it can only fail confusingly.
+      // The drawer stays open with the inline error above.
+      if (isCustomDomain) {
+        setApiDomain(normalizedDomain);
+        onSaveSettings({
+          calendarFeedUrl: '',
+          apiDomain: normalizedDomain,
+          apiToken: '',
+          autoSync,
+          lastSyncedAt: new Date().toISOString(),
+        });
+      }
+      return;
     }
     if (!trimmedFeed && trimmedToken && !rawDomain) {
       setSettingsError('API token needs your Canvas URL too (e.g. https://4015.instructure.com).');
@@ -204,9 +219,12 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
   const handleSubmitDriveFile = async (assignment: CanvasAssignment) => {
     if (!onSubmitAssignment || !selectedFileId) return;
     setIsSubmittingDrive(true);
+    setActionError(null);
     try {
       await onSubmitAssignment(assignment, selectedFileId);
       setSelectedFileId('');
+    } catch (err: any) {
+      setActionError(err?.message || 'Submit to Canvas failed. Check your connection, then retry.');
     } finally {
       setIsSubmittingDrive(false);
     }
@@ -214,8 +232,11 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
   const handleSyncAll = async () => {
     setIsSyncingAll(true);
+    setActionError(null);
     try {
       await onSyncAllPending();
+    } catch (err: any) {
+      setActionError(err?.message || 'Sync-all failed. Check your connection, then retry.');
     } finally {
       setIsSyncingAll(false);
     }
@@ -272,6 +293,20 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
             className="px-3 py-2 bg-[#C96442] hover:bg-[#A94E33] text-white rounded-xl text-xs font-bold shrink-0 min-h-[44px] inline-flex items-center gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" /> {t('retry')}
+          </button>
+        </div>
+      )}
+      {/* Inline action-error banner (sync-all / Drive submit) — same channel, no raw throws. */}
+      {actionError && !errorMessage && (
+        <div className="p-3 rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 flex items-start gap-2.5" role="alert">
+          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <p className="flex-1 text-xs text-amber-800 dark:text-amber-200 break-words">{actionError}</p>
+          <button
+            onClick={() => setActionError(null)}
+            className="text-amber-700 dark:text-amber-300 hover:opacity-70 shrink-0"
+            aria-label="Dismiss"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
       )}
