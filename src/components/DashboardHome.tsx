@@ -380,22 +380,22 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                 <>
                   {overdue.length>0 && (
                     <div className="space-y-1.5">
-                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-rose-600">{t('overdue')} • {overdue.length}</h4>
+                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">{t('overdue')} • {overdue.length}</h4>
                       {sorted(overdue).slice(0,2).map(a=>(
                         <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-xs">
                           <span className="font-semibold truncate flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0" />{a.assignmentName}</span>
-                          <span className="text-[11px] text-rose-700 ml-2 shrink-0">{a.subject} • {a.dueDate}</span>
+                          <span className="text-[11px] text-rose-700 dark:text-rose-300 ml-2 shrink-0">{a.subject} • {a.dueDate}</span>
                         </div>
                       ))}
                     </div>
                   )}
                   {dueToday.length>0 && (
                     <div className="space-y-1.5">
-                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-700">{t('due_today')} • {dueToday.length}</h4>
+                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">{t('due_today')} • {dueToday.length}</h4>
                       {sorted(dueToday).slice(0,2).map(a=>(
                         <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs">
                           <span className="font-semibold truncate flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />{a.assignmentName}</span>
-                          <span className="text-[11px] text-amber-800 ml-2 shrink-0">{a.subject} • {t('today')}</span>
+                          <span className="text-[11px] text-amber-800 dark:text-amber-200 ml-2 shrink-0">{a.subject} • {t('today')}</span>
                         </div>
                       ))}
                     </div>
@@ -405,7 +405,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                     {sorted(upcoming).slice(0,3).map(a=>(
                       <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB]/40 text-xs">
                         <span className="font-semibold truncate flex items-center gap-1.5"><span className={`w-1.5 h-1.5 rounded-full shrink-0 ${a.priority==='High'?'bg-rose-500': a.priority==='Med'?'bg-amber-500':'bg-emerald-500'}`} />{a.assignmentName}</span>
-                        <span className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8] ml-2 shrink-0">{a.subject} • Due {a.dueDate} {a.priority==='High' && <span className="ml-1 px-1 py-0.5 rounded bg-rose-100 text-rose-700 text-[9px] font-bold">HIGH</span>}</span>
+                        <span className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8] ml-2 shrink-0">{a.subject} • {t('tracker_due')} {a.dueDate} {a.priority==='High' && <span className="ml-1 px-1 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 text-[9px] font-bold">{t('dash_high_badge')}</span>}</span>
                       </div>
                     ))}
                     {upcoming.length===0 && overdue.length===0 && dueToday.length===0 && <div className="text-xs text-[#6B6860] dark:text-[#B5B2A8] italic">{t('dash_all_caught_up')}</div>}
@@ -563,7 +563,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
 
         {/* NASA Astronomy Picture of the Day — visible educational card (toggle in Settings → Appearance) */}
         {apodEnabled && (
-          <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-card text-left space-y-3" aria-label="NASA Astronomy Picture of the Day">
+          <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-card text-left space-y-3" aria-label={t('dash_apod_aria')}>
             <div className="flex items-center justify-between gap-2">
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6860] dark:text-[#B5B2A8]">{t('nasa_title')}</h4>
             </div>
@@ -609,7 +609,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                   <span>{t('dash_image_credit')}{nasaApod.copyright ? ` • © ${nasaApod.copyright}` : ''}</span>
                   {nasaApod.hdurl && <a href={nasaApod.hdurl} target="_blank" rel="noreferrer" className="font-bold text-[#D97757] dark:text-[#E59A7C] hover:underline underline-offset-4 shrink-0">{t('dash_open_hd')}</a>}
                 </div>
-                {apodError && <p className="text-[10px] text-amber-700" role="status">NASA giới hạn hoặc mất mạng. Hiện ảnh cũ — bấm Thử lại. <button type="button" onClick={reloadApod} className="font-bold underline underline-offset-4 cursor-pointer min-h-[44px] px-2">Thử lại • Retry</button></p>}
+                {apodError && <p className="text-[10px] text-amber-700 dark:text-amber-300" role="status">{t('dash_apod_error')} <button type="button" onClick={reloadApod} className="font-bold underline underline-offset-4 cursor-pointer min-h-[44px] px-2">{t('retry')}</button></p>}
               </div>
             )}
           </div>
