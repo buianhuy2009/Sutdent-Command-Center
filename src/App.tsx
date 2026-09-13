@@ -1702,8 +1702,8 @@ export default function App() {
     try {
       let apiFetched: CanvasAssignment[] = [];
       let feedFetched: CanvasAssignment[] = [];
-      let apiError: { message: string; kind?: string } | null = null;
-      let feedError: { message: string; kind?: string } | null = null;
+      let apiError: { message: string; kind?: string; code?: string } | null = null;
+      let feedError: { message: string; kind?: string; code?: string } | null = null;
 
       // 1. Fetch via REST API if configured (requires BOTH Canvas URL + token)
       if (isApiConfigured) {
@@ -1714,7 +1714,7 @@ export default function App() {
           );
         } catch (e: any) {
           console.warn('Canvas REST API query error:', e);
-          apiError = { message: e?.message || 'Canvas API request failed.', kind: (e as any)?.kind };
+          apiError = { message: e?.message || 'Canvas API request failed.', kind: (e as any)?.kind, code: (e as any)?.code };
         }
       }
 
@@ -1724,7 +1724,7 @@ export default function App() {
           feedFetched = await fetchCanvasAssignmentsFromFeed(feedUrl);
         } catch (e: any) {
           console.warn('Canvas Calendar Feed query error:', e);
-          feedError = { message: e?.message || 'Canvas feed request failed.', kind: (e as any)?.kind };
+          feedError = { message: e?.message || 'Canvas feed request failed.', kind: (e as any)?.kind, code: (e as any)?.code };
         }
       }
 
@@ -1779,11 +1779,18 @@ export default function App() {
             case 'auth':
               errMsg = 'Canvas rejected the API token (401). Regenerate a token at Canvas → Account → Settings → New Access Token, save it here, then retry.';
               break;
-            case 'host':
-              errMsg = `Canvas host did not answer (${apiError.message}). Check the URL is exactly your school host, then retry.`;
+            case 'host': {
+              // Allowlist blocks carry code + detail from the service: the token
+              // is fine, the deployment refuses the host — name that exact fix.
+              const blockedByAllowlist =
+                apiError.code === 'host-not-allowlisted' || /allowlist/i.test(apiError.message || '');
+              errMsg = blockedByAllowlist
+                ? `Canvas sync is blocked: ${cleanTail(apiError.message || '')}. Your token is fine — the app server refuses this Canvas host. Fix: redeploy with your host added to CANVAS_ALLOWED_HOSTS, then retry.`
+                : `Canvas host did not answer (${apiError.message}). Check the URL is exactly your school host, then retry.`;
               break;
+            }
             case 'network':
-              errMsg = 'Could not reach Canvas — network error or timed out after 15s. Check your connection, then retry.';
+              errMsg = 'Could not reach Canvas — network error or timed out after 20s. Check your connection, then retry.';
               break;
             case 'backend':
               errMsg = `Canvas sync is blocked: ${apiError.message}. This is a deployment issue, not your token — the app's /api functions are not serving JSON. Redeploy the latest main, then retry.`;
