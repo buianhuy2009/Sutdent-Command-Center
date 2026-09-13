@@ -1,13 +1,101 @@
-import React, { useState } from 'react';
-import { ExternalLink, Maximize2, Minimize2, RefreshCw, PenTool } from 'lucide-react';
-import { IframeErrorBoundary } from '../IframeErrorBoundary';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { ExternalLink, Focus, Maximize2, Minimize2, RefreshCw, PenTool, Trash2 } from 'lucide-react';
 import { t, useLang } from '../../services/i18n';
+import '@excalidraw/excalidraw/index.css';
+
+// Heavy canvas chunk loads on demand so the main bundle stays lean.
+const Excalidraw = React.lazy(() =>
+  import('@excalidraw/excalidraw').then((m) => ({ default: m.Excalidraw })),
+);
+
+type ExcalidrawProps = React.ComponentProps<typeof Excalidraw>;
+// The package root does not re-export its prop types, so derive them from
+// the component instead of importing type paths (which the exports map hides).
+type ExcalidrawApi = NonNullable<Parameters<NonNullable<ExcalidrawProps['excalidrawAPI']>>[0]>;
+
+const STORAGE_KEY = 'scc_excalidraw_scene_v1';
+const MAX_BYTES = 2 * 1024 * 1024; // ~2MB cap for the autosaved scene
+const SAVE_DELAY_MS = 1000;
+
+function loadSavedScene(): ExcalidrawProps['initialData'] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return undefined;
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') {
+      return undefined;
+    }
+    return parsed as ExcalidrawProps['initialData'];
+  } catch {
+    return undefined;
+  }
+}
 
 export const ExcalidrawWorkspace: React.FC = () => {
   useLang();
   const [reloadKey, setReloadKey] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const url = 'https://excalidraw.com';
+  const apiRef = useRef<ExcalidrawApi | null>(null);
+  const saveTimer = useRef<number | null>(null);
+
+  // Restore once per mount so Reload (re-mount) picks up the latest save.
+  const initialData = useMemo(() => loadSavedScene(), [reloadKey]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current !== null) {
+        window.clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+    };
+  }, []);
+
+  const scheduleSave: NonNullable<ExcalidrawProps['onChange']> = (elements, appState) => {
+    if (saveTimer.current !== null) {
+      window.clearTimeout(saveTimer.current);
+    }
+    saveTimer.current = window.setTimeout(() => {
+      saveTimer.current = null;
+      try {
+        const payload = JSON.stringify({ elements, appState });
+        if (payload.length > MAX_BYTES) {
+          return; // Drop oversized scenes instead of blowing quota.
+        }
+        try {
+          localStorage.setItem(STORAGE_KEY, payload);
+        } catch {
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch {
+            // Storage unavailable — canvas still works in memory.
+          }
+        }
+      } catch {
+        // Scene not serializable — skip this save.
+      }
+    }, SAVE_DELAY_MS);
+  };
+
+  const handleClear = () => {
+    // NOTE: no exca_clear i18n key exists and i18n files are out of scope,
+    // so this confirm stays in plain English.
+    if (!window.confirm('Clear the whiteboard? This cannot be undone.')) {
+      return;
+    }
+    apiRef.current?.updateScene({ elements: [] });
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignore — canvas is already cleared in memory.
+    }
+  };
+
+  const handleResetView = () => {
+    apiRef.current?.scrollToContent();
+  };
 
   return (
     <div className={`flex flex-col h-full w-full select-none ${isFullscreen ? 'fixed inset-0 z-50 bg-[#FAF9F5] dark:bg-[#141413] p-4' : ''}`}>
@@ -31,6 +119,22 @@ export const ExcalidrawWorkspace: React.FC = () => {
           </button>
 
           <button
+            onClick={handleResetView}
+            className="p-1.5 rounded-lg bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] transition-colors cursor-pointer"
+            title="Reset view (zoom to fit)"
+          >
+            <Focus className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={handleClear}
+            className="p-1.5 rounded-lg bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-red-400 text-[#5C5A54] dark:text-[#B5B2A8] transition-colors cursor-pointer"
+            title="Clear canvas"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+
+          <button
             onClick={() => setIsFullscreen(!isFullscreen)}
             className="p-1.5 rounded-lg bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] transition-colors cursor-pointer"
           >
@@ -49,13 +153,26 @@ export const ExcalidrawWorkspace: React.FC = () => {
         </div>
       </div>
 
-      {/* Embed Canvas */}
+      {/* Local Canvas */}
       <div key={reloadKey} className="flex-1 w-full min-h-[550px] rounded-2xl overflow-hidden border border-[#DFDACB] dark:border-[#2C2B27] bg-white shadow-xs">
-        <IframeErrorBoundary
-          title="Excalidraw Whiteboard"
-          src={url}
-          className="w-full h-full border-0 min-h-[550px]"
-        />
+        <div className="w-full h-full min-h-[550px] excalidraw-wrapper">
+          <Suspense
+            fallback={
+              <div className="w-full h-full min-h-[550px] flex items-center justify-center gap-2 text-xs text-[#8C897F] font-medium bg-white">
+                <RefreshCw className="w-4 h-4 animate-spin text-purple-600" />
+                <span>Loading whiteboard…</span>
+              </div>
+            }
+          >
+            <Excalidraw
+              initialData={initialData}
+              onChange={scheduleSave}
+              excalidrawAPI={(api) => {
+                apiRef.current = api;
+              }}
+            />
+          </Suspense>
+        </div>
       </div>
     </div>
   );
