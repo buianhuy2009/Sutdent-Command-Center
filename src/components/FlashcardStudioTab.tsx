@@ -37,6 +37,33 @@ export interface CardDeck {
 }
 
 const LOCAL_DECKS_KEY = 'scc_flashcard_decks_v1';
+const LOCAL_GEN_COUNT_KEY = 'scc_flashcard_gencount_v1';
+const LOCAL_SESSION_LIMIT_KEY = 'scc_flashcard_session_limit_v1';
+
+function loadGenCount(): number {
+  try {
+    const raw = localStorage.getItem(LOCAL_GEN_COUNT_KEY);
+    if (raw !== null) {
+      const n = Math.floor(Number(raw));
+      if (Number.isFinite(n) && n >= 1 && n <= 50) return n;
+    }
+  } catch (e) {
+    console.error('Error loading flashcard gen count:', e);
+  }
+  return 8;
+}
+
+function loadSessionLimit(): number | 'all' {
+  try {
+    const raw = localStorage.getItem(LOCAL_SESSION_LIMIT_KEY);
+    if (raw === null || raw === 'all') return 'all';
+    const n = Math.floor(Number(raw));
+    if (Number.isFinite(n) && n >= 1 && n <= 500) return n;
+  } catch (e) {
+    console.error('Error loading flashcard session limit:', e);
+  }
+  return 'all';
+}
 
 function loadSavedDecks(): CardDeck[] {
   try {
@@ -67,8 +94,15 @@ export const FlashcardStudioTab: React.FC = () => {
   const [genTopic, setGenTopic] = useState('');
   const [genSubject, setGenSubject] = useState('');
   const [genNotes, setGenNotes] = useState('');
-  const [genCount, setGenCount] = useState<number>(8);
+  const [genCount, setGenCount] = useState<number>(loadGenCount);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Per-session review limit (presets + custom, persisted, default All)
+  const [sessionLimit, setSessionLimit] = useState<number | 'all'>(loadSessionLimit);
+  const [customSessionInput, setCustomSessionInput] = useState<string>(() => {
+    const stored = loadSessionLimit();
+    return typeof stored === 'number' && ![10, 20, 50].includes(stored) ? String(stored) : '';
+  });
 
   // Study Mode State
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -93,20 +127,50 @@ export const FlashcardStudioTab: React.FC = () => {
   }, [decks, activeDeckId]);
 
   const activeDeck = decks.find((d) => d.id === activeDeckId) || null;
-  const displayDeck = activeDeck ? { ...activeDeck, cards: sortedCards } as CardDeck : null;
-  const currentCard = displayDeck && displayDeck.cards.length > 0 ? displayDeck.cards[currentCardIndex] : null;
+  // genCount already flows into the AI prompt (Generate ${genCount} ...) — persist it so it survives reload.
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_GEN_COUNT_KEY, String(genCount));
+    } catch (e) {
+      console.error('Error saving flashcard gen count:', e);
+    }
+  }, [genCount]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_SESSION_LIMIT_KEY, sessionLimit === 'all' ? 'all' : String(sessionLimit));
+    } catch (e) {
+      console.error('Error saving flashcard session limit:', e);
+    }
+  }, [sessionLimit]);
+
+  const sessionCards = React.useMemo(() => {
+    if (sessionLimit === 'all') return sortedCards;
+    return sortedCards.slice(0, sessionLimit);
+  }, [sortedCards, sessionLimit]);
+
+  // Keep the review index inside the capped session window.
+  useEffect(() => {
+    if (currentCardIndex >= sessionCards.length && sessionCards.length > 0) {
+      setCurrentCardIndex(0);
+      setIsFlipped(false);
+    }
+  }, [sessionCards.length, currentCardIndex]);
+
+  const displayDeck = activeDeck ? { ...activeDeck, cards: sessionCards } as CardDeck : null;
+  const currentCard = displayDeck && displayDeck.cards.length > 0 ? displayDeck.cards[Math.min(currentCardIndex, displayDeck.cards.length - 1)] : null;
 
   const queueSummary = React.useMemo(() => {
-    if (!displayDeck) return { due: 0, new: 0, learning: 0 };
+    if (!activeDeck) return { due: 0, new: 0, learning: 0 };
     const today = new Date().toISOString().split('T')[0];
     let due = 0, isNew = 0, learning = 0;
-    displayDeck.cards.forEach(c => {
+    activeDeck.cards.forEach(c => {
       if (!c.dueDate || c.dueDate <= today) due++;
       if ((c.repetitions || 0) === 0) isNew++;
       else if (!c.mastered) learning++;
     });
     return { due, new: isNew, learning };
-  }, [displayDeck]);
+  }, [activeDeck]);
 
   // Keyboard navigation for flashcard review
   useEffect(() => {
@@ -146,8 +210,8 @@ export const FlashcardStudioTab: React.FC = () => {
 
   const handleToggleMastered = () => {
     if (!activeDeck || !currentCard) return;
-    const updatedCards = activeDeck.cards.map((c, idx) =>
-      idx === currentCardIndex ? { ...c, mastered: !c.mastered } : c
+    const updatedCards = activeDeck.cards.map((c) =>
+      c.id === currentCard.id ? { ...c, mastered: !c.mastered } : c
     );
     const updatedDeck = { ...activeDeck, cards: updatedCards };
     const updatedDecks = decks.map((d) => (d.id === activeDeck.id ? updatedDeck : d));
@@ -586,11 +650,48 @@ Example format:
             {displayDeck && currentCard ? (
               <>
                 {/* Queue Summary */}
-                <div className="flex items-center gap-2 text-[11px] font-bold mb-3">
+                <div className="flex items-center gap-2 text-[11px] font-bold mb-2 flex-wrap">
                   <span className="px-2 py-1 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800">{queueSummary.due} Due Today</span>
                   <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">{queueSummary.new} New</span>
                   <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">{queueSummary.learning} Learning</span>
                   <span className="ml-auto text-[10px] text-[#8C897F] font-mono">Overdue → New → Due order</span>
+                </div>
+                {/* Review Session Size */}
+                <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                  <span className="text-[11px] font-bold text-[#5C5A54] dark:text-[#B5B2A8]">Session size:</span>
+                  {[10, 20, 50].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => { setSessionLimit(n); setCustomSessionInput(''); setCurrentCardIndex(0); setIsFlipped(false); }}
+                      className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer ${sessionLimit === n ? 'bg-[#D97757] text-white border-[#D97757]' : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]/40'}`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => { setSessionLimit('all'); setCustomSessionInput(''); setCurrentCardIndex(0); setIsFlipped(false); }}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer ${sessionLimit === 'all' ? 'bg-[#D97757] text-white border-[#D97757]' : 'bg-[#FAF9F5] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757]/40'}`}
+                  >
+                    All
+                  </button>
+                  <input
+                    type="number"
+                    min={1}
+                    max={500}
+                    value={customSessionInput}
+                    onChange={(e) => {
+                      setCustomSessionInput(e.target.value);
+                      const n = Math.floor(Number(e.target.value));
+                      if (Number.isFinite(n) && n >= 1 && n <= 500) {
+                        setSessionLimit(n);
+                        setCurrentCardIndex(0);
+                        setIsFlipped(false);
+                      }
+                    }}
+                    placeholder="Custom"
+                    title="Custom session size"
+                    className="w-20 px-2 py-1 text-[11px] bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D97757] text-[#141413] dark:text-[#FAF9F5]"
+                  />
                 </div>
                 {/* Top Deck Info & Card Index */}
                 <div className="flex items-center justify-between pb-3 border-b border-[#DFDACB] dark:border-[#2C2B27]">
@@ -599,7 +700,7 @@ Example format:
                       {displayDeck!.title}
                     </h3>
                     <span className="text-[11px] text-[#8C897F]">
-                      Card {currentCardIndex + 1}/{displayDeck!.cards.length} • {queueSummary.due} due
+                      Session {displayDeck!.cards.length > 0 ? Math.min(currentCardIndex + 1, displayDeck!.cards.length) : 0}/{displayDeck!.cards.length} • {queueSummary.due} due{sessionLimit !== 'all' && activeDeck ? ` (of ${activeDeck.cards.length})` : ''}
                     </span>
                   </div>
 
