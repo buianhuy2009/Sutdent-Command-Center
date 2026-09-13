@@ -49,6 +49,16 @@ import {
   setClientGroqApiKey,
 } from '../services/gemini';
 import { getTheme, setTheme } from '../services/theme';
+import {
+  maskApiKey,
+  getGeminiKeyMeta,
+  setGeminiKeyExpiry,
+  getGroqKeyMeta,
+  setGroqKeyExpiry,
+  getExpiryStatus,
+} from '../services/gemini/providers';
+import { loadCanvasSettings, saveCanvasSettings } from '../services/canvas';
+import { getGoogleTokenStatus } from '../services/firebase';
 import { t, useLang } from '../services/i18n';
 import { LanguageToggle } from './LanguageToggle';
 import { setNasaApodEnabled } from '../hooks/useNasaApod';
@@ -154,6 +164,14 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   const [isTestingGemini, setIsTestingGemini] = useState(false);
   const [geminiTestStatus, setGeminiTestStatus] = useState<'idle' | 'success' | 'failed'>('idle');
   const [geminiStatusMsg, setGeminiStatusMsg] = useState('');
+  // Connections hub: per-key expiry metadata (stored separately from key values)
+  const [geminiExpiry, setGeminiExpiry] = useState('');
+  const [groqExpiry, setGroqExpiry] = useState('');
+  // Connections hub: Canvas domain + token (canonical saveCanvasSettings keys)
+  const [canvasDomain, setCanvasDomain] = useState('');
+  const [canvasToken, setCanvasToken] = useState('');
+  const [showCanvasToken, setShowCanvasToken] = useState(false);
+  const [canvasSaveMsg, setCanvasSaveMsg] = useState('');
 
   // UI Density & Themes — strict two-mode palette: Warm Cream light / Dark Charcoal dark
   const [density, setDensity] = useState<'compact' | 'comfortable' | 'spacious'>(() => {
@@ -263,6 +281,14 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
       setGeminiKey(savedGemini);
       const savedGroq = getClientGroqApiKey();
       setGroqKey(savedGroq);
+      try { setGeminiExpiry(getGeminiKeyMeta().expiresAt || ''); } catch {}
+      try { setGroqExpiry(getGroqKeyMeta().expiresAt || ''); } catch {}
+      try {
+        const cs = loadCanvasSettings();
+        setCanvasDomain(cs.apiDomain || '');
+        setCanvasToken(cs.apiToken || '');
+        setCanvasSaveMsg('');
+      } catch {}
     }
   }, [isOpen]);
 
@@ -271,7 +297,19 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   const handleSaveKeys = () => {
     setClientGeminiApiKey(geminiKey);
     setClientGroqApiKey(groqKey);
+    try { setGeminiKeyExpiry(geminiExpiry ? geminiExpiry : null); } catch {}
+    try { setGroqKeyExpiry(groqExpiry ? groqExpiry : null); } catch {}
     setGeminiStatusMsg('Keys saved locally.');
+  };
+
+  const handleSaveCanvasConnection = () => {
+    try {
+      const current = loadCanvasSettings();
+      saveCanvasSettings({ ...current, apiDomain: canvasDomain.trim(), apiToken: canvasToken.trim() });
+      setCanvasSaveMsg('Canvas domain + token saved. Press Save & Sync in Canvas tab to apply.');
+    } catch {
+      setCanvasSaveMsg('Could not save Canvas settings.');
+    }
   };
 
   const handleTestGemini = async () => {
@@ -325,7 +363,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
   const navItems: Array<{ id: SettingsSection; label: string; icon: any }> = [
     { id: 'general', label: 'General', icon: Sliders },
     { id: 'models', label: 'Models & AI Keys', icon: Bot },
-    { id: 'sync', label: 'Google & Canvas Sync', icon: Globe },
+    { id: 'sync', label: 'Connections', icon: Globe },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
     { id: 'integrations', label: 'Integrations & LMS', icon: Layers },
@@ -407,7 +445,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
               <p className="text-xs text-[#8C897F] mt-0.5">
                 {activeSection === 'general' && 'Configure execution preferences, storage policies, and session controls.'}
                 {activeSection === 'models' && 'Manage Google Gemini and Groq API keys with dual-provider failover.'}
-                {activeSection === 'sync' && 'Manage Canvas LMS sync tokens, Google Drive permissions, and Google Sheets.'}
+                {activeSection === 'sync' && 'All keys + Canvas domain in one place — AI keys, Canvas, and Google.'}
                 {activeSection === 'appearance' && 'Customize theme warmth, contrast, and motion reduction.'}
                 {activeSection === 'shortcuts' && 'Keyboard navigation and quick action hotkeys.'}
                 {activeSection === 'integrations' && 'Connected LMS hubs, Classroom, and external study utilities.'}
@@ -634,6 +672,25 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                     </button>
                   </div>
 
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-[11px] font-mono text-[#8C897F]">
+                      {geminiKey ? `Saved: ${maskApiKey(geminiKey)}` : 'No key saved'}
+                      {(() => { const s = getExpiryStatus(geminiExpiry); return s.label ? ` • ${s.label}` : ''; })()}
+                    </span>
+                    <label className="flex items-center gap-1.5 text-[11px] text-[#8C897F]">
+                      <span>Expires</span>
+                      <input
+                        type="date"
+                        value={geminiExpiry}
+                        onChange={(e) => setGeminiExpiry(e.target.value)}
+                        className="px-2 py-1 text-[11px] bg-white dark:bg-[#141413] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-lg text-[#141413] dark:text-[#F5F4ED]"
+                      />
+                      {geminiExpiry && (
+                        <button type="button" onClick={() => setGeminiExpiry('')} className="text-[11px] text-[#C96442] hover:underline font-semibold">Clear</button>
+                      )}
+                    </label>
+                  </div>
+
                   <div className="flex items-center justify-between pt-1">
                     <span className="text-[11px] text-[#8C897F]">
                       {geminiStatusMsg || 'Stored locally in browser.'}
@@ -688,6 +745,25 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                       {showGroqKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
                   </div>
+
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-[11px] font-mono text-[#8C897F]">
+                      {groqKey ? `Saved: ${maskApiKey(groqKey)}` : 'No key saved'}
+                      {(() => { const s = getExpiryStatus(groqExpiry); return s.label ? ` • ${s.label}` : ''; })()}
+                    </span>
+                    <label className="flex items-center gap-1.5 text-[11px] text-[#8C897F]">
+                      <span>Expires</span>
+                      <input
+                        type="date"
+                        value={groqExpiry}
+                        onChange={(e) => setGroqExpiry(e.target.value)}
+                        className="px-2 py-1 text-[11px] bg-white dark:bg-[#141413] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-lg text-[#141413] dark:text-[#F5F4ED]"
+                      />
+                      {groqExpiry && (
+                        <button type="button" onClick={() => setGroqExpiry('')} className="text-[11px] text-[#C96442] hover:underline font-semibold">Clear</button>
+                      )}
+                    </label>
+                  </div>
                 </div>
 
                 <div className="flex justify-end pt-2">
@@ -701,14 +777,158 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
               </div>
             )}
 
-            {/* SECTION 3: SYNC & GOOGLE */}
+            {/* SECTION 3: CONNECTIONS (unified keys + domains manager) */}
             {activeSection === 'sync' && (
               <div className="space-y-4">
-                {/* Google Account */}
+                {/* AI Keys — masked display + edit + expiry (same localStorage keys as Models tab) */}
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
+                      AI Keys
+                    </div>
+                    <span className="text-[10px] font-mono text-[#8C897F]">
+                      {geminiKey ? `Gemini ${maskApiKey(geminiKey)}` : 'Gemini —'} • {groqKey ? `Groq ${maskApiKey(groqKey)}` : 'Groq —'}
+                    </span>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    <div className="relative">
+                      <Key className="w-4 h-4 text-[#8C897F] absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showGeminiKey ? 'text' : 'password'}
+                        value={geminiKey}
+                        onChange={(e) => setGeminiKey(e.target.value)}
+                        placeholder="Gemini key (AIzaSy...)"
+                        aria-label="Gemini API key"
+                        className="w-full pl-9 pr-10 py-2 text-xs font-mono bg-white dark:bg-[#141413] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C96442] text-[#141413] dark:text-[#F5F4ED]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowGeminiKey(!showGeminiKey)}
+                        className="p-1.5 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#F5F4ED] absolute right-2.5 top-1/2 -translate-y-1/2"
+                      >
+                        {showGeminiKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Key className="w-4 h-4 text-[#8C897F] absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showGroqKey ? 'text' : 'password'}
+                        value={groqKey}
+                        onChange={(e) => setGroqKey(e.target.value)}
+                        placeholder="Groq key (gsk_...)"
+                        aria-label="Groq API key"
+                        className="w-full pl-9 pr-10 py-2 text-xs font-mono bg-white dark:bg-[#141413] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C96442] text-[#141413] dark:text-[#F5F4ED]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowGroqKey(!showGroqKey)}
+                        className="p-1.5 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#F5F4ED] absolute right-2.5 top-1/2 -translate-y-1/2"
+                      >
+                        {showGroqKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    <label className="flex items-center gap-1.5 text-[11px] text-[#8C897F]">
+                      <span>Gemini expires</span>
+                      <input
+                        type="date"
+                        value={geminiExpiry}
+                        onChange={(e) => setGeminiExpiry(e.target.value)}
+                        className="px-2 py-1 text-[11px] bg-white dark:bg-[#141413] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-lg text-[#141413] dark:text-[#F5F4ED]"
+                      />
+                      <span className="font-semibold">{getExpiryStatus(geminiExpiry).label}</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[11px] text-[#8C897F]">
+                      <span>Groq expires</span>
+                      <input
+                        type="date"
+                        value={groqExpiry}
+                        onChange={(e) => setGroqExpiry(e.target.value)}
+                        className="px-2 py-1 text-[11px] bg-white dark:bg-[#141413] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-lg text-[#141413] dark:text-[#F5F4ED]"
+                      />
+                      <span className="font-semibold">{getExpiryStatus(groqExpiry).label}</span>
+                    </label>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-[#8C897F]">{geminiStatusMsg || 'Stored locally in browser.'}</span>
+                    <button
+                      onClick={handleSaveKeys}
+                      className="px-4 py-1.5 bg-[#C96442] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    >
+                      Save AI Keys
+                    </button>
+                  </div>
+                </div>
+
+                {/* Canvas domain + token — canonical saveCanvasSettings keys */}
+                <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
+                      Canvas LMS
+                    </div>
+                    <span className="text-[10px] font-mono text-[#8C897F]">
+                      {canvasDomain || 'No domain saved'} • {canvasToken ? `Token ${maskApiKey(canvasToken)}` : 'No token'}
+                    </span>
+                  </div>
+                  <div className="grid gap-2">
+                    <input
+                      type="text"
+                      value={canvasDomain}
+                      onChange={(e) => setCanvasDomain(e.target.value)}
+                      placeholder="https://your-school.instructure.com"
+                      aria-label="Canvas domain"
+                      className="w-full px-3 py-2 text-xs font-mono bg-white dark:bg-[#141413] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C96442] text-[#141413] dark:text-[#F5F4ED]"
+                    />
+                    <div className="relative">
+                      <Key className="w-4 h-4 text-[#8C897F] absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showCanvasToken ? 'text' : 'password'}
+                        value={canvasToken}
+                        onChange={(e) => setCanvasToken(e.target.value)}
+                        placeholder="Canvas API token"
+                        aria-label="Canvas API token"
+                        className="w-full pl-9 pr-10 py-2 text-xs font-mono bg-white dark:bg-[#141413] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C96442] text-[#141413] dark:text-[#F5F4ED]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCanvasToken(!showCanvasToken)}
+                        className="p-1.5 text-[#8C897F] hover:text-[#141413] dark:hover:text-[#F5F4ED] absolute right-2.5 top-1/2 -translate-y-1/2"
+                      >
+                        {showCanvasToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-[11px] text-[#8C897F]">
+                      {canvasSaveMsg || 'Press Save & Sync in Canvas tab to apply.'}
+                    </span>
+                    <button
+                      onClick={handleSaveCanvasConnection}
+                      className="px-4 py-1.5 bg-white dark:bg-[#252422] border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] text-[#141413] dark:text-[#F5F4ED] rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      Save Canvas
+                    </button>
+                  </div>
+                  <div className="text-[11px] text-[#8C897F]">
+                    Note: press Save &amp; Sync in Canvas tab to apply.
+                  </div>
+                </div>
+
+                {/* Google Account (read-only status via existing helpers) */}
                 <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] flex items-center justify-between">
                   <div>
-                    <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
-                      Google Workspace Sync
+                    <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED] flex items-center gap-2">
+                      <span>Google Workspace Sync</span>
+                      {(() => {
+                        let s: string = 'missing';
+                        try { s = getGoogleTokenStatus(); } catch {}
+                        return (
+                          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold ${s === 'connected' ? 'bg-emerald-500/15 text-emerald-600' : s === 'expired' ? 'bg-amber-500/15 text-amber-600' : 'bg-[#8C897F]/15 text-[#8C897F]'}`}>
+                            {s === 'connected' ? 'Connected' : s === 'expired' ? 'Expired — reconnect' : 'Not connected'}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="text-[11px] text-[#8C897F]">
                       {user ? `Connected as ${user.email}` : 'Not connected (Local Guest Mode)'}
