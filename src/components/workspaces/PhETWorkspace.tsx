@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Atom, ExternalLink, Maximize2, Minimize2, ArrowLeft } from 'lucide-react';
+import { Atom, ExternalLink, Maximize2, Minimize2, ArrowLeft, Search, X } from 'lucide-react';
 import { IframeErrorBoundary } from '../IframeErrorBoundary';
 
 interface PhetSim {
@@ -66,6 +66,153 @@ const PHET_SIMS: PhetSim[] = [
     category: 'Biology',
     description: 'Examine transcription and translation to generate proteins from DNA.',
     url: 'https://phet.colorado.edu/sims/html/gene-expression-essentials/latest/gene-expression-essentials_en.html',
+  },
+  {
+    id: 'phet-wave-string',
+    title: 'Wave on a String',
+    category: 'Physics',
+    description: 'Wiggle the string to make waves and explore frequency, amplitude, and damping.',
+    url: 'https://phet.colorado.edu/sims/html/wave-on-a-string/latest/wave-on-a-string_en.html',
+  },
+  {
+    id: 'phet-ohms-law',
+    title: "Ohm's Law",
+    category: 'Physics',
+    description: 'See how voltage, current, and resistance relate in a simple circuit.',
+    url: 'https://phet.colorado.edu/sims/html/ohms-law/latest/ohms-law_en.html',
+  },
+  {
+    id: 'phet-balloons',
+    title: 'Balloons and Static Electricity',
+    category: 'Physics',
+    description: 'Rub a balloon on a sweater to learn how static charges attract and repel.',
+    url: 'https://phet.colorado.edu/sims/html/balloons-and-static-electricity/latest/balloons-and-static-electricity_en.html',
+  },
+  {
+    id: 'phet-bending-light',
+    title: 'Bending Light',
+    category: 'Physics',
+    description: 'Shine lasers through materials to discover refraction and total internal reflection.',
+    url: 'https://phet.colorado.edu/sims/html/bending-light/latest/bending-light_en.html',
+  },
+  {
+    id: 'phet-masses-springs',
+    title: 'Masses and Springs',
+    category: 'Physics',
+    description: 'Hang masses on springs to explore stretch, oscillation, and stored energy.',
+    url: 'https://phet.colorado.edu/sims/html/masses-and-springs/latest/masses-and-springs_en.html',
+  },
+  {
+    id: 'phet-pendulum',
+    title: 'Pendulum Lab',
+    category: 'Physics',
+    description: 'Swing pendulums to find what controls their period: length, mass, or gravity.',
+    url: 'https://phet.colorado.edu/sims/html/pendulum-lab/latest/pendulum-lab_en.html',
+  },
+  {
+    id: 'phet-skate-basics',
+    title: 'Energy Skate Park: Basics',
+    category: 'Physics',
+    description: 'Ride a skater on tracks to trade kinetic and potential energy back and forth.',
+    url: 'https://phet.colorado.edu/sims/html/energy-skate-park-basics/latest/energy-skate-park-basics_en.html',
+  },
+  {
+    id: 'phet-color-vision',
+    title: 'Color Vision',
+    category: 'Physics',
+    description: 'Mix red, green, and blue light to see how your eyes perceive color.',
+    url: 'https://phet.colorado.edu/sims/html/color-vision/latest/color-vision_en.html',
+  },
+  {
+    id: 'phet-ph-scale',
+    title: 'pH Scale',
+    category: 'Chemistry',
+    description: 'Dip the pH meter into drinks and cleaners to compare acids and bases.',
+    url: 'https://phet.colorado.edu/sims/html/ph-scale/latest/ph-scale_en.html',
+  },
+  {
+    id: 'phet-molarity',
+    title: 'Molarity',
+    category: 'Chemistry',
+    description: 'Dissolve solute, change volume, and watch solution concentration update live.',
+    url: 'https://phet.colorado.edu/sims/html/molarity/latest/molarity_en.html',
+  },
+  {
+    id: 'phet-build-atom',
+    title: 'Build an Atom',
+    category: 'Chemistry',
+    description: 'Add protons, neutrons, and electrons to build atoms and ions from scratch.',
+    url: 'https://phet.colorado.edu/sims/html/build-an-atom/latest/build-an-atom_en.html',
+  },
+  {
+    id: 'phet-gas-properties',
+    title: 'Gas Properties',
+    category: 'Chemistry',
+    description: 'Pump gas into a box, heat it, and squeeze it to learn the gas laws.',
+    url: 'https://phet.colorado.edu/sims/html/gas-properties/latest/gas-properties_en.html',
+  },
+  {
+    id: 'phet-concentration',
+    title: 'Concentration',
+    category: 'Chemistry',
+    description: 'Mix drinks to discover how concentration, moles, and volume connect.',
+    url: 'https://phet.colorado.edu/sims/html/concentration/latest/concentration_en.html',
+  },
+  {
+    id: 'phet-beers-law',
+    title: "Beer's Law Lab",
+    category: 'Chemistry',
+    description: 'Shine light through solutions to connect absorbance with concentration.',
+    url: 'https://phet.colorado.edu/sims/html/beers-law-lab/latest/beers-law-lab_en.html',
+  },
+  {
+    id: 'phet-states-matter-basics',
+    title: 'States of Matter: Basics',
+    category: 'Chemistry',
+    description: 'Heat and cool atoms to watch solids melt and gases condense.',
+    url: 'https://phet.colorado.edu/sims/html/states-of-matter-basics/latest/states-of-matter-basics_en.html',
+  },
+  {
+    id: 'phet-neuron',
+    title: 'Neuron',
+    category: 'Biology',
+    description: 'Stimulate a neuron and watch the signal travel down the axon.',
+    url: 'https://phet.colorado.edu/sims/html/neuron/latest/neuron_en.html',
+  },
+  {
+    id: 'phet-membrane-channels',
+    title: 'Membrane Channels',
+    category: 'Biology',
+    description: 'Add channels to a cell membrane and see ions flow in and out.',
+    url: 'https://phet.colorado.edu/sims/html/membrane-channels/latest/membrane-channels_en.html',
+  },
+  {
+    id: 'phet-area-builder',
+    title: 'Area Builder',
+    category: 'Math',
+    description: 'Build shapes on a grid to master area and perimeter by playing.',
+    url: 'https://phet.colorado.edu/sims/html/area-builder/latest/area-builder_en.html',
+  },
+  {
+    id: 'phet-fraction-matcher',
+    title: 'Fraction Matcher',
+    category: 'Math',
+    description: 'Match fractions to pictures and number lines in a timed memory game.',
+    url: 'https://phet.colorado.edu/sims/html/fraction-matcher/latest/fraction-matcher_en.html',
+  },
+  {
+    id: 'phet-graphing-lines',
+    title: 'Graphing Lines',
+    category: 'Math',
+    description: 'Drag points to graph lines and discover slope and slope-intercept form.',
+    url: 'https://phet.colorado.edu/sims/html/graphing-lines/latest/graphing-lines_en.html',
+  },
+  {
+    id: 'phet-least-squares',
+    title: 'Least-Squares Regression',
+    category: 'Math',
+    description: 'Drop data points and fit your own line to learn correlation and residuals.',
+    url: 'https://phet.colorado.edu/sims/html/least-squares-regression/latest/least-squares-regression_en.html',
   },
 ];
 
@@ -151,7 +298,7 @@ export const PhETWorkspace: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              {['All', 'Physics', 'Chemistry', 'Biology'].map((cat) => (
+              {['All', 'Physics', 'Chemistry', 'Biology', 'Math'].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setCategory(cat)}
@@ -167,6 +314,48 @@ export const PhETWorkspace: React.FC = () => {
             </div>
           </div>
 
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8C897F] pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search simulations by title or topic..."
+                aria-label="Search simulations"
+                className="w-full pl-9 pr-9 py-2.5 rounded-xl bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] focus:border-[#D97757] focus:outline-none text-sm text-[#141413] dark:text-[#FAF9F5] placeholder:text-[#8C897F]"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  aria-label="Clear search"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[#8C897F] hover:text-[#D97757] hover:bg-[#EFECE2] dark:hover:bg-[#2C2A26] transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <span className="text-xs text-[#8C897F] font-medium shrink-0" aria-live="polite">
+              {filtered.length} of {PHET_SIMS.length} simulations
+            </span>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="bg-white dark:bg-[#1A1917] rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-10 text-center space-y-3">
+              <p className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">
+                No simulations match &ldquo;{search}&rdquo;
+              </p>
+              <p className="text-xs text-[#8C897F]">
+                Try a different keyword or category.
+              </p>
+              <button
+                onClick={() => { setSearch(''); setCategory('All'); }}
+                className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                Clear search &amp; filters
+              </button>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filtered.map((sim) => (
               <div
@@ -192,6 +381,7 @@ export const PhETWorkspace: React.FC = () => {
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
     </div>
