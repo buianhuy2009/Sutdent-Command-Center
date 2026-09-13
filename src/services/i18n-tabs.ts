@@ -86,6 +86,8 @@ export const WS_TABS_STRINGS: Record<string, { en: string; vi: string }> = {
   gmail_select_title: { en: 'Select an email from the inbox', vi: 'Chọn một email trong hộp thư' },
   gmail_select_hint: { en: 'Read full announcements, extract assignments, or draft AI replies.', vi: 'Đọc thông báo đầy đủ, trích xuất bài tập hoặc soạn trả lời bằng AI.' },
   gmail_from: { en: 'From:', vi: 'Từ:' },
+  gmail_connected_fallback: { en: 'Gmail connected', vi: 'Đã kết nối Gmail' },
+  gmail_not_connected: { en: 'Gmail is not connected.', vi: 'Chưa kết nối Gmail.' },
   // ——— GoogleDriveTab (drive_) ———
   drive_all: { en: 'All Files', vi: 'Tất cả tệp' },
   drive_docs: { en: 'Docs', vi: 'Docs' },

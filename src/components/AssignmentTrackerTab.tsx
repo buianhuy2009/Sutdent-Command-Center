@@ -381,7 +381,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
           {/* Search Box */}
           <div className="relative w-full sm:w-44">
-            <Search className="w-3.5 h-3.5 text-[#8C897F] absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-[#8C897F] dark:text-[#B5B2A8] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
@@ -397,8 +397,8 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
               onClick={() => setViewMode('table')}
               className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-white dark:bg-[#252422] text-[#C96442] shadow-2xs'
-                  : 'text-[#8C897F] hover:text-[#141413] dark:hover:text-[#F5F4ED]'
+                  ? 'bg-white dark:bg-[#252422] text-[#C96442] dark:text-[#E59A7C] shadow-2xs'
+                  : 'text-[#8C897F] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#F5F4ED]'
               }`}
               title="Table List View"
             >
@@ -408,8 +408,8 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
               onClick={() => setViewMode('kanban')}
               className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 viewMode === 'kanban'
-                  ? 'bg-white dark:bg-[#252422] text-[#C96442] shadow-2xs'
-                  : 'text-[#8C897F] hover:text-[#141413] dark:hover:text-[#F5F4ED]'
+                  ? 'bg-white dark:bg-[#252422] text-[#C96442] dark:text-[#E59A7C] shadow-2xs'
+                  : 'text-[#8C897F] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#F5F4ED]'
               }`}
               title="Kanban Board View"
             >
@@ -437,7 +437,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             className="px-3 py-1.5 bg-[#E8E6DC] dark:bg-[#252422] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] text-[#141413] dark:text-[#F5F4ED] text-xs font-bold rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             title="Sync with Google Sheet"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#C96442] ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-[#C96442] dark:text-[#E59A7C] ${isLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{isLoading ? t('syncing') : t('sync_sheet')}</span>
           </button>
 
@@ -450,7 +450,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                 : 'bg-[#E8E6DC] dark:bg-[#252422] text-[#5C5A54] dark:text-[#B5B2A8] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] border-[#E8E6DC] dark:border-[#2C2B27]'
             }`}
           >
-            <Sparkles className={`w-3.5 h-3.5 ${showAiAdd ? 'text-white' : 'text-[#C96442]'}`} />
+            <Sparkles className={`w-3.5 h-3.5 ${showAiAdd ? 'text-white' : 'text-[#C96442] dark:text-[#E59A7C]'}`} />
             <span className="hidden sm:inline">{t('smart_add')}</span>
           </button>
 
@@ -503,7 +503,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             className="px-3 py-1.5 bg-[#E8E6DC] dark:bg-[#252422] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] text-[#141413] dark:text-[#F5F4ED] text-xs font-bold rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] transition-all flex items-center gap-1.5 cursor-pointer"
             title="Export currently filtered rows to CSV"
           >
-            <FileText className="w-3.5 h-3.5 text-[#C96442]" />
+            <FileText className="w-3.5 h-3.5 text-[#C96442] dark:text-[#E59A7C]" />
             <span>{t('export_csv')}</span>
           </button>
           {sheetUrl && (
@@ -514,7 +514,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
               className="px-2.5 py-1.5 bg-[#E8E6DC] dark:bg-[#252422] hover:bg-[#E8E6DC] dark:hover:bg-[#2C2A26] text-[#5C5A54] dark:text-[#B5B2A8] text-xs font-semibold rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] transition-all flex items-center gap-1 cursor-pointer"
               title="Open Google Sheet in new tab"
             >
-              <ExternalLink className="w-3.5 h-3.5 text-[#0F9D58]" />
+              <ExternalLink className="w-3.5 h-3.5 text-[#0F9D58] dark:text-[#4ADE80]" />
               <span className="text-[11px]">{t('open_sheet')}</span>
             </a>
           )}
@@ -527,7 +527,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
           onSubmit={handleQuickSubmit}
           className="bg-white dark:bg-[#1A1917] border border-[#E8E6DC] dark:border-[#2C2B27] rounded-2xl p-3 shadow-xs flex items-center gap-2 animate-in fade-in flex-wrap"
         >
-          <Sparkles className="w-4 h-4 text-[#C96442] shrink-0 ml-1" />
+          <Sparkles className="w-4 h-4 text-[#C96442] dark:text-[#E59A7C] shrink-0 ml-1" />
           <input
             type="text"
             value={quickInput}
@@ -542,7 +542,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             className="px-3 py-1.5 bg-[#E8E6DC] dark:bg-[#252422] hover:bg-[#E8E6DC] text-xs font-bold rounded-xl border border-[#E8E6DC] dark:border-[#2C2B27] transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
             title="AI Dynamic Priority & Effort Matrix"
           >
-            <Zap className={`w-3.5 h-3.5 text-[#C96442] ${isEstimating ? 'animate-bounce' : ''}`} />
+            <Zap className={`w-3.5 h-3.5 text-[#C96442] dark:text-[#E59A7C] ${isEstimating ? 'animate-bounce' : ''}`} />
             <span>{isEstimating ? '…' : sortByAIFocus ? '✓ AI' : 'AI Rank'}</span>
           </button>
           <button
@@ -579,7 +579,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                     <h3 className="text-xs font-bold uppercase tracking-wider text-[#141413] dark:text-[#F5F4ED]">
                       {col.label}
                     </h3>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8E6DC] dark:bg-[#252422] text-[#8C897F] border border-[#E8E6DC] dark:border-[#2C2B27]">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8E6DC] dark:bg-[#252422] text-[#8C897F] dark:text-[#B5B2A8] border border-[#E8E6DC] dark:border-[#2C2B27]">
                       {colTasks.length}
                     </span>
                   </div>
@@ -588,7 +588,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                 {/* Cards Container */}
                 <div className="flex-1 space-y-2.5 overflow-y-auto max-h-[600px] pr-1">
                   {colTasks.length === 0 ? (
-                    <div className="py-12 text-center text-[11px] text-[#8C897F]">
+                    <div className="py-12 text-center text-[11px] text-[#8C897F] dark:text-[#B5B2A8]">
                       No tasks in {col.label.toLowerCase()}
                     </div>
                   ) : (
@@ -623,14 +623,14 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
 
                           <h4
                             className={`text-xs font-bold text-[#141413] dark:text-[#F5F4ED] leading-snug line-clamp-2 ${
-                              isDone ? 'line-through text-[#8C897F]' : ''
+                              isDone ? 'line-through text-[#8C897F] dark:text-[#B5B2A8]' : ''
                             }`}
                           >
                             {task.assignmentName}
                           </h4>
 
                           {effortEstimates[task.id] && (
-                            <div className="text-[10px] text-[#C96442] font-semibold flex items-center gap-1">
+                            <div className="text-[10px] text-[#C96442] dark:text-[#E59A7C] font-semibold flex items-center gap-1">
                               <Zap className="w-3 h-3" />
                               <span>Est. {effortEstimates[task.id].estimatedMinutes} min</span>
                             </div>
@@ -638,7 +638,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
 
                           {/* Footer with Due Date & Status Mover */}
                           <div
-                            className="flex items-center justify-between pt-2 border-t border-[#E8E6DC]/40 dark:border-[#2C2B27]/40 text-[11px] text-[#8C897F]"
+                            className="flex items-center justify-between pt-2 border-t border-[#E8E6DC]/40 dark:border-[#2C2B27]/40 text-[11px] text-[#8C897F] dark:text-[#B5B2A8]"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <span className="flex items-center gap-1.5 flex-wrap">
@@ -676,7 +676,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                               {col.id === 'Done' && (
                                 <button
                                   onClick={() => onUpdateStatus(task, 'Not Started')}
-                                  className="px-2 py-0.5 rounded bg-white dark:bg-[#252422] border border-[#E8E6DC] text-[10px] font-bold text-[#8C897F] hover:text-[#141413] dark:hover:text-[#F5F4ED] transition-colors"
+                                  className="px-2 py-0.5 rounded bg-white dark:bg-[#252422] border border-[#E8E6DC] text-[10px] font-bold text-[#8C897F] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#F5F4ED] transition-colors"
                                   title="Reopen"
                                 >
                                   Reopen
@@ -697,12 +697,12 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
         /* TABLE VIEW */
         <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] overflow-hidden shadow-xs">
           {isLoading ? (
-            <div className="p-16 text-center text-[#8C897F] flex flex-col items-center justify-center gap-2">
-              <RefreshCw className="w-6 h-6 animate-spin text-[#C96442]" />
+            <div className="p-16 text-center text-[#8C897F] dark:text-[#B5B2A8] flex flex-col items-center justify-center gap-2">
+              <RefreshCw className="w-6 h-6 animate-spin text-[#C96442] dark:text-[#E59A7C]" />
               <span className="text-xs font-semibold">Syncing master sheet...</span>
             </div>
           ) : filteredAssignments.length === 0 ? (
-            <div className="p-16 text-center text-[#8C897F] space-y-2">
+            <div className="p-16 text-center text-[#8C897F] dark:text-[#B5B2A8] space-y-2">
               <CheckSquare className="w-8 h-8 mx-auto opacity-40" />
               <p className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">
                 No tasks found in this view
@@ -721,8 +721,8 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 truncate">{a.subject}</span>
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${a.priority==='High'?'bg-rose-50 text-rose-700 border border-rose-200':'bg-slate-100 text-slate-600'}`}>{a.priority}</span>
                     </div>
-                    <div className={`text-xs font-bold truncate ${isDone?'line-through text-[#6B6860]':''}`}>{a.assignmentName}</div>
-                    <div className="flex items-center justify-between text-[11px] text-[#6B6860]">
+                    <div className={`text-xs font-bold truncate ${isDone?'line-through text-[#6B6860] dark:text-[#B5B2A8]':''}`}>{a.assignmentName}</div>
+                    <div className="flex items-center justify-between text-[11px] text-[#6B6860] dark:text-[#B5B2A8]">
                       <span className="flex items-center gap-1.5 flex-wrap">
                         <span>Due {a.dueDate || 'No date'}</span>
                         {urgency && (
@@ -740,7 +740,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#E8E6DC]/80 dark:border-[#2C2B27]/80 bg-[#E8E6DC] dark:bg-[#1F1E1B] text-[10px] font-bold uppercase tracking-wider text-[#6B6860]">
+                  <tr className="border-b border-[#E8E6DC]/80 dark:border-[#2C2B27]/80 bg-[#E8E6DC] dark:bg-[#1F1E1B] text-[10px] font-bold uppercase tracking-wider text-[#6B6860] dark:text-[#B5B2A8]">
                     <th className="py-2.5 px-3 w-10 text-center">Done</th>
                     <th className="py-2.5 px-3 w-32">Subject</th>
                     <th className="py-2.5 px-3">Assignment Name</th>
@@ -768,7 +768,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                         <td className="py-1.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => handleStatusClick(assignment)}
-                            className="text-[#8C897F] hover:text-[#C96442] transition-colors"
+                            className="text-[#8C897F] dark:text-[#B5B2A8] hover:text-[#C96442] dark:hover:text-[#E59A7C] transition-colors"
                           >
                             {isDone ? (
                               <CheckCircle className="w-4 h-4 text-emerald-600 fill-emerald-100 dark:fill-emerald-950" />
@@ -792,7 +792,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                               {assignment.assignmentName}
                             </span>
                             {effortEstimates[assignment.id] && (
-                              <span className="text-[10px] text-[#C96442] font-mono shrink-0">
+                              <span className="text-[10px] text-[#C96442] dark:text-[#E59A7C] font-mono shrink-0">
                                 (~{effortEstimates[assignment.id].estimatedMinutes}m)
                               </span>
                             )}
@@ -800,7 +800,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                         </td>
 
                         {/* Due Date */}
-                        <td className="py-1.5 px-3 whitespace-nowrap text-[11px] text-[#8C897F]">
+                        <td className="py-1.5 px-3 whitespace-nowrap text-[11px] text-[#8C897F] dark:text-[#B5B2A8]">
                           <span className="inline-flex items-center gap-1.5">
                             <span>{assignment.dueDate || 'No Due Date'}</span>
                             {urgency && (
@@ -826,7 +826,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                         <td className="py-1.5 px-3 text-right" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => setSelectedAssignment(assignment)}
-                            className="p-1 text-[#8C897F] hover:text-[#C96442] rounded-lg hover:bg-[#E8E6DC] dark:hover:bg-[#252422]"
+                            className="p-1 text-[#8C897F] dark:text-[#B5B2A8] hover:text-[#C96442] dark:hover:text-[#E59A7C] rounded-lg hover:bg-[#E8E6DC] dark:hover:bg-[#252422]"
                             title="Inspect Details"
                           >
                             <ChevronRight className="w-4 h-4" />
@@ -856,7 +856,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
 
             <button
               onClick={() => setSelectedAssignment(null)}
-              className="p-1.5 text-[#8C897F] hover:bg-[#E8E6DC] dark:hover:bg-[#252422] rounded-lg cursor-pointer"
+              className="p-1.5 text-[#8C897F] dark:text-[#B5B2A8] hover:bg-[#E8E6DC] dark:hover:bg-[#252422] rounded-lg cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -867,7 +867,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
               <h3 className="text-sm font-bold text-[#141413] dark:text-[#F5F4ED] mb-2">
                 {selectedAssignment.assignmentName}
               </h3>
-              <div className="space-y-1 text-[#8C897F] text-[11px]">
+              <div className="space-y-1 text-[#8C897F] dark:text-[#B5B2A8] text-[11px]">
                 <div className="flex items-center justify-between">
                   <span>Status:</span>
                   <span className="font-semibold text-[#141413] dark:text-[#F5F4ED]">{selectedAssignment.status}</span>
@@ -886,14 +886,14 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
             {/* AI Estimation Card if present */}
             {effortEstimates[selectedAssignment.id] && (
               <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-2">
-                <div className="flex items-center gap-1.5 font-bold text-[#C96442]">
+                <div className="flex items-center gap-1.5 font-bold text-[#C96442] dark:text-[#E59A7C]">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>AI Effort Matrix</span>
                 </div>
                 <div className="text-[11px] text-[#5C5A54] dark:text-[#B5B2A8]">
                   {effortEstimates[selectedAssignment.id].aiTip}
                 </div>
-                <div className="flex items-center gap-2 pt-1 text-[10px] text-[#8C897F]">
+                <div className="flex items-center gap-2 pt-1 text-[10px] text-[#8C897F] dark:text-[#B5B2A8]">
                   <span>Est. Time: {effortEstimates[selectedAssignment.id].estimatedMinutes} mins</span>
                   <span>•</span>
                   <span>Risk Score: {effortEstimates[selectedAssignment.id].riskScore}/10</span>
@@ -934,7 +934,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                 className="px-3 py-1.5 bg-[#E8E6DC] dark:bg-[#252422] border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] text-[#141413] dark:text-[#F5F4ED] rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
                 title="AI Cognitive Deconstruction"
               >
-                <Brain className="w-3.5 h-3.5 text-[#C96442]" />
+                <Brain className="w-3.5 h-3.5 text-[#C96442] dark:text-[#E59A7C]" />
                 <span>Why Is This Hard?</span>
               </button>
 
@@ -945,7 +945,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                 }}
                 className="px-3 py-1.5 bg-white dark:bg-[#252422] border border-[#E8E6DC] dark:border-[#2C2B27] hover:border-[#C96442] text-[#141413] dark:text-[#F5F4ED] rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                <Calendar className="w-3.5 h-3.5 text-[#C96442]" />
+                <Calendar className="w-3.5 h-3.5 text-[#C96442] dark:text-[#E59A7C]" />
                 <span>Schedule Block</span>
               </button>
             </div>
@@ -982,7 +982,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
               <h3 className="text-sm font-bold text-[#141413] dark:text-[#F5F4ED]">New Assignment</h3>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-[#8C897F] hover:text-[#141413] dark:hover:text-[#F5F4ED]"
+                className="text-[#8C897F] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#F5F4ED]"
               >
                 <X className="w-4 h-4" />
               </button>

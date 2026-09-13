@@ -157,7 +157,7 @@ export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({
             <option value="OLDEST">{t('drive_sort_oldest')}</option>
           </select>
           <div className="relative w-full sm:w-48">
-            <Search className="w-3.5 h-3.5 text-[#8C897F] absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-[#8C897F] dark:text-[#B5B2A8] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
@@ -173,7 +173,7 @@ export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({
             className="p-1.5 bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] text-[#5C5A54] dark:text-[#B5B2A8] rounded-xl transition-colors cursor-pointer"
             title={t('drive_refresh')}
           >
-            <RefreshCw className={`w-4 h-4 ${isLoadingFiles ? 'animate-spin text-[#D97757]' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isLoadingFiles ? 'animate-spin text-[#D97757] dark:text-[#E59A7C]' : ''}`} />
           </button>
         </div>
       </div>
@@ -197,19 +197,19 @@ export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({
         
         {/* LEFT MASTER PANE: Compact File List */}
         <div className="w-full md:w-80 lg:w-96 border-r border-[#DFDACB] dark:border-[#2C2B27] flex flex-col bg-[#FAF9F5] dark:bg-[#1F1E1B] overflow-hidden">
-          <div className="p-3 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60 flex items-center justify-between text-xs font-bold text-[#8C897F]">
+          <div className="p-3 border-b border-[#DFDACB]/60 dark:border-[#2C2B27]/60 flex items-center justify-between text-xs font-bold text-[#8C897F] dark:text-[#B5B2A8]">
             <span>{t('drive_items')}</span>
             <span>{filteredFiles.length} {t('drive_files')}</span>
           </div>
 
           <div className="flex-1 overflow-y-auto divide-y divide-[#DFDACB]/40 dark:divide-[#2C2B27]/40">
             {isLoadingFiles ? (
-              <div className="p-12 text-center text-[#8C897F] flex flex-col items-center justify-center gap-2">
-                <RefreshCw className="w-5 h-5 animate-spin text-[#D97757]" />
+              <div className="p-12 text-center text-[#8C897F] dark:text-[#B5B2A8] flex flex-col items-center justify-center gap-2">
+                <RefreshCw className="w-5 h-5 animate-spin text-[#D97757] dark:text-[#E59A7C]" />
                 <span className="text-xs">{t('drive_indexing')}</span>
               </div>
             ) : filteredFiles.length === 0 ? (
-              <div className="p-12 text-center text-[#8C897F] text-xs">
+              <div className="p-12 text-center text-[#8C897F] dark:text-[#B5B2A8] text-xs">
                 {t('drive_empty')}
               </div>
             ) : (
@@ -231,7 +231,7 @@ export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({
                       <div className="text-xs text-[#141413] dark:text-[#FAF9F5] font-semibold truncate mb-0.5">
                         {file.name}
                       </div>
-                      <div className="flex items-center gap-2 text-[10px] text-[#8C897F]">
+                      <div className="flex items-center gap-2 text-[10px] text-[#8C897F] dark:text-[#B5B2A8]">
                         <span className={`px-1.5 py-0.2 rounded font-bold ${fileType.bg}`}>
                           {fileType.label}
                         </span>
@@ -258,7 +258,7 @@ export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({
                   <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5] leading-snug">
                     {activeFile.name}
                   </h3>
-                  <div className="flex items-center gap-2 text-xs text-[#8C897F]">
+                  <div className="flex items-center gap-2 text-xs text-[#8C897F] dark:text-[#B5B2A8]">
                     <span>{t('drive_type')} <strong className="text-[#141413] dark:text-[#FAF9F5]">{getFileTypeDetails(activeFile.mimeType).label}</strong></span>
                     {activeFile.modifiedTime && (
                       <>
@@ -288,10 +288,10 @@ export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({
                 {/* 1-Click Peer Sharing Card */}
                 <div className="p-5 bg-[#FAF9F5] dark:bg-[#1F1E1B] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-3">
                   <div className="flex items-center gap-2 font-bold text-[#141413] dark:text-[#FAF9F5]">
-                    <Share2 className="w-4 h-4 text-[#D97757]" />
+                    <Share2 className="w-4 h-4 text-[#D97757] dark:text-[#E59A7C]" />
                     <span>{t('drive_share_title')}</span>
                   </div>
-                  <p className="text-[11px] text-[#8C897F]">
+                  <p className="text-[11px] text-[#8C897F] dark:text-[#B5B2A8]">
                     {t('drive_share_desc')}
                   </p>
 
@@ -322,10 +322,10 @@ export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({
 
                 {/* File Details */}
                 <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#8C897F] block">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#8C897F] dark:text-[#B5B2A8] block">
                     {t('drive_identifiers')}
                   </span>
-                  <div className="space-y-1 text-[#8C897F] text-[11px] font-mono">
+                  <div className="space-y-1 text-[#8C897F] dark:text-[#B5B2A8] text-[11px] font-mono">
                     <div>ID: {activeFile.id}</div>
                     <div>MIME: {activeFile.mimeType}</div>
                   </div>
@@ -333,7 +333,7 @@ export const GoogleDriveTab: React.FC<GoogleDriveTabProps> = ({
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-[#8C897F] text-center space-y-2">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-[#8C897F] dark:text-[#B5B2A8] text-center space-y-2">
               <HardDrive className="w-10 h-10 opacity-30" />
               <p className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">{t('drive_select_title')}</p>
               <p className="text-[11px] max-w-xs">{t('drive_select_hint')}</p>

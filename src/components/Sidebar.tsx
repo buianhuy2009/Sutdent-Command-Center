@@ -191,7 +191,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {isExpanded && (
                         <div className="text-left min-w-0">
                           <div className="text-xs truncate leading-tight">{meta.label || app.name}</div>
-                          <div className={`text-[10px] truncate ${isActive ? 'text-[#E05D38]/70' : 'text-[#70695E] dark:text-[#B5B2A8]'}`}>
+                          <div className={`text-[10px] truncate ${isActive ? 'text-[#E05D38]/70 dark:text-[#E59A7C]/70' : 'text-[#70695E] dark:text-[#B5B2A8]'}`}>
                             {meta.desc || app.category}
                           </div>
                         </div>
@@ -248,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {isExpanded && (
                         <div className="text-left min-w-0">
                           <div className="text-xs truncate leading-tight">{app.name}</div>
-                          <div className={`text-[10px] truncate ${isActive ? 'text-[#E05D38]/70' : 'text-[#70695E] dark:text-[#B5B2A8]'}`}>{app.category}</div>
+                          <div className={`text-[10px] truncate ${isActive ? 'text-[#E05D38]/70 dark:text-[#E59A7C]/70' : 'text-[#70695E] dark:text-[#B5B2A8]'}`}>{app.category}</div>
                         </div>
                       )}
                     </div>
@@ -265,7 +265,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="pt-2 relative group/add">
           <button
             onClick={onOpenAppStore}
-            className={`w-full rounded-xl flex items-center transition-all cursor-pointer border border-dashed border-[#70695E]/40 dark:border-[#2C2B27] hover:border-[#2B2621] text-[#2B2621] dark:text-[#B5B2A8] hover:text-[#2B2621] ${
+            className={`w-full rounded-xl flex items-center transition-all cursor-pointer border border-dashed border-[#70695E]/40 dark:border-[#2C2B27] hover:border-[#2B2621] text-[#2B2621] dark:text-[#B5B2A8] hover:text-[#2B2621] dark:hover:text-[#F5F4ED] ${
               isExpanded ? 'px-3 py-2.5 gap-2.5 text-xs font-semibold min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'
             }`}
             title="Open App Store"
@@ -287,7 +287,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
           aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
           aria-pressed={darkMode}
-          className={`rounded-xl flex items-center transition-colors cursor-pointer border border-transparent hover:border-[#70695E]/30 dark:hover:border-[#2C2B27] hover:bg-white/50 dark:hover:bg-[#252422] text-[#2B2621] hover:text-[#2B2621] dark:hover:text-[#F5F4ED] ${
+          className={`rounded-xl flex items-center transition-colors cursor-pointer border border-transparent hover:border-[#70695E]/30 dark:hover:border-[#2C2B27] hover:bg-white/50 dark:hover:bg-[#252422] text-[#2B2621] dark:text-[#F5F4ED] hover:text-[#2B2621] dark:hover:text-[#F5F4ED] ${
             isExpanded ? 'w-full px-3 py-2 gap-2.5 text-xs font-semibold min-h-[44px]' : 'w-11 h-11 mx-auto justify-center'
           }`}
         >
@@ -302,7 +302,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {!isExpanded && (
           <button
             onClick={onToggleExpand}
-            className="w-11 h-11 mx-auto rounded-xl bg-white/40 hover:bg-white/70 dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#2B2621] hover:text-[#2B2621] dark:hover:text-[#F5F4ED] flex items-center justify-center transition-colors cursor-pointer border border-[#70695E]/30 dark:border-[#2C2B27]"
+            className="w-11 h-11 mx-auto rounded-xl bg-white/40 hover:bg-white/70 dark:bg-[#252422]/60 dark:hover:bg-[#252422] text-[#2B2621] dark:text-[#F5F4ED] hover:text-[#2B2621] dark:hover:text-[#F5F4ED] flex items-center justify-center transition-colors cursor-pointer border border-[#70695E]/30 dark:border-[#2C2B27]"
             title="Expand Sidebar"
           >
             <ChevronRight className="w-4 h-4" strokeWidth={1.75} />

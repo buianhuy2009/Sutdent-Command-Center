@@ -183,7 +183,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
               <h2 className="text-base font-extrabold text-[#141413] dark:text-[#FAF9F5]">
                 AI Daily Study Plan Generator
               </h2>
-              <p className="text-xs text-[#8C897F]">
+              <p className="text-xs text-[#8C897F] dark:text-[#B5B2A8]">
                 Input your deadlines and let AI construct a prioritised hour-by-hour plan
               </p>
             </div>
@@ -191,7 +191,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] hover:border-[#D97757] transition-all cursor-pointer"
+            className="p-2 rounded-xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[#8C897F] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#FAF9F5] hover:border-[#D97757] transition-all cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -205,12 +205,12 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
             
             {/* Start Time & Target Duration */}
             <div className="space-y-3">
-              <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F] block">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F] dark:text-[#B5B2A8] block">
                 Session Timing
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <div className="p-3 bg-white dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-1">
-                  <span className="text-[10px] text-[#8C897F] font-bold block">Start Time</span>
+                  <span className="text-[10px] text-[#8C897F] dark:text-[#B5B2A8] font-bold block">Start Time</span>
                   <input
                     type="time"
                     value={startTime}
@@ -220,7 +220,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                 </div>
 
                 <div className="p-3 bg-white dark:bg-[#1F1E1B] rounded-xl border border-[#DFDACB] dark:border-[#2C2B27] space-y-1">
-                  <span className="text-[10px] text-[#8C897F] font-bold block">Total Hours</span>
+                  <span className="text-[10px] text-[#8C897F] dark:text-[#B5B2A8] font-bold block">Total Hours</span>
                   <select
                     value={targetHours}
                     onChange={(e) => setTargetHours(Number(e.target.value))}
@@ -238,7 +238,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
 
             {/* Pacing & Strategy */}
             <div className="space-y-3">
-              <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F] block">
+              <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F] dark:text-[#B5B2A8] block">
                 Pacing &amp; Rhythm
               </label>
               <div className="grid grid-cols-3 gap-1.5 bg-[#EFECE2]/50 dark:bg-[#252422]/50 p-1.5 rounded-xl border border-[#DFDACB] dark:border-[#2C2B27]">
@@ -267,14 +267,14 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
             {/* Select Target Deadlines */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F]">
+                <label className="text-xs font-bold uppercase tracking-wider text-[#8C897F] dark:text-[#B5B2A8]">
                   Target Deadlines ({selectedAssignmentIds.length})
                 </label>
               </div>
 
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {pendingAssignments.length === 0 ? (
-                  <p className="text-xs text-[#8C897F] py-2">No pending assignments loaded.</p>
+                  <p className="text-xs text-[#8C897F] dark:text-[#B5B2A8] py-2">No pending assignments loaded.</p>
                 ) : (
                   pendingAssignments.map((a) => {
                     const isSelected = selectedAssignmentIds.includes(a.id);
@@ -292,7 +292,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                           <p className="font-bold text-[#141413] dark:text-[#FAF9F5] truncate">
                             {a.assignmentName}
                           </p>
-                          <span className="text-[10px] text-[#8C897F]">
+                          <span className="text-[10px] text-[#8C897F] dark:text-[#B5B2A8]">
                             {a.subject || 'Course'} • Due {a.dueDate || 'Soon'}
                           </span>
                         </div>
@@ -300,7 +300,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => {}}
-                          className="w-3.5 h-3.5 rounded text-[#D97757] focus:ring-[#D97757] pointer-events-none"
+                          className="w-3.5 h-3.5 rounded text-[#D97757] dark:text-[#E59A7C] focus:ring-[#D97757] pointer-events-none"
                         />
                       </div>
                     );
@@ -325,13 +325,13 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
             
             {planBlocks.length === 0 ? (
               <div className="my-auto text-center space-y-3 py-16">
-                <div className="w-12 h-12 rounded-3xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-center mx-auto text-[#D97757]">
+                <div className="w-12 h-12 rounded-3xl bg-[#FAF9F5] dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-center mx-auto text-[#D97757] dark:text-[#E59A7C]">
                   <Clock className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-bold text-[#141413] dark:text-[#FAF9F5]">
                   Ready to optimize today's study blocks
                 </h3>
-                <p className="text-xs text-[#8C897F] max-w-sm mx-auto leading-relaxed">
+                <p className="text-xs text-[#8C897F] dark:text-[#B5B2A8] max-w-sm mx-auto leading-relaxed">
                   Select your available timing and target deadlines on the left, then click Generate to get an hour-by-hour breakdown.
                 </p>
               </div>
@@ -341,7 +341,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                 {/* Summary Banner */}
                 <div className="p-4 rounded-2xl bg-[#FAF9F5] dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] flex items-start justify-between gap-4">
                   <div className="space-y-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#D97757] flex items-center gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#D97757] dark:text-[#E59A7C] flex items-center gap-1">
                       <Brain className="w-3.5 h-3.5" />
                       <span>Optimized Cognitive Flow</span>
                     </span>
@@ -352,7 +352,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
 
                   <button
                     onClick={handleCopyPlan}
-                    className="p-2 rounded-xl bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[#8C897F] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors cursor-pointer shrink-0"
+                    className="p-2 rounded-xl bg-white dark:bg-[#252422] border border-[#DFDACB] dark:border-[#2C2B27] text-[#8C897F] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors cursor-pointer shrink-0"
                     title="Copy Schedule"
                   >
                     {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
@@ -379,7 +379,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                             <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5]">
                               {block.assignmentTitle}
                             </h4>
-                            <span className="text-[10px] font-semibold text-[#8C897F]">
+                            <span className="text-[10px] font-semibold text-[#8C897F] dark:text-[#B5B2A8]">
                               ({block.courseName})
                             </span>
                           </div>
@@ -413,7 +413,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
             {/* Bottom Actions Bar */}
             {planBlocks.length > 0 && (
               <div className="pt-4 border-t border-[#DFDACB] dark:border-[#2C2B27] flex items-center justify-between gap-3 shrink-0">
-                <span className="text-xs text-[#8C897F]">
+                <span className="text-xs text-[#8C897F] dark:text-[#B5B2A8]">
                   {planBlocks.filter((b) => !b.isBreak).length} Focus Blocks • {planBlocks.filter((b) => b.isBreak).length} Rest Breaks
                 </span>
 

@@ -168,7 +168,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
       {/* Top Clean Header */}
       <div className="bg-white dark:bg-[#1A1917] rounded-2xl p-5 border border-[#DFDACB] dark:border-[#2C2B27] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#D97757]/15 text-[#D97757] flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#D97757]/15 text-[#D97757] dark:text-[#E59A7C] flex items-center justify-center shrink-0">
             <CalendarIcon className="w-5 h-5" />
           </div>
           <div>
@@ -179,7 +179,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                 day: 'numeric',
               })}
             </h2>
-            <p className="text-xs text-[#6B6860] mt-0.5">
+            <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] mt-0.5">
               {events.length} {events.length === 1 ? t('radar_event_1') : t('radar_events')} {t('radar_scheduled_today')}
             </p>
           </div>
@@ -191,7 +191,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
             className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border ${
               showChronotypePanel
                 ? 'bg-[#D97757] text-white border-[#D97757] shadow-xs'
-                : 'bg-[#D97757]/10 text-[#D97757] hover:bg-[#D97757]/20 border-[#D97757]/30'
+                : 'bg-[#D97757]/10 text-[#D97757] dark:text-[#E59A7C] hover:bg-[#D97757]/20 border-[#D97757]/30'
             }`}
             title={t('radar_chrono_title')}
           >
@@ -210,7 +210,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
           <button
             id="btn-refresh-schedule-radar"
             onClick={onRefreshEvents}
-            className="p-1.5 rounded-xl hover:bg-[#FAF9F5] dark:hover:bg-[#252422] text-[#8C897F] hover:text-[#D97757] transition-colors cursor-pointer border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27]"
+            className="p-1.5 rounded-xl hover:bg-[#FAF9F5] dark:hover:bg-[#252422] text-[#8C897F] dark:text-[#B5B2A8] hover:text-[#D97757] dark:hover:text-[#E59A7C] transition-colors cursor-pointer border border-transparent hover:border-[#DFDACB] dark:hover:border-[#2C2B27]"
             title={t('radar_sync_title')}
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -225,7 +225,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
               <h4 className="text-xs font-bold text-[#141413] dark:text-[#FAF9F5] uppercase tracking-wider">
                 {t('radar_peak')}
               </h4>
-              <p className="text-[10px] text-[#6B6860] mt-0.5">
+              <p className="text-[10px] text-[#6B6860] dark:text-[#B5B2A8] mt-0.5">
                 {t('radar_peak_hint')}
               </p>
             </div>
@@ -352,7 +352,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                       <button
                         onClick={() => handleApplySlot(slot, idx)}
                         disabled={schedulingSlotIndex === idx}
-                        className="w-full py-1.5 px-3 bg-[#D97757]/10 dark:bg-[#D97757]/15 hover:bg-[#D97757] text-[#D97757] hover:text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 border border-[#D97757]/30 transition-colors cursor-pointer"
+                        className="w-full py-1.5 px-3 bg-[#D97757]/10 dark:bg-[#D97757]/15 hover:bg-[#D97757] text-[#D97757] dark:text-[#E59A7C] hover:text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 border border-[#D97757]/30 transition-colors cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>{schedulingSlotIndex === idx ? t('radar_scheduling') : t('radar_add_to_cal')}</span>
@@ -405,7 +405,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
         <div className="mt-5 space-y-3.5">
           {!isGoogleConnected ? (
             <div className="py-12 px-4 text-center bg-[#FAF9F5] dark:bg-[#252422]/60 rounded-xl border border-dashed border-[#DFDACB] dark:border-[#2C2B27]">
-              <CalendarIcon className="w-10 h-10 mx-auto text-[#D97757] mb-2 opacity-80" />
+              <CalendarIcon className="w-10 h-10 mx-auto text-[#D97757] dark:text-[#E59A7C] mb-2 opacity-80" />
               <h3 className="text-sm font-bold text-[#141413] dark:text-[#FAF9F5]">{t('radar_disconnected')}</h3>
               <p className="text-xs text-[#6B6860] dark:text-[#B5B2A8] mt-1 max-w-md mx-auto">
                 {t('radar_disconnected_hint')}
@@ -422,7 +422,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
             </div>
           ) : isLoadingEvents ? (
             <div className="py-16 flex flex-col items-center justify-center text-[#6B6860] dark:text-[#B5B2A8]">
-              <RefreshCw className="w-7 h-7 animate-spin text-[#D97757] mb-2" />
+              <RefreshCw className="w-7 h-7 animate-spin text-[#D97757] dark:text-[#E59A7C] mb-2" />
               <p className="text-xs font-semibold text-[#6B6860] dark:text-[#B5B2A8]">
                 {t('radar_syncing')}
               </p>
@@ -482,9 +482,9 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                         <div className="flex items-center gap-2 flex-wrap">
                           <div className="flex items-center gap-1">
                             {event.isCanvas && (
-                              <svg className="w-3.5 h-3.5 text-[#D97757] shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                                <circle cx="12" cy="12" r="10" className="text-[#D97757]/20" />
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" className="text-[#D97757]" />
+                              <svg className="w-3.5 h-3.5 text-[#D97757] dark:text-[#E59A7C] shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10" className="text-[#D97757]/20 dark:text-[#E59A7C]/20" />
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" className="text-[#D97757] dark:text-[#E59A7C]" />
                               </svg>
                             )}
                             <h4
@@ -546,7 +546,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
                             rel="noreferrer"
                               className={`p-1.5 rounded-lg transition-colors ${
                                 event.isCanvas
-                                  ? 'text-[#D97757] hover:bg-[#D97757]/10'
+                                  ? 'text-[#D97757] dark:text-[#E59A7C] hover:bg-[#D97757]/10'
                                   : 'text-[#6B6860] hover:text-[#141413] dark:text-[#B5B2A8] dark:hover:text-[#FAF9F5]'
                               }`}
                             title={event.isCanvas ? t('radar_open_canvas') : t('radar_open_gcal')}
@@ -576,7 +576,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
             href="https://calendar.google.com"
             target="_blank"
             rel="noreferrer"
-            className="font-medium hover:text-[#D97757] inline-flex items-center gap-1"
+            className="font-medium hover:text-[#D97757] dark:hover:text-[#E59A7C] inline-flex items-center gap-1"
           >
             <span>{t('radar_open_gcal_btn')}</span>
             <ExternalLink className="w-3 h-3" />
@@ -592,7 +592,7 @@ export const DailyRadarTab: React.FC<DailyRadarTabProps> = ({
             className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] hover:border-[#D97757] transition-all cursor-pointer shadow-xs group flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#D97757]/15 text-[#D97757] flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-[#D97757]/15 text-[#D97757] dark:text-[#E59A7C] flex items-center justify-center shrink-0">
                 <Layers className="w-4 h-4" />
               </div>
               <div>
