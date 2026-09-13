@@ -31,6 +31,7 @@ export const ArxivWorkspace: React.FC = () => {
   const [category, setCategory] = useState('all');
   const [papers, setPapers] = useState<ArxivPaper[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedPaper, setSelectedPaper] = useState<ArxivPaper | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -41,6 +42,7 @@ export const ArxivWorkspace: React.FC = () => {
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setIsLoading(true);
+    setError(null);
     try {
       const results = await searchArxiv(query, category);
       setPapers(results);
@@ -49,6 +51,7 @@ export const ArxivWorkspace: React.FC = () => {
       }
     } catch (err) {
       console.error('arXiv search failed:', err);
+      setError('Search failed. Check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +73,15 @@ export const ArxivWorkspace: React.FC = () => {
       const newNote = { id: `note-${Date.now()}`, title: `arXiv: ${paper.title.slice(0, 60)}`, subject: paper.primaryCategory || 'Research', content, updatedAt: new Date().toLocaleDateString() };
       localStorage.setItem('scc_markdown_notes_v1', JSON.stringify([newNote, ...notes]));
       // bibliography
-      import('../../services/bibliography').then(m=> m.addBibEntry({ id:`bib-${Date.now()}`, type:'article', title: paper.title, authors: paper.authors.join(', '), year: paper.published.slice(-4)||'2025', journal:'arXiv:'+paper.primaryCategory, url: paper.pdfUrl }));
+      import('../../services/bibliography').then(m=> {
+        const authors = paper.authors.join(', ');
+        const year = paper.published.slice(-4)||'2025';
+        const apa = `${authors} (${year}). ${paper.title}. arXiv:${paper.primaryCategory}. ${paper.pdfUrl}`;
+        const mla = `${authors}. "${paper.title}." arXiv:${paper.primaryCategory}, ${year}, ${paper.pdfUrl}.`;
+        const chicago = `${authors}. ${year}. "${paper.title}." arXiv:${paper.primaryCategory}. ${paper.pdfUrl}.`;
+        const bibtex = `@article{arxiv${year}${paper.id.replace(/[^a-zA-Z0-9]/g, '').slice(-12)},\n  title = {${paper.title}},\n  author = {${authors}},\n  year = {${year}},\n  url = {${paper.pdfUrl}}\n}`;
+        m.saveBibliographyEntry({ id:`bib-${Date.now()}`, title: paper.title, authors, year, apa, mla, chicago, bibtex, source: paper.pdfUrl, createdAt: new Date().toISOString() });
+      });
       setSavedToNotesId(paper.id);
       setTimeout(() => setSavedToNotesId(null), 2000);
     } catch (e) { console.error(e); }
@@ -141,13 +152,23 @@ export const ArxivWorkspace: React.FC = () => {
               <RefreshCw className="w-7 h-7 text-[#D97757] animate-spin mx-auto opacity-70" />
               <p>{t('arxiv_loading')}</p>
             </div>
+          ) : error ? (
+            <div className="py-20 text-center text-xs space-y-3">
+              <p className="font-bold text-[#141413] dark:text-[#FAF9F5]">{error}</p>
+              <p className="text-[#8C897F]">Your search for “{query}” was kept — retry when ready.</p>
+              <button onClick={() => handleSearch()} className="px-4 py-2 bg-[#D97757] hover:bg-[#C86646] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer">
+                Retry
+              </button>
+            </div>
           ) : papers.length === 0 ? (
             <div className="py-20 text-center text-[#8C897F] text-xs space-y-2">
               <BookOpen className="w-8 h-8 mx-auto opacity-30" />
               <p>{t('arxiv_empty')}</p>
             </div>
           ) : (
-            papers.map((paper) => {
+            <>
+              <p className="text-[11px] text-[#8C897F] px-1">{papers.length} results</p>
+            {papers.map((paper) => {
               const isSelected = selectedPaper?.id === paper.id;
               return (
                 <div
@@ -175,7 +196,8 @@ export const ArxivWorkspace: React.FC = () => {
                   </div>
                 </div>
               );
-            })
+            })}
+            </>
           )}
         </div>
 

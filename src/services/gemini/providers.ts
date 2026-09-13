@@ -1,3 +1,56 @@
+// Current default model (2.5-flash current; 2.0-flash fallback). Retired 1.5-* must NOT be default.
+export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash';
+export const GEMINI_FALLBACK_MODEL = 'gemini-2.0-flash';
+
+/** Mask a key for display (never log full keys). e.g. "AIza...****" */
+export function maskApiKey(key: string): string {
+  try {
+    const t = (key || '').trim();
+    if (!t) return '';
+    if (t.length <= 8) return '****';
+    return `${t.slice(0, 4)}...****`;
+  } catch { return '****'; }
+}
+
+// --- Optional per-key expiration metadata (stored SEPARATELY from key value) ---
+const GEMINI_META_KEY = 'scc_gemini_api_key_meta';
+const GROQ_META_KEY = 'scc_groq_api_key_meta';
+export interface ApiKeyMeta { expiresAt?: string }
+function readMeta(storageKey: string): ApiKeyMeta {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return {};
+    const data = JSON.parse(raw);
+    return typeof data === 'object' && data !== null ? { expiresAt: data.expiresAt } : {};
+  } catch { return {}; }
+}
+function writeMeta(storageKey: string, meta: ApiKeyMeta): void {
+  try {
+    if (!meta.expiresAt) localStorage.removeItem(storageKey);
+    else localStorage.setItem(storageKey, JSON.stringify(meta));
+  } catch {}
+}
+export function getGeminiKeyMeta(): ApiKeyMeta { return readMeta(GEMINI_META_KEY); }
+export function setGeminiKeyExpiry(dateStr: string | null): void {
+  writeMeta(GEMINI_META_KEY, dateStr ? { expiresAt: dateStr } : {});
+}
+export function getGroqKeyMeta(): ApiKeyMeta { return readMeta(GROQ_META_KEY); }
+export function setGroqKeyExpiry(dateStr: string | null): void {
+  writeMeta(GROQ_META_KEY, dateStr ? { expiresAt: dateStr } : {});
+}
+export function getExpiryStatus(expiresAt?: string): { state: 'none' | 'valid' | 'expiring' | 'expired'; daysLeft: number | null; label: string } {
+  if (!expiresAt) return { state: 'none', daysLeft: null, label: '' };
+  try {
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const exp = new Date(`${expiresAt}T00:00:00`);
+    if (isNaN(exp.getTime())) return { state: 'none', daysLeft: null, label: '' };
+    const daysLeft = Math.round((exp.getTime() - now.getTime()) / 86400000);
+    if (daysLeft < 0) return { state: 'expired', daysLeft, label: 'Expired' };
+    if (daysLeft <= 7) return { state: 'expiring', daysLeft, label: daysLeft === 0 ? 'Expires today' : `Expires in ${daysLeft} day${daysLeft === 1 ? '' : 's'}` };
+    return { state: 'valid', daysLeft, label: `Expires in ${daysLeft} days` };
+  } catch { return { state: 'none', daysLeft: null, label: '' }; }
+}
+
 export function getClientGeminiApiKey(): string {
   try {
     const sess = sessionStorage.getItem('scc_gemini_api_key_session');

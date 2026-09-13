@@ -47,26 +47,62 @@ export function hasAnyCanvasSettings(): boolean {
 /**
  * Normalize a user-pasted Canvas instance URL to `https://<host>`.
  * Accepts full login URLs (e.g. `https://4015.instructure.com/login/`),
- * bare hosts (`4015.instructure.com`), or full origins — strips any
- * path/query/hash and trailing slashes so REST calls hit the API root.
+ * bare hosts (`4015.instructure.com`), webcal links, or full origins —
+ * strips any path/query/hash (incl. a pasted `/api/v1` prefix) and trailing
+ * slashes so REST calls hit the API root exactly once. Preserves
+ * non-default ports for self-hosted Canvas instances.
  */
 export function normalizeCanvasDomain(input?: string, fallback = 'https://canvas.instructure.com'): string {
   if (!input || !input.trim()) return fallback;
-  let raw = input.trim();
+  // Handle webcal:// FIRST (before the scheme check) so a pasted
+  // `webcal://host/...` link is not mangled into `https://webcal://...`.
+  let raw = input.trim().replace(/^webcal:\/\//i, 'https://');
   // Allow bare hosts like `4015.instructure.com`
   if (!/^https?:\/\//i.test(raw)) {
     raw = `https://${raw}`;
   }
-  // Allow webcal:// pasted from calendar links
-  raw = raw.replace(/^webcal:\/\//i, 'https://');
   try {
     const u = new URL(raw);
     if (u.protocol !== 'http:' && u.protocol !== 'https:') return fallback;
     if (!u.hostname || !u.hostname.includes('.')) return fallback;
-    return `${u.protocol}//${u.hostname}`;
+    const port = u.port ? `:${u.port}` : '';
+    return `${u.protocol}//${u.hostname}${port}`;
   } catch {
     return fallback;
   }
+}
+
+/**
+ * Early, human-readable validation for API-mode credentials (additive helper;
+ * existing callers are unaffected). Returns an actionable message, or null
+ * when the pair is well-formed. Never throws.
+ */
+export function validateCanvasCredentials(domain?: string, token?: string): string | null {
+  const cleanToken = (token || '').trim();
+  const rawDomain = (domain || '').trim();
+  if (!rawDomain && !cleanToken) {
+    return 'Paste your Canvas URL and API token (Canvas → Account → Settings → New Access Token), or paste a Calendar Feed URL instead.';
+  }
+  if (rawDomain && !cleanToken) {
+    return 'Canvas URL saved, but the API token is missing — add your token (Canvas → Account → Settings → New Access Token), then retry.';
+  }
+  if (!rawDomain && cleanToken) {
+    return 'API token needs your Canvas URL too (e.g. https://4015.instructure.com).';
+  }
+  const probe = rawDomain.replace(/^webcal:\/\//i, 'https://');
+  const withScheme = /^https?:\/\//i.test(probe) ? probe : `https://${probe}`;
+  try {
+    const u = new URL(withScheme);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+      return 'That Canvas URL does not look right — it should start with https:// (e.g. https://4015.instructure.com).';
+    }
+    if (!u.hostname || !u.hostname.includes('.')) {
+      return 'That Canvas URL does not look right — check it is exactly your school host (e.g. https://4015.instructure.com).';
+    }
+  } catch {
+    return 'That Canvas URL does not look right — check it is exactly your school host (e.g. https://4015.instructure.com).';
+  }
+  return null;
 }
 
 /**
@@ -76,8 +112,12 @@ export function normalizeCanvasDomain(input?: string, fallback = 'https://canvas
 export function extractCanvasDomain(feedUrl?: string, defaultDomain = 'https://canvas.instructure.com'): string {
   if (!feedUrl || !feedUrl.trim()) return normalizeCanvasDomain(defaultDomain);
   try {
-    const clean = feedUrl.trim().replace(/^webcal:\/\//i, 'https://');
+    let clean = feedUrl.trim().replace(/^webcal:\/\//i, 'https://');
+    // Tolerate a pasted bare host (`4015.instructure.com/...`) — same rule as
+    // normalizeCanvasDomain — so links don't silently point at the default host.
+    if (!/^https?:\/\//i.test(clean)) clean = `https://${clean}`;
     const u = new URL(clean);
+    if (!u.hostname || !u.hostname.includes('.')) return normalizeCanvasDomain(defaultDomain);
     return `${u.protocol}//${u.host}`;
   } catch {
     return normalizeCanvasDomain(defaultDomain);
@@ -239,13 +279,16 @@ export function parseCanvasICS(icsText: string): CanvasAssignment[] {
       currentUid = '';
     } else if (line.startsWith('END:VEVENT')) {
       inEvent = false;
-      if (currentSummary) {
+      // Tolerate nameless events (UID-only records): keep them under a
+      // fallback name instead of dropping them silently.
+      const rawSummary = currentSummary.trim();
+      if (rawSummary || currentUid) {
         // Canvas ICS summary format is usually: "Assignment Title [Course Name]" or "[Course] Assignment"
-        let name = currentSummary;
+        let name = rawSummary || 'Canvas Event';
         let courseName = 'Canvas Course';
 
-        const bracketMatch = currentSummary.match(/^(.*?)\s*\[(.*?)\]$/);
-        const prefixBracketMatch = currentSummary.match(/^\[(.*?)\]\s*(.*)$/);
+        const bracketMatch = rawSummary.match(/^(.*?)\s*\[(.*?)\]$/);
+        const prefixBracketMatch = rawSummary.match(/^\[(.*?)\]\s*(.*)$/);
 
         if (bracketMatch) {
           name = bracketMatch[1].trim();
@@ -293,9 +336,11 @@ export function parseCanvasICS(icsText: string): CanvasAssignment[] {
         assignments.push({
           id: currentUid || `canvas-ics-${Math.random().toString(36).substring(2, 9)}`,
           name,
-          courseName,
+          courseName: courseName || 'Canvas Course',
           courseId,
-          dueAt: dueAt || new Date().toISOString().split('T')[0],
+          // Never fabricate today's date for dateless items — an empty dueAt
+          // renders as "No Due Date" instead of a false overdue flag.
+          dueAt: dueAt || '',
           pointsPossible,
           htmlUrl: finalUrl,
           description: cleanDesc,
@@ -327,34 +372,63 @@ export function parseCanvasICS(icsText: string): CanvasAssignment[] {
  * Fetch Canvas assignments from Calendar Feed (.ics) via proxy with authentic error handling
  */
 export async function fetchCanvasAssignmentsFromFeed(feedUrl: string): Promise<CanvasAssignment[]> {
-  const cleanUrl = feedUrl.trim();
+  const cleanUrl = (feedUrl || '').trim();
   if (!cleanUrl) {
     return [];
+  }
+
+  // Validate the feed URL shape up front so a typo reports the URL —
+  // not a misleading proxy/auth error after the round trip.
+  const normalizedUrl = cleanUrl.replace(/^webcal:\/\//i, 'https://');
+  try {
+    const u = new URL(normalizedUrl);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+      throw new CanvasSyncError('host', 'That Calendar Feed URL does not look like a web address — re-copy it from Canvas → Calendar → Calendar Feed.');
+    }
+  } catch (err) {
+    if (err instanceof CanvasSyncError) throw err;
+    throw new CanvasSyncError('host', 'That Calendar Feed URL does not look like a web address — re-copy it from Canvas → Calendar → Calendar Feed.');
   }
 
   // Detect a broken/missing deployment before blaming the user's feed URL.
   await probeBackend();
 
-  // Handle webcal:// prefix from Apple/Canvas copy link
-  const normalizedUrl = cleanUrl.replace(/^webcal:\/\//i, 'https://');
-
   const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(normalizedUrl)}`;
-  const res = await fetch(proxyUrl);
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(proxyUrl);
+  } catch {
+    throw new CanvasSyncError('network', 'Could not reach the Canvas feed (network error or timed out). Check your connection, then retry.');
+  }
 
   if (!res.ok) {
     let errorDetail = res.statusText;
     try {
-      const errJson = await res.json();
-      if (errJson.error) errorDetail = errJson.error;
+      const raw = await res.text();
+      try {
+        const errJson = JSON.parse(raw);
+        if (errJson.error || errJson.message) errorDetail = String(errJson.error || errJson.message);
+        else if (raw) errorDetail = raw.slice(0, 300);
+      } catch {
+        if (raw) errorDetail = raw.slice(0, 300);
+      }
     } catch {
-      // Ignore text parse errors
+      // Ignore body parse errors
     }
-    throw new Error(`Canvas feed fetch failed (${res.status}): ${errorDetail}`);
+    const withDetail = (bare: string) =>
+      (errorDetail && !bare.includes(errorDetail.slice(0, 60)) ? `${bare} Detail: ${errorDetail}` : bare);
+    if (res.status === 401 || res.status === 403) {
+      throw new CanvasSyncError('auth', withDetail('Canvas feed was rejected — the feed link expired or needs sign-in. In Canvas → Calendar → Calendar Feed, copy a fresh link, save it, and sync again.'), res.status);
+    }
+    if (res.status === 404) {
+      throw new CanvasSyncError('host', withDetail('Canvas feed answered 404 — the feed URL looks wrong. Re-copy the Calendar Feed link from Canvas.'), 404);
+    }
+    throw new CanvasSyncError('unknown', withDetail(`Canvas feed fetch failed (${res.status}): ${errorDetail}`), res.status);
   }
 
   const icsText = await res.text();
   if (!icsText || icsText.trim().length === 0) {
-    throw new Error('Canvas feed returned empty content');
+    throw new CanvasSyncError('unknown', 'Canvas feed returned empty content — re-copy the Calendar Feed link from Canvas and try again.');
   }
 
   return parseCanvasICS(icsText);
@@ -389,7 +463,7 @@ export class CanvasSyncError extends Error {
  */
 async function probeBackend(): Promise<void> {
   try {
-    const res = await fetch('/api/health', { headers: { Accept: 'application/json' } });
+    const res = await fetchWithTimeout('/api/health', { headers: { Accept: 'application/json' } });
     const type = res.headers.get('content-type') || '';
     if (res.ok && type.includes('json')) return;
     throw new CanvasSyncError(
@@ -402,17 +476,33 @@ async function probeBackend(): Promise<void> {
   }
 }
 
-const CANVAS_FETCH_TIMEOUT_MS = 15000;
+const CANVAS_FETCH_TIMEOUT_MS = 20000;
 
-/** Same-origin proxy fetch with a timeout so a hung Canvas/proxy can't hang sync forever. */
-function canvasFetch(url: string, headers: Record<string, string>): Promise<Response> {
+/**
+ * Same-origin fetch with a ~20s timeout so a hung Canvas/proxy can't hang
+ * sync forever. Uses AbortController (works everywhere fetch does); falls
+ * back to AbortSignal.timeout where available. Rejects with an AbortError
+ * on timeout — callers map that to a network/timeout message.
+ */
+function fetchWithTimeout(url: string, init?: RequestInit, timeoutMs = CANVAS_FETCH_TIMEOUT_MS): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const options: RequestInit = { ...(init || {}), signal: controller.signal };
+  // Prefer the platform timeout signal when present, wiring it to our
+  // controller so callers that pass their own signal still time out.
   try {
-    const withTimeout = (AbortSignal as any)?.timeout;
-    if (typeof withTimeout === 'function') {
-      return fetch(url, { headers, signal: withTimeout.call(AbortSignal, CANVAS_FETCH_TIMEOUT_MS) });
+    const platformTimeout = (AbortSignal as any)?.timeout;
+    if (typeof platformTimeout === 'function' && !init?.signal) {
+      const platformSignal = platformTimeout.call(AbortSignal, timeoutMs) as AbortSignal;
+      platformSignal.addEventListener('abort', () => controller.abort(), { once: true });
     }
   } catch {}
-  return fetch(url, { headers });
+  return fetch(url, options).finally(() => clearTimeout(timer));
+}
+
+/** Same-origin proxy fetch with a timeout so a hung Canvas/proxy can't hang sync forever. */
+function canvasFetch(url: string, headers: Record<string, string>, init?: RequestInit): Promise<Response> {
+  return fetchWithTimeout(url, { ...(init || {}), headers });
 }
 
 interface CanvasProbeFailure { status: number | null; network: boolean; detail?: string }
@@ -442,15 +532,23 @@ export async function fetchCanvasAssignmentsFromApi(
   domain: string,
   token: string
 ): Promise<CanvasAssignment[]> {
-  if (!domain || !token) return [];
+  // Validate BEFORE any network call: a silent [] here used to look like
+  // "caught up with zero assignments". Typed errors let the UI name the fix.
+  const credentialProblem = validateCanvasCredentials(domain, token);
+  if (credentialProblem) {
+    const cleanToken = (token || '').trim();
+    const rawDomain = (domain || '').trim();
+    throw new CanvasSyncError(!cleanToken ? 'auth' : !rawDomain ? 'host' : 'host', credentialProblem);
+  }
+
+  // Normalize once — normalizeCanvasDomain strips any pasted /api/v1 path and
+  // trailing slashes, so endpoint templates below can append /api/v1 safely.
+  const cleanDomain = normalizeCanvasDomain((domain || '').trim());
+  const cleanToken = (token || '').trim();
+  const headers = { 'x-canvas-token': cleanToken };
 
   // Detect a broken/missing deployment before blaming the user's token or URL.
   await probeBackend();
-
-  const cleanDomain = normalizeCanvasDomain(domain);
-  const cleanToken = token.trim();
-  if (!cleanToken) return [];
-  const headers = { 'x-canvas-token': cleanToken };
 
   // Tracks whether ANY Canvas endpoint answered — if none did, the URL/token
   // is wrong and we must throw (never return a silent [] that looks "caught up").
@@ -503,7 +601,10 @@ export async function fetchCanvasAssignmentsFromApi(
           const list = await res.json();
           if (Array.isArray(list)) {
             list.forEach((c: any) => {
-              if (c && c.id && (c.name || c.course_code)) {
+              // Tolerate nameless courses (missing name/course_code): keep by
+              // id and fall back to 'Canvas Course' later, so their
+              // assignments are still fetched instead of dropped.
+              if (c && c.id != null) {
                 courseMap.set(c.id, c);
               }
             });
@@ -697,7 +798,7 @@ export async function fetchCanvasAssignmentsFromApi(
           return {
             id: `canvas-api-${e.id || a.id}`,
             name: a.name || e.title || 'Canvas Task',
-            courseName: e.context_name || 'Course',
+            courseName: e.context_name || 'Canvas Course',
             courseId: e.context_code,
             dueAt: (a.due_at || e.start_at || '').split('T')[0] || '',
             pointsPossible: a.points_possible,
@@ -721,8 +822,10 @@ export async function fetchCanvasAssignmentsFromApi(
     const s = failure?.status ?? null;
     const detail = (failure?.detail || '').trim();
     const withDetail = (bare: string) => (detail && !bare.includes(detail.slice(0, 60)) ? `${bare} Detail: ${detail}` : bare);
-    if (s === 401) {
-      throw new CanvasSyncError('auth', 'Canvas rejected the API token (401 Unauthorized).', 401);
+    if (s === 401 || s === 403) {
+      // 403 via the proxy is the same user-facing problem as 401: Canvas
+      // refused these credentials (bad/expired token or token without scope).
+      throw new CanvasSyncError('auth', `Canvas rejected the API token (${s} ${s === 401 ? 'Unauthorized' : 'Forbidden'}).`, s);
     }
     if (s === 400) {
       throw new CanvasSyncError('host', withDetail('The Canvas proxy refused this host (400).'), 400);
@@ -821,7 +924,20 @@ export async function submitCanvasAssignment(
   assignmentId: string,
   fileUrl: string
 ): Promise<any> {
-  const cleanDomain = normalizeCanvasDomain(domain);
+  const credentialProblem = validateCanvasCredentials(domain, token);
+  if (credentialProblem) {
+    throw new Error(credentialProblem);
+  }
+  if (!courseId || !String(courseId).trim()) {
+    throw new Error('Missing Canvas course id — open the assignment in Canvas and retry.');
+  }
+  if (!assignmentId || !String(assignmentId).trim()) {
+    throw new Error('Missing Canvas assignment id — open the assignment in Canvas and retry.');
+  }
+  if (!fileUrl || !String(fileUrl).trim()) {
+    throw new Error('Pick a Google Drive file to submit first.');
+  }
+  const cleanDomain = normalizeCanvasDomain((domain || '').trim());
   
   // Extract numerical assignment ID (e.g. from canvas-assign-12345)
   const rawId = assignmentId.replace(/^(canvas-assign-|canvas-planner-|canvas-api-|canvas-ics-)/, '');
@@ -841,11 +957,16 @@ export async function submitCanvasAssignment(
   };
 
   const proxyUrl = `/api/canvas/proxy?url=${encodeURIComponent(targetUrl)}`;
-  const res = await fetch(proxyUrl, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(proxyUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error('Canvas submission failed: network error or timed out. Check your connection, then retry.');
+  }
 
   if (!res.ok) {
     let errMessage = res.statusText;
@@ -858,6 +979,14 @@ export async function submitCanvasAssignment(
       }
     } catch {
       // ignore
+    }
+    // Actionable status mapping (same vocabulary as sync errors): never show
+    // a bare `failed (401)` — name the fix. Still throws Error (signature unchanged).
+    if (res.status === 401 || res.status === 403) {
+      throw new Error('Canvas rejected the API token — regenerate it (Canvas → Account → Settings → New Access Token), save it here, and retry.');
+    }
+    if (res.status === 404) {
+      throw new Error('Canvas answered 404 — the school URL, course, or assignment looks wrong. Check the Canvas URL in Settings and retry.');
     }
     throw new Error(`Canvas submission failed (${res.status}): ${errMessage}`);
   }
