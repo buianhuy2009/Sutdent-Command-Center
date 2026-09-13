@@ -223,7 +223,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   }[selectedVibe];
 
   const vibeTextAccentClass = {
-    focus: 'text-[#D97757]',
+    focus: 'text-[#D97757] dark:text-[#E59A7C]',
     calm: 'text-blue-500 dark:text-blue-400',
     creative: 'text-violet-500 dark:text-violet-400',
     recharge: 'text-emerald-600 dark:text-emerald-400',
@@ -271,7 +271,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                     setNameInput(studentName);
                     setIsEditingName(true);
                   }}
-                  className="p-1.5 rounded-lg bg-white dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-[#6B6860] hover:text-[#D97757] hover:border-[#D97757]/40 transition-colors shrink-0"
+                  className="p-1.5 rounded-lg bg-white dark:bg-[#1F1E1B] border border-[#DFDACB] dark:border-[#2C2B27] text-[#6B6860] dark:text-[#B5B2A8] hover:text-[#D97757] dark:hover:text-[#E59A7C] hover:border-[#D97757]/40 transition-colors shrink-0"
                   aria-label={t('dash_edit_name')}
                   title={t('dash_edit_name')}
                 >
@@ -307,7 +307,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                   setIntentionInput(dailyIntention);
                   setIsEditingIntention(true);
                 }}
-                className="text-xs sm:text-sm text-[#8C897F] hover:text-[#D97757] transition-colors cursor-pointer italic leading-relaxed"
+                className="text-xs sm:text-sm text-[#8C897F] dark:text-[#B5B2A8] hover:text-[#D97757] dark:hover:text-[#E59A7C] transition-colors cursor-pointer italic leading-relaxed"
                 title={t('dash_intention_title')}
               >
                 {dailyIntention ? `"${dailyIntention}"` : t('dash_intention_empty')}
@@ -348,7 +348,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                 <span className="flex items-center gap-2 shrink-0">
                   <span
                     className={`text-[11px] sm:text-xs font-bold ${
-                      nextDeadlineInfo.isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-[#D97757]'
+                      nextDeadlineInfo.isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-[#D97757] dark:text-[#E59A7C]'
                     }`}
                   >
                     {nextDeadlineInfo ? formatDeadline(nextDeadlineInfo) : ''}
@@ -380,35 +380,35 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                 <>
                   {overdue.length>0 && (
                     <div className="space-y-1.5">
-                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-rose-600">{t('overdue')} • {overdue.length}</h4>
+                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">{t('overdue')} • {overdue.length}</h4>
                       {sorted(overdue).slice(0,2).map(a=>(
                         <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-xs">
                           <span className="font-semibold truncate flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0" />{a.assignmentName}</span>
-                          <span className="text-[11px] text-rose-700 ml-2 shrink-0">{a.subject} • {a.dueDate}</span>
+                          <span className="text-[11px] text-rose-700 dark:text-rose-300 ml-2 shrink-0">{a.subject} • {a.dueDate}</span>
                         </div>
                       ))}
                     </div>
                   )}
                   {dueToday.length>0 && (
                     <div className="space-y-1.5">
-                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-700">{t('due_today')} • {dueToday.length}</h4>
+                      <h4 className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">{t('due_today')} • {dueToday.length}</h4>
                       {sorted(dueToday).slice(0,2).map(a=>(
                         <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs">
                           <span className="font-semibold truncate flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />{a.assignmentName}</span>
-                          <span className="text-[11px] text-amber-800 ml-2 shrink-0">{a.subject} • {t('today')}</span>
+                          <span className="text-[11px] text-amber-800 dark:text-amber-200 ml-2 shrink-0">{a.subject} • {t('today')}</span>
                         </div>
                       ))}
                     </div>
                   )}
                   <div className="space-y-1.5">
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#6B6860] flex items-center gap-1.5"><Clock className="w-3 h-3 text-[#D97757]" />{t('upcoming')}</h4>
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#6B6860] dark:text-[#B5B2A8] flex items-center gap-1.5"><Clock className="w-3 h-3 text-[#D97757] dark:text-[#E59A7C]" />{t('upcoming')}</h4>
                     {sorted(upcoming).slice(0,3).map(a=>(
                       <div key={a.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF9F5] dark:bg-[#1A1917] border border-[#DFDACB]/40 text-xs">
                         <span className="font-semibold truncate flex items-center gap-1.5"><span className={`w-1.5 h-1.5 rounded-full shrink-0 ${a.priority==='High'?'bg-rose-500': a.priority==='Med'?'bg-amber-500':'bg-emerald-500'}`} />{a.assignmentName}</span>
-                        <span className="text-[11px] text-[#6B6860] ml-2 shrink-0">{a.subject} • Due {a.dueDate} {a.priority==='High' && <span className="ml-1 px-1 py-0.5 rounded bg-rose-100 text-rose-700 text-[9px] font-bold">HIGH</span>}</span>
+                        <span className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8] ml-2 shrink-0">{a.subject} • {t('tracker_due')} {a.dueDate} {a.priority==='High' && <span className="ml-1 px-1 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 text-[9px] font-bold">{t('dash_high_badge')}</span>}</span>
                       </div>
                     ))}
-                    {upcoming.length===0 && overdue.length===0 && dueToday.length===0 && <div className="text-xs text-[#6B6860] italic">{t('dash_all_caught_up')}</div>}
+                    {upcoming.length===0 && overdue.length===0 && dueToday.length===0 && <div className="text-xs text-[#6B6860] dark:text-[#B5B2A8] italic">{t('dash_all_caught_up')}</div>}
                   </div>
                 </>
               );
@@ -427,11 +427,11 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           open={(() => { try { const v=localStorage.getItem('scc_dashboard_personalize_open'); return v===null ? true : v==='true'; } catch { return true; } })()}
           onToggle={(e)=>{ try{ localStorage.setItem('scc_dashboard_personalize_open', String((e.currentTarget as HTMLDetailsElement).open)); }catch{} }}
         >
-          <summary className="list-none flex items-center justify-between cursor-pointer font-bold text-[#6B6860] uppercase tracking-wider">{t('dash_personalize')} <span className="flex items-center gap-1.5 text-[10px] bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] px-2 py-0.5 rounded-full">{t('edit')} <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" strokeWidth={1.75} /></span></summary>
+          <summary className="list-none flex items-center justify-between cursor-pointer font-bold text-[#6B6860] dark:text-[#B5B2A8] uppercase tracking-wider">{t('dash_personalize')} <span className="flex items-center gap-1.5 text-[10px] bg-white dark:bg-[#1A1917] border border-[#DFDACB] dark:border-[#2C2B27] px-2 py-0.5 rounded-full">{t('edit')} <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" strokeWidth={1.75} /></span></summary>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           {/* Left: Vibe / Ambient Light Selection */}
           <div className="space-y-2">
-            <span className="font-bold text-[#6B6860] uppercase tracking-wider block">
+            <span className="font-bold text-[#6B6860] dark:text-[#B5B2A8] uppercase tracking-wider block">
               {t('dash_vibe_title')}
             </span>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -460,7 +460,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
 
           {/* Right: Daily Sprint Target Goal */}
           <div className="space-y-2 flex flex-col justify-center">
-            <span className="font-bold text-[#6B6860] uppercase tracking-wider block">
+            <span className="font-bold text-[#6B6860] dark:text-[#B5B2A8] uppercase tracking-wider block">
               {t('dash_pomodoro_target')}
             </span>
             <div className="flex items-center gap-3">
@@ -472,14 +472,14 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
               <div className="flex items-center gap-1 bg-white/70 dark:bg-[#1E1D1B]/50 border border-[#DFDACB] dark:border-[#2C2B27] rounded-xl p-0.5">
                 <button
                   onClick={() => handleAdjustSprintGoal(-1)}
-                  className="p-1 text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors"
+                  className="p-1 text-[#6B6860] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors"
                   title={t('dash_decrease')}
                 >
                   <ChevronDown className="w-4 h-4" strokeWidth={1.75} />
                 </button>
                 <button
                   onClick={() => handleAdjustSprintGoal(1)}
-                  className="p-1 text-[#6B6860] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors"
+                  className="p-1 text-[#6B6860] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#FAF9F5] transition-colors"
                   title={t('dash_increase')}
                 >
                   <ChevronUp className="w-4 h-4" strokeWidth={1.75} />
@@ -493,7 +493,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
         {/* Habit Streak — memoized via streakMap (single JSON.parse) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger">
           <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card text-left hover-lift">
-            <h4 className="text-xs font-bold text-[#6B6860] uppercase tracking-wider flex items-center gap-1.5"><Timer className="w-3.5 h-3.5 text-[#D97757]" strokeWidth={1.75} /> {t('dash_streak_title')}</h4>
+            <h4 className="text-xs font-bold text-[#6B6860] dark:text-[#B5B2A8] uppercase tracking-wider flex items-center gap-1.5"><Timer className="w-3.5 h-3.5 text-[#D97757] dark:text-[#E59A7C]" strokeWidth={1.75} /> {t('dash_streak_title')}</h4>
             <div className="mt-3 grid grid-cols-7 gap-1">
               {Array.from({length:28}).map((_,i)=>{
                 const d=new Date(); d.setDate(d.getDate()-(27-i));
@@ -508,14 +508,14 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                 return <div key={i} className={`w-full aspect-square rounded-sm ${intensity}`} title={`${dateStr}: ${mins}m`} />
               })}
             </div>
-            <p className="text-[11px] text-[#6B6860] mt-2">{safeCompletedFocusSessions} {t('dash_focus_sprints')} • {safeSprintGoal} {t('dash_daily_target')}</p>
+            <p className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8] mt-2">{safeCompletedFocusSessions} {t('dash_focus_sprints')} • {safeSprintGoal} {t('dash_daily_target')}</p>
           </div>
           <div className="p-4 bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] shadow-card text-left hover-lift">
-            <h4 className="text-xs font-bold text-[#6B6860] uppercase tracking-wider flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[#7C3AED]" strokeWidth={1.75} /> {t('dash_focus_analytics')}</h4>
+            <h4 className="text-xs font-bold text-[#6B6860] dark:text-[#B5B2A8] uppercase tracking-wider flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[#7C3AED] dark:text-[#A78BFA]" strokeWidth={1.75} /> {t('dash_focus_analytics')}</h4>
             <div className="mt-3 space-y-2">
               <div className="flex items-center justify-between text-xs"><span>{t('dash_deep_work')}</span><span className="font-mono font-bold">{safeCompletedFocusSessions * 25}m / {safeSprintGoal * 25}m</span></div>
               <div className="h-2 bg-[#EFECE2] dark:bg-[#252422] rounded-full overflow-hidden"><div className="h-full bg-[#D97757]" style={{width: `${focusProgressPct}%`}} /></div>
-              <p className="text-[11px] text-[#6B6860]">{t('dash_completion_funnel')} {assignments.filter(a=>a.status==='Done').length}/{assignments.length} {t('dash_tasks_done')}</p>
+              <p className="text-[11px] text-[#6B6860] dark:text-[#B5B2A8]">{t('dash_completion_funnel')} {assignments.filter(a=>a.status==='Done').length}/{assignments.length} {t('dash_tasks_done')}</p>
             </div>
           </div>
         </div>
@@ -533,7 +533,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           {onOpenStudyPlan && (
             <button
               onClick={onOpenStudyPlan}
-              className="px-2 py-2 text-xs font-semibold text-[#D97757] hover:text-[#C86646] hover:underline underline-offset-4 transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-2 py-2 text-xs font-semibold text-[#D97757] dark:text-[#E59A7C] hover:text-[#C86646] dark:hover:text-[#E59A7C] hover:underline underline-offset-4 transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" strokeWidth={1.75} />
               <span>{t('dash_ai_plan')}</span>
@@ -544,10 +544,10 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
         {/* Serif Quote Block */}
         <div className="space-y-3.5 pt-4 border-t border-[#DFDACB]/60 dark:border-[#2C2B27]/60 relative group">
           <div className="flex items-center justify-center gap-2">
-            <Quote className="w-4 h-4 text-[#D97757]/30 mx-auto" />
+            <Quote className="w-4 h-4 text-[#D97757]/30 dark:text-[#E59A7C]/30 mx-auto" />
             <button
               onClick={handleShuffleQuote}
-              className="p-1 text-[#8C897F] hover:text-[#D97757] rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer absolute right-2"
+              className="p-1 text-[#8C897F] dark:text-[#B5B2A8] hover:text-[#D97757] dark:hover:text-[#E59A7C] rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer absolute right-2"
               title={t('dash_another_quote')}
             >
               <Shuffle className="w-3.5 h-3.5" />
@@ -556,16 +556,16 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           <blockquote className="text-base sm:text-lg font-serif italic text-[#5C5A54] dark:text-[#B5B2A8] leading-relaxed max-w-xl mx-auto">
             &ldquo;{quote.quote}&rdquo;
           </blockquote>
-          <cite className="text-xs font-bold text-[#8C897F] not-italic block">
-            — {quote.author} <span className="text-[10px] font-mono text-[#8C897F]/75">({quote.field})</span>
+          <cite className="text-xs font-bold text-[#8C897F] dark:text-[#B5B2A8] not-italic block">
+            — {quote.author} <span className="text-[10px] font-mono text-[#8C897F]/75 dark:text-[#B5B2A8]/75">({quote.field})</span>
           </cite>
         </div>
 
         {/* NASA Astronomy Picture of the Day — visible educational card (toggle in Settings → Appearance) */}
         {apodEnabled && (
-          <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-card text-left space-y-3" aria-label="NASA Astronomy Picture of the Day">
+          <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-4 shadow-card text-left space-y-3" aria-label={t('dash_apod_aria')}>
             <div className="flex items-center justify-between gap-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6860]">{t('nasa_title')}</h4>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B6860] dark:text-[#B5B2A8]">{t('nasa_title')}</h4>
             </div>
             {apodLoading && !nasaApod && (
               <div className="animate-pulse space-y-2" role="status" aria-live="polite" aria-label={t('dash_apod_loading')}>
@@ -577,7 +577,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
             {apodError && !nasaApod && (
               <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-950 via-[#1A1917] to-[#D97757]/20 border border-[#DFDACB] dark:border-[#2C2B27] text-xs space-y-2" role="status" aria-live="polite">
                 <p className="font-bold text-[#141413] dark:text-[#FAF9F5]">NASA giới hạn hoặc mất mạng. Đang hiện ảnh dự phòng — bấm Thử lại.</p>
-                <p className="text-[#6B6860]">{apodError}</p>
+                <p className="text-[#6B6860] dark:text-[#B5B2A8]">{apodError}</p>
                 <button type="button" onClick={reloadApod} className="px-3 py-2 bg-[#D97757] text-white rounded-xl text-xs font-bold min-h-[44px] cursor-pointer">Thử lại • Retry</button>
               </div>
             )}
@@ -599,17 +599,17 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                   <p className="text-[11px] leading-relaxed text-[#5C5A54] dark:text-[#B5B2A8]">
                     {apodExpanded || nasaApod.explanation.length <= 280 ? nasaApod.explanation : `${nasaApod.explanation.slice(0, 280)}… `}
                     {nasaApod.explanation.length > 280 && (
-                      <button type="button" onClick={() => setApodExpanded(!apodExpanded)} className="font-bold text-[#D97757] hover:underline underline-offset-4 ml-1 cursor-pointer" aria-expanded={apodExpanded}>
+                      <button type="button" onClick={() => setApodExpanded(!apodExpanded)} className="font-bold text-[#D97757] dark:text-[#E59A7C] hover:underline underline-offset-4 ml-1 cursor-pointer" aria-expanded={apodExpanded}>
                         {apodExpanded ? t('show_less') : t('dash_read_more')}
                       </button>
                     )}
                   </p>
                 )}
-                <div className="flex items-center justify-between gap-2 text-[10px] text-[#6B6860]">
+                <div className="flex items-center justify-between gap-2 text-[10px] text-[#6B6860] dark:text-[#B5B2A8]">
                   <span>{t('dash_image_credit')}{nasaApod.copyright ? ` • © ${nasaApod.copyright}` : ''}</span>
-                  {nasaApod.hdurl && <a href={nasaApod.hdurl} target="_blank" rel="noreferrer" className="font-bold text-[#D97757] hover:underline underline-offset-4 shrink-0">{t('dash_open_hd')}</a>}
+                  {nasaApod.hdurl && <a href={nasaApod.hdurl} target="_blank" rel="noreferrer" className="font-bold text-[#D97757] dark:text-[#E59A7C] hover:underline underline-offset-4 shrink-0">{t('dash_open_hd')}</a>}
                 </div>
-                {apodError && <p className="text-[10px] text-amber-700" role="status">NASA giới hạn hoặc mất mạng. Hiện ảnh cũ — bấm Thử lại. <button type="button" onClick={reloadApod} className="font-bold underline underline-offset-4 cursor-pointer min-h-[44px] px-2">Thử lại • Retry</button></p>}
+                {apodError && <p className="text-[10px] text-amber-700 dark:text-amber-300" role="status">{t('dash_apod_error')} <button type="button" onClick={reloadApod} className="font-bold underline underline-offset-4 cursor-pointer min-h-[44px] px-2">{t('retry')}</button></p>}
               </div>
             )}
           </div>
@@ -618,7 +618,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
       </div>
 
       {/* Bottom Section: Command Center Label */}
-      <div className="text-[10px] text-[#8C897F] font-mono select-none uppercase tracking-wider shrink-0">
+      <div className="text-[10px] text-[#8C897F] dark:text-[#B5B2A8] font-mono select-none uppercase tracking-wider shrink-0">
         Student Command Center • Version 2.4.2
       </div>
 
