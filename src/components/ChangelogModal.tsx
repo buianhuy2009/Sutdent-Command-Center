@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.11.0';
+export const CURRENT_VERSION = '2.12.0';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,24 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.12.0',
+    date: 'September 13, 2026',
+    title: 'Homework Sorter Metrics + Classifier Lab Experiment',
+    badge: 'Latest Update',
+    highlights: [
+      'Homework Sorter now proves its learning: honest holdout accuracy, confusion matrix, and top-word reasons for every prediction — all on-device, no key needed',
+      'New Classifier Lab tab runs a Baseline vs Few-shot experiment on your own school messages and shows exactly how much 3 examples help',
+    ],
+    details: [
+      '080 Sorter honest metrics: per-label holdout testing (last 20%, min 1 max 5) with accuracy, per-label precision/recall, full confusion matrix, and confidence histogram — locked with guidance until each label has 3+ examples (find it in Train My Model Lab → Homework Sorter).',
+      '081 Sorter prediction card: test any new line for a label + confidence bar + top-3 contributing words, with an optional AI explanation that never overrides the local answer (find it below the Train button).',
+      '082 Classifier Lab experiment: 12 seed school messages, zero-shot baseline vs 3-example few-shot on the same rows, side-by-side scoreboard with delta banner, per-row checkmarks, fail gallery with your own notes, and fully visible prompts (find it in Train My Model Lab → Classifier Lab).',
+    ]
+  },
+  {
     version: '2.11.0',
     date: 'September 13, 2026',
     title: 'Study Tools Wave + AI Planner Flagship + Safer Sync & Keys',
-    badge: 'Latest Update',
     highlights: [
       'STEM Lab grows up: searchable PhET library with 29 sims, real GeoGebra applets, local whiteboard, offline Python, and a PDF reader that never goes blank',
       'New AI Planner flagship builds your week from real deadlines, Gantt scans every task with a live preview, and flashcards stop at a healthy session limit',
