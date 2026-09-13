@@ -456,6 +456,17 @@ export const APP_CATALOG: AppStoreItem[] = [
     rating: 4.8,
   },
   {
+    id: 'ai-planner',
+    name: 'AI Planner',
+    category: 'Plan',
+    description: 'Exclusive 7-day study timetable from assignments, Canvas & meetings.',
+    longOverview: 'Scans your assignments and Canvas deadlines, works around Google Calendar meetings, and lays out one exclusive 7-day timetable. Chat to reschedule in plain words.',
+    features: ['Exclusive 7-day timetable', 'Gemini BYOK with offline fallback', 'Chat re-plan in plain words', 'Read-only calendar — never writes'],
+    badge: 'Flagship',
+    developer: 'StudentOS',
+    rating: 5.0,
+  },
+  {
     id: 'grade-forecaster',
     name: 'Grade Forecaster',
     category: 'Plan',
