@@ -676,7 +676,7 @@ export const AssignmentTrackerTab: React.FC<AssignmentTrackerTabProps> = ({
                               {col.id === 'Done' && (
                                 <button
                                   onClick={() => onUpdateStatus(task, 'Not Started')}
-                                  className="px-2 py-0.5 rounded bg-white dark:bg-[#252422] border border-[#E8E6DC] text-[10px] font-bold text-[#8C897F] hover:text-[#141413] transition-colors"
+                                  className="px-2 py-0.5 rounded bg-white dark:bg-[#252422] border border-[#E8E6DC] text-[10px] font-bold text-[#8C897F] hover:text-[#141413] dark:hover:text-[#F5F4ED] transition-colors"
                                   title="Reopen"
                                 >
                                   Reopen

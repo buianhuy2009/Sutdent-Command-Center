@@ -254,7 +254,7 @@ export const StudyPlanGeneratorModal: React.FC<StudyPlanGeneratorModalProps> = (
                     className={`py-1.5 px-2 rounded-lg text-center transition-all cursor-pointer ${
                       studyPacing === p.id
                         ? 'bg-[#D97757] text-white shadow-xs'
-                        : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#141413]'
+                        : 'text-[#5C5A54] dark:text-[#B5B2A8] hover:text-[#141413] dark:hover:text-[#FAF9F5]'
                     }`}
                   >
                     <div className="text-xs font-bold">{p.label}</div>

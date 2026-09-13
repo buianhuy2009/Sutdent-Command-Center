@@ -142,7 +142,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <h1 className="text-sm font-extrabold text-[#2B2621] dark:text-[#F5F4ED] tracking-tight truncate leading-tight">
                 StudentOS
               </h1>
-              <p className="text-[10px] text-[#70695E] font-mono truncate">Academic AI Hub</p>
+              <p className="text-[10px] text-[#70695E] dark:text-[#B5B2A8] font-mono truncate">Academic AI Hub</p>
             </div>
           )}
         </button>
@@ -150,7 +150,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {isExpanded && (
           <button
             onClick={onToggleExpand}
-            className="p-2.5 rounded-xl hover:bg-[#FCEEE8] dark:hover:bg-[#252422] text-[#70695E] hover:text-[#2B2621] dark:hover:text-[#F5F4ED] transition-all duration-200 cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="p-2.5 rounded-xl hover:bg-[#FCEEE8] dark:hover:bg-[#252422] text-[#70695E] dark:text-[#B5B2A8] hover:text-[#2B2621] dark:hover:text-[#F5F4ED] transition-all duration-200 cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
             title="Collapse to icon rail"
             aria-label="Collapse sidebar to icon rail"
           >
@@ -163,7 +163,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <NavSection title="Pinned" isExpanded={isExpanded}>
           <div className="space-y-1">
             {pinnedApps.length === 0 ? (
-              <div className="text-[11px] text-[#70695E] px-2 py-2 italic">No pinned apps — add from App Store</div>
+              <div className="text-[11px] text-[#70695E] dark:text-[#B5B2A8] px-2 py-2 italic">No pinned apps — add from App Store</div>
             ) : pinnedApps.map((app) => {
               const meta = APP_META[app.id] || { label: app.name, desc: app.category };
               const badgeKey = (APP_META[app.id]?.badgeKey) || app.id;
@@ -191,7 +191,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {isExpanded && (
                         <div className="text-left min-w-0">
                           <div className="text-xs truncate leading-tight">{meta.label || app.name}</div>
-                          <div className={`text-[10px] truncate ${isActive ? 'text-[#E05D38]/70' : 'text-[#70695E]'}`}>
+                          <div className={`text-[10px] truncate ${isActive ? 'text-[#E05D38]/70' : 'text-[#70695E] dark:text-[#B5B2A8]'}`}>
                             {meta.desc || app.category}
                           </div>
                         </div>
@@ -219,7 +219,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {isExpanded && (
                     <button
                       onClick={() => onUnpinApp(app.id)}
-                      className="absolute right-2 opacity-0 group-hover/item:opacity-100 p-1 text-[#70695E] hover:text-[#2B2621] rounded transition-opacity cursor-pointer"
+                      className="absolute right-2 opacity-0 group-hover/item:opacity-100 p-1 text-[#70695E] dark:text-[#B5B2A8] hover:text-[#2B2621] dark:hover:text-[#F5F4ED] rounded transition-opacity cursor-pointer"
                       title="Unpin"
                     >
                       <PinOff className="w-3.5 h-3.5" strokeWidth={1.75} />
@@ -248,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {isExpanded && (
                         <div className="text-left min-w-0">
                           <div className="text-xs truncate leading-tight">{app.name}</div>
-                          <div className={`text-[10px] truncate ${isActive ? 'text-[#E05D38]/70' : 'text-[#70695E]'}`}>{app.category}</div>
+                          <div className={`text-[10px] truncate ${isActive ? 'text-[#E05D38]/70' : 'text-[#70695E] dark:text-[#B5B2A8]'}`}>{app.category}</div>
                         </div>
                       )}
                     </div>
@@ -338,7 +338,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="text-xs font-bold text-[#2B2621] dark:text-[#F5F4ED] truncate leading-tight">
                 {user ? user.displayName || user.email?.split('@')[0] : 'Guest Student'}
               </div>
-              <div className="text-[10px] text-[#70695E] truncate">
+              <div className="text-[10px] text-[#70695E] dark:text-[#B5B2A8] truncate">
                 {user ? user.email : 'Click for Settings'}
               </div>
             </div>
