@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { rateLimiter } from "./rateLimiter";
-import { checkDailyQuota, incrementQuota, getClientGeminiApiKey, callGroqDirect, getClientGroqApiKey, GEMINI_DEFAULT_MODEL, GEMINI_FALLBACK_MODEL } from "./providers";
+import { checkDailyQuota, incrementQuota, getClientGeminiApiKey, callGroqDirect, getClientGroqApiKey, GEMINI_DEFAULT_MODEL, GEMINI_FALLBACK_MODEL, GEMINI_SAFETY_MODELS } from "./providers";
 
 function extractErrorText(err: any): string {
   const status = err?.status ?? err?.code ?? err?.response?.status;
@@ -71,7 +71,7 @@ export async function callGemini(params: { contents:any; config?:any; model?:str
     const clientKey=getClientGeminiApiKey();
     const targetModel=params.model||GEMINI_DEFAULT_MODEL;
     if(clientKey){
-      const attempts = targetModel === GEMINI_DEFAULT_MODEL ? [GEMINI_DEFAULT_MODEL, GEMINI_FALLBACK_MODEL] : [targetModel];
+      const attempts = targetModel === GEMINI_DEFAULT_MODEL ? [GEMINI_DEFAULT_MODEL, GEMINI_FALLBACK_MODEL, ...GEMINI_SAFETY_MODELS] : [targetModel, GEMINI_DEFAULT_MODEL, GEMINI_FALLBACK_MODEL, ...GEMINI_SAFETY_MODELS];
       let lastErr: any = null;
       for (const m of attempts) {
         try{

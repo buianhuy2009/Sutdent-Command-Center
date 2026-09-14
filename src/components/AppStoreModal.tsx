@@ -545,8 +545,9 @@ export const APP_CATALOG: AppStoreItem[] = [
   },
 ];
 
-// Top 8 Recommended Highlight Apps (Exactly 8)
+// Top 8 Recommended Highlight Apps (Exactly 8) — AI Planner flagship first for judges.
 export const TOP_8_HIGHLIGHT_IDS = [
+  'ai-planner',
   'canvas',
   'radar',
   'tracker',
@@ -554,7 +555,6 @@ export const TOP_8_HIGHLIGHT_IDS = [
   'desmos-graphing',
   'pomodoro',
   'flashcards',
-  'drive',
 ];
 
 const CATEGORIES = [
@@ -569,7 +569,7 @@ const CATEGORIES = [
 const LOCAL_PINNED_APPS_KEY = 'scc_pinned_apps_v2';
 
 export function loadPinnedAppIds(): string[] {
-  const defaults = ['canvas', 'radar', 'tracker', 'gmail', 'drive'];
+  const defaults = ['ai-planner', 'canvas', 'radar', 'tracker', 'gmail', 'drive'];
   try {
     const saved = localStorage.getItem(LOCAL_PINNED_APPS_KEY);
     if (saved) {

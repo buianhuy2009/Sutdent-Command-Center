@@ -73,7 +73,8 @@ export function sanitizeCanvasAssignments(list: any): CanvasAssignment[] {
 export function sanitizeEmailAlert(e: any, index = 0): EmailAlert | null {
   if (!e || typeof e !== 'object') return null;
   const urgency = e.urgency === 'HIGH' || e.urgency === 'MEDIUM' || e.urgency === 'LOW' || e.urgency === 'INFO' ? e.urgency : 'INFO';
-  return { ...e, id: safeStr(e.id, `alert-${Date.now()}-${index}`), urgency } as EmailAlert;
+  const category = ['ASSIGNMENT','EXAM','GRADE','SCHEDULE','ANNOUNCEMENT','SPAM','PROMOTION','SOCIAL','GENERAL'].includes(e.category) ? e.category : 'GENERAL';
+  return { ...e, id: safeStr(e.id, `alert-${Date.now()}-${index}`), urgency, category, gmailLabels: Array.isArray(e.gmailLabels) ? e.gmailLabels : Array.isArray(e.rawEmail?.labelIds) ? e.rawEmail.labelIds : [] } as EmailAlert;
 }
 
 export function sanitizeEmailAlerts(list: any): EmailAlert[] {
@@ -93,5 +94,6 @@ export function sanitizeRawEmails(list: any): EmailMessage[] {
     snippet: safeStr(e.snippet, ''),
     body: e.body,
     unread: e.unread,
+    labelIds: Array.isArray(e.labelIds) ? e.labelIds : [],
   }));
 }

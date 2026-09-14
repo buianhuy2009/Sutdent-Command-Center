@@ -1341,7 +1341,14 @@ export default function App() {
 
     if (!isSilent) setIsLoadingEvents(true);
     try {
-      const items = await fetchTodayCalendarEvents(token);
+      // Planner needs a 7-day window — fetch upcoming, fall back to today-only.
+      let items: CalendarEvent[] = [];
+      try {
+        const { fetchUpcomingCalendarEvents } = await import('./services/googleWorkspace');
+        items = await fetchUpcomingCalendarEvents(token, 7);
+      } catch {
+        items = await fetchTodayCalendarEvents(token);
+      }
       setCalendarEvents(items);
       setCalendarError(null);
       setCalendarApiInfo(null);
@@ -1428,13 +1435,12 @@ export default function App() {
         try {
           alerts = await summarizeEmailsWithGemini(emails);
         } catch (geminiErr) {
-          console.warn('Gemini email summarizer unavailable, using rule-based classification:', geminiErr);
+          console.warn('Gemini email summarizer unavailable, using Gmail-native classification:', geminiErr);
+          // Offline: Gmail labels only — no content keywords.
           alerts = emails.map((msg, idx) => {
-            const text = `${msg.subject} ${msg.snippet}`.toLowerCase();
-            const isExam = text.includes('exam') || text.includes('midterm') || text.includes('final') || text.includes('quiz') || text.includes('kiểm tra');
-            const isDue = text.includes('due') || text.includes('assignment') || text.includes('homework') || text.includes('submit') || text.includes('deadline') || text.includes('hạn');
-            const isSpam = text.includes('unsubscribe') || text.includes('newsletter') || text.includes('promo') || text.includes('discount');
-            const isUrgent = isExam || isDue || text.includes('urgent') || text.includes('important');
+            const labels = (msg as any).labelIds || [];
+            const isPromo = labels.includes('SPAM') || labels.includes('CATEGORY_PROMOTIONS');
+            const isSocial = !isPromo && labels.includes('CATEGORY_SOCIAL');
             const summary = msg.snippet ? (msg.snippet.slice(0, 160) + (msg.snippet.length > 160 ? '...' : '')) : msg.subject;
 
             return {
@@ -1442,16 +1448,12 @@ export default function App() {
               sender: msg.sender,
               subject: msg.subject,
               oneLineSummary: summary,
-              urgency: isUrgent ? ('HIGH' as const) : ('MEDIUM' as const),
-              category: isExam ? ('EXAM' as const) : isDue ? ('ASSIGNMENT' as const) : isSpam ? ('ANNOUNCEMENT' as const) : ('GENERAL' as const),
-              isSpam,
-              detectedAssignment: isDue || isExam ? {
-                isAssignment: true,
-                name: msg.subject,
-                subject: 'Coursework',
-                dueDate: msg.date || 'Upcoming',
-                priority: 'Med' as const,
-              } : undefined,
+              urgency: isPromo || isSocial ? 'INFO' as const : 'MEDIUM' as const,
+              category: isPromo ? 'PROMOTION' as const : isSocial ? 'SOCIAL' as const : 'GENERAL' as const,
+              isSpam: isPromo,
+              spamReason: isPromo ? 'Sorted by Gmail' : '',
+              gmailLabels: labels,
+              detectedAssignment: undefined,
               rawEmail: msg,
             };
           });
@@ -3141,7 +3143,7 @@ export default function App() {
                 )}
 
                 {activeTab === 'ai-planner' && (
-                  <AIPlannerWorkspace assignments={assignments} canvasAssignments={canvasAssignments} meetings={calendarEvents} />
+                  <AIPlannerWorkspace assignments={assignments} canvasAssignments={canvasAssignments} classroomAssignments={classroomAssignments} emailAlerts={emailAlerts} meetings={calendarEvents} />
                 )}
 
                 {activeTab === 'grade-forecaster' && (

@@ -61,9 +61,10 @@ export function setClientGeminiApiKey(key: string, opts?: { sessionOnly?: boolea
   }
 }
 
-// Current default model (2.5-flash current; 2.0-flash fallback). Retired 1.5-* must NOT be default.
-export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash';
-export const GEMINI_FALLBACK_MODEL = 'gemini-2.0-flash';
+// Judge-locked chain: 3.5-flash → 3.0-flash → Groq. 2.5/2.0 kept as safety net for 404s.
+export const GEMINI_DEFAULT_MODEL = 'gemini-3.5-flash';
+export const GEMINI_FALLBACK_MODEL = 'gemini-3.0-flash';
+export const GEMINI_SAFETY_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'];
 
 /** Mask a key for display (never log full keys). e.g. "AIza...****" */
 export function maskApiKey(key: string): string {
@@ -429,11 +430,11 @@ export async function callGemini(params: {
     const clientKey = getClientGeminiApiKey();
     const targetModel = params.model || GEMINI_DEFAULT_MODEL;
 
-    // 1. Client-side user key priority (fallback to 2.0-flash if 2.5-flash is unavailable for the key)
+    // 1. Client-side user key priority (3.5-flash → 3.0-flash → safety → server → Groq)
     if (clientKey) {
       const modelCandidates = targetModel === GEMINI_DEFAULT_MODEL
-        ? [GEMINI_DEFAULT_MODEL, GEMINI_FALLBACK_MODEL]
-        : [targetModel];
+        ? [GEMINI_DEFAULT_MODEL, GEMINI_FALLBACK_MODEL, ...GEMINI_SAFETY_MODELS]
+        : [targetModel, GEMINI_DEFAULT_MODEL, GEMINI_FALLBACK_MODEL, ...GEMINI_SAFETY_MODELS];
       let clientSucceeded = false;
       let lastClientErr: any = null;
       for (const modelAttempt of modelCandidates) {
@@ -1207,9 +1208,39 @@ Return only JSON.`;
 // -------------------------------------------------------------
 
 export async function summarizeEmailsWithGemini(emails: EmailMessage[]): Promise<EmailAlert[]> {
+  // Gmail-native pre-sort: trust labelIds, never keywords. SPAM + PROMOTIONS share
+  // the PROMOTION category, SOCIAL gets its own tab. Academic senders found in
+  // PROMOTIONS/SOCIAL are still AI-routed (user requirement).
+  const ACADEMIC_SENDER_RE = /classroom|canvas|moodle|blackboard|\.edu|school|teacher|professor|instructor|phòng đào tạo|giáo viên/i;
+  const isAcademicSender = (e: EmailMessage) =>
+    ACADEMIC_SENDER_RE.test(`${e.senderEmail || ''} ${e.sender || ''}`);
+  const bucketOf = (e: EmailMessage): 'PROMOTION' | 'SOCIAL' | 'AI' => {
+    const labels = e.labelIds || [];
+    if (labels.includes('SPAM')) return 'PROMOTION'; // same category, not hidden
+    if (labels.includes('CATEGORY_PROMOTIONS')) return isAcademicSender(e) ? 'AI' : 'PROMOTION';
+    if (labels.includes('CATEGORY_SOCIAL')) return isAcademicSender(e) ? 'AI' : 'SOCIAL';
+    return 'AI';
+  };
+  const localAlert = (e: EmailMessage, category: 'PROMOTION' | 'SOCIAL'): EmailAlert => ({
+    id: e.id,
+    sender: e.sender,
+    subject: e.subject,
+    oneLineSummary: `${(e.snippet || e.subject || '').slice(0, 75)}...`,
+    urgency: 'INFO' as const,
+    category,
+    categoryLabel: category === 'SOCIAL' ? 'Social' : 'Promotion / Spam',
+    isSpam: category === 'PROMOTION',
+    spamReason: 'Sorted by Gmail',
+    language: 'other' as const,
+    gmailLabels: e.labelIds || [],
+    rawEmail: e,
+  });
   try {
-    // PII: truncate snippet to 300 chars before POST
-    const truncated = emails.map(e => ({ ...e, snippet: (e.snippet||'').slice(0,300), body: e.body ? e.body.slice(0,300) : undefined }));
+    const aiEmails = emails.filter((e) => bucketOf(e) === 'AI');
+    const localAlerts = emails.filter((e) => bucketOf(e) !== 'AI').map((e) => localAlert(e, bucketOf(e) as 'PROMOTION' | 'SOCIAL'));
+    if (aiEmails.length === 0) return localAlerts;
+    // PII: truncate snippet to 300 chars before POST (keep labelIds + sender for server trust)
+    const truncated = aiEmails.map(e => ({ id: e.id, sender: e.sender, senderEmail: e.senderEmail, subject: e.subject, date: e.date, snippet: (e.snippet||'').slice(0,300), body: e.body ? e.body.slice(0,300) : undefined, labelIds: e.labelIds || [] }));
     const res = await fetch('/api/gemini/summarize-emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1218,23 +1249,35 @@ export async function summarizeEmailsWithGemini(emails: EmailMessage[]): Promise
 
     if (!res.ok) throw new Error(`Summarize API failed: ${res.statusText}`);
     const data = await res.json();
-    return (data.alerts || []).map((alert: any) => ({
-      ...alert,
-      rawEmail: emails.find((e) => e.id === alert.id),
-    }));
+    const aiAlerts: EmailAlert[] = (data.alerts || []).map((alert: any) => {
+      const src = aiEmails.find((e) => e.id === alert.id);
+      // Server already trusts Gmail labels; re-assert academic-sender-in-promo stays AI-labeled:
+      // if server forced PROMOTION but sender is academic, keep server label only when Gmail said promo AND sender non-academic.
+      return { ...alert, gmailLabels: src?.labelIds || [], rawEmail: src };
+    });
+    const byId = new Map<string, EmailAlert>();
+    [...aiAlerts, ...localAlerts].forEach((a) => byId.set(a.id, a));
+    // Preserve original inbox order, show ALL by default.
+    return emails.map((e) => byId.get(e.id)).filter((a): a is EmailAlert => Boolean(a));
   } catch (error) {
     console.error('Error calling summarize emails API:', error);
-    return emails.map((e) => ({
-      id: e.id,
-      sender: e.sender,
-      subject: e.subject,
-      oneLineSummary: `${(e.snippet || e.subject || '').slice(0, 75)}...`,
-      urgency: 'LOW' as const,
-      category: 'GENERAL' as const,
-      categoryLabel: 'General Update',
-      isSpam: false,
-      rawEmail: e,
-    }));
+    // Offline fallback: Gmail labels only, no keywords.
+    return emails.map((e) => {
+      const b = bucketOf(e);
+      if (b !== 'AI') return localAlert(e, b);
+      return {
+        id: e.id,
+        sender: e.sender,
+        subject: e.subject,
+        oneLineSummary: `${(e.snippet || e.subject || '').slice(0, 75)}...`,
+        urgency: 'LOW' as const,
+        category: 'GENERAL' as const,
+        categoryLabel: 'General Update',
+        isSpam: false,
+        gmailLabels: e.labelIds || [],
+        rawEmail: e,
+      };
+    });
   }
 }
 

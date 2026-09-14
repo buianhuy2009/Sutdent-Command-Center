@@ -233,15 +233,18 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
   const matchesCategory = (alert: EmailAlert, cat: string) => {
     if (cat === 'ALL') return true;
     if (cat === 'PROMOTIONS') {
+      // Spam + Promotions share one category (Gmail-native, not hidden).
+      const labels = alert.gmailLabels || alert.rawEmail?.labelIds || [];
       return (
         alert.category === 'PROMOTION' ||
         alert.category === 'SPAM' ||
-        alert.subject.toLowerCase().includes('newsletter') ||
-        alert.subject.toLowerCase().includes('event') ||
-        alert.subject.toLowerCase().includes('invite') ||
-        alert.subject.toLowerCase().includes('promotion') ||
-        alert.sender.toLowerCase().includes('noreply')
+        labels.includes('SPAM') ||
+        labels.includes('CATEGORY_PROMOTIONS')
       );
+    }
+    if (cat === 'SOCIAL') {
+      const labels = alert.gmailLabels || alert.rawEmail?.labelIds || [];
+      return alert.category === 'SOCIAL' || labels.includes('CATEGORY_SOCIAL');
     }
     return alert.category === cat;
   };
@@ -272,7 +275,7 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
       return raw?.unread ?? false;
     };
     const counts: Record<string, number> = {};
-    for (const cat of ['ALL', 'ASSIGNMENT', 'EXAM', 'ANNOUNCEMENT', 'PROMOTIONS', 'GENERAL']) {
+    for (const cat of ['ALL', 'ASSIGNMENT', 'EXAM', 'ANNOUNCEMENT', 'PROMOTIONS', 'SOCIAL', 'GENERAL']) {
       counts[cat] = emailAlerts.filter((a) => matchesCategory(a, cat) && isUnread(a)).length;
     }
     return counts;
@@ -354,9 +357,9 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
       {/* Top Filter Bar */}
       <div className="bg-white dark:bg-[#1A1917] rounded-2xl border border-[#DFDACB] dark:border-[#2C2B27] p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
         
-        {/* Category Filter Pills */}
+        {/* Category Filter Pills — ALL default, PROMOTIONS = spam+promo, SOCIAL separate */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          {['ALL', 'ASSIGNMENT', 'EXAM', 'ANNOUNCEMENT', 'PROMOTIONS', 'GENERAL'].map((cat) => (
+          {['ALL', 'ASSIGNMENT', 'EXAM', 'ANNOUNCEMENT', 'PROMOTIONS', 'SOCIAL', 'GENERAL'].map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
@@ -376,6 +379,8 @@ export const GmailRadarTab: React.FC<GmailRadarTabProps> = ({
                 ? t('exam')
                 : cat === 'ANNOUNCEMENT'
                 ? t('gmail_announcement')
+                : cat === 'SOCIAL'
+                ? 'Social'
                 : t('gmail_general')}
               {unreadCounts[cat] > 0 && (
                 <span

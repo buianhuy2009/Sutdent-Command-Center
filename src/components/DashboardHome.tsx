@@ -316,6 +316,30 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
         </div>
 
+        {/* Flagship hero — AI Planner first for judges */}
+        <div className="bg-gradient-to-br from-violet-600 via-[#6D28D9] to-[#4C1D95] rounded-3xl p-5 text-left text-white shadow-lg shadow-violet-500/20 space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider bg-white/20 px-2.5 py-1 rounded-full">
+              <Sparkles className="w-3.5 h-3.5" /> Flagship · AI Planner
+            </span>
+            <span className="text-[11px] font-semibold text-white/80">
+              {pendingAssignments.length} deadlines · {calendarEvents.length} meetings avoided
+            </span>
+          </div>
+          <h2 className="text-lg font-extrabold leading-tight">Your week, planned from every source.</h2>
+          <ul className="text-xs leading-relaxed text-white/90 space-y-1 list-disc pl-4">
+            <li>Tracker + Canvas + Classroom + Gmail + Moodle in one exclusive 7-day timetable.</li>
+            <li>Gmail-native inbox: Spam/Promos share a tab, Social separate, academic senders in Promo still AI-sorted — zero keywords.</li>
+            <li>AI chain 3.5-flash → 3.0-flash → Groq with offline fallback — never blank.</li>
+          </ul>
+          <button
+            onClick={() => onNavigateWorkspace('ai-planner')}
+            className="px-5 py-2.5 bg-white text-[#4C1D95] rounded-xl text-xs font-extrabold hover:bg-white/90 transition flex items-center gap-2 cursor-pointer"
+          >
+            Open AI Planner <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+
         {/* Today's Plan — overdue grouping + due today */}
         {pendingAssignments.length > 0 ? (
           <div className="bg-white/70 dark:bg-[#1C1B19]/60 backdrop-blur-md rounded-3xl border border-[#DFDACB] dark:border-[#2C2B27] p-5 text-left space-y-3">

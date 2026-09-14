@@ -344,11 +344,12 @@ export async function fetchAcademicEmails(
     let query = options?.customQuery;
     if (!query) {
       if (options?.mode === 'academic') {
-        query =
-          'in:inbox (assignment OR quiz OR exam OR due OR test OR project OR syllabus OR homework OR rubric OR grade OR "bài tập" OR "kiểm tra" OR "hạn nộp" OR "thông báo" OR teacher OR professor OR canvas OR classroom)';
+        // Academic mode: keep broad inbox scope, trust Gmail native categories
+        // instead of keyword OR-lists. Spam/Trash excluded at API level.
+        query = 'in:inbox -in:chats -in:spam -in:trash';
       } else {
-        // Default to real-time latest inbox messages
-        query = 'in:inbox -in:chats';
+        // Default: latest inbox, Gmail-native spam/trash already excluded.
+        query = 'in:inbox -in:chats -in:spam -in:trash';
       }
     }
 
@@ -400,6 +401,7 @@ export async function fetchAcademicEmails(
             date: dateHeader ? new Date(dateHeader.value).toLocaleDateString() : 'Recent',
             snippet: bodySnippet,
             unread: Array.isArray(data.labelIds) && data.labelIds.includes('UNREAD'),
+            labelIds: Array.isArray(data.labelIds) ? data.labelIds : [],
           };
         } catch (e) {
           return null;

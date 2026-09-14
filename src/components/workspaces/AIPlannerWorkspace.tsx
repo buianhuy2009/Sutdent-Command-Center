@@ -14,8 +14,8 @@ import {
   KeyRound,
   MessageSquareText,
 } from 'lucide-react';
-import type { Assignment, CalendarEvent, CanvasAssignment } from '../../types';
-import { getClientGeminiApiKey, getClientGroqApiKey } from '../../services/gemini';
+import type { Assignment, CalendarEvent, CanvasAssignment, EmailAlert } from '../../types';
+import { callGemini, GEMINI_DEFAULT_MODEL } from '../../services/gemini';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -24,7 +24,11 @@ import { getClientGeminiApiKey, getClientGroqApiKey } from '../../services/gemin
 export interface AIPlannerWorkspaceProps {
   assignments: Assignment[];
   canvasAssignments: CanvasAssignment[];
-  /** Read-only Google Calendar events (optional). Never written to. */
+  /** Classroom coursework (same shape as Canvas). Optional for backward compat. */
+  classroomAssignments?: CanvasAssignment[];
+  /** Gmail radar alerts with detectedAssignment. Optional. */
+  emailAlerts?: EmailAlert[];
+  /** Read-only Google Calendar events (optional). Prefer 7-day upcoming feed. */
   meetings?: CalendarEvent[];
 }
 
@@ -135,37 +139,90 @@ interface DatedTask {
   dueISO: string;
   priority: 'High' | 'Med' | 'Low';
   minutes: number;
-  origin: 'assignment' | 'canvas';
+  origin: 'assignment' | 'canvas' | 'classroom' | 'gmail' | 'moodle';
 }
 
-function harvestTasks(assignments: Assignment[], canvas: CanvasAssignment[]): DatedTask[] {
+function readCachedArray(key: string): any[] {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function harvestTasks(
+  assignments: Assignment[],
+  canvas: CanvasAssignment[],
+  classroom?: CanvasAssignment[],
+  emailAlerts?: EmailAlert[],
+  days?: string[],
+): DatedTask[] {
   const out: DatedTask[] = [];
+  const fallbackDue = days && days.length > 0 ? days[days.length - 1] : toISODate(addDays(new Date(), 6));
   for (const a of assignments || []) {
     if (!a || a.status === 'Done') continue;
-    const dueISO = parseDueToISO(a.dueDate);
-    if (!dueISO) continue;
+    let dueISO = parseDueToISO(a.dueDate);
+    if (!dueISO) {
+      // Undated High-priority still deserves a slot — backlog to end of week.
+      if (a.priority !== 'High') continue;
+      dueISO = fallbackDue;
+    }
+    const subMin = Array.isArray(a.subtasks)
+      ? a.subtasks.reduce((s, st: any) => s + (Number(st?.estimatedMinutes) || 0), 0)
+      : 0;
     out.push({
       key: `a-${a.id}`,
       title: a.assignmentName || 'Untitled assignment',
       subject: a.subject || 'General',
       dueISO,
       priority: a.priority || 'Med',
-      minutes: Math.max(30, Math.min(240, a.estimatedMinutes || 90)),
+      minutes: Math.max(30, Math.min(240, Math.max(a.estimatedMinutes || 90, subMin || 0))),
       origin: 'assignment',
     });
   }
-  for (const c of canvas || []) {
-    if (!c || c.isCompleted || c.isInformational) continue;
-    const dueISO = parseDueToISO(c.dueAt);
-    if (!dueISO) continue;
+  const pushLms = (c: CanvasAssignment, prefix: string, origin: DatedTask['origin'], fallbackSubject: string) => {
+    if (!c || c.isCompleted || c.isInformational) return;
+    const dueISO = parseDueToISO((c as any).dueAt);
+    if (!dueISO) return;
     out.push({
-      key: `c-${c.id}`,
-      title: c.name || 'Untitled Canvas item',
-      subject: c.courseName || 'Canvas',
+      key: `${prefix}-${c.id}`,
+      title: c.name || 'Untitled item',
+      subject: c.courseName || fallbackSubject,
       dueISO,
       priority: 'Med',
       minutes: 60,
-      origin: 'canvas',
+      origin,
+    });
+  };
+  for (const c of canvas || []) pushLms(c, 'c', 'canvas', 'Canvas');
+  for (const c of classroom || []) pushLms(c, 'gclass', 'classroom', 'Classroom');
+  for (const m of readCachedArray('scc_cached_moodle_assignments')) {
+    pushLms(
+      { id: String(m?.id || m?.name || Math.random()), name: m?.name || m?.title, courseName: m?.courseName || m?.course || 'Moodle', dueAt: m?.dueAt || m?.dueDate } as CanvasAssignment,
+      'm',
+      'moodle',
+      'Moodle',
+    );
+  }
+  const seenGmail = new Set<string>();
+  for (const alert of emailAlerts || []) {
+    const det = alert?.detectedAssignment;
+    if (!det?.isAssignment) continue;
+    const title = (det.name || alert.subject || '').trim();
+    if (!title || seenGmail.has(title.toLowerCase())) continue;
+    seenGmail.add(title.toLowerCase());
+    const dueISO = parseDueToISO(det.dueDate) || fallbackDue;
+    out.push({
+      key: `g-${alert.id}`,
+      title,
+      subject: det.subject || 'Gmail',
+      dueISO,
+      priority: det.priority || 'Med',
+      minutes: 60,
+      origin: 'gmail',
     });
   }
   const weight = { High: 0, Med: 1, Low: 2 } as const;
@@ -204,6 +261,25 @@ function meetingsToBusy(meetings?: CalendarEvent[]): BusySpan[] {
       });
     } catch {
       /* ignore malformed events */
+    }
+  }
+  return spans;
+}
+
+/** Weekly timetable (scc_timetable_v1 {day:Mon..Sun,hour:8..19,title}) → busy spans for this 7-day window. */
+function timetableToBusy(days: string[]): BusySpan[] {
+  const rows = readCachedArray('scc_timetable_v1');
+  if (rows.length === 0) return [];
+  const idx: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const spans: BusySpan[] = [];
+  for (const dayISO of days) {
+    const dow = new Date(`${dayISO}T12:00:00`).getDay();
+    for (const r of rows) {
+      const key = String(r?.day || '').slice(0, 3);
+      if (idx[key] !== dow) continue;
+      const h = Number(r?.hour);
+      if (!Number.isFinite(h)) continue;
+      spans.push({ dayISO, startMin: h * 60, endMin: Math.min(1440, h * 60 + 60), label: String(r?.title || 'Class') });
     }
   }
   return spans;
@@ -295,8 +371,9 @@ function buildLocalPlan(
   for (const task of tasks) {
     const left = daysUntil(task.dueISO);
     const sessionsNeeded = task.minutes > 120 ? 3 : task.minutes > 60 ? 2 : 1;
-    // Eligible days: from today up to (and including) the due date, capped to the 7-day window.
-    const eligible = days.filter((d) => d <= task.dueISO);
+    // Eligible days: today → due date within the 7-day window.
+    // Overdue (due < today) front-loads across the whole week instead of vanishing.
+    const eligible = task.dueISO < days[0] ? [...days] : days.filter((d) => d <= task.dueISO);
     const ordered = [...eligible].sort((a, b) => {
       // Urgent items first, then earliest slot — spreads load across free days.
       if (left <= 2) return a.localeCompare(b);
@@ -323,8 +400,9 @@ function buildLocalPlan(
 }
 
 /* ------------------------------------------------------------------ */
-/* Gemini enhancement (BYOK, read-only key import, direct REST call).   */
-/* Any failure → null, caller falls back to the local plan.            */
+/* AI enhancement (judge-locked chain: 3.5-flash → 3.0-flash → Groq).  */
+/* Uses shared callGemini so BYOK, server proxy, and Groq all work.   */
+/* Any failure → null, caller falls back to the local plan.           */
 /* ------------------------------------------------------------------ */
 
 async function tryGeminiPlan(
@@ -333,13 +411,7 @@ async function tryGeminiPlan(
   constraints: PlannerConstraints,
   signal: AbortSignal,
 ): Promise<PlanBlock[] | null> {
-  let key = '';
-  try {
-    key = (getClientGeminiApiKey() || getClientGroqApiKey() || '').trim();
-  } catch {
-    key = '';
-  }
-  if (!key) return null;
+  if (signal.aborted) return null;
 
   const prompt = [
     'You are a student timetable planner. Return ONLY valid JSON: an array of blocks.',
@@ -347,24 +419,16 @@ async function tryGeminiPlan(
     `Week days (use only these): ${days.join(', ')}.`,
     `Constraints: avoidMornings=${constraints.avoidMornings}, preferEvenings=${constraints.preferEvenings}, moreBreaks=${constraints.moreBreaks}, blockedDays=${constraints.blockedDays.join('|') || 'none'}.`,
     'Rules: exclusive timetable — no overlapping blocks. 45-75 minute sessions. Put urgent due dates first.',
-    `Tasks: ${JSON.stringify(tasks.slice(0, 20))}`,
+    `Tasks: ${JSON.stringify(tasks.slice(0, 40))}`,
   ].join('\n');
 
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(key)}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt.slice(0, 12000) }] }] }),
-        signal,
-      },
-    );
-    if (!res.ok) return null;
-    const json = await res.json().catch(() => null);
-    const text: string =
-      json?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text || '').join('') || '';
-    if (!text) return null;
+    const text = await callGemini({
+      contents: prompt.slice(0, 12000),
+      config: { responseMimeType: 'application/json' },
+      model: GEMINI_DEFAULT_MODEL,
+    });
+    if (!text || signal.aborted) return null;
     const start = text.indexOf('[');
     const end = text.lastIndexOf(']');
     if (start < 0 || end <= start) return null;
@@ -389,7 +453,7 @@ async function tryGeminiPlan(
         dayISO,
         startMin: Math.max(0, Math.min(1439, Math.round(s))),
         endMin: Math.max(1, Math.min(1440, Math.round(e))),
-        reason: String(b?.reason || 'Placed by Gemini around your deadlines.').slice(0, 140),
+        reason: String(b?.reason || 'Placed by AI around your deadlines.').slice(0, 140),
         kind: 'study',
       });
     });
@@ -437,11 +501,11 @@ function parseConstraintsFromText(
       changes.push('Shorter 45-minute sessions with breathers between them.');
     }
   }
-  // Day mentions combined with busy/meeting/reschedule/avoid/off → block that day.
-  const dayBusy = /(busy|meeting|reschedul|avoid|off|unavailable|no\s*time|booked)/.test(lower);
+  // Explicit "keep X clear / busy Friday / no time Monday" blocks that day — same rule every weekday.
+  const dayBusy = /(busy|meeting|reschedul|avoid|off|unavailable|no\s*time|booked|clear|keep|move)/.test(lower);
   WEEKDAYS.forEach((wd, idx) => {
     if (!lower.includes(wd) && !lower.includes(wd.slice(0, 3))) return;
-    if (!dayBusy && !/friday/.test(wd)) return;
+    if (!dayBusy) return;
     const match = days.find((iso) => new Date(`${iso}T12:00:00`).getDay() === idx);
     if (match && !next.blockedDays.includes(match)) {
       next.blockedDays.push(match);
@@ -463,14 +527,19 @@ function parseConstraintsFromText(
 export const AIPlannerWorkspace: React.FC<AIPlannerWorkspaceProps> = ({
   assignments,
   canvasAssignments,
+  classroomAssignments,
+  emailAlerts,
   meetings,
 }) => {
   const days = useMemo(() => next7Days(), []);
   const tasks = useMemo(
-    () => harvestTasks(assignments || [], canvasAssignments || []),
-    [assignments, canvasAssignments],
+    () => harvestTasks(assignments || [], canvasAssignments || [], classroomAssignments, emailAlerts, days),
+    [assignments, canvasAssignments, classroomAssignments, emailAlerts, days],
   );
-  const busySpans = useMemo(() => meetingsToBusy(meetings), [meetings]);
+  const busySpans = useMemo(
+    () => [...meetingsToBusy(meetings), ...timetableToBusy(days)],
+    [meetings, days],
+  );
   const busyByDay = useMemo(() => {
     const map: Record<string, BusySpan[]> = {};
     for (const b of busySpans) (map[b.dayISO] ||= []).push(b);
@@ -525,28 +594,22 @@ export const AIPlannerWorkspace: React.FC<AIPlannerWorkspaceProps> = ({
         await delay(340);
         if (ctrl.signal.aborted) return;
 
-        let keyPresent = false;
-        try {
-          keyPresent = Boolean((getClientGeminiApiKey() || getClientGroqApiKey() || '').trim());
-        } catch {
-          keyPresent = false;
-        }
-        setPhase(keyPresent ? 'Asking Gemini for a smart layout…' : 'Planning locally — no key needed…');
+        setPhase('Asking AI for a smart layout (3.5-flash → 3.0-flash → Groq)…');
         await delay(300);
         if (ctrl.signal.aborted) return;
 
         const local = buildLocalPlan(tasks, busySpans, days, active);
         let blocks = local;
         let mode: 'ai' | 'local' = 'local';
-        if (keyPresent) {
-          setPhase('Refining slots with Gemini…');
+        {
+          setPhase('Refining slots with AI…');
           const ai = await tryGeminiPlan(tasks, days, active, ctrl.signal);
           if (ai && ai.length > 0) {
             blocks = ai;
             mode = 'ai';
           } else {
             setAiError(
-              'Gemini did not return a usable plan (key may be invalid or quota reached) — showing the offline plan instead. Add a key in Settings → AI (BYOK).',
+              'AI did not return a usable plan (keys missing or quota reached) — showing the offline plan instead. Add a key in Settings → AI (BYOK).',
             );
           }
         }
@@ -689,7 +752,7 @@ export const AIPlannerWorkspace: React.FC<AIPlannerWorkspaceProps> = ({
               }`}
             >
               <Sparkles className="h-3 w-3" aria-hidden="true" />
-              {plan.mode === 'ai' ? 'Gemini-tuned plan' : 'Offline plan — no key needed'}
+              {plan.mode === 'ai' ? 'AI-tuned plan (3.5-flash → 3.0-flash → Groq)' : 'Offline plan — no key needed'}
             </span>
             <span className="text-[#6B6860] dark:text-[#A8A49A]">
               Built {new Date(plan.generatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}

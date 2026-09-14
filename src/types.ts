@@ -54,9 +54,11 @@ export interface EmailMessage {
   snippet: string;
   body?: string;
   unread?: boolean;
+  /** Gmail native labels (CATEGORY_PROMOTIONS, CATEGORY_SOCIAL, SPAM, etc.). Trusted over keywords. */
+  labelIds?: string[];
 }
 
-export type EmailCategory = 'ASSIGNMENT' | 'EXAM' | 'GRADE' | 'SCHEDULE' | 'ANNOUNCEMENT' | 'SPAM' | 'PROMOTION' | 'GENERAL';
+export type EmailCategory = 'ASSIGNMENT' | 'EXAM' | 'GRADE' | 'SCHEDULE' | 'ANNOUNCEMENT' | 'SPAM' | 'PROMOTION' | 'SOCIAL' | 'GENERAL';
 
 export interface EmailAlert {
   id: string;
@@ -77,6 +79,8 @@ export interface EmailAlert {
     priority: PriorityLevel;
   };
   rawEmail?: EmailMessage;
+  /** Gmail native labels carried through (trusted over keywords). */
+  gmailLabels?: string[];
 }
 
 export interface SchoolFile {

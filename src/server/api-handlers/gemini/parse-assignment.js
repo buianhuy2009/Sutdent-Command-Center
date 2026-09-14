@@ -37,7 +37,7 @@ Respond with JSON:
 Return only JSON.`;
 
     const response = await ai.models.generateContent({
-      model: process.env.GEMINI_MODEL || "gemini-3.6-flash",
+      model: process.env.GEMINI_MODEL || "gemini-3.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",

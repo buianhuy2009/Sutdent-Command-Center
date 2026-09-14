@@ -1,6 +1,7 @@
-// Current default model (2.5-flash current; 2.0-flash fallback). Retired 1.5-* must NOT be default.
-export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash';
-export const GEMINI_FALLBACK_MODEL = 'gemini-2.0-flash';
+// Judge-locked chain: 3.5-flash → 3.0-flash → Groq. 2.5/2.0 kept as safety net for 404s.
+export const GEMINI_DEFAULT_MODEL = 'gemini-3.5-flash';
+export const GEMINI_FALLBACK_MODEL = 'gemini-3.0-flash';
+export const GEMINI_SAFETY_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'];
 
 /** Mask a key for display (never log full keys). e.g. "AIza...****" */
 export function maskApiKey(key: string): string {

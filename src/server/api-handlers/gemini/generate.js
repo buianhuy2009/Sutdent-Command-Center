@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 let genAI=null;
 function getGenAI(){ if(!genAI){ genAI=new GoogleGenAI({apiKey: process.env.GEMINI_API_KEY||""}); } return genAI; }
-const CANDIDATE_MODELS=[process.env.GEMINI_MODEL,"gemini-2.0-flash","gemini-2.0-flash-lite","gemini-1.5-flash"].filter(Boolean);
+const CANDIDATE_MODELS=[process.env.GEMINI_MODEL,"gemini-3.5-flash","gemini-3.0-flash","gemini-2.5-flash","gemini-2.0-flash"].filter(Boolean);
 async function generateWithModelFallback(params){
   const ai=getGenAI(); let last=null;
   for(const model of CANDIDATE_MODELS){

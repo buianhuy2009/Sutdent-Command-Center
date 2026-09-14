@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.12.0';
+export const CURRENT_VERSION = '2.13.0';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,25 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.13.0',
+    date: 'September 14, 2026',
+    title: 'AI Planner All-Source Upgrade + Gmail-Native Inbox + Judge Hero',
+    badge: 'Latest Update',
+    highlights: [
+      'AI Planner now builds your week from Tracker, Canvas, Classroom, Gmail, Moodle, 7-day Calendar and timetable — overdue front-loads instead of vanishing',
+      'Gmail trusts Gmail: Spam and Promotions share one tab, Social gets its own, ALL shows by default, academic senders in Promo still AI-sorted, zero content keywords',
+      'AI chain locked to 3.5-flash → 3.0-flash → Groq with offline fallback, plus a flagship hero card, Top-8 first slot and pinned sidebar',
+    ],
+    details: [
+      '083 Planner all-source harvest: Classroom coursework, Gmail detected assignments, cached Moodle items, subtask minutes and undated High-priority backlog feed the same exclusive timetable with timetable busy-blocking (find it in Schedule → AI Planner).',
+      '084 Gmail-native inbox: labelIds plumbing end-to-end, pre-AI promo/social skip (academic-sender exception), server prompt + fallback rewritten to labels, Social tab added, Spam merged into Promotions, ALL default (find it in Gmail Radar).',
+      '085 Model chain + hero: shared callGemini 3.5-flash → 3.0-flash → safety → server → Groq everywhere, planner AI-tuned badge, Dashboard flagship card, App Store Top-8 first + pinned default (find it on Dashboard → AI Planner).',
+    ]
+  },
+  {
     version: '2.12.0',
     date: 'September 13, 2026',
     title: 'Homework Sorter Metrics + Classifier Lab Experiment',
-    badge: 'Latest Update',
     highlights: [
       'Homework Sorter now proves its learning: honest holdout accuracy, confusion matrix, and top-word reasons for every prediction — all on-device, no key needed',
       'New Classifier Lab tab runs a Baseline vs Few-shot experiment on your own school messages and shows exactly how much 3 examples help',
