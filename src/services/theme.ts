@@ -1,7 +1,8 @@
-// Warm Linen / Sand / Terracotta:
-// Light = #F8F6F0 / Sidebar #F1ECE1 / Cards #FFFFFF / Border #E7DFD3
-// Accent #E05D38 (hover #C94F2D) / Active pill #FCEEE8 / Ink #2B2621 / Muted #70695E
-// Dark  = Soft charcoal #252320 / Canvas text #F5F4ED / Accent #E05D38 / Surface #35322B
+// Paper & Coal / Claude accent:
+// Light = paper #F5F0E6 / Sidebar #EAE2D1 / Cards #EAE2D1 / Border #D5C9AF
+// Accent #D97757 (hover #B85C38) / Active pill #F6DDCC / Ink #26241F / Muted #7A7161
+// Dark  = coal #201D18 / Panel #2B2620 / Element #38312A / Cream text #ECE3D0
+// Muted #A2937B / Accent text #E8936B / Border #4A4136
 export type ThemeId = 'linen' | 'midnight';
 
 const THEME_KEY = 'scc_color_theme_v1';
@@ -37,8 +38,8 @@ function migrateLegacyThemeKeyOnce() {
 }
 
 export const THEME_META: Record<ThemeId, { label: string; accent: string; bg: string }> = {
-  linen: { label: 'Warm Linen (Light)', accent: '#E05D38', bg: '#F8F6F0' },
-  midnight: { label: 'Soft Charcoal (Dark)', accent: '#E05D38', bg: '#252320' },
+  linen: { label: 'Paper (Light)', accent: '#D97757', bg: '#F5F0E6' },
+  midnight: { label: 'Coal (Dark)', accent: '#D97757', bg: '#201D18' },
 };
 
 // Legacy palettes (ocean/forest/nord/dracula/catppuccin/cyberpunk/parchment) were

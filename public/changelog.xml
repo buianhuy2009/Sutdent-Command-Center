@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.14.0 — Paper &amp; Coal Theme + Semantic Palette</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.14.0</link>
+      <pubDate>Mon, 14 Sep 2026 00:00:00 GMT</pubDate>
+      <description>New Paper light (#F5F0E6) and Coal dark (#201D18) theme with Claude-orange accent, ink/cream text, rebalanced borders, and new semantic colors (gold, sage, clay, amber, slate).</description>
+    </item>
+    <item>
       <title>v2.13.0 — AI Planner All-Source Upgrade + Gmail-Native Inbox + Judge Hero</title>
       <link>https://student-command-center.vercel.app/?changelog=2.13.0</link>
       <pubDate>Mon, 14 Sep 2026 00:00:00 GMT</pubDate>

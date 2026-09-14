@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.13.0';
+export const CURRENT_VERSION = '2.14.0';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,22 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.14.0',
+    date: 'September 14, 2026',
+    title: 'Paper & Coal Theme + Semantic Palette',
+    badge: 'Latest Update',
+    highlights: [
+      'New Paper light and Coal dark theme: warmer canvas, cream cards, Claude-orange accent everywhere',
+      'New semantic colors (gold, sage, clay, amber, slate) ready for badges and status chips',
+    ],
+    details: [
+      '086 Paper & Coal restyle: light canvas #F5F0E6 with #EAE2D1 panels, dark coal #201D18 with #2B2620 panels, Claude #D97757 accent with #B85C38 hover, plus ink/cream text and rebalanced borders (applies app-wide, find it in Settings → Appearance).',
+    ]
+  },
+  {
     version: '2.13.0',
     date: 'September 14, 2026',
     title: 'AI Planner All-Source Upgrade + Gmail-Native Inbox + Judge Hero',
-    badge: 'Latest Update',
     highlights: [
       'AI Planner now builds your week from Tracker, Canvas, Classroom, Gmail, Moodle, 7-day Calendar and timetable — overdue front-loads instead of vanishing',
       'Gmail trusts Gmail: Spam and Promotions share one tab, Social gets its own, ALL shows by default, academic senders in Promo still AI-sorted, zero content keywords',
