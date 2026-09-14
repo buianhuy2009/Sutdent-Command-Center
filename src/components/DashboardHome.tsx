@@ -316,11 +316,11 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
           </div>
         </div>
 
-        {/* Flagship hero — AI Planner first for judges */}
+        {/* AI Planner — most-used planning entry point */}
         <div className="bg-gradient-to-br from-violet-600 via-[#6D28D9] to-[#4C1D95] rounded-3xl p-5 text-left text-white shadow-lg shadow-violet-500/20 space-y-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider bg-white/20 px-2.5 py-1 rounded-full">
-              <Sparkles className="w-3.5 h-3.5" /> Flagship · AI Planner
+              <Sparkles className="w-3.5 h-3.5" /> AI Planner
             </span>
             <span className="text-[11px] font-semibold text-white/80">
               {pendingAssignments.length} deadlines · {calendarEvents.length} meetings avoided

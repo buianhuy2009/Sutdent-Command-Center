@@ -705,6 +705,17 @@ html.dark [class*="divide-[#E8E6DC]"] > :not([hidden]) ~ :not([hidden]) { border
 .text-\[\#E8E6DC\] { color: #D5C9AF; }
 html.dark .text-\[\#E8E6DC\], html.dark .dark\:text-\[\#2C2B27\] { color: #4A4136; }
 kbd[class*="bg-white"], kbd[class*="bg-[#FAF9F5]"] { background-color: #F5F0E6; }
+/* Dark-mode safety net — light-only muted/ink text with NO dark: counterpart
+   would vanish on coal. Only applies when the element has no dark:text-* class,
+   so explicit dark choices always win. */
+html.dark .text-\[\#8C897F\]:not([class*="dark:text"]),
+html.dark .text-\[\#5E5D59\]:not([class*="dark:text"]),
+html.dark .text-\[\#5C5A54\]:not([class*="dark:text"]),
+html.dark .text-\[\#6B6860\]:not([class*="dark:text"]),
+html.dark .text-\[\#70695E\]:not([class*="dark:text"]),
+html.dark .text-\[\#A8A49A\]:not([class*="dark:text"]) { color: #A2937B; }
+html.dark .text-\[\#141413\]:not([class*="dark:text"]) { color: #ECE3D0; }
+html.dark .hover\:text-\[\#141413\]:hover, html.dark .hover\:text-\[\#1A1917\]:hover { color: #ECE3D0; }
 
 /* === Guided-tour spotlight — warm terracotta pulse on the real UI target === */
 .scc-tour-flash {

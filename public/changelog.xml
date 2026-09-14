@@ -6,6 +6,12 @@
     <description>Plain-English updates to StudentOS — what changed and why it matters for studying.</description>
     <language>en-us</language>
     <item>
+      <title>v2.15.0 — AI Planner Day View + Editable Times + Linked Sources</title>
+      <link>https://student-command-center.vercel.app/?changelog=2.15.0</link>
+      <pubDate>Mon, 14 Sep 2026 00:00:00 GMT</pubDate>
+      <description>AI Planner shows one roomy day at a time with editable block times and a linked Tracker, Canvas, Classroom, Gmail and Moodle source list; dark-mode text safety net and Flagship wording removed.</description>
+    </item>
+    <item>
       <title>v2.14.0 — Paper &amp; Coal Theme + Semantic Palette</title>
       <link>https://student-command-center.vercel.app/?changelog=2.14.0</link>
       <pubDate>Mon, 14 Sep 2026 00:00:00 GMT</pubDate>
@@ -15,7 +21,7 @@
       <title>v2.13.0 — AI Planner All-Source Upgrade + Gmail-Native Inbox + Judge Hero</title>
       <link>https://student-command-center.vercel.app/?changelog=2.13.0</link>
       <pubDate>Mon, 14 Sep 2026 00:00:00 GMT</pubDate>
-      <description>AI Planner fuses Tracker, Canvas, Classroom, Gmail, Moodle, 7-day Calendar and timetable with a 3.5-flash to 3.0-flash to Groq chain; Gmail trusts native Spam/Promo/Social labels with zero keywords; Dashboard hero, Top-8 first slot and pinned sidebar put the flagship first.</description>
+      <description>AI Planner fuses Tracker, Canvas, Classroom, Gmail, Moodle, 7-day Calendar and timetable with a 3.5-flash to 3.0-flash to Groq chain; Gmail trusts native Spam/Promo/Social labels with zero keywords; Dashboard hero, Top-8 first slot and pinned sidebar put it first.</description>
     </item>
     <item>
       <title>v2.12.0 — Homework Sorter Metrics + Classifier Lab Experiment</title>
@@ -24,10 +30,10 @@
       <description>Homework Sorter gains honest on-device metrics (holdout accuracy, confusion matrix, top-word reasons) and a new Classifier Lab tab compares zero-shot baseline vs 3-example few-shot on your own school messages with a side-by-side scoreboard.</description>
     </item>
     <item>
-      <title>v2.11.0 — Study Tools Wave + AI Planner Flagship + Safer Sync &amp; Keys</title>
+      <title>v2.11.0 — Study Tools Wave + AI Planner + Safer Sync &amp; Keys</title>
       <link>https://student-command-center.vercel.app/?changelog=2.11.0</link>
       <pubDate>Sun, 13 Sep 2026 00:00:00 GMT</pubDate>
-      <description>Searchable PhET library with 29 sims, official GeoGebra embeds, local whiteboard and offline Python, strict embed allowlist, Gemini 2.5-flash keys with edit and expiry, Google auto-connect, named Canvas errors, formal Dossier, VI/EN contrast fixes, Gantt scan-all with preview, flashcard session limits, focus music, PDF fallback, Notion ZIP/CSV export, flagship AI Planner, sanitized studio embeds, silent-empty Canvas fix, and a unified keys manager.</description>
+      <description>Searchable PhET library with 29 sims, official GeoGebra embeds, local whiteboard and offline Python, strict embed allowlist, Gemini 2.5-flash keys with edit and expiry, Google auto-connect, named Canvas errors, formal Dossier, VI/EN contrast fixes, Gantt scan-all with preview, flashcard session limits, focus music, PDF fallback, Notion ZIP/CSV export, AI Planner, sanitized studio embeds, silent-empty Canvas fix, and a unified keys manager.</description>
     </item>
     <item>
       <title>v2.10.0 — Warm Linen Theme + Buttery Motion</title>

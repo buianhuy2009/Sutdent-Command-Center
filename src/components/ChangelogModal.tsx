@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 
-export const CURRENT_VERSION = '2.14.0';
+export const CURRENT_VERSION = '2.15.0';
 
 interface VersionRelease {
   version: string;
@@ -14,10 +14,25 @@ interface VersionRelease {
 
 const RELEASES: VersionRelease[] = [
   {
+    version: '2.15.0',
+    date: 'September 14, 2026',
+    title: 'AI Planner Day View + Editable Times + Linked Sources',
+    badge: 'Latest Update',
+    highlights: [
+      'AI Planner shows one roomy day at a time with a day picker — no more squished week grid',
+      'Every block time is editable and saved; connected Tracker, Canvas, Classroom, Gmail and Moodle items stay linked in-panel with placement status',
+      'Dark-mode safety net: muted text without a dark variant now falls back to cream instead of vanishing',
+    ],
+    details: [
+      '088 Day focus: the 7-column grid is now a day picker with per-day counts plus prev/next arrows, big cards with full start–end times and durations (find it in Schedule → AI Planner).',
+      '089 Editable times + sources: each block has Edit time (15-minute minimum, overlap warning, persisted until Regenerate), and a Planned-from list shows every connected item with origin chip, due, minutes, placed-or-missing status and Open link — no tab-hopping.',
+      '090 Dark text net + naming: light-only muted/ink text auto-falls-back in dark mode unless the component sets its own dark color; AI Coach pill contrast raised; Flagship wording removed everywhere.',
+    ]
+  },
+  {
     version: '2.14.0',
     date: 'September 14, 2026',
     title: 'Paper & Coal Theme + Semantic Palette',
-    badge: 'Latest Update',
     highlights: [
       'New Paper light and Coal dark theme: warmer canvas, cream cards, ember-orange accent everywhere',
       'New semantic colors (gold, sage, clay, amber, slate) ready for badges and status chips',
@@ -34,12 +49,12 @@ const RELEASES: VersionRelease[] = [
     highlights: [
       'AI Planner now builds your week from Tracker, Canvas, Classroom, Gmail, Moodle, 7-day Calendar and timetable — overdue front-loads instead of vanishing',
       'Gmail trusts Gmail: Spam and Promotions share one tab, Social gets its own, ALL shows by default, academic senders in Promo still AI-sorted, zero content keywords',
-      'AI chain locked to 3.5-flash → 3.0-flash → Groq with offline fallback, plus a flagship hero card, Top-8 first slot and pinned sidebar',
+      'AI chain locked to 3.5-flash → 3.0-flash → Groq with offline fallback, plus a hero card, Top-8 first slot and pinned sidebar',
     ],
     details: [
       '083 Planner all-source harvest: Classroom coursework, Gmail detected assignments, cached Moodle items, subtask minutes and undated High-priority backlog feed the same exclusive timetable with timetable busy-blocking (find it in Schedule → AI Planner).',
       '084 Gmail-native inbox: labelIds plumbing end-to-end, pre-AI promo/social skip (academic-sender exception), server prompt + fallback rewritten to labels, Social tab added, Spam merged into Promotions, ALL default (find it in Gmail Radar).',
-      '085 Model chain + hero: shared callGemini 3.5-flash → 3.0-flash → safety → server → Groq everywhere, planner AI-tuned badge, Dashboard flagship card, App Store Top-8 first + pinned default (find it on Dashboard → AI Planner).',
+      '085 Model chain + hero: shared callGemini 3.5-flash → 3.0-flash → safety → server → Groq everywhere, planner AI-tuned badge, Dashboard hero card, App Store Top-8 first + pinned default (find it on Dashboard → AI Planner).',
     ]
   },
   {
@@ -59,10 +74,10 @@ const RELEASES: VersionRelease[] = [
   {
     version: '2.11.0',
     date: 'September 13, 2026',
-    title: 'Study Tools Wave + AI Planner Flagship + Safer Sync & Keys',
+    title: 'Study Tools Wave + AI Planner + Safer Sync & Keys',
     highlights: [
       'STEM Lab grows up: searchable PhET library with 29 sims, real GeoGebra applets, local whiteboard, offline Python, and a PDF reader that never goes blank',
-      'New AI Planner flagship builds your week from real deadlines, Gantt scans every task with a live preview, and flashcards stop at a healthy session limit',
+      'New AI Planner builds your week from real deadlines, Gantt scans every task with a live preview, and flashcards stop at a healthy session limit',
       'Safer everywhere: strict embed allowlist, hardened research tools, sanitized studio embeds, honest Canvas errors, auto-reconnect Google, and one Keys manager for Gemini + Google + Canvas',
     ],
     details: [
@@ -83,7 +98,7 @@ const RELEASES: VersionRelease[] = [
       '072 Local Pyodide: the Python runner now loads Pyodide locally for offline-friendly execution with a clear loading state (find it in Code Runner; READY).',
       '073 PDF fallback: the PDF reader shows a friendly fallback with download/open options instead of a blank page when a file cannot render (find it in PDF Reader).',
       '074 Notion zip/csv: notes export to Notion-friendly ZIP/CSV with preserved formatting and per-note files (find it in Notes → Export).',
-      '075 AI Planner flagship: the new AI Planner turns deadlines, free gaps, and focus goals into an accept-or-drag weekly plan with breaks (find it in Schedule → AI Planner).',
+      '075 AI Planner: the new AI Planner turns deadlines, free gaps, and focus goals into an accept-or-drag weekly plan with breaks (find it in Schedule → AI Planner).',
       '077 CreationStudio XSS sanitize: studio embeds and pasted HTML are now sanitized so untrusted markup cannot run scripts (find it in Creation Studio).',
       '078 Canvas silent-empty fix: a configured-but-empty Canvas sync now explains itself instead of showing a silent empty list (find it in Canvas LMS tab).',
       '079 Unified keys manager: one Keys manager covers Gemini, Google, and Canvas credentials with masked display, test, and revoke in one place (find it in Settings → Keys).',

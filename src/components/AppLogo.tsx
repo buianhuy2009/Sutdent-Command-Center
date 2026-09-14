@@ -353,7 +353,7 @@ export const AppLogo: React.FC<AppLogoProps> = ({ id, size = 'md', className = '
         </div>
       );
 
-    // 25b. AI Planner — flagship study timetable
+    // 25b. AI Planner — study timetable
     case 'ai-planner':
       return (
         <div aria-label="AI Planner" className={`${sizeClasses} bg-gradient-to-br from-[#8B5CF6] to-[#4C1D95] text-white flex items-center justify-center font-bold shadow-sm shadow-violet-500/20 shrink-0 ${className}`}>

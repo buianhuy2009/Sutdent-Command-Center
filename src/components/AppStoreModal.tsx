@@ -459,10 +459,9 @@ export const APP_CATALOG: AppStoreItem[] = [
     id: 'ai-planner',
     name: 'AI Planner',
     category: 'Plan',
-    description: 'Exclusive 7-day study timetable from assignments, Canvas & meetings.',
-    longOverview: 'Scans your assignments and Canvas deadlines, works around Google Calendar meetings, and lays out one exclusive 7-day timetable. Chat to reschedule in plain words.',
-    features: ['Exclusive 7-day timetable', 'Gemini BYOK with offline fallback', 'Chat re-plan in plain words', 'Read-only calendar — never writes'],
-    badge: 'Flagship',
+    description: 'Day-by-day study plan from Tracker, Canvas, Classroom, Gmail & meetings — times editable.',
+    longOverview: 'Scans your assignments, Canvas, Classroom and Gmail deadlines, works around meetings and timetable, and lays out a day-by-day plan. Times are editable, sources stay linked in-panel, chat to reschedule in plain words.',
+    features: ['Day-by-day agenda', 'Editable block times', 'Connected sources in-panel', 'Read-only calendar — never writes'],
     developer: 'StudentOS',
     rating: 5.0,
   },
@@ -545,7 +544,7 @@ export const APP_CATALOG: AppStoreItem[] = [
   },
 ];
 
-// Top 8 Recommended Highlight Apps (Exactly 8) — AI Planner flagship first for judges.
+// Top 8 Recommended Highlight Apps (Exactly 8) — AI Planner first.
 export const TOP_8_HIGHLIGHT_IDS = [
   'ai-planner',
   'canvas',

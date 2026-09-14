@@ -13,6 +13,11 @@ import {
   ListPlus,
   KeyRound,
   MessageSquareText,
+  Pencil,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  ListTodo,
 } from 'lucide-react';
 import type { Assignment, CalendarEvent, CanvasAssignment, EmailAlert } from '../../types';
 import { callGemini, GEMINI_DEFAULT_MODEL } from '../../services/gemini';
@@ -34,6 +39,8 @@ export interface AIPlannerWorkspaceProps {
 
 interface PlanBlock {
   id: string;
+  /** Stable source task key (e.g. `a-123`) so the resource list can count placed sessions. */
+  taskKey?: string;
   title: string;
   subject: string;
   dayISO: string; // YYYY-MM-DD
@@ -111,6 +118,21 @@ function fmtTime(min: number): string {
   return `${h}:${`${m}`.padStart(2, '0')} ${ampm}`;
 }
 
+function minToInput(min: number): string {
+  const h = Math.max(0, Math.min(23, Math.floor(min / 60)));
+  const m = Math.max(0, Math.min(59, Math.round(min % 60)));
+  return `${`${h}`.padStart(2, '0')}:${`${m}`.padStart(2, '0')}`;
+}
+
+function inputToMin(v: string): number | null {
+  const m = /^(\d{1,2}):(\d{2})/.exec(v || '');
+  if (!m) return null;
+  const h = Number(m[1]);
+  const mm = Number(m[2]);
+  if (h > 23 || mm > 59) return null;
+  return h * 60 + mm;
+}
+
 function dayLabel(iso: string): string {
   const d = new Date(`${iso}T12:00:00`);
   const today = toISODate(new Date());
@@ -140,6 +162,8 @@ interface DatedTask {
   priority: 'High' | 'Med' | 'Low';
   minutes: number;
   origin: 'assignment' | 'canvas' | 'classroom' | 'gmail' | 'moodle';
+  /** Deep link back to the source (tracker doc, Canvas/Classroom URL) when known. */
+  url?: string;
 }
 
 function readCachedArray(key: string): any[] {
@@ -181,6 +205,7 @@ function harvestTasks(
       priority: a.priority || 'Med',
       minutes: Math.max(30, Math.min(240, Math.max(a.estimatedMinutes || 90, subMin || 0))),
       origin: 'assignment',
+      url: a.docUrl,
     });
   }
   const pushLms = (c: CanvasAssignment, prefix: string, origin: DatedTask['origin'], fallbackSubject: string) => {
@@ -195,13 +220,14 @@ function harvestTasks(
       priority: 'Med',
       minutes: 60,
       origin,
+      url: (c as any).htmlUrl || (c as any).url,
     });
   };
   for (const c of canvas || []) pushLms(c, 'c', 'canvas', 'Canvas');
   for (const c of classroom || []) pushLms(c, 'gclass', 'classroom', 'Classroom');
   for (const m of readCachedArray('scc_cached_moodle_assignments')) {
     pushLms(
-      { id: String(m?.id || m?.name || Math.random()), name: m?.name || m?.title, courseName: m?.courseName || m?.course || 'Moodle', dueAt: m?.dueAt || m?.dueDate } as CanvasAssignment,
+      { id: String(m?.id || m?.name || Math.random()), name: m?.name || m?.title, courseName: m?.courseName || m?.course || 'Moodle', dueAt: m?.dueAt || m?.dueDate, htmlUrl: m?.htmlUrl || m?.url } as CanvasAssignment,
       'm',
       'moodle',
       'Moodle',
@@ -335,6 +361,7 @@ function buildLocalPlan(
           seq += 1;
           blocks.push({
             id: `${task.key}-s${seq}`,
+            taskKey: task.key,
             title: task.title,
             subject: task.subject,
             dayISO,
@@ -521,6 +548,26 @@ function parseConstraintsFromText(
 }
 
 /* ------------------------------------------------------------------ */
+/* Origin badges for the in-panel resource list                       */
+/* ------------------------------------------------------------------ */
+
+const ORIGIN_META: Record<DatedTask['origin'], { label: string; chip: string }> = {
+  assignment: { label: 'Tracker', chip: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300' },
+  canvas: { label: 'Canvas', chip: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' },
+  classroom: { label: 'Classroom', chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
+  gmail: { label: 'Gmail', chip: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
+  moodle: { label: 'Moodle', chip: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
+};
+
+function dueNote(dueISO: string): string {
+  const left = daysUntil(dueISO);
+  if (left < 0) return `Due ${dueISO} · overdue`;
+  if (left === 0) return `Due today`;
+  if (left === 1) return `Due tomorrow`;
+  return `Due ${dueISO} · ${left}d left`;
+}
+
+/* ------------------------------------------------------------------ */
 /* Component                                                           */
 /* ------------------------------------------------------------------ */
 
@@ -662,6 +709,52 @@ export const AIPlannerWorkspace: React.FC<AIPlannerWorkspaceProps> = ({
 
   const handleRegenerate = () => void runPlanning(constraints);
 
+  /* ------------------------- day focus + manual times ------------------------- */
+
+  const [selectedDay, setSelectedDay] = useState<string>(() => days[0]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editStart, setEditStart] = useState('');
+  const [editEnd, setEditEnd] = useState('');
+  const [showSources, setShowSources] = useState(true);
+
+  const beginEdit = (b: PlanBlock) => {
+    setEditingId(b.id);
+    setEditStart(minToInput(b.startMin));
+    setEditEnd(minToInput(b.endMin));
+  };
+
+  /** Manual time change — saved into the persisted plan (Regenerate rebuilds from scratch). */
+  const saveEdit = (b: PlanBlock) => {
+    const s = inputToMin(editStart);
+    const e = inputToMin(editEnd);
+    if (s === null || e === null || e - s < 15 || s < 0 || e > 1440) return;
+    setPlan((prev) => {
+      if (!prev) return prev;
+      const blocks = prev.blocks.map((x) => (x.id === b.id ? { ...x, startMin: s, endMin: e } : x));
+      blocks.sort((x, y) => x.dayISO.localeCompare(y.dayISO) || x.startMin - y.startMin);
+      const next = { ...prev, blocks };
+      persist(next);
+      return next;
+    });
+    setEditingId(null);
+  };
+
+  const placedByKey = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const b of plan?.blocks || []) {
+      if (b.kind === 'break') continue;
+      const key = b.taskKey || (tasks.some((t) => b.id.startsWith(`${t.key}-`)) ? b.id.slice(0, b.id.lastIndexOf('-s')) : null);
+      if (key) map[key] = (map[key] || 0) + 1;
+    }
+    return map;
+  }, [plan, tasks]);
+
+  const stepDay = (dir: 1 | -1) => {
+    const i = days.indexOf(selectedDay);
+    const n = Math.min(days.length - 1, Math.max(0, i + dir));
+    setSelectedDay(days[n]);
+  };
+
   const handleChatSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const text = draft.trim();
@@ -713,7 +806,7 @@ export const AIPlannerWorkspace: React.FC<AIPlannerWorkspaceProps> = ({
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-4 overflow-x-hidden px-1">
+    <div className="mx-auto w-full max-w-4xl space-y-4 overflow-x-hidden px-1">
       {/* Header */}
       <div className="rounded-3xl border border-[#DFDACB] bg-white p-5 shadow-card dark:border-[#2C2B27] dark:bg-[#1A1917] sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -724,7 +817,7 @@ export const AIPlannerWorkspace: React.FC<AIPlannerWorkspaceProps> = ({
             <div className="min-w-0">
               <h2 className="text-lg font-bold text-[#1A1917] dark:text-[#F5F2EA]">AI Planner</h2>
               <p className="mt-0.5 text-xs leading-relaxed text-[#6B6860] dark:text-[#A8A49A]">
-                Exclusive 7-day timetable from {tasks.length} dated item{tasks.length === 1 ? '' : 's'}
+                Day-by-day plan from {tasks.length} dated item{tasks.length === 1 ? '' : 's'}
                 {hasMeetingFeed ? ` · working around ${busySpans.length} meeting${busySpans.length === 1 ? '' : 's'}` : ''}
                 {plan ? ` · ${Math.round(totalStudyMin / 60)}h planned` : ''}
               </p>
@@ -814,74 +907,250 @@ export const AIPlannerWorkspace: React.FC<AIPlannerWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Hero agenda */}
-      {plan && !phase && (
-        <div ref={planLiveRef} aria-live="polite" className="grid items-start gap-3 lg:grid-cols-7">
-          {days.map((day) => {
-            const dayBlocks = (blocksByDay[day] || []).filter((b) => b.kind !== 'break');
-            const breaks = (blocksByDay[day] || []).filter((b) => b.kind === 'break');
-            const meetingsToday = busyByDay[day] || [];
-            const isEmpty = dayBlocks.length === 0 && meetingsToday.length === 0;
-            return (
-              <section
-                key={day}
-                aria-label={dayLabel(day)}
-                className="min-w-0 rounded-2xl border border-[#DFDACB] bg-white p-3 shadow-card dark:border-[#2C2B27] dark:bg-[#1A1917]"
-              >
-                <h3 className="truncate text-xs font-bold text-[#1A1917] dark:text-[#F5F2EA]">{dayLabel(day)}</h3>
-                <div className="mt-2 space-y-2">
-                  {meetingsToday.map((m, i) => (
-                    <div
-                      key={`m-${i}`}
-                      className="rounded-xl border border-sky-200 bg-sky-50 p-2 dark:border-sky-900 dark:bg-sky-950/40"
-                    >
-                      <p className="flex items-center gap-1 text-[11px] font-bold text-sky-800 dark:text-sky-200">
-                        <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
-                        <span className="truncate">{fmtTime(m.startMin)} – {fmtTime(m.endMin)}</span>
-                      </p>
-                      <p className="mt-0.5 break-words text-[11px] font-semibold text-sky-900 dark:text-sky-100">{m.label}</p>
-                      <p className="text-[10px] text-sky-600 dark:text-sky-400">Busy — kept clear</p>
-                    </div>
-                  ))}
-                  {dayBlocks.map((b) => (
+      {/* Day focus — one roomy day at a time, times editable */}
+      {plan && !phase && (() => {
+        const dayBlocks = (blocksByDay[selectedDay] || []).filter((b) => b.kind !== 'break');
+        const breaks = (blocksByDay[selectedDay] || []).filter((b) => b.kind === 'break');
+        const meetingsToday = busyByDay[selectedDay] || [];
+        const dayMin = dayBlocks.reduce((s, b) => s + (b.endMin - b.startMin), 0);
+        const isEmpty = dayBlocks.length === 0 && meetingsToday.length === 0;
+        return (
+          <div ref={planLiveRef} aria-live="polite" className="mx-auto w-full max-w-3xl space-y-3">
+            <div className="flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="Pick a day">
+              {days.map((day) => {
+                const n = (blocksByDay[day] || []).filter((b) => b.kind !== 'break').length;
+                const active = day === selectedDay;
+                const d = new Date(`${day}T12:00:00`);
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setSelectedDay(day)}
+                    className={`flex min-w-[64px] flex-1 flex-col items-center gap-0.5 rounded-2xl border px-2 py-2 text-xs font-bold transition ${
+                      active
+                        ? 'border-[#D97757] bg-[#D97757] text-white shadow-sm'
+                        : 'border-[#DFDACB] bg-white text-[#6B6860] hover:border-[#D97757]/50 dark:border-[#2C2B27] dark:bg-[#1A1917] dark:text-[#A8A49A]'
+                    }`}
+                  >
+                    <span className="text-[10px] font-semibold uppercase tracking-wide opacity-80">
+                      {d.toLocaleDateString('en-US', { weekday: 'short' })}
+                    </span>
+                    <span className="text-sm">{d.getDate()}</span>
+                    <span className={`rounded-full px-1.5 text-[10px] font-bold ${active ? 'bg-white/25 text-white' : 'bg-[#D97757]/10 text-[#D97757]'}`}>
+                      {n === 0 ? '·' : `${n} block${n === 1 ? '' : 's'}`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <section
+              aria-label={dayLabel(selectedDay)}
+              className="rounded-3xl border border-[#DFDACB] bg-white p-5 shadow-card dark:border-[#2C2B27] dark:bg-[#1A1917]"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-base font-bold text-[#1A1917] dark:text-[#F5F2EA]">{dayLabel(selectedDay)}</h3>
+                  <p className="text-xs text-[#6B6860] dark:text-[#A8A49A]">
+                    {dayBlocks.length === 0 && meetingsToday.length === 0
+                      ? 'Nothing scheduled'
+                      : `${dayBlocks.length} study block${dayBlocks.length === 1 ? '' : 's'} · ${Math.floor(dayMin / 60)}h ${dayMin % 60}m`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button type="button" onClick={() => stepDay(-1)} disabled={days.indexOf(selectedDay) === 0} aria-label="Previous day" className="rounded-xl border border-[#DFDACB] p-2 text-[#6B6860] transition hover:border-[#D97757] disabled:opacity-40 dark:border-[#2C2B27] dark:text-[#A8A49A]">
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  <button type="button" onClick={() => stepDay(1)} disabled={days.indexOf(selectedDay) === days.length - 1} aria-label="Next day" className="rounded-xl border border-[#DFDACB] p-2 text-[#6B6860] transition hover:border-[#D97757] disabled:opacity-40 dark:border-[#2C2B27] dark:text-[#A8A49A]">
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {meetingsToday.map((m, i) => (
+                  <div
+                    key={`m-${i}`}
+                    className="rounded-2xl border border-sky-200 bg-sky-50 p-3 dark:border-sky-900 dark:bg-sky-950/40"
+                  >
+                    <p className="flex items-center gap-1.5 text-sm font-bold text-sky-800 dark:text-sky-200">
+                      <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      {fmtTime(m.startMin)} – {fmtTime(m.endMin)}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-sky-900 dark:text-sky-100">{m.label}</p>
+                    <p className="text-xs text-sky-600 dark:text-sky-400">Busy — kept clear</p>
+                  </div>
+                ))}
+                {dayBlocks.map((b) => {
+                  const dur = b.endMin - b.startMin;
+                  const s = inputToMin(editStart);
+                  const e = inputToMin(editEnd);
+                  const valid = editingId === b.id && s !== null && e !== null && e - s >= 15 && s >= 0 && e <= 1440;
+                  const clash = valid && (blocksByDay[selectedDay] || []).some(
+                    (o) => o.id !== b.id && o.kind !== 'break' && (s as number) < o.endMin && o.startMin < (e as number),
+                  );
+                  return (
                     <article
                       key={b.id}
-                      className={`rounded-xl border p-2 ${
+                      className={`rounded-2xl border p-4 ${
                         b.kind === 'review'
                           ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40'
                           : 'border-violet-200 bg-violet-50 dark:border-violet-900 dark:bg-violet-950/30'
                       }`}
                     >
-                      <p className="flex items-center gap-1 text-[11px] font-bold text-[#1A1917] dark:text-[#F5F2EA]">
-                        {b.kind === 'review'
-                          ? <BookOpen className="h-3 w-3 shrink-0 text-emerald-600" aria-hidden="true" />
-                          : <CalendarCheck className="h-3 w-3 shrink-0 text-violet-600" aria-hidden="true" />}
-                        <span className="truncate">{fmtTime(b.startMin)} – {fmtTime(b.endMin)}</span>
-                      </p>
-                      <p className="mt-0.5 break-words text-[11px] font-bold leading-snug text-[#1A1917] dark:text-[#F5F2EA]">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="flex items-center gap-1.5 text-sm font-bold text-[#1A1917] dark:text-[#F5F2EA]">
+                          {b.kind === 'review'
+                            ? <BookOpen className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+                            : <CalendarCheck className="h-4 w-4 shrink-0 text-violet-600" aria-hidden="true" />}
+                          {fmtTime(b.startMin)} – {fmtTime(b.endMin)}
+                          <span className="text-xs font-semibold text-[#6B6860] dark:text-[#A8A49A]">({dur} min)</span>
+                        </p>
+                        {editingId !== b.id && (
+                          <button
+                            type="button"
+                            onClick={() => beginEdit(b)}
+                            aria-label={`Change time for ${b.title}`}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[#DFDACB] px-2 py-1 text-[11px] font-bold text-[#6B6860] transition hover:border-[#D97757] hover:text-[#D97757] dark:border-[#2C2B27] dark:text-[#A8A49A]"
+                          >
+                            <Pencil className="h-3 w-3" aria-hidden="true" />
+                            Edit time
+                          </button>
+                        )}
+                      </div>
+                      <p className="mt-1 text-sm font-bold leading-snug text-[#1A1917] dark:text-[#F5F2EA]">
                         {b.title}
                       </p>
-                      <p className="truncate text-[10px] font-medium text-[#6B6860] dark:text-[#A8A49A]">{b.subject}</p>
-                      <p className="mt-1 break-words text-[10px] italic leading-snug text-[#6B6860] dark:text-[#A8A49A]">
+                      <p className="text-xs font-medium text-[#6B6860] dark:text-[#A8A49A]">{b.subject}</p>
+                      <p className="mt-1 text-xs italic leading-snug text-[#6B6860] dark:text-[#A8A49A]">
                         {b.reason}
                       </p>
+                      {editingId === b.id && (
+                        <div className="mt-3 rounded-xl border border-[#DFDACB] bg-white p-3 dark:border-[#2C2B27] dark:bg-[#1F1E1B]">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <label className="sr-only" htmlFor={`start-${b.id}`}>Start time</label>
+                            <input
+                              id={`start-${b.id}`}
+                              type="time"
+                              value={editStart}
+                              onChange={(ev) => setEditStart(ev.target.value)}
+                              className="rounded-lg border border-[#DFDACB] bg-white px-2 py-1.5 text-xs font-bold text-[#1A1917] dark:border-[#2C2B27] dark:bg-[#1A1917] dark:text-[#F5F2EA]"
+                            />
+                            <span className="text-xs font-bold text-[#6B6860] dark:text-[#A8A49A]">–</span>
+                            <label className="sr-only" htmlFor={`end-${b.id}`}>End time</label>
+                            <input
+                              id={`end-${b.id}`}
+                              type="time"
+                              value={editEnd}
+                              onChange={(ev) => setEditEnd(ev.target.value)}
+                              className="rounded-lg border border-[#DFDACB] bg-white px-2 py-1.5 text-xs font-bold text-[#1A1917] dark:border-[#2C2B27] dark:bg-[#1A1917] dark:text-[#F5F2EA]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => saveEdit(b)}
+                              disabled={!valid}
+                              className="rounded-lg bg-[#D97757] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#B85C38] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingId(null)}
+                              className="rounded-lg border border-[#DFDACB] px-3 py-1.5 text-xs font-bold text-[#6B6860] dark:border-[#2C2B27] dark:text-[#A8A49A]"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                          {!valid && (
+                            <p className="mt-2 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                              Sessions need at least 15 minutes between 12:00 AM and midnight.
+                            </p>
+                          )}
+                          {valid && clash && (
+                            <p className="mt-2 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                              Heads up — this overlaps another block on {dayLabel(selectedDay).split('·')[0].trim()}.
+                            </p>
+                          )}
+                          <p className="mt-1 text-[11px] text-[#6B6860] dark:text-[#A8A49A]">
+                            Saved to this plan. Regenerate or chat re-plan rebuilds from scratch.
+                          </p>
+                        </div>
+                      )}
                     </article>
-                  ))}
-                  {breaks.length > 0 && (
-                    <p className="flex items-center gap-1 px-1 text-[10px] font-medium text-[#6B6860] dark:text-[#A8A49A]">
-                      <Coffee className="h-3 w-3 shrink-0" aria-hidden="true" />
-                      {breaks.length} breather{breaks.length === 1 ? '' : 's'} tucked in
-                    </p>
-                  )}
-                  {isEmpty && (
-                    <p className="rounded-xl border border-dashed border-[#DFDACB] p-2 text-center text-[10px] text-[#A8A49A] dark:border-[#2C2B27]">
-                      Open day — nothing scheduled.
-                    </p>
-                  )}
-                </div>
-              </section>
-            );
-          })}
+                  );
+                })}
+                {breaks.length > 0 && (
+                  <p className="flex items-center gap-1.5 px-1 text-xs font-medium text-[#6B6860] dark:text-[#A8A49A]">
+                    <Coffee className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    {breaks.length} breather{breaks.length === 1 ? '' : 's'} tucked in
+                  </p>
+                )}
+                {isEmpty && (
+                  <p className="rounded-2xl border border-dashed border-[#DFDACB] p-6 text-center text-xs text-[#A8A49A] dark:border-[#2C2B27]">
+                    Open day — nothing scheduled. Pick another day above, or edit any block's time to move it here.
+                  </p>
+                )}
+              </div>
+            </section>
+          </div>
+        );
+      })()}
+
+      {/* Connected resources — the todo lists behind this plan, no tab-hopping */}
+      {plan && !phase && (
+        <div className="mx-auto w-full max-w-3xl rounded-3xl border border-[#DFDACB] bg-white shadow-card dark:border-[#2C2B27] dark:bg-[#1A1917]">
+          <button
+            type="button"
+            onClick={() => setShowSources((v) => !v)}
+            aria-expanded={showSources}
+            className="flex w-full items-center justify-between gap-2 p-5 text-left"
+          >
+            <span className="flex min-w-0 items-center gap-2 text-sm font-bold text-[#1A1917] dark:text-[#F5F2EA]">
+              <ListTodo className="h-4 w-4 shrink-0 text-[#D97757]" aria-hidden="true" />
+              <span className="truncate">Planned from — {tasks.length} connected item{tasks.length === 1 ? '' : 's'}</span>
+            </span>
+            <ChevronRight className={`h-4 w-4 shrink-0 text-[#6B6860] transition-transform dark:text-[#A8A49A] ${showSources ? 'rotate-90' : ''}`} aria-hidden="true" />
+          </button>
+          {showSources && (
+            <ul className="space-y-2 px-5 pb-5">
+              {tasks.map((t) => {
+                const placed = placedByKey[t.key] || 0;
+                const meta = ORIGIN_META[t.origin];
+                return (
+                  <li
+                    key={t.key}
+                    className="flex items-start justify-between gap-3 rounded-2xl border border-[#DFDACB] bg-[#FAF9F5] p-3 dark:border-[#2C2B27] dark:bg-[#1F1E1B]"
+                  >
+                    <div className="min-w-0">
+                      <p className="flex flex-wrap items-center gap-1.5">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${meta.chip}`}>{meta.label}</span>
+                        <span className="min-w-0 break-words text-xs font-bold text-[#1A1917] dark:text-[#F5F2EA]">{t.title}</span>
+                      </p>
+                      <p className="mt-1 text-[11px] text-[#6B6860] dark:text-[#A8A49A]">
+                        {t.subject} · {dueNote(t.dueISO)} · ~{t.minutes} min
+                      </p>
+                      <p className={`mt-0.5 text-[11px] font-semibold ${placed > 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}`}>
+                        {placed > 0 ? `${placed} session${placed === 1 ? '' : 's'} in this plan` : 'Not placed — no free slot this week'}
+                      </p>
+                    </div>
+                    {t.url && (
+                      <a
+                        href={t.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-[#DFDACB] px-2 py-1 text-[11px] font-bold text-[#6B6860] transition hover:border-[#D97757] hover:text-[#D97757] dark:border-[#2C2B27] dark:text-[#A8A49A]"
+                      >
+                        <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                        Open
+                      </a>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       )}
 
@@ -898,7 +1167,7 @@ export const AIPlannerWorkspace: React.FC<AIPlannerWorkspaceProps> = ({
           {chat.length === 0 && (
             <p className="rounded-2xl bg-[#FAF9F5] p-3 text-xs text-[#6B6860] dark:bg-[#1F1E1B] dark:text-[#A8A49A]">
               No reschedule notes yet — your latest plan is shown above. Tell me what changed and I will
-              re-lay the week around it.
+              re-lay the plan around it.
             </p>
           )}
           {chat.slice(-10).map((m, i) => (
