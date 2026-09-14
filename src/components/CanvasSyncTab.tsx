@@ -279,7 +279,7 @@ export const CanvasSyncTab: React.FC<CanvasSyncTabProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Sync error banner — single channel (no duplicate toast). Claude palette. */}
+      {/* Sync error banner — single channel (no duplicate toast). Ember palette. */}
       {errorMessage && (
         <div className="p-4 rounded-2xl border border-[#E8E6DC] dark:border-[#4F4A3E] bg-white dark:bg-[#262624] flex items-start gap-3" role="alert">
           <AlertTriangle className="w-5 h-5 text-[#C96442] shrink-0 mt-0.5" />

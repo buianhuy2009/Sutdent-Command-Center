@@ -543,7 +543,7 @@ export const AccountSettingsModal: React.FC<AccountSettingsModalProps> = ({
                     </div>
                   )}
 
-                  {/* Setting Card: User Avatar Selection — Claude neutrals, single terracotta active */}
+                  {/* Setting Card: User Avatar Selection — Ember neutrals, single terracotta active */}
                   <div className="p-4 bg-[#E8E6DC] dark:bg-[#1F1E1B] rounded-2xl border border-[#E8E6DC] dark:border-[#2C2B27] space-y-3">
                     <div>
                       <div className="text-xs font-bold text-[#141413] dark:text-[#F5F4ED]">

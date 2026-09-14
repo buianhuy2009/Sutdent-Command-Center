@@ -1,4 +1,4 @@
-// Paper & Coal / Claude accent:
+// Paper & Coal / Ember accent:
 // Light = paper #F5F0E6 / Sidebar #EAE2D1 / Cards #EAE2D1 / Border #D5C9AF
 // Accent #D97757 (hover #B85C38) / Active pill #F6DDCC / Ink #26241F / Muted #7A7161
 // Dark  = coal #201D18 / Panel #2B2620 / Element #38312A / Cream text #ECE3D0

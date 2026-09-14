@@ -19,11 +19,12 @@ const RELEASES: VersionRelease[] = [
     title: 'Paper & Coal Theme + Semantic Palette',
     badge: 'Latest Update',
     highlights: [
-      'New Paper light and Coal dark theme: warmer canvas, cream cards, Claude-orange accent everywhere',
+      'New Paper light and Coal dark theme: warmer canvas, cream cards, ember-orange accent everywhere',
       'New semantic colors (gold, sage, clay, amber, slate) ready for badges and status chips',
     ],
     details: [
-      '086 Paper & Coal restyle: light canvas #F5F0E6 with #EAE2D1 panels, dark coal #201D18 with #2B2620 panels, Claude #D97757 accent with #B85C38 hover, plus ink/cream text and rebalanced borders (applies app-wide, find it in Settings → Appearance).',
+      '086 Paper & Coal restyle: light canvas #F5F0E6 with #EAE2D1 panels, dark coal #201D18 with #2B2620 panels, Ember #D97757 accent with #B85C38 hover, plus ink/cream text and rebalanced borders (applies app-wide, find it in Settings → Appearance).',
+      '087 Contrast pass: AI Coach pill, breadcrumb separator and kbd chips re-toned so text never matches its background in either mode.',
     ]
   },
   {
@@ -102,106 +103,14 @@ const RELEASES: VersionRelease[] = [
   {
     version: '2.9.8',
     date: 'September 12, 2026',
-    title: '#f7e4c6 Canvas + Motion & Feel Polish',
+    title: 'Warm Cream Theme — Final Tuning + Motion Polish',
     highlights: [
-      'Background is now your #f7e4c6, and the whole app feels alive: cascading entrances, tactile buttons, lift-on-hover cards',
+      'Warm cream canvas everywhere with a deeper sidebar, softer readable dark mode, and a livelier homepage',
+      'Tactile motion throughout: cascading entrances, lift-on-hover cards, button shine, spring modals',
     ],
     details: [
-      'Canvas (theme tokens in index.css + theme.ts): background token moves to #f7e4c6 everywhere. Feel (new polish layer in index.css): dashboard hub and stat cards cascade in with a staggered rise, the workspace gently rises on load, cards lift with a soft shadow on hover, every button has a tactile press-down, links/focus rings/scrollbars are brand-toned, and prefers-reduced-motion fully disables it all for accessibility. Verified in dist.',
-    ]
-  },
-  {
-    version: '2.9.7',
-    date: 'September 12, 2026',
-    title: '#f2eac7 Canvas + Swatch-Matched Sidebar',
-    highlights: [
-      'Background moves to your #f2eac7, sidebar matched to your swatch',
-    ],
-    details: [
-      'Palette (theme tokens in index.css + theme.ts, Sidebar.tsx): canvas token is now #f2eac7 everywhere; the sidebar rail is set to my best read of your swatch (#EACB8D, edge #D4AF6E) — reply with a hex if your swatch differs and I will set it exactly. Verified in dist.',
-    ]
-  },
-  {
-    version: '2.9.6',
-    date: 'September 12, 2026',
-    title: 'Your Exact Palette — #FAF9F5, #141413, #D97757',
-    highlights: [
-      'Background is now exactly #FAF9F5 warm cream with #D97757 terracotta accents everywhere',
-    ],
-    details: [
-      'Palette (theme tokens in index.css + theme.ts): canvas moves to your #FAF9F5, text stays #141413 dark charcoal, and every CTA/fill/glow that used the old terracotta now uses your #D97757 (small-text accents keep the darker AA-safe shade for readability). Verified in dist.',
-    ]
-  },
-  {
-    version: '2.9.5',
-    date: 'September 12, 2026',
-    title: 'Your Exact Creams — #f7daa3 Canvas, #fcce77 Sidebar',
-    highlights: [
-      'Main workspace and the entire dashboard now use your #f7daa3, sidebar uses your #fcce77',
-    ],
-    details: [
-      'Palette (theme tokens in index.css + theme.ts, Sidebar.tsx, DashboardHome.tsx): canvas token moves to #f7daa3 across every workspace tab and the whole dashboard (its own deeper fill removed), sidebar rail moves to #fcce77 with matching edge. Verified in dist that the remaps win.',
-    ]
-  },
-  {
-    version: '2.9.4',
-    date: 'September 12, 2026',
-    title: 'Claude-Sidebar Cream + Deeper Dashboard',
-    highlights: [
-      'Workspaces and sidebar now wear Claude-sidebar cream, dashboard one shade deeper',
-    ],
-    details: [
-      'Palette (theme tokens in index.css + theme.ts, Sidebar.tsx, DashboardHome.tsx): canvas and sidebar settle on Claude-sidebar #F0EEE6 with a soft hairline edge, dashboard deepens to #E6DFCE, and sidebar active pills move to warm card #FDF6E7 so the selection stays visible on the pale rail. Verified in dist that the unlayered remaps win.',
-    ]
-  },
-  {
-    version: '2.9.3',
-    date: 'September 12, 2026',
-    title: 'Warm Cream Everywhere — Background Fix That Actually Applies',
-    highlights: [
-      'Dashboard and every workspace finally show the warm cream background — the fix is verified in the built CSS',
-      'Settings rows go deeper cream, cards go warm cream, sidebar stays one shade deeper',
-    ],
-    details: [
-      'Root cause (index.css): the cream remaps lived in @layer base, where Tailwind v4 utilities always beat them — every background silently rendered the old pale hex. They are now unlayered (verified: .bg-[#F5F4ED] resolves to var(--linen) #F5E7C6 in dist), so dashboard, all workspace tabs, Settings whites and sand rows show warm cream #F5E7C6 with deeper #EAD0A2 rows and #FDF6E7 cards.',
-      'Sidebar (Sidebar.tsx): softened to #ECD2A6 — lighter than before, still clearly deeper than the warm cream workspace.',
-    ]
-  },
-  {
-    version: '2.9.2',
-    date: 'September 12, 2026',
-    title: 'Warmer Workspace + Richer Sidebar',
-    highlights: [
-      'Dashboard and workspace glow in a warmer orange cream, with the sidebar one shade richer',
-    ],
-    details: [
-      'Palette (theme tokens in index.css + theme.ts, Sidebar.tsx): canvas warms from #F0EEE6 to orange cream #F4E5C6 and the sidebar deepens to #E9CDA0 with a matching edge — cards, borders and dark mode follow the existing tokens untouched.',
-    ]
-  },
-  {
-    version: '2.9.1',
-    date: 'September 12, 2026',
-    title: 'Plain Warm Cream Background — Starry Wash Removed',
-    highlights: [
-      'The grey starry wash on the dashboard is gone — plain Claude-sidebar warm cream behind everything',
-    ],
-    details: [
-      'Dashboard (DashboardHome.tsx + Settings): the NASA wallpaper full-screen background layer and its Card/Wallpaper switch are removed entirely — the daily space photo lives on as a normal card only, so the background stays clean warm cream #F0EEE6 with the sidebar a touch deeper. Anyone stuck on wallpaper mode automatically gets the card view.',
-    ]
-  },
-  {
-    version: '2.9.0',
-    date: 'September 12, 2026',
-    title: 'Warm Cream Theme + Gentle Dark Mode + Lively Landing',
-    highlights: [
-      'Every screen is now warm cream — dashboard, sidebar and panels share one cozy canvas',
-      'Dark mode is softer and easier to read, no more pitch-black surfaces',
-      'Logged-out homepage glows brighter with floating warmth and scroll-reveal animations',
-    ],
-    details: [
-      'Palette (theme tokens in index.css + theme.ts, Sidebar.tsx): light canvas warms to #F7F0DE with cards at #FDF8EC and sand borders #D9CBAE; the sidebar settles into a deeper warm cream #E7D9BC with dark-coffee text. One token change flows everywhere — dashboard, tracker, Canvas, settings — via the existing remap layers.',
-      'Dark mode (elevation system in index.css): canvas lifts from near-black #141413 to soft warm charcoal #252320, surfaces/borders/inputs step up to match, and dim secondary text brightens to #C7C2B4 so small labels stay legible. Find the toggle in the sidebar footer or landing header.',
-      'Landing (logged-out homepage): brighter #FAF3E4 wash, two slowly drifting warm gradient blobs behind the hero, buttery scroll-reveal with staggered card cascades and hover lifts, smooth anchor scrolling, and a press-down feel on the main CTA. All motion respects prefers-reduced-motion.',
+      'Palette (theme tokens in index.css + theme.ts, Sidebar.tsx, DashboardHome.tsx): eight tuning passes (2.9.0–2.9.7) settled the canvas, sidebar and card creams, removed the starry wallpaper wash, and fixed the CSS-layer bug that kept backgrounds pale — final canvas #f7e4c6 with unlayered remaps verified in dist.',
+      'Dark mode (elevation system in index.css): near-black lifted to soft warm charcoal with stepped surfaces and brighter secondary text. Landing: brighter wash, drifting gradient blobs, scroll-reveal cascades. All motion respects prefers-reduced-motion.',
     ]
   },
   {
@@ -272,16 +181,16 @@ const RELEASES: VersionRelease[] = [
   {
     version: '2.7.0',
     date: 'September 11, 2026',
-    title: 'Claude Palette, VI/EN Toggle, Calmer Toolbars & Honest Canvas',
+    title: 'Ember Palette, VI/EN Toggle, Calmer Toolbars & Honest Canvas',
     highlights: [
-      'Whole app now follows the Anthropic Claude palette — canvas, hairline borders and primary accent',
+      'Whole app now follows the Ember palette — canvas, hairline borders and primary accent',
       'New Vietnamese / English toggle in the navbar, landing header, footer and Settings — auto-detects on first visit',
       'Master Tracker toolbar decluttered — filters, export and sheet link moved into a Filters panel, AI Rank merged into Smart Add',
       'Canvas failures show one clear banner only (no more duplicate popup) and never wipe your loaded assignments',
       'Logged-out homepage rebuilt — Features, How-it-works, FAQ and Privacy sections with anchor navigation',
     ],
     details: [
-      'Palette (theme, stylesheet, app shell): tokens move to Claude official values — canvas #F5F4ED, warm-sand borders #E8E6DC, primary #C96442, muted #5E5D59. Avatar badges drop off-palette blue/emerald/purple for Claude neutrals, and error toasts use the dark surface instead of the old rose block. Find it in Settings → Appearance.',
+      'Palette (theme, stylesheet, app shell): tokens move to Ember official values — canvas #F5F4ED, warm-sand borders #E8E6DC, primary #C96442, muted #5E5D59. Avatar badges drop off-palette blue/emerald/purple for Ember neutrals, and error toasts use the dark surface instead of the old rose block. Find it in Settings → Appearance.',
       'Language (navbar, landing, Tracker, Canvas, Settings → General): every chrome string goes through one dictionary with auto-detect (browser Vietnamese → Vietnamese) saved per device. Deep AI-generated content stays in its source language by design.',
       'Tracker (Master Tracker header): removed the Export CSV button, standalone Sheet pill and Timeline toggle from the main row. Subject/status/priority filters, CSV export and Open Sheet live behind the new Filters icon; AI Rank now sits inside the Smart Add bar. Canvas tab pills wrap cleanly and the Settings → General Tour + Changelog cards merge into one Help & updates row.',
       'Canvas (Canvas LMS tab): the same failure used to fire both an inline banner and an identical popup. Only the banner shows now, the message is shortened to a single fix, failed syncs keep your cached assignments (now persisted across reloads) instead of blanking the list.',

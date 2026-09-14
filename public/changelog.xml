@@ -9,7 +9,7 @@
       <title>v2.14.0 — Paper &amp; Coal Theme + Semantic Palette</title>
       <link>https://student-command-center.vercel.app/?changelog=2.14.0</link>
       <pubDate>Mon, 14 Sep 2026 00:00:00 GMT</pubDate>
-      <description>New Paper light (#F5F0E6) and Coal dark (#201D18) theme with Claude-orange accent, ink/cream text, rebalanced borders, and new semantic colors (gold, sage, clay, amber, slate).</description>
+      <description>New Paper light (#F5F0E6) and Coal dark (#201D18) theme with ember-orange accent, ink/cream text, rebalanced borders, and new semantic colors (gold, sage, clay, amber, slate).</description>
     </item>
     <item>
       <title>v2.13.0 — AI Planner All-Source Upgrade + Gmail-Native Inbox + Judge Hero</title>
@@ -36,58 +36,10 @@
       <description>New warm linen palette (#F8F6F0 canvas, #F1ECE1 sidebar, white cards, #E05D38 buttons) with smoother hovers, page transitions, and button shine across the app.</description>
     </item>
     <item>
-      <title>v2.9.8 — #f7e4c6 Canvas + Motion &amp; Feel Polish</title>
+      <title>v2.9.8 — Warm Cream Theme, Final Tuning + Motion Polish</title>
       <link>https://student-command-center.vercel.app/?changelog=2.9.8</link>
       <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
-      <description>Background moves to #f7e4c6 with cascading entrances, tactile buttons, and lift-on-hover cards across the app.</description>
-    </item>
-    <item>
-      <title>v2.9.7 — #f2eac7 Canvas + Swatch-Matched Sidebar</title>
-      <link>https://student-command-center.vercel.app/?changelog=2.9.7</link>
-      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
-      <description>Background moves to #f2eac7 with the sidebar matched to the sent swatch.</description>
-    </item>
-    <item>
-      <title>v2.9.6 — Your Exact Palette: #FAF9F5, #141413, #D97757</title>
-      <link>https://student-command-center.vercel.app/?changelog=2.9.6</link>
-      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
-      <description>Background is exactly #FAF9F5 warm cream with #D97757 terracotta accents on every button and glow.</description>
-    </item>
-    <item>
-      <title>v2.9.5 — Your Exact Creams: #f7daa3 Canvas, #fcce77 Sidebar</title>
-      <link>https://student-command-center.vercel.app/?changelog=2.9.5</link>
-      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
-      <description>Workspace and entire dashboard use #f7daa3, sidebar uses #fcce77, verified in the built CSS.</description>
-    </item>
-    <item>
-      <title>v2.9.4 — Claude-Sidebar Cream + Deeper Dashboard</title>
-      <link>https://student-command-center.vercel.app/?changelog=2.9.4</link>
-      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
-      <description>Workspaces and sidebar move to Claude-sidebar cream with the dashboard one shade deeper and the sidebar selection kept visible.</description>
-    </item>
-    <item>
-      <title>v2.9.3 — Warm Cream Everywhere: Background Fix That Applies</title>
-      <link>https://student-command-center.vercel.app/?changelog=2.9.3</link>
-      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
-      <description>Fixed the CSS layer bug that kept backgrounds pale — dashboard and all tabs now show warm cream with deeper rows and a softer sidebar.</description>
-    </item>
-    <item>
-      <title>v2.9.2 — Warmer Workspace + Richer Sidebar</title>
-      <link>https://student-command-center.vercel.app/?changelog=2.9.2</link>
-      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
-      <description>Dashboard and workspace move to a warmer orange cream with the sidebar one shade richer.</description>
-    </item>
-    <item>
-      <title>v2.9.1 — Plain Warm Cream Background: Starry Wash Removed</title>
-      <link>https://student-command-center.vercel.app/?changelog=2.9.1</link>
-      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
-      <description>The grey starry wallpaper wash is removed entirely — the dashboard sits on plain Claude-sidebar warm cream with the sidebar a touch deeper, and the space photo stays as a card.</description>
-    </item>
-    <item>
-      <title>v2.9.0 — Warm Cream Theme + Gentle Dark Mode + Lively Landing</title>
-      <link>https://student-command-center.vercel.app/?changelog=2.9.0</link>
-      <pubDate>Sat, 12 Sep 2026 00:00:00 GMT</pubDate>
-      <description>Warm cream canvas everywhere with a deeper-cream sidebar, softer readable dark mode, and a brighter logged-out homepage with floating glows and scroll-reveal animations.</description>
+      <description>Eight tuning passes settle the warm cream canvas, deeper sidebar, softer dark mode and livelier homepage with cascading entrances and tactile buttons.</description>
     </item>
     <item>
       <title>v2.8.4 — Warmer Look: No Grey Wash, Lighter Sidebar</title>
@@ -120,10 +72,10 @@
       <description>Math formulas in Study Coach, Feynman, quizzes, PhotoMath and STEM Lab now render as real equations with KaTeX, theme-matched and Vietnamese-safe.</description>
     </item>
     <item>
-      <title>v2.7.0 — Claude Palette, VI/EN Toggle, Calmer Toolbars &amp; Honest Canvas</title>
+      <title>v2.7.0 — Ember Palette, VI/EN Toggle, Calmer Toolbars &amp; Honest Canvas</title>
       <link>https://student-command-center.vercel.app/?changelog=2.7.0</link>
       <pubDate>Fri, 11 Sep 2026 00:00:00 GMT</pubDate>
-      <description>Official Claude canvas/border/accent palette everywhere, Vietnamese-English toggle with auto-detect, decluttered Tracker toolbar with Filters panel and Smart Add AI Rank, single-banner Canvas errors that keep cached assignments, and a multi-section homepage with Features, How-it-works, FAQ and Privacy.</description>
+      <description>Official Ember canvas/border/accent palette everywhere, Vietnamese-English toggle with auto-detect, decluttered Tracker toolbar with Filters panel and Smart Add AI Rank, single-banner Canvas errors that keep cached assignments, and a multi-section homepage with Features, How-it-works, FAQ and Privacy.</description>
     </item>
     <item>
       <title>v2.6.1 — True Palette, Point-At-You Tour &amp; Honest Canvas Errors</title>

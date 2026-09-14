@@ -121,8 +121,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={onToggleAiChat}
           className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
             isAiChatOpen
-              ? 'bg-[#C96442] border-[#C96442] text-white shadow-xs'
-              : 'bg-[#C96442]/10 hover:bg-[#C96442]/20 text-[#C96442] border-[#C96442]/20'
+              ? 'bg-[#B85C38] border-[#B85C38] text-white shadow-xs'
+              : 'bg-[#F6DDCC] hover:bg-[#E2D8C0] text-[#B85C38] border-[#D97757]/30'
           }`}
           title="AI Study Coach"
         >

@@ -701,6 +701,10 @@ html.dark input[class*="bg-white"], html.dark select[class*="bg-white"], html.da
 html.dark [class*="border-[#E8E6DC]"] { border-color: #4A4136; }
 [class*="divide-[#E8E6DC]"] > :not([hidden]) ~ :not([hidden]) { border-color: #D5C9AF; }
 html.dark [class*="divide-[#E8E6DC]"] > :not([hidden]) ~ :not([hidden]) { border-color: #4A4136; }
+/* Breadcrumb "/" separator + kbd chips must never match their surface */
+.text-\[\#E8E6DC\] { color: #D5C9AF; }
+html.dark .text-\[\#E8E6DC\], html.dark .dark\:text-\[\#2C2B27\] { color: #4A4136; }
+kbd[class*="bg-white"], kbd[class*="bg-[#FAF9F5]"] { background-color: #F5F0E6; }
 
 /* === Guided-tour spotlight — warm terracotta pulse on the real UI target === */
 .scc-tour-flash {
@@ -850,9 +854,9 @@ a { transition: color .2s ease, background-color .2s ease, border-color .2s ease
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
 
-/* ============ Paper & Coal remap — user palette paper/ink + coal/cream, Claude accent ============
+/* ============ Paper & Coal remap — user palette paper/ink + coal/cream, Ember accent ============
    Unlayered + last-in-file so it beats Tailwind v4 utilities AND older remaps above.
-   Every legacy cream/claude hex instantly follows the new tokens without per-file rewrites. */
+   Every legacy cream/ember hex instantly follows the new tokens without per-file rewrites. */
 .bg-\[\#F5F4ED\], .bg-slate-50, .hover\:bg-slate-50:hover { background-color: #F5F0E6; }
 .bg-\[\#FAF9F5\] { background-color: #F5F0E6; }
 .bg-\[\#E8E6DC\], .bg-slate-100, .bg-slate-200, .hover\:bg-slate-100:hover, .hover\:bg-slate-200:hover { background-color: #EAE2D1; }
